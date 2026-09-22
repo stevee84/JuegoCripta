@@ -1,4 +1,4 @@
-from modelo.cambios import TransaccionAccion
+from logica.cambios import TransaccionAccion
 
 
 class HistorialReversible:
