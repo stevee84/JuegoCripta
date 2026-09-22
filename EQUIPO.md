@@ -12,25 +12,26 @@ Estructuras de Datos · II Ciclo 2026
 
 | Ubicación | Resp. | Contenido |
 |-----------|-------|-----------|
-| `modelo/entidades/` `modelo/estado_partida.py` `modelo/acciones.py` | 1 | Entidades, estado y costos |
-| `modelo/mapa_cripta.py` `modelo/registro_rastro.py` | 1 | Grafo y rastro |
-| `modelo/eventos.py` `modelo/agenda_eventos.py` `modelo/motor_juego.py` | 1 | Orden temporal y ejecución |
-| `modelo/reglas_combate.py` `modelo/comportamiento_enemigos.py` `modelo/gestor_efectos.py` | 1 | Combate, IA local y efectos |
-| `modelo/inventario.py` `modelo/servicio_inventario.py` | 3 | Orden, cursor, objetos |
-| `modelo/cambios.py` `modelo/historial_reversible.py` | 3 | Retroceso |
-| `modelo/ordenamiento.py` `modelo/bitacora_pantalla.py` | 3 | Algoritmos y bitácora |
+| `dto/` | 1 | Entidades, estado, eventos y acción |
+| `logica/mapa_cripta.py` `logica/registro_rastro.py` | 1 | Grafo y rastro |
+| `logica/agenda_eventos.py` `logica/motor_juego.py` | 1 | Orden temporal y ejecución |
+| `logica/reglas_combate.py` `logica/comportamiento_enemigos.py` `logica/gestor_efectos.py` | 1 | Combate, IA local y efectos |
+| `logica/acciones.py` | 1 | Costos de acción |
+| `logica/inventario.py` `logica/servicio_inventario.py` | 3 | Orden, cursor, objetos |
+| `logica/cambios.py` `logica/historial_reversible.py` | 3 | Retroceso |
+| `logica/ordenamiento.py` `logica/bitacora_pantalla.py` | 3 | Algoritmos y bitácora |
 | `estructuras/monticulo_minimo.py` | 1 | Montículo propio |
 | `estructuras/tabla_hash.py` | 2 | Tabla hash propia |
 | `estructuras/lista_doble.py` `estructuras/cola_circular.py` | 3 | Lista doble y cola circular |
-| `puertos/` `adaptadores/` (excepto registro_partida y repositorio_puntajes) | 2 | API, offline, precarga, catálogo, caché, guardado |
-| `adaptadores/registro_partida.py` `adaptadores/repositorio_puntajes.py` | 3 | Log y puntajes |
-| `controlador/` `vista/` | 3 | Controlador, replay y consola |
+| `datos/` (excepto registro_partida y repositorio_puntajes) | 2 | API, offline, decodificador, presupuesto, almacén, guardado |
+| `datos/registro_partida.py` `datos/repositorio_puntajes.py` | 3 | Log y puntajes |
+| `service/` | 2/3 | Catálogo, precarga, caché, coordinación |
+| `controller/` `vista/` | 3 | Controlador, replay y consola |
 | `main.py` `configuracion.py` | 3 | Arranque y argumentos |
 | `tests/` `benchmarks/` `docs/` | Todos | Cada uno prueba y mide su bloque |
 
 ## Contratos compartidos (acordados el Día 1)
 
-- `contratos/accion.py` — Accion y ResultadoAccion
 - `contratos/cambio_reversible.py` — CambioReversible
 - `contratos/fuente_datos.py` — FuenteDatos
 - `contratos/tabla_hash.py` — TablaHash
@@ -38,6 +39,10 @@ Estructuras de Datos · II Ciclo 2026
 - `contratos/agenda_eventos.py` — AgendaEventosContrato
 - `contratos/motor_juego.py` — MotorJuegoContrato
 - `contratos/ordenador_adaptativo.py` — OrdenadorAdaptativoContrato
+
+## DTOs compartidos
+
+- `dto/accion.py` — Accion y ResultadoAccion
 
 ## Stubs temporales
 

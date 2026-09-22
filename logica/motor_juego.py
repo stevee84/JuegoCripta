@@ -1,4 +1,4 @@
-from contratos.accion import Accion, ResultadoAccion
+from dto.accion import Accion, ResultadoAccion
 from contratos.motor_juego import MotorJuegoContrato
 
 

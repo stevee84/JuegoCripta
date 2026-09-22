@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from contratos.accion import Accion, ResultadoAccion
+from dto.accion import Accion, ResultadoAccion
 
 
 class MotorJuegoContrato(ABC):
