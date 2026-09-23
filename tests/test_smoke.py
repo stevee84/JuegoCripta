@@ -19,7 +19,7 @@ def test_importar_dto():
     from dto.sala import Sala, Puerta, Trampa
     from dto.objeto_instancia import ObjetoInstancia
     from dto.estado_partida import EstadoPartida
-    from dto.eventos import Evento
+    from dto.evento import Evento
 
 
 def test_importar_logica():
