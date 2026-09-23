@@ -1,5 +1,6 @@
 """Pruebas de humo: verifica que todos los módulos se importan sin error."""
 
+import pytest
 
 
 def test_importar_contratos():
