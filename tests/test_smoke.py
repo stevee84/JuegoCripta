@@ -4,7 +4,6 @@ import pytest
 
 
 def test_importar_contratos():
-    from contratos.accion import Accion, ResultadoAccion
     from contratos.cambio_reversible import CambioReversible
     from contratos.fuente_datos import FuenteDatos
     from contratos.tabla_hash import TablaHash
@@ -14,25 +13,29 @@ def test_importar_contratos():
     from contratos.ordenador_adaptativo import OrdenadorAdaptativoContrato
 
 
-def test_importar_modelo():
-    from modelo.entidades.actor import Actor, Jugador, Enemigo
-    from modelo.entidades.sala import Sala, Puerta, Trampa
-    from modelo.entidades.objeto_instancia import ObjetoInstancia
-    from modelo.estado_partida import EstadoPartida
-    from modelo.mapa_cripta import MapaCripta
-    from modelo.registro_rastro import RegistroRastro
-    from modelo.eventos import Evento
-    from modelo.agenda_eventos import AgendaEventos
-    from modelo.motor_juego import MotorJuego
-    from modelo.reglas_combate import ReglasCombate
-    from modelo.comportamiento_enemigos import ComportamientoEnemigos
-    from modelo.gestor_efectos import GestorEfectos
-    from modelo.inventario import Inventario
-    from modelo.servicio_inventario import ServicioInventario
-    from modelo.cambios import TransaccionAccion
-    from modelo.historial_reversible import HistorialReversible
-    from modelo.ordenamiento import OrdenadorAdaptativo
-    from modelo.bitacora_pantalla import BitacoraPantalla
+def test_importar_dto():
+    from dto.accion import Accion, ResultadoAccion
+    from dto.actor import Actor, Jugador, Enemigo
+    from dto.sala import Sala, Puerta, Trampa
+    from dto.objeto_instancia import ObjetoInstancia
+    from dto.estado_partida import EstadoPartida
+    from dto.eventos import Evento
+
+
+def test_importar_logica():
+    from logica.mapa_cripta import MapaCripta
+    from logica.registro_rastro import RegistroRastro
+    from logica.agenda_eventos import AgendaEventos
+    from logica.motor_juego import MotorJuego
+    from logica.reglas_combate import ReglasCombate
+    from logica.comportamiento_enemigos import ComportamientoEnemigos
+    from logica.gestor_efectos import GestorEfectos
+    from logica.inventario import Inventario
+    from logica.servicio_inventario import ServicioInventario
+    from logica.cambios import TransaccionAccion
+    from logica.historial_reversible import HistorialReversible
+    from logica.ordenamiento import OrdenadorAdaptativo
+    from logica.bitacora_pantalla import BitacoraPantalla
 
 
 def test_importar_estructuras():
@@ -42,23 +45,28 @@ def test_importar_estructuras():
     from estructuras.cola_circular import ColaCircular
 
 
-def test_importar_adaptadores():
-    from adaptadores.cliente_api import ClienteAPI
-    from adaptadores.fuente_offline import FuenteOffline
-    from adaptadores.decodificador_datos import DecodificadorDatos
-    from adaptadores.presupuesto_solicitudes import PresupuestoSolicitudes
-    from adaptadores.planificador_precarga import PlanificadorPrecarga
-    from adaptadores.repositorio_catalogo import RepositorioCatalogo
-    from adaptadores.cache_catalogo import CacheCatalogo
-    from adaptadores.almacen_persistente import AlmacenPersistente
-    from adaptadores.guardado_binario import GuardadoBinario
-    from adaptadores.registro_partida import RegistroPartida
-    from adaptadores.repositorio_puntajes import RepositorioPuntajes
+def test_importar_datos():
+    from datos.cliente_api import ClienteAPI
+    from datos.fuente_offline import FuenteOffline
+    from datos.decodificador_datos import DecodificadorDatos
+    from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+    from datos.almacen_persistente import AlmacenPersistente
+    from datos.guardado_binario import GuardadoBinario
+    from datos.registro_partida import RegistroPartida
+    from datos.repositorio_puntajes import RepositorioPuntajes
 
 
-def test_importar_controlador_vista():
-    from controlador.controlador_juego import ControladorJuego
-    from controlador.ejecutor_replay import EjecutorReplay
+def test_importar_service():
+    from service.repositorio_catalogo import RepositorioCatalogo
+    from service.planificador_precarga import PlanificadorPrecarga
+    from service.cache_catalogo import CacheCatalogo
+    from service.juego_service import JuegoService
+    from service.partida_service import PartidaService
+
+
+def test_importar_controller_vista():
+    from controller.controlador_juego import ControladorJuego
+    from controller.ejecutor_replay import EjecutorReplay
     from vista.vista_consola import VistaConsola
 
 

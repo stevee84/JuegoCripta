@@ -3,7 +3,7 @@
 from stubs.tabla_hash_dict import DictTablaHash
 from stubs.lista_doble_simple import ListaDobleSimple
 from stubs.motor_falso import MotorFalso
-from contratos.accion import Accion, ResultadoAccion
+from dto.accion import Accion, ResultadoAccion
 
 
 def test_dict_tabla_hash():

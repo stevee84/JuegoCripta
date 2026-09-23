@@ -1,6 +1,6 @@
 """Integrante 1. Subclases concretas de Accion para cada tipo de acción del juego."""
 
-from contratos.accion import Accion
+from dto.accion import Accion
 
 COSTO_MOVER = 100
 COSTO_ATACAR = 100

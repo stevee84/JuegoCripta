@@ -8,10 +8,10 @@ def main() -> None:
 
     # Seleccionar fuente de datos
     if config.offline:
-        from adaptadores.fuente_offline import FuenteOffline
+        from datos.fuente_offline import FuenteOffline
         fuente = FuenteOffline(ruta_directorio=config.ruta_datos_offline)
     else:
-        from adaptadores.cliente_api import ClienteAPI
+        from datos.cliente_api import ClienteAPI
         fuente = ClienteAPI(url_base=config.url_api)
 
     # Modo benchmark
@@ -21,15 +21,15 @@ def main() -> None:
 
     # Modo replay
     if config.replay:
-        from controlador.ejecutor_replay import EjecutorReplay
+        from controller.ejecutor_replay import EjecutorReplay
         EjecutorReplay().reproducir(config.replay)
         return
 
     # Modo normal
-    from modelo.motor_juego import MotorJuego
-    from modelo.historial_reversible import HistorialReversible
+    from logica.motor_juego import MotorJuego
+    from logica.historial_reversible import HistorialReversible
     from vista.vista_consola import VistaConsola
-    from controlador.controlador_juego import ControladorJuego
+    from controller.controlador_juego import ControladorJuego
 
     motor = MotorJuego()
     vista = VistaConsola()
