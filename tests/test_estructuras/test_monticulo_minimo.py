@@ -111,6 +111,71 @@ class TestMonticuloMinimo(unittest.TestCase):
 
         self.assertIsNone(resultado)
 
+    def test_buscar_evento_por_id(self):
+
+        monticulo = MonticuloMinimo()
+
+
+        evento = EventoPrueba(
+            tiempo=20,
+            secuencia=1
+        )
+
+        evento.id_evento = "E1"
+
+
+        monticulo.insertar(evento)
+
+
+        encontrado = monticulo.buscar_por_id("E1")
+
+
+        self.assertIsNotNone(encontrado)
+
+
+
+    def test_eliminar_evento(self):
+
+        monticulo = MonticuloMinimo()
+
+
+        evento1 = EventoPrueba(
+            tiempo=10,
+            secuencia=1
+        )
+
+        evento1.id_evento = "E1"
+
+
+        evento2 = EventoPrueba(
+            tiempo=20,
+            secuencia=1
+        )
+
+        evento2.id_evento = "E2"
+
+
+        monticulo.insertar(evento1)
+        monticulo.insertar(evento2)
+
+
+        eliminado = monticulo.eliminar("E1")
+
+
+        self.assertEqual(
+            eliminado.id_evento,
+            "E1"
+        )
+
+
+        siguiente = monticulo.extraer_minimo()
+
+
+        self.assertEqual(
+            siguiente.id_evento,
+            "E2"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

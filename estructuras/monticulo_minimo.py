@@ -100,3 +100,40 @@ class MonticuloMinimo:
             )
 
             indice = menor
+
+    def buscar_por_id(self, evento_id):
+        for evento in self._datos:
+
+            if evento.id_evento == evento_id:
+                return evento
+
+        return None
+
+    def eliminar(self, evento_id):
+        indice = -1
+
+        for i, evento in enumerate(self._datos):
+
+            if evento.id_evento == evento_id:
+                indice = i
+                break
+
+        if indice == -1:
+            return None
+
+        eliminado = self._datos[indice]
+
+        ultimo = self._datos.pop()
+
+        if indice < len(self._datos):
+            self._datos[indice] = ultimo
+
+            padre = (indice - 1) // 2
+
+            if indice > 0 and self._datos[indice] < self._datos[padre]:
+                self._subir(indice)
+
+            else:
+                self._bajar(indice)
+
+        return eliminado
