@@ -1,6 +1,5 @@
 """Pruebas de humo: verifica que todos los módulos se importan sin error."""
 
-import pytest
 
 
 def test_importar_contratos():
@@ -59,7 +58,7 @@ def test_importar_datos():
 def test_importar_service():
     from service.repositorio_catalogo import RepositorioCatalogo
     from service.planificador_precarga import PlanificadorPrecarga
-    from service.cache_catalogo import CacheCatalogo
+    from logica.cache_catalogo import CacheCatalogo
     from service.juego_service import JuegoService
     from service.partida_service import PartidaService
 
