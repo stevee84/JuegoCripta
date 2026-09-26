@@ -3,16 +3,17 @@ class Evento:
     """
     Representa un evento dentro de la simulación.
 
-    Los eventos son almacenados en la Agenda de Eventos
-    utilizando un MonticuloMinimo.
+    Los eventos son administrados por la AgendaEventos y
+    ordenados mediante el MonticuloMinimo.
 
-    La prioridad de ejecución se define por:
+    La prioridad se determina por:
 
-        1. Menor tiempo del evento.
+        1. Menor tiempo.
         2. Menor secuencia en caso de empate.
 
-    Esto permite que el motor del juego ejecute los eventos
-    siempre en un orden determinista.
+    El atributo datos permite almacenar información adicional
+    necesaria para procesar eventos específicos, por ejemplo:
+    efectos temporales, daño o información de trampas.
     """
 
     def __init__(
@@ -21,7 +22,8 @@ class Evento:
         tiempo: int,
         secuencia: int,
         tipo: str,
-        destinatario_id: str
+        destinatario_id: str,
+        datos=None
     ):
 
         if tiempo < 0:
@@ -41,11 +43,23 @@ class Evento:
         self.tipo = tipo
         self.destinatario_id = destinatario_id
 
+        # Información adicional del evento.
+        #
+        # Ejemplo:
+        #
+        # {
+        #   "id": "veneno_01",
+        #   "duracion": 5,
+        #   "daño": 3
+        # }
+        #
+        self.datos = datos
+
+
 
     def __lt__(self, otro):
         """
-        Define la prioridad del evento.
-        Se utiliza automáticamente por el MonticuloMinimo.
+        Define la prioridad utilizada por MonticuloMinimo.
         """
 
         return (
@@ -57,11 +71,12 @@ class Evento:
         )
 
 
+
     def __repr__(self):
         """
-        Facilita la visualización del evento
-        durante pruebas y depuración.
+        Representación para pruebas y depuración.
         """
+
         return (
             f"Evento("
             f"id={self.id_evento}, "
