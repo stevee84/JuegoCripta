@@ -1,3 +1,4 @@
+#SOFIA
 class Actor:
     """
     Clase base para representar cualquier entidad que participa

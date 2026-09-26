@@ -1,5 +1,5 @@
 import random
-
+#SOFIA
 
 class EstadoPartida:
     """

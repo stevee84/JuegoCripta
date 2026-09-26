@@ -1,3 +1,4 @@
+#SOFIA
 class Evento:
     """
     Representa un evento dentro de la simulación.

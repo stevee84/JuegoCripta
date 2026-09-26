@@ -1,6 +1,7 @@
 from contratos.agenda_eventos import AgendaEventosContrato
 from estructuras.monticulo_minimo import MonticuloMinimo
 
+#SOFIA
 
 class AgendaEventos(AgendaEventosContrato):
     """
