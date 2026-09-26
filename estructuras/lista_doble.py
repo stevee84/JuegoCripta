@@ -11,8 +11,25 @@ class NodoDoble:
 
 
 class ListaDobleImpl(ListaDoble):
-    """Lista doble reutilizable en el inventario y la caché."""
+    """
+    Se utiliza una lista doble porque el inventario necesita
+    recorrerse hacia adelante y hacia atrás desde el objeto
+    seleccionado.
 
+    Cada nodo guarda referencias al anterior y al siguiente.
+    Esto permite quitar un nodo o moverlo al frente sin recorrer
+    la lista, siempre que ya tengamos una referencia a ese nodo.
+
+    Se elige frente a una lista de Python porque quitar un
+    elemento intermedio de esa lista requiere desplazar los
+    elementos posteriores. Una lista simplemente enlazada
+    tampoco permite retroceder directamente al nodo anterior.
+
+    Insertar al inicio, quitar un nodo conocido y moverlo al
+    frente tienen costo O(1). Buscar un objeto sin conocer
+    su nodo requiere recorrer la lista y tiene costo O(n).
+    """
+    
     def __init__(self):
         # La lista comienza vacía.
         self.primero = None

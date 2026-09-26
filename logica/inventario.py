@@ -2,8 +2,23 @@ from estructuras.lista_doble import ListaDobleImpl
 
 
 class Inventario:
-    """Administra los objetos y permite recorrerlos mediante un cursor."""
+    """
+    El inventario utiliza una lista doble para almacenar los
+    objetos y un cursor que referencia el nodo seleccionado.
 
+    Se guarda una referencia al nodo en lugar de un número de
+    posición para avanzar, retroceder y quitar el objeto actual
+    sin buscarlo desde el inicio.
+
+    La capacidad máxima se recibe de los datos de la cripta.
+    Cuando se alcanza ese límite, agregar un objeto se rechaza
+    sin modificar el contenido ni la selección.
+
+    Para mostrar una vista ordenada se obtiene una lista auxiliar.
+    Así se pueden ordenar las referencias a los objetos sin
+    modificar el orden real del inventario.
+    """
+    
     def __init__(self, capacidad: int, lista_doble=None):
         # La capacidad máxima viene de los datos de la cripta.
         self._capacidad = capacidad
