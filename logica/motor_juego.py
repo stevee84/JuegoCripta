@@ -202,7 +202,7 @@ class MotorJuego(MotorJuegoContrato):
         cambios = []
 
 
-        while not self.estado.agenda._monticulo.esta_vacio():
+        while not self.estado.agenda.tiene_eventos():
 
             evento = self.estado.agenda.extraer_siguiente()
 
