@@ -22,7 +22,8 @@ class RegistroRastro:
         #
         self._presencias = {}
 
-
+    def obtener_tiempo(self, id_sala):
+        return self._presencias.get(id_sala)
 
     def actualizar(self, id_sala: str, tiempo: int) -> None:
         """

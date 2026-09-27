@@ -97,7 +97,7 @@ class ComportamientoEnemigos:
             }
 
 
-        destino = vecinos[0]
+        destino = estado.azar.choice(vecinos)
 
 
         return {
@@ -111,10 +111,9 @@ class ComportamientoEnemigos:
         """
         Comportamiento rastreador.
 
-        Busca si existe un rastro reciente del jugador
-        en alguna sala conocida.
+        Revisa únicamente salas vecinas accesibles
+        y sigue el rastro fresco más reciente.
         """
-
         rastro = getattr(
             estado,
             "registro_rastro",
@@ -122,29 +121,44 @@ class ComportamientoEnemigos:
         )
 
 
-        if rastro is None:
-
+        if rastro is None or enemigo.sala_actual is None:
             return {
-                "tipo": "ESPERAR"
+             "tipo": "ESPERAR"
             }
 
+        vecinos = estado.mapa.vecinos_abiertos(
+            enemigo.sala_actual.id_sala
+        )
 
-        sala_jugador = estado.jugador.sala_actual
+
+        mejor_sala = None
+        mejor_tiempo = -1
 
 
-        if sala_jugador is not None:
+        for sala in vecinos:
 
-            if rastro.consultar_fresco(
-                sala_jugador.id_sala,
-                estado.reloj
+            tiempo_rastro = rastro.obtener_tiempo(
+                sala.id_sala
+            )
+
+
+        if tiempo_rastro is not None:
+
+            if (
+                estado.reloj - tiempo_rastro < 400
+                and tiempo_rastro > mejor_tiempo
             ):
 
-                return {
-                    "tipo": "SEGUIR_RASTRO",
-                    "destino": sala_jugador.id_sala
-                }
+                mejor_tiempo = tiempo_rastro
+                mejor_sala = sala
 
 
-        return {
-            "tipo": "ESPERAR"
-        }
+
+        if mejor_sala is not None:
+
+            return {
+                "tipo": "SEGUIR_RASTRO",
+                "destino": mejor_sala.id_sala
+            }
+
+        return {"tipo": "ESPERAR"}

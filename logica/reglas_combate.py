@@ -59,24 +59,29 @@ class ReglasCombate:
 
     def procesar_muerte(self, actor, estado) -> list:
         """
-        Procesa las consecuencias cuando un actor es derrotado.
+        Procesa las consecuencias de la muerte de un actor.
 
-        Retorna una lista de eventos o acciones generadas.
-
-        Actualmente:
-            - Registra enemigos derrotados.
-            - Genera información de recompensa futura.
-
-        La creación de objetos específicos dependerá
-        del diseño final del inventario.
+        Genera cambios que posteriormente pueden ser procesados
+        por el motor del juego.
         """
-
 
         resultados = []
 
 
         if actor.esta_vivo():
+
             return resultados
+
+
+
+        # Cancelar eventos futuros del actor muerto
+
+        resultados.append(
+            {
+             "tipo": "CANCELAR_EVENTOS_ACTOR",
+             "actor": actor.id_actor
+            }
+        )
 
 
 
@@ -86,10 +91,10 @@ class ReglasCombate:
 
 
             resultados.append(
-                {
-                    "tipo": "ENEMIGO_DERROTADO",
-                    "actor": actor.id_actor
-                }
+             {
+                "tipo": "ENEMIGO_DERROTADO",
+                "actor": actor.id_actor
+             }
             )
 
 
@@ -97,11 +102,10 @@ class ReglasCombate:
 
             estado.partida_activa = False
 
-
             resultados.append(
-                {
-                    "tipo": "JUGADOR_DERROTADO",
-                    "actor": actor.id_actor
+             {
+                "tipo": "JUGADOR_DERROTADO",
+                "actor": actor.id_actor
                 }
             )
 

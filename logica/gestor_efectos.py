@@ -1,23 +1,20 @@
-#SOFIA
 class GestorEfectos:
     """
-    Administra los efectos temporales activos dentro de la partida.
+    Administra efectos temporales activos.
 
-    Los efectos se almacenan dentro de EstadoPartida y son
-    procesados mediante eventos del motor.
-
-    Esta clase administra la duración y aplicación de efectos,
-    pero no contiene reglas completas de combate.
+    Los efectos modifican temporalmente el estado
+    de los actores durante la simulación.
     """
+
 
     def aplicar(self, efecto, estado) -> list:
         """
-        Agrega un efecto al estado actual de la partida.
-
-        Retorna una lista de eventos generados.
+        Agrega un nuevo efecto activo.
         """
 
-        estado.efectos_activos.append(efecto)
+        estado.efectos_activos.append(
+            efecto
+        )
 
 
         return [
@@ -31,29 +28,31 @@ class GestorEfectos:
 
     def cancelar(self, efecto_id, estado) -> list:
         """
-        Elimina un efecto activo por su identificador.
-
-        Retorna información de la operación realizada.
+        Elimina un efecto activo.
         """
 
         eliminados = []
 
 
-        nuevos_efectos = []
+        efectos_restantes = []
 
 
         for efecto in estado.efectos_activos:
 
             if efecto.get("id") == efecto_id:
 
-                eliminados.append(efecto)
+                eliminados.append(
+                    efecto
+                )
 
             else:
 
-                nuevos_efectos.append(efecto)
+                efectos_restantes.append(
+                    efecto
+                )
 
 
-        estado.efectos_activos = nuevos_efectos
+        estado.efectos_activos = efectos_restantes
 
 
         return eliminados
@@ -62,41 +61,98 @@ class GestorEfectos:
 
     def procesar_evento(self, evento, estado) -> list:
         """
-        Procesa un evento relacionado con efectos.
-
-        Dependiendo del tipo de efecto se aplicarán cambios
-        sobre el estado del juego.
-
-        Por ahora solamente administra vencimiento.
+        Ejecuta los efectos cuando llega su evento.
         """
 
-        resultados = []
+        cambios = []
 
 
         if evento.tipo != "EFECTO":
-            return resultados
+            return cambios
 
 
         efecto = evento.datos
 
 
         if efecto is None:
-            return resultados
+            return cambios
 
 
-        if efecto.get("duracion", 0) <= 0:
 
-            resultados.append(
+        objetivo = efecto.get(
+            "objetivo"
+        )
+
+
+        tipo = efecto.get(
+            "tipo"
+        )
+
+
+
+        if tipo == "VENENO":
+
+            objetivo.vida -= efecto.get(
+                "valor",
+                1
+            )
+
+
+            if objetivo.vida < 0:
+                objetivo.vida = 0
+
+
+
+            cambios.append(
                 {
-                    "tipo": "EFECTO_TERMINADO",
-                    "efecto": efecto
+                    "tipo": "DAÑO_VENENO",
+                    "actor": objetivo.id_actor
                 }
             )
 
+
+
+        elif tipo == "REGENERACION":
+
+            objetivo.vida += efecto.get(
+                "valor",
+                1
+            )
+
+
+            if objetivo.vida > objetivo.vida_max:
+
+                objetivo.vida = objetivo.vida_max
+
+
+
+            cambios.append(
+                {
+                    "tipo": "CURACION",
+                    "actor": objetivo.id_actor
+                }
+            )
+
+
+
+        efecto["duracion"] -= 1
+
+
+
+        if efecto["duracion"] <= 0:
+
             self.cancelar(
-                efecto.get("id"),
+                efecto["id"],
                 estado
             )
 
 
-        return resultados
+            cambios.append(
+                {
+                    "tipo": "EFECTO_TERMINADO",
+                    "efecto": efecto["id"]
+                }
+            )
+
+
+        return cambios
