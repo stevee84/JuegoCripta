@@ -37,6 +37,9 @@ class AgendaEventos(AgendaEventosContrato):
         """
         self._monticulo.eliminar(evento_id)
 
+    def tiene_eventos(self):
+        return not self._monticulo.esta_vacio()
+
     def reprogramar(self, evento_id, nuevo_tiempo: int) -> None:
         """
         Cambia el tiempo de ejecución de un evento.
