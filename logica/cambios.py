@@ -83,3 +83,56 @@ class TransaccionAccion:
             self._cambios.quitar_nodo(nodo)
 
         self._revertida = True
+
+class CambioSoltarObjeto(CambioReversible):
+    """
+    Conserva la información necesaria para deshacer la salida
+    de un objeto del inventario hacia el suelo de una sala.
+
+    Reutiliza RetiroInventario para recuperar el mismo nodo,
+    su posición y el cursor, sin copiar el inventario completo.
+
+    La restauración del nodo cuesta O(1). Localizar y retirar
+    el objeto de Sala.objetos cuesta O(n), porque actualmente
+    el suelo utiliza una lista de Python.
+
+    Este cambio está destinado a objetos reversibles.
+    Los movimientos de pergaminos no deben registrarse aquí.
+    """
+
+    def __init__(self, retiro, sala):
+        # El registro contiene el inventario y el nodo retirado.
+        self._retiro = retiro
+        self._sala = sala
+        self._objeto = retiro.nodo.valor
+
+        # Debe capturarse antes de cambiar la ubicación a la sala.
+        self._ubicacion_anterior = self._objeto.ubicacion
+        self._deshecho = False
+
+    def deshacer(self, estado) -> None:
+        if self._deshecho:
+            return
+
+        # Busca la instancia exacta que fue soltada.
+        posicion = -1
+
+        for i in range(len(self._sala.objetos)):
+            if self._sala.objetos[i] is self._objeto:
+                posicion = i
+                break
+
+        if posicion == -1:
+            raise ValueError(
+                "El objeto que se desea restaurar no está en la sala."
+            )
+
+        # Primero valida y restaura la posición del inventario.
+        # Si falla, el objeto permanece en el suelo.
+        self._retiro.inventario.restaurar_retiro(self._retiro)
+
+        # Completa el traslado inverso.
+        self._sala.objetos.pop(posicion)
+        self._objeto.ubicacion = self._ubicacion_anterior
+
+        self._deshecho = True
