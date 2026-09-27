@@ -119,13 +119,25 @@ class MotorJuego(MotorJuegoContrato):
 
         if not defensor.esta_vivo():
 
-            cambios.extend(
-                self.combate.procesar_muerte(
-                    defensor,
-                    self.estado
-                )
+            cambios_muerte = self.combate.procesar_muerte(
+                defensor,
+                self.estado
             )
 
+
+            cambios.extend(
+            cambios_muerte
+            )
+
+
+            for cambio in cambios_muerte:
+
+                if cambio["tipo"] == "CANCELAR_EVENTOS_ACTOR":
+
+                    self.estado.enemigos.pop(
+                        cambio["actor"]
+                    )
+               
 
         return ResultadoAccion(
             True,

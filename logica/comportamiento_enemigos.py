@@ -142,15 +142,12 @@ class ComportamientoEnemigos:
             )
 
 
-        if tiempo_rastro is not None:
+            if tiempo_rastro is not None:
 
-            if (
-                estado.reloj - tiempo_rastro < 400
-                and tiempo_rastro > mejor_tiempo
-            ):
+                if (estado.reloj - tiempo_rastro < 400 and tiempo_rastro > mejor_tiempo):
 
-                mejor_tiempo = tiempo_rastro
-                mejor_sala = sala
+                    mejor_tiempo = tiempo_rastro
+                    mejor_sala = sala
 
 
 
