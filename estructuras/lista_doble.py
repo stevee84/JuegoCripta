@@ -99,3 +99,60 @@ class ListaDobleImpl(ListaDoble):
         nodo.siguiente = self.primero
         self.primero.anterior = nodo
         self.primero = nodo
+
+    def reinsertar_nodo(self, nodo, anterior, siguiente) -> None:
+        """
+        Reinserta un nodo desconectado entre dos vecinos actuales.
+
+        Se utiliza para recuperar una posición sin crear otro nodo
+        ni copiar la lista. La operación tiene costo O(1).
+
+        El nodo debe estar fuera de cualquier lista. Los vecinos
+        deben pertenecer a esta lista y delimitar un espacio válido.
+        """
+
+        if nodo is None:
+            raise ValueError("Debes proporcionar un nodo.")
+
+        # Rechaza nodos que todavía tienen conexiones.
+        if nodo.anterior is not None or nodo.siguiente is not None:
+            raise ValueError("El nodo debe estar desconectado.")
+
+        # Un nodo único puede estar conectado sin tener vecinos.
+        if nodo is self.primero or nodo is self.ultimo:
+            raise ValueError("El nodo ya pertenece a esta lista.")
+
+        if nodo is anterior or nodo is siguiente:
+            raise ValueError("El nodo no puede ser su propio vecino.")
+
+        # Comprueba el espacio desde el lado anterior.
+        if anterior is None:
+            if self.primero is not siguiente:
+                raise ValueError("La posición inicial no es válida.")
+        else:
+            if anterior.siguiente is not siguiente:
+                raise ValueError("Los vecinos no son consecutivos.")
+
+        # Comprueba el espacio desde el lado siguiente.
+        if siguiente is None:
+            if self.ultimo is not anterior:
+                raise ValueError("La posición final no es válida.")
+        else:
+            if siguiente.anterior is not anterior:
+                raise ValueError("Los vecinos no son consecutivos.")
+
+        # Todas las comprobaciones ocurren antes de modificar la lista.
+        nodo.anterior = anterior
+        nodo.siguiente = siguiente
+
+        if anterior is None:
+            self.primero = nodo
+        else:
+            anterior.siguiente = nodo
+
+        if siguiente is None:
+            self.ultimo = nodo
+        else:
+            siguiente.anterior = nodo
+
+        self.cantidad += 1
