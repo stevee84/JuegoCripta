@@ -84,6 +84,41 @@ class TransaccionAccion:
 
         self._revertida = True
 
+class CambioRecogerObjeto(CambioReversible):
+    """Restaura el suelo y el cursor anteriores a una recolección.
+
+    Guarda referencias y una posición, sin copiar el inventario.
+    El nodo insertado queda al frente; el orden inverso de la
+    transacción permite retirarlo en O(1). Reinsertar en el suelo
+    cuesta O(n), porque Sala.objetos es una lista de Python.
+    """
+
+    def __init__(self, inventario, objeto, sala, posicion):
+        self._inventario = inventario
+        self._objeto = objeto
+        self._sala = sala
+        self._posicion = posicion
+        self._cursor_anterior = inventario._cursor
+        self._ubicacion_anterior = objeto.ubicacion
+        self._deshecho = False
+
+    def deshacer(self, estado) -> None:
+        if self._deshecho:
+            return
+
+        inventario = self._inventario
+        nodo = inventario._lista.primero
+        if nodo is None or nodo.valor is not self._objeto:
+            raise ValueError("Debes deshacer primero los cambios posteriores.")
+
+        inventario._lista.quitar_nodo(nodo)
+        inventario._cantidad -= 1
+        inventario._cursor = self._cursor_anterior
+        self._sala.objetos.insert(self._posicion, self._objeto)
+        self._objeto.ubicacion = self._ubicacion_anterior
+        self._deshecho = True
+
+
 class CambioSoltarObjeto(CambioReversible):
     """
     Conserva la información necesaria para deshacer la salida

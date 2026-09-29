@@ -1,5 +1,6 @@
 from dto.accion import ResultadoAccion
 from logica.acciones import COSTO_RECOGER, COSTO_SOLTAR
+from logica.cambios import CambioRecogerObjeto, CambioSoltarObjeto
 
 
 class ServicioInventario:
@@ -17,15 +18,16 @@ class ServicioInventario:
     Devuelve ResultadoAccion para informar el resultado y
     el costo base. El avance del reloj corresponde al motor.
 
-    En esta etapa implementa recoger y soltar. El equipamiento,
-    el uso de objetos y sus cambios reversibles se incorporarán
-    en los siguientes pasos.
+    Recoger y soltar devuelven cambios para el historial. El
+    coordinador indica reversible=False para movimientos de pergaminos;
+    la instancia no contiene la categoría de su ficha de catálogo.
+    El equipamiento y el uso de objetos siguen pendientes.
     """
 
     def __init__(self, inventario):
         self._inventario = inventario
 
-    def recoger(self, objeto, sala) -> ResultadoAccion:
+    def recoger(self, objeto, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
             return ResultadoAccion(
                 False, "No hay una sala disponible."
@@ -49,6 +51,9 @@ class ServicioInventario:
                 False, "El objeto no está en esta sala."
             )
 
+        # Captura la selección antes de que agregar seleccione el nuevo nodo.
+        cambio = CambioRecogerObjeto(self._inventario, objeto, sala, posicion)
+
         # Si no hay espacio, el objeto permanece en el suelo.
         if not self._inventario.agregar(objeto):
             return ResultadoAccion(
@@ -62,10 +67,11 @@ class ServicioInventario:
         return ResultadoAccion(
             exito=True,
             mensaje="Objeto recogido.",
+            cambios=[cambio] if reversible else [],
             costo=COSTO_RECOGER
         )
 
-    def soltar(self, sala) -> ResultadoAccion:
+    def soltar(self, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
             return ResultadoAccion(
                 False, "No hay una sala disponible."
@@ -86,7 +92,9 @@ class ServicioInventario:
             )
 
         # Retira el nodo seleccionado y actualiza el cursor.
-        objeto = self._inventario.quitar_actual()
+        retiro = self._inventario.retirar_actual_con_registro()
+        # Captura la ubicación original antes del traslado al suelo.
+        cambio = CambioSoltarObjeto(retiro, sala)
 
         sala.objetos.append(objeto)
         objeto.ubicacion = sala.id_sala
@@ -94,6 +102,7 @@ class ServicioInventario:
         return ResultadoAccion(
             exito=True,
             mensaje="Objeto soltado.",
+            cambios=[cambio] if reversible else [],
             costo=COSTO_SOLTAR
         )
 
