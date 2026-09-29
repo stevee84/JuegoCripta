@@ -1,5 +1,9 @@
 # Preparación de joshua para integrar Steve
 
+> Informe histórico del primer ensayo. La adaptación posterior autorizada
+> exclusivamente en joshua está en [adaptacion_joshua_actual.md](adaptacion_joshua_actual.md).
+> Los cinco diagnósticos que aquí figuraban pendientes ya pasan en joshua.
+
 Revisión del 29 de septiembre de 2026.
 
 ## Referencias y alcance

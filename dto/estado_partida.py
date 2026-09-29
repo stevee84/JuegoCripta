@@ -1,5 +1,5 @@
 import random
-
+#SOFIA
 
 class EstadoPartida:
     """
@@ -12,11 +12,13 @@ class EstadoPartida:
     información del estado actual.
     """
 
-    def __init__(self, semilla: int = 0):
+    def __init__(self, semilla: int = 0, cripta_id: str = ""):
 
         # Entidades principales
         self.jugador = None
         self.mapa = None
+        # Identificador que utiliza la cabecera del guardado.
+        self.cripta_id = cripta_id
 
 
         # Control del tiempo de simulación

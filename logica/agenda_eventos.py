@@ -1,6 +1,7 @@
 from contratos.agenda_eventos import AgendaEventosContrato
 from estructuras.monticulo_minimo import MonticuloMinimo
 
+#SOFIA
 
 class AgendaEventos(AgendaEventosContrato):
     """
@@ -35,6 +36,35 @@ class AgendaEventos(AgendaEventosContrato):
         Elimina el evento identificado por evento_id.
         """
         self._monticulo.eliminar(evento_id)
+
+    def cancelar_por_actor(self, actor_id) -> None:
+        """
+        Cancela todos los eventos asociados a un actor.
+
+        Se utiliza cuando un actor muere para evitar que
+        sus eventos futuros continúen ejecutándose.
+        """
+
+        eventos_cancelados = []
+
+
+        for evento in list(self._monticulo._datos):
+
+            if evento.destinatario_id == actor_id:
+
+                eventos_cancelados.append(
+                    evento.id_evento
+                )
+
+
+        for evento_id in eventos_cancelados:
+
+            self._monticulo.eliminar(
+                evento_id
+            )    
+
+    def tiene_eventos(self):
+        return not self._monticulo.esta_vacio()
 
     def reprogramar(self, evento_id, nuevo_tiempo: int) -> None:
         """

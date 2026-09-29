@@ -1,3 +1,4 @@
+#SOFIA
 class Sala:
     """
     Representa una habitación dentro de la cripta.

@@ -1,7 +1,7 @@
-"""Ejecutar explícitamente con pytest en la integración; requiere el bloque Steve.
+"""Regresiones de los fallos encontrados al comparar con origin/Steve.
 
-Estas pruebas expresan contratos pendientes y deben fallar hasta corregirlos.
-No se incluyen en la suite de joshua, donde esos módulos son esqueletos.
+Ahora también se ejecutan desde tests/test_logica/test_contratos_compartidos.py.
+Se conserva este archivo para repetir el diagnóstico original explícitamente.
 """
 
 from dto.accion import Accion
