@@ -12,20 +12,27 @@ class MapaCripta:
 
     def __init__(self):
 
-        # Diccionario:
-        # clave -> id de sala
-        # valor -> objeto Sala
-        #
-        # Se utiliza porque permite localizar una sala por ID
-        # de forma directa.
-        self._salas = {}
+        # Arreglo de salas: búsqueda O(n), sin índice hash. Permite recorrer
+        # el mapa para guardado y precarga conservando el orden de llegada.
+        self._salas = []
 
 
     def agregar_sala(self, sala) -> None:
-        self._salas[sala.id_sala] = sala
+        for i in range(len(self._salas)):
+            if self._salas[i].id_sala == sala.id_sala:
+                self._salas[i] = sala
+                return
+        self._salas.append(sala)
 
     def obtener_sala(self, id_sala: str):
-        return self._salas.get(id_sala)
+        for sala in self._salas:
+            if sala.id_sala == id_sala:
+                return sala
+        return None
+
+    def obtener_salas(self) -> list:
+        # Copia las referencias, para no exponer el arreglo interno.
+        return list(self._salas)
 
 
 

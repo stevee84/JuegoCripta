@@ -134,10 +134,10 @@ class MotorJuego(MotorJuegoContrato):
 
                 if cambio["tipo"] == "CANCELAR_EVENTOS_ACTOR":
 
-                    self.estado.enemigos.pop(
+                    self.estado.agenda.cancelar_por_actor(
                         cambio["actor"]
                     )
-               
+
 
         return ResultadoAccion(
             True,

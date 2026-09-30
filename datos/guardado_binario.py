@@ -24,7 +24,14 @@ class GuardadoBinario:
     # --- guardar ---
 
     def guardar(self, ruta: str, estado) -> None:
-        salas = estado.salas if isinstance(estado.salas, dict) else {}
+        mapa = getattr(estado, 'mapa', None)
+        salas_attr = getattr(estado, 'salas', None)
+        if salas_attr and isinstance(salas_attr, dict):
+            salas = salas_attr
+        elif mapa is not None and hasattr(mapa, 'obtener_salas'):
+            salas = {s.id_sala: s for s in mapa.obtener_salas()}
+        else:
+            salas = {}
         jugador = estado.jugador
         sala_actual_id = ""
         if jugador.sala_actual is not None:

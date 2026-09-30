@@ -2,12 +2,12 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 import pytest
-from stubs.lista_doble_simple import ListaDobleSimple
+from estructuras.lista_doble import ListaDobleImpl
 from logica.cache_catalogo import CacheCatalogo
 
 
 def crear_cache(capacidad=3):
-    lista = ListaDobleSimple()
+    lista = ListaDobleImpl()
     return CacheCatalogo(capacidad=capacidad, lista_doble=lista)
 
 

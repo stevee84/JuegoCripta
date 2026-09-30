@@ -77,6 +77,11 @@ class GestorEfectos:
         if efecto is None:
             return cambios
 
+        # Un evento atrasado no debe aplicar un pulso adicional al vencer.
+        if efecto["duracion"] <= 0:
+            self.cancelar(efecto["id"], estado)
+            return [{"tipo": "EFECTO_TERMINADO", "efecto": efecto["id"]}]
+
 
 
         objetivo = efecto.get(

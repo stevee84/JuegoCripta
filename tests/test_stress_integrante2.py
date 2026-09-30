@@ -9,7 +9,7 @@ from datos.decodificador_datos import DecodificadorDatos
 from datos.almacen_persistente import AlmacenPersistente
 from datos.fuente_offline import FuenteOffline
 from datos.guardado_binario import GuardadoBinario
-from stubs.lista_doble_simple import ListaDobleSimple
+from estructuras.lista_doble import ListaDobleImpl as ListaDobleSimple
 from dto.sala import Sala, Puerta, Trampa
 from dto.actor import Jugador, Enemigo
 from dto.objeto_instancia import ObjetoInstancia

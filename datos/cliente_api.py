@@ -38,10 +38,14 @@ class ClienteAPI(FuenteDatos):
                     timeout=self._timeout,
                 )
             except requests.exceptions.Timeout:
+                if intento < self._MAX_REINTENTOS:
+                    continue
                 raise CriptaAPIError(
                     f"Timeout al conectar con {url}"
                 )
             except requests.exceptions.ConnectionError:
+                if intento < self._MAX_REINTENTOS:
+                    continue
                 raise CriptaAPIError(
                     f"Error de conexión con {url}"
                 )

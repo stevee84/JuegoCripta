@@ -82,10 +82,10 @@ class TestReglasCombate(unittest.TestCase):
         )
 
 
-        self.assertEqual(
-            resultado[0]["tipo"],
-            "ENEMIGO_DERROTADO"
-        )
+        # El contrato requiere ambas notificaciones, sin imponer su orden.
+        self.assertEqual(len(resultado), 2)
+        self.assertIn({"tipo": "ENEMIGO_DERROTADO", "actor": "E1"}, resultado)
+        self.assertIn({"tipo": "CANCELAR_EVENTOS_ACTOR", "actor": "E1"}, resultado)
 
 
 
@@ -117,10 +117,9 @@ class TestReglasCombate(unittest.TestCase):
         )
 
 
-        self.assertEqual(
-            resultado[0]["tipo"],
-            "JUGADOR_DERROTADO"
-        )
+        self.assertEqual(len(resultado), 2)
+        self.assertIn({"tipo": "JUGADOR_DERROTADO", "actor": "J1"}, resultado)
+        self.assertIn({"tipo": "CANCELAR_EVENTOS_ACTOR", "actor": "J1"}, resultado)
 
 
 

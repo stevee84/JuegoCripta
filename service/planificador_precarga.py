@@ -36,7 +36,11 @@ class PlanificadorPrecarga:
         # Determinar profundidad base por tamano de cripta
         if total_salas <= 20:
             # Cargar todo: obtener todos los IDs del mapa
-            todos = list(getattr(self._mapa, '_salas', {}).keys())
+            salas_raw = getattr(self._mapa, '_salas', [])
+            if isinstance(salas_raw, dict):
+                todos = list(salas_raw.keys())
+            else:
+                todos = [s.id_sala for s in salas_raw]
             ids = [sid for sid in todos if sid not in self._cargadas]
             return ids
         elif total_salas <= 50:

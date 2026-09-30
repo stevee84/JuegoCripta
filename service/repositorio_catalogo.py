@@ -23,10 +23,11 @@ class RepositorioCatalogo:
                     self._presupuesto.registrar_intento()
                     version = self._fuente.obtener_version_catalogo()
                     if not self._almacen.validar_version(ficha_id, version):
-                        # Version obsoleta, intentar red
-                        return self._resolver_desde_red(ficha_id)
+                        resultado_red = self._resolver_desde_red(ficha_id)
+                        if resultado_red is not None:
+                            return resultado_red
                 except Exception:
-                    pass  # Si falla validacion, usar datos de disco
+                    pass
             self._cache.insertar(ficha_id, datos_disco)
             return datos_disco
 
@@ -99,4 +100,4 @@ class RepositorioCatalogo:
         try:
             return self._fuente.obtener_version_catalogo()
         except Exception:
-            return None
+            return ""
