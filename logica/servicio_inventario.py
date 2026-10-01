@@ -59,6 +59,7 @@ class ServicioInventario:
             return ResultadoAccion(
                 False, "El inventario está lleno."
             )
+        cambio._nodo = self._inventario._cursor
 
         # Completa el traslado después de aceptar la inserción.
         sala.objetos.pop(posicion)

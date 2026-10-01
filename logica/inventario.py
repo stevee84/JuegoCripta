@@ -3,7 +3,7 @@ from estructuras.lista_doble import ListaDobleImpl
 class RetiroInventario:
     """
     Conserva las referencias necesarias para restaurar un retiro:
-    inventario de origen, nodo y sus dos vecinos.
+    inventario de origen, nodo, vecinos y marca de orden anterior.
 
     No copia el inventario ni el objeto. Como se retira el nodo
     seleccionado, ese mismo nodo permite recuperar el cursor.
@@ -14,6 +14,7 @@ class RetiroInventario:
         self.nodo = nodo
         self.anterior = nodo.anterior
         self.siguiente = nodo.siguiente
+        self._orden = nodo._orden_inventario
         self.restaurado = False
 
 
@@ -48,6 +49,9 @@ class Inventario:
         # El cursor señala el nodo seleccionado.
         self._cursor = None
         self._cantidad = 0
+        # Marca de orden propia del inventario, no de la lista doble.
+        # Los retiros no renumeran los nodos que siguen presentes.
+        self._orden_frente = 0
 
     def esta_vacio(self) -> bool:
         return self._cantidad == 0
@@ -68,6 +72,8 @@ class Inventario:
 
         # Agrega al inicio y selecciona el objeto nuevo.
         self._cursor = self._lista.insertar(objeto)
+        self._orden_frente -= 1
+        self._cursor._orden_inventario = self._orden_frente
         self._cantidad += 1
 
         return True
@@ -123,6 +129,9 @@ class Inventario:
             return False
 
         # Conserva el cursor porque se mueve el mismo nodo.
+        if self._cursor is not self._lista.primero:
+            self._orden_frente -= 1
+            self._cursor._orden_inventario = self._orden_frente
         self._lista.mover_al_frente(self._cursor)
         return True
 
@@ -158,9 +167,9 @@ class Inventario:
         """
         Devuelve el mismo nodo a su posición y lo selecciona.
 
-        Los vecinos guardados deben seguir delimitando un espacio
-        válido. Esta operación restaura un retiro anterior; no es
-        una nueva recolección de objetos.
+        La marca de orden permite localizar vecinos vigentes aunque
+        los anteriores se hayan consumido o movido fuera del historial.
+        Buscar el espacio cuesta O(n); reconectar el nodo cuesta O(1).
         """
 
         if registro is None:
@@ -176,12 +185,28 @@ class Inventario:
                 "Este retiro ya fue restaurado."
             )
 
-        # La lista valida la posición antes de modificar los enlaces.
+        if self.esta_lleno():
+            raise ValueError("El inventario está lleno.")
+
+        # Cada inserción o movimiento al frente recibe una marca menor.
+        # Reinsertar por la marca anterior conserva el orden de los demás
+        # nodos sin restaurar vecinos ausentes ni mover los actuales.
+        anterior = None
+        siguiente = self._lista.primero
+        while (
+            siguiente is not None
+            and siguiente._orden_inventario < registro._orden
+        ):
+            anterior = siguiente
+            siguiente = siguiente.siguiente
+
+        # Solo se entregan a la lista vecinos que están vigentes.
         self._lista.reinsertar_nodo(
             registro.nodo,
-            registro.anterior,
-            registro.siguiente
+            anterior,
+            siguiente
         )
+        registro.nodo._orden_inventario = registro._orden
 
         self._cantidad += 1
 

@@ -88,9 +88,9 @@ class CambioRecogerObjeto(CambioReversible):
     """Restaura el suelo y el cursor anteriores a una recolección.
 
     Guarda referencias y una posición, sin copiar el inventario.
-    El nodo insertado queda al frente; el orden inverso de la
-    transacción permite retirarlo en O(1). Reinsertar en el suelo
-    cuesta O(n), porque Sala.objetos es una lista de Python.
+    Valida el nodo recogido y la selección recorriendo el inventario
+    en O(n); desconectar el nodo cuesta O(1). Reinsertar en el suelo
+    cuesta O(m), porque Sala.objetos es una lista de Python.
     """
 
     def __init__(self, inventario, objeto, sala, posicion):
@@ -98,6 +98,8 @@ class CambioRecogerObjeto(CambioReversible):
         self._objeto = objeto
         self._sala = sala
         self._posicion = posicion
+        # El servicio entrega el nodo después de agregar el objeto.
+        self._nodo = None
         self._cursor_anterior = inventario._cursor
         self._ubicacion_anterior = objeto.ubicacion
         self._deshecho = False
@@ -107,13 +109,34 @@ class CambioRecogerObjeto(CambioReversible):
             return
 
         inventario = self._inventario
-        nodo = inventario._lista.primero
-        if nodo is None or nodo.valor is not self._objeto:
+        nodo = None
+        cursor = None
+        actual = inventario._lista.primero
+        while actual is not None:
+            if actual is self._nodo or (
+                self._nodo is None and nodo is None and actual.valor is self._objeto
+            ):
+                nodo = actual
+            if self._cursor_anterior is not None and (
+                actual is self._cursor_anterior or (
+                    cursor is None and actual.valor is self._cursor_anterior.valor
+                )
+            ):
+                cursor = actual
+            actual = actual.siguiente
+
+        if nodo is None:
             raise ValueError("Debes deshacer primero los cambios posteriores.")
 
+        # Si la selección anterior desapareció, conserva la actual salvo
+        # que sea el nodo que se va a retirar; entonces selecciona un vecino.
+        if cursor is None:
+            cursor = inventario._cursor
+        if cursor is nodo:
+            cursor = nodo.siguiente or nodo.anterior
         inventario._lista.quitar_nodo(nodo)
         inventario._cantidad -= 1
-        inventario._cursor = self._cursor_anterior
+        inventario._cursor = cursor or inventario._lista.primero
         self._sala.objetos.insert(self._posicion, self._objeto)
         self._objeto.ubicacion = self._ubicacion_anterior
         self._deshecho = True
@@ -127,9 +150,9 @@ class CambioSoltarObjeto(CambioReversible):
     Reutiliza RetiroInventario para recuperar el mismo nodo,
     su posición y el cursor, sin copiar el inventario completo.
 
-    La restauración del nodo cuesta O(1). Localizar y retirar
-    el objeto de Sala.objetos cuesta O(n), porque actualmente
-    el suelo utiliza una lista de Python.
+    Localizar la posición del nodo cuesta O(n) y reconectarlo O(1).
+    Localizar y retirar el objeto de Sala.objetos cuesta O(m),
+    porque actualmente el suelo utiliza una lista de Python.
 
     Este cambio está destinado a objetos reversibles.
     Los movimientos de pergaminos no deben registrarse aquí.
