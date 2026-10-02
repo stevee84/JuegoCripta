@@ -1,5 +1,3 @@
-import bisect
-
 from estructuras.lista_doble import ListaDobleImpl
 
 
@@ -19,12 +17,19 @@ class CacheCatalogo:
         self._capacidad = capacidad
         self._lista = lista_doble if lista_doble is not None else ListaDobleImpl()
         self._arreglo: list[tuple[str, object]] = []
-        self._fijados: set[str] = set()
+        self._fijados = []
         self._aciertos = 0
         self._fallos = 0
 
     def _buscar_indice(self, ficha_id: str):
-        i = bisect.bisect_left(self._arreglo, (ficha_id,))
+        izquierda, derecha = 0, len(self._arreglo)
+        while izquierda < derecha:
+            medio = (izquierda + derecha) // 2
+            if self._arreglo[medio][0] < ficha_id:
+                izquierda = medio + 1
+            else:
+                derecha = medio
+        i = izquierda
         if i < len(self._arreglo) and self._arreglo[i][0] == ficha_id:
             return i, True
         return i, False
@@ -71,13 +76,15 @@ class CacheCatalogo:
         self._arreglo.insert(pos, (ficha_id, nodo))
 
     def fijar(self, ficha_id: str) -> None:
-        self._fijados.add(ficha_id)
+        if ficha_id not in self._fijados:
+            self._fijados.append(ficha_id)
         pos, encontrado = self._buscar_indice(ficha_id)
         if encontrado:
             self._arreglo[pos][1].valor.fijada = True
 
     def liberar_referencia(self, ficha_id: str) -> None:
-        self._fijados.discard(ficha_id)
+        if ficha_id in self._fijados:
+            self._fijados.remove(ficha_id)
         pos, encontrado = self._buscar_indice(ficha_id)
         if encontrado:
             self._arreglo[pos][1].valor.fijada = False

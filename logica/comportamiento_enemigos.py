@@ -28,6 +28,8 @@ class ComportamientoEnemigos:
 
         Retorna un diccionario con la acción seleccionada.
         """
+        if not enemigo.esta_vivo():
+            return {"tipo": "ESPERAR"}
         comportamiento = enemigo.comportamiento.lower()
 
         if comportamiento == "guardian":
@@ -38,7 +40,7 @@ class ComportamientoEnemigos:
 
         if comportamiento == "rastreador":
             return self._accion_rastreador(enemigo,estado)
-        
+
         return {
             "tipo": "ESPERAR"
         }
@@ -55,6 +57,8 @@ class ComportamientoEnemigos:
 
         if (
             enemigo.sala_actual is not None
+            and estado.jugador is not None
+            and estado.jugador.esta_vivo()
             and enemigo.sala_actual == estado.jugador.sala_actual
         ):
 
@@ -86,7 +90,7 @@ class ComportamientoEnemigos:
 
 
         vecinos = estado.mapa.vecinos_abiertos(
-            enemigo.sala_actual.id_sala
+            enemigo.sala_actual
         )
 
 
@@ -127,7 +131,7 @@ class ComportamientoEnemigos:
             }
 
         vecinos = estado.mapa.vecinos_abiertos(
-            enemigo.sala_actual.id_sala
+            enemigo.sala_actual
         )
 
 
@@ -138,13 +142,13 @@ class ComportamientoEnemigos:
         for sala in vecinos:
 
             tiempo_rastro = rastro.obtener_tiempo(
-                sala.id_sala
+                sala
             )
 
 
             if tiempo_rastro is not None:
 
-                if (estado.reloj - tiempo_rastro < 400 and tiempo_rastro > mejor_tiempo):
+                if (0 <= estado.reloj - tiempo_rastro < 400 and tiempo_rastro > mejor_tiempo):
 
                     mejor_tiempo = tiempo_rastro
                     mejor_sala = sala

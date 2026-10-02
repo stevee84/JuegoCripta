@@ -60,6 +60,9 @@ class TransaccionAccion:
                 "No se pueden registrar cambios después de revertir."
             )
 
+        if not isinstance(cambio, CambioReversible):
+            raise TypeError("El historial solo admite cambios reversibles.")
+
         # El cambio más reciente queda primero.
         self._cambios.insertar(cambio)
 
@@ -117,6 +120,66 @@ class CambioRecogerObjeto(CambioReversible):
         self._sala.objetos.insert(self._posicion, self._objeto)
         self._objeto.ubicacion = self._ubicacion_anterior
         self._deshecho = True
+
+
+class CambioAtributo(CambioReversible):
+    """Un valor anterior, nunca una copia de la entidad."""
+
+    def __init__(self, objeto, nombre):
+        self.objeto = objeto
+        self.nombre = nombre
+        self.anterior = getattr(objeto, nombre)
+
+    def deshacer(self, estado):
+        setattr(self.objeto, self.nombre, self.anterior)
+
+
+class CambioDato(CambioReversible):
+    """Un campo de una ficha de efecto (no un índice)."""
+
+    def __init__(self, datos, clave):
+        self.datos, self.clave = datos, clave
+        self.existia = clave in datos
+        self.anterior = datos.get(clave)
+
+    def deshacer(self, estado):
+        if self.existia:
+            self.datos[self.clave] = self.anterior
+        else:
+            self.datos.pop(self.clave, None)
+
+
+class CambioLista(CambioReversible):
+    def __init__(self, lista, posicion, valor, insertado):
+        self.lista, self.posicion = lista, posicion
+        self.valor, self.insertado = valor, insertado
+
+    def deshacer(self, estado):
+        if self.insertado:
+            self.lista.pop(self.posicion)
+        else:
+            self.lista.insert(self.posicion, self.valor)
+
+
+class CambioAzar(CambioReversible):
+    def __init__(self, azar):
+        self.azar = azar
+        self.anterior = azar.getstate()
+
+    def deshacer(self, estado):
+        self.azar.setstate(self.anterior)
+
+
+class CambioAgenda(CambioReversible):
+    def __init__(self, agenda, evento, insertado):
+        self.agenda, self.evento = agenda, evento
+        self.insertado = insertado
+
+    def deshacer(self, estado):
+        if self.insertado:
+            self.agenda.cancelar(self.evento.id_evento)
+        else:
+            self.agenda.restaurar_evento(self.evento)
 
 
 class CambioSoltarObjeto(CambioReversible):

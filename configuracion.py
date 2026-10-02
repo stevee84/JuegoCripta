@@ -6,6 +6,7 @@ import argparse
 def parsear_argumentos():
     parser = argparse.ArgumentParser(description="CRIPTA")
     parser.add_argument("--offline", action="store_true", help="Usar fuente offline en vez de API")
+    parser.add_argument("--demo", action="store_true", help="Partida sintética de integración con clases reales")
     parser.add_argument("--cache-size", type=int, default=25, help="Capacidad de la caché de fichas")
     parser.add_argument("--replay", type=str, default=None, help="Ruta del log a reproducir")
     parser.add_argument("--bench", action="store_true", help="Ejecutar benchmarks sin vista interactiva")
@@ -18,6 +19,7 @@ class Configuracion:
         if args is None:
             args = parsear_argumentos()
         self.offline: bool = args.offline
+        self.demo: bool = getattr(args, "demo", False)
         self.cache_size: int = args.cache_size
         self.replay: str | None = args.replay
         self.bench: bool = args.bench

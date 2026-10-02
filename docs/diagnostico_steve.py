@@ -40,10 +40,16 @@ def test_muerte_cancela_solo_eventos_del_actor():
     estado = EstadoPartida()
     estado.jugador = Jugador("j", "Jugador", 100, 20, 0, 1)
     enemigo = Enemigo("e", "Enemigo", 1, 1, 0, 1)
+    sala = Sala("s1")
+    sala.enemigos.append(enemigo)
+    estado.mapa = MapaCripta()
+    estado.mapa.agregar_sala(sala)
+    estado.jugador.sala_actual = sala
     motor = MotorJuego()
     motor.iniciar(estado)
     estado.agenda.programar(Evento("e1", 1, 1, "TURNO", "e"))
-    estado.agenda.programar(Evento("e2", 2, 2, "TURNO", "j"))
+    # Posterior a la decisión: debe conservarse, no consumirse ni cancelarse.
+    estado.agenda.programar(Evento("e2", 200, 2, "TURNO", "j"))
     estado.agenda.programar(Evento("e3", 3, 3, "TURNO", "e"))
     assert motor.ejecutar_accion(Accion("ATACAR", enemigo)).exito
     assert estado.agenda.extraer_siguiente().id_evento == "e2"

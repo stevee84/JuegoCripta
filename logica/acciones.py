@@ -1,6 +1,6 @@
-"""Integrante 1. Subclases concretas de Accion para cada tipo de acción del juego."""
+"""Costos base confirmados. Accion(tipo=...) es el DTO compartido."""
 
-from dto.accion import Accion
+from dto.accion import Accion  # Conserva la importación pública anterior.
 
 COSTO_MOVER = 100
 COSTO_ATACAR = 100
@@ -12,4 +12,15 @@ COSTO_RECOGER = 25
 COSTO_SOLTAR = 25
 COSTO_RETROCEDER = 0
 
-# TODO(Integrante1): definir subclases o usar Accion(tipo=...) directamente
+def costo_base(tipo):
+    # No se aplica una fórmula de velocidad sin su especificación.
+    for nombre, costo in (
+        ("MOVER", COSTO_MOVER), ("ATACAR", COSTO_ATACAR),
+        ("ESPERAR", COSTO_ESPERAR), ("USAR", COSTO_USAR),
+        ("EQUIPAR", COSTO_EQUIPAR), ("ABRIR", COSTO_ABRIR),
+        ("RECOGER", COSTO_RECOGER), ("SOLTAR", COSTO_SOLTAR),
+        ("RETROCEDER", COSTO_RETROCEDER),
+    ):
+        if nombre == tipo:
+            return costo
+    raise ValueError("Acción desconocida.")

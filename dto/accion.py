@@ -9,6 +9,8 @@ class ResultadoAccion:
     mensaje: str
     cambios: list = field(default_factory=list)
     costo: int = 0
+    # Descripciones para la vista; cambios contiene solo CambioReversible.
+    notificaciones: list = field(default_factory=list)
 
 
 @dataclass

@@ -30,6 +30,7 @@ class Actor:
         self.ataque = ataque
         self.defensa = defensa
         self.velocidad = velocidad
+        self.muerte_procesada = False
 
         # Referencia a la sala donde se encuentra actualmente.
         # Será asignada por el mapa de la cripta.

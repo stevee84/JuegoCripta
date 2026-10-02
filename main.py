@@ -7,7 +7,9 @@ def main() -> None:
     config = Configuracion()
 
     # Seleccionar fuente de datos
-    if config.offline:
+    if config.demo:
+        fuente = None
+    elif config.offline:
         from datos.fuente_offline import FuenteOffline
         fuente = FuenteOffline(ruta_directorio=config.ruta_datos_offline)
     else:
@@ -21,8 +23,7 @@ def main() -> None:
 
     # Modo replay
     if config.replay:
-        from controller.ejecutor_replay import EjecutorReplay
-        EjecutorReplay().reproducir(config.replay)
+        print("Replay pendiente: falta acordar el formato del registro y los datos iniciales.")
         return
 
     # Modo normal
@@ -35,7 +36,14 @@ def main() -> None:
     vista = VistaConsola()
     historial = HistorialReversible()
     controlador = ControladorJuego(motor=motor, vista=vista, fuente=fuente, historial=historial)
-    controlador.iniciar()
+    estado = None
+    if config.demo:
+        from docs.partida_minima import crear_partida_minima
+        estado = crear_partida_minima(config.semilla if config.semilla is not None else 7)
+    try:
+        controlador.iniciar(estado)
+    except ValueError as error:
+        vista.mostrar_error(str(error))
 
 
 if __name__ == "__main__":

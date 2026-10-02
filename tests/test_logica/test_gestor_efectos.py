@@ -3,6 +3,7 @@ import unittest
 from logica.gestor_efectos import GestorEfectos
 from dto.estado_partida import EstadoPartida
 from dto.evento import Evento
+from dto.actor import Jugador
 
 
 
@@ -20,8 +21,10 @@ class TestGestorEfectos(unittest.TestCase):
             "id": "veneno_01",
             "tipo": "VENENO",
             "duracion": 5,
-            "daño": 3
+            "valor": 3,
+            "objetivo": Jugador("j", "Jugador", 10, 1, 0, 1)
         }
+        estado.jugador = efecto["objetivo"]
 
 
         resultado = gestor.aplicar(

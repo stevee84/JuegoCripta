@@ -5,7 +5,7 @@ class PlanificadorPrecarga:
         self._repositorio = repositorio
         self._mapa = mapa
         self._presupuesto = presupuesto
-        self._cargadas = set()
+        self._cargadas = []
 
     def _vecinos(self, sala_id: str) -> list:
         """Obtiene IDs de salas adyacentes via puertas."""
@@ -16,7 +16,7 @@ class PlanificadorPrecarga:
 
     def _bfs(self, sala_id: str, profundidad: int) -> list:
         """BFS hasta cierta profundidad, retorna IDs encontrados."""
-        visitados = {sala_id}
+        visitados = [sala_id]
         frontera = [sala_id]
         resultado = []
         for _ in range(profundidad):
@@ -24,7 +24,7 @@ class PlanificadorPrecarga:
             for sid in frontera:
                 for vecino in self._vecinos(sid):
                     if vecino not in visitados:
-                        visitados.add(vecino)
+                        visitados.append(vecino)
                         siguiente.append(vecino)
                         resultado.append(vecino)
             frontera = siguiente
@@ -36,11 +36,7 @@ class PlanificadorPrecarga:
         # Determinar profundidad base por tamano de cripta
         if total_salas <= 20:
             # Cargar todo: obtener todos los IDs del mapa
-            salas_raw = getattr(self._mapa, '_salas', [])
-            if isinstance(salas_raw, dict):
-                todos = list(salas_raw.keys())
-            else:
-                todos = [s.id_sala for s in salas_raw]
+            todos = [s.id_sala for s in self._mapa.obtener_salas()]
             ids = [sid for sid in todos if sid not in self._cargadas]
             return ids
         elif total_salas <= 50:
@@ -72,14 +68,16 @@ class PlanificadorPrecarga:
             chunk = sala_ids[i:i + 10]
             parcial = self._repositorio.resolver_lote(chunk)
             resultado.update(parcial)
-            self._cargadas.update(parcial.keys())
+            for sala_id in parcial:
+                if sala_id not in self._cargadas:
+                    self._cargadas.append(sala_id)
         return resultado
 
     def asegurar_contenido(self, sala_id: str) -> dict:
         if sala_id not in self._cargadas:
             ficha = self._repositorio.resolver(sala_id)
             if ficha is not None:
-                self._cargadas.add(sala_id)
+                self._cargadas.append(sala_id)
                 return ficha
             return None
         return self._repositorio.resolver(sala_id)

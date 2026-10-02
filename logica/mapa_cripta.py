@@ -15,9 +15,11 @@ class MapaCripta:
         # Arreglo de salas: búsqueda O(n), sin índice hash. Permite recorrer
         # el mapa para guardado y precarga conservando el orden de llegada.
         self._salas = []
+        self._enlaces_listos = False
 
 
     def agregar_sala(self, sala) -> None:
+        self._enlaces_listos = False
         for i in range(len(self._salas)):
             if self._salas[i].id_sala == sala.id_sala:
                 self._salas[i] = sala
@@ -36,7 +38,14 @@ class MapaCripta:
 
 
 
-    def vecinos_abiertos(self, id_sala: str) -> list:
+    def vincular_salidas(self):
+        """Resuelve IDs una vez; el recorrido de vecinos usa referencias locales."""
+        for sala in self._salas:
+            for puerta in sala.puertas:
+                puerta.destino_sala = self.obtener_sala(puerta.destino_sala_id)
+        self._enlaces_listos = True
+
+    def vecinos_abiertos(self, id_sala) -> list:
         """
         Obtiene las salas conectadas mediante puertas abiertas.
 
@@ -46,7 +55,9 @@ class MapaCripta:
         Retorna una lista con objetos Sala.
         """
 
-        sala = self.obtener_sala(id_sala)
+        if not self._enlaces_listos:
+            self.vincular_salidas()
+        sala = self.obtener_sala(id_sala) if isinstance(id_sala, str) else id_sala
 
         if sala is None:
             return []
@@ -55,9 +66,7 @@ class MapaCripta:
 
         for puerta in sala.puertas:
             if puerta.abierta:
-                destino = self.obtener_sala(
-                    puerta.destino_sala_id
-                )
+                destino = puerta.destino_sala
 
                 if destino is not None:
                     vecinos.append(destino)

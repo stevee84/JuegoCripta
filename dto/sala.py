@@ -18,6 +18,7 @@ class Sala:
         self.trampas = []
         self.enemigos = []
         self.objetos = []
+        self.ultimo_rastro = None
 
 
     def obtener_salida(self, direccion: str):
@@ -53,6 +54,7 @@ class Puerta:
 
         self.id_puerta = id_puerta
         self.destino_sala_id = destino_sala_id
+        self.destino_sala = None
         self.direccion = direccion
 
         self.abierta = False

@@ -10,7 +10,7 @@ class MonticuloMinimo:
 
         1. Tiempo del evento.
         2. Secuencia del evento en caso de empate.
-        
+
     """
 
     def __init__(self):
@@ -49,6 +49,10 @@ class MonticuloMinimo:
 
     def tamano(self) -> int:
         return len(self._datos)
+
+    def recorrer(self):
+        """Referencias en orden interno, sin exponer el arreglo mutable."""
+        return iter(tuple(self._datos))
 
     def _subir(self, indice):
         #Reorganiza el montículo después de insertar.

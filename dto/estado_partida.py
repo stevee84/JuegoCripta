@@ -59,3 +59,12 @@ class EstadoPartida:
         # Registro auxiliar para mecánicas futuras
         # como rastros y exploración.
         self.salas_visitadas = []
+        self.registro_rastro = None
+        self.inventario = None
+        self.historial = None
+        self.iniciada = False
+        self.jugador_disponible = True
+        self.evento_decision_id = None
+        # El formato v1 solo permite inspección, no una reanudación fiel.
+        self.reanudable = True
+        self.limitaciones_carga = ()

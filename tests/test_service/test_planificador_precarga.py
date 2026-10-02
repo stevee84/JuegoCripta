@@ -2,21 +2,19 @@ import unittest
 from unittest.mock import MagicMock
 from service.planificador_precarga import PlanificadorPrecarga
 from dto.sala import Sala, Puerta
+from logica.mapa_cripta import MapaCripta
 
 
 def _crear_mapa_lineal(n):
     """Crea un mapa lineal: s0 - s1 - s2 - ... - s(n-1)."""
-    mapa = MagicMock()
-    salas = {}
+    mapa = MapaCripta()
     for i in range(n):
         sala = Sala(f"s{i}")
         if i < n - 1:
             sala.puertas.append(Puerta(f"p{i}_{i+1}", f"s{i+1}", "ESTE"))
         if i > 0:
             sala.puertas.append(Puerta(f"p{i}_{i-1}", f"s{i-1}", "OESTE"))
-        salas[f"s{i}"] = sala
-    mapa.obtener_sala.side_effect = lambda sid: salas.get(sid)
-    mapa._salas = salas
+        mapa.agregar_sala(sala)
     return mapa
 
 
@@ -80,7 +78,7 @@ class TestPlanificadorPrecarga(unittest.TestCase):
     def test_planificar_filtra_cargadas(self):
         mapa = _crear_mapa_lineal(5)
         plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
-        plan._cargadas = {"s0", "s1"}
+        plan._cargadas = ["s0", "s1"]
         ids = plan.planificar("s0", 5)
         self.assertNotIn("s0", ids)
         self.assertNotIn("s1", ids)
@@ -122,7 +120,7 @@ class TestPlanificadorPrecarga(unittest.TestCase):
     def test_asegurar_contenido_ya_cargado(self):
         mapa = _crear_mapa_lineal(5)
         plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
-        plan._cargadas.add("s0")
+        plan._cargadas.append("s0")
         self.repo.resolver.return_value = {"nombre": "sala"}
         resultado = plan.asegurar_contenido("s0")
         self.assertEqual(resultado, {"nombre": "sala"})

@@ -74,6 +74,16 @@ class HistorialReversible:
             antiguo = self._intervalos.ultimo
             self._intervalos.quitar_nodo(antiguo)
 
+    def cambios_actuales(self) -> list:
+        if self._actual is None:
+            return []
+        cambios = []
+        nodo = self._actual._cambios.ultimo
+        while nodo is not None:
+            cambios.append(nodo.valor)
+            nodo = nodo.anterior
+        return cambios
+
     def deshacer_ultimo(self, estado) -> bool:
         # Solo se permite deshacer entre intervalos completos.
         if self.hay_intervalo_abierto():
@@ -92,3 +102,10 @@ class HistorialReversible:
         self._intervalos.quitar_nodo(nodo)
 
         return True
+
+    def abortar_intervalo(self, estado) -> None:
+        """Revierte un intento fallido sin incorporarlo al historial."""
+        transaccion = self._actual
+        self._actual = None
+        if transaccion is not None:
+            transaccion.revertir(estado)

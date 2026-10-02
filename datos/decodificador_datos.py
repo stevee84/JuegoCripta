@@ -16,12 +16,16 @@ class DecodificadorDatos:
                 puerta.llave_requerida = p["llave_requerida"]
             if "abierta" in p:
                 puerta.abierta = p["abierta"]
+            if "cierre_automatico" in p:
+                puerta.cierre_automatico = p["cierre_automatico"]
             sala.puertas.append(puerta)
 
         for t in datos.get("trampas", []):
             trampa = Trampa(t["id_trampa"], t["tipo"])
             if "armada" in t:
                 trampa.armada = t["armada"]
+            if "tiempo_rearme" in t:
+                trampa.tiempo_rearme = t["tiempo_rearme"]
             sala.trampas.append(trampa)
 
         return sala
@@ -43,6 +47,9 @@ class DecodificadorDatos:
                     comportamiento=e.get("comportamiento", "guardian"),
                 )
                 entrada["enemigos"].append(enemigo)
+                enemigo.vida_max = e.get("vida_max", enemigo.vida_max)
+                enemigo.activo = e.get("activo", False)
+                enemigo.muerte_procesada = not enemigo.esta_vivo()
 
             for o in contenido.get("objetos", []):
                 obj = ObjetoInstancia(
@@ -57,6 +64,8 @@ class DecodificadorDatos:
                 trampa = Trampa(t["id_trampa"], t["tipo"])
                 if "armada" in t:
                     trampa.armada = t["armada"]
+                if "tiempo_rearme" in t:
+                    trampa.tiempo_rearme = t["tiempo_rearme"]
                 entrada["trampas"].append(trampa)
 
             resultado[sala_id] = entrada
