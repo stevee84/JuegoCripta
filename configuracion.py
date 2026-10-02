@@ -10,13 +10,18 @@ def parsear_argumentos():
     parser.add_argument("--replay", type=str, default=None, help="Ruta del log a reproducir")
     parser.add_argument("--bench", action="store_true", help="Ejecutar benchmarks sin vista interactiva")
     parser.add_argument("--semilla", type=int, default=None, help="Semilla para azar determinista")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.cache_size <= 0:
+        parser.error("--cache-size debe ser un entero positivo")
+    return args
 
 
 class Configuracion:
     def __init__(self, args=None):
         if args is None:
             args = parsear_argumentos()
+        if type(args.cache_size) is not int or args.cache_size <= 0:
+            raise ValueError("cache-size debe ser un entero positivo")
         self.offline: bool = args.offline
         self.cache_size: int = args.cache_size
         self.replay: str | None = args.replay
