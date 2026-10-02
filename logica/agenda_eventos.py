@@ -83,15 +83,29 @@ class AgendaEventos(AgendaEventosContrato):
         return not self._monticulo.esta_vacio()
 
     def reprogramar(self, evento_id, nuevo_tiempo: int) -> None:
+        """
+        Cambia el tiempo del evento y le asigna una secuencia nueva.
+
+        Registra los cambios para poder recuperar el tiempo y
+        la secuencia anteriores al deshacer.
+        """
         if type(nuevo_tiempo) is not int or nuevo_tiempo < 0:
-            raise ValueError("El tiempo no puede ser negativo.")
+            raise ValueError("El tiempo debe ser un entero no negativo.")
+
         evento = self.buscar(evento_id)
+
         if evento is None:
             return
-        for pendiente in self.recorrer():
-            if pendiente is not evento and (pendiente.tiempo, pendiente.secuencia) == (nuevo_tiempo, evento.secuencia):
-                raise ValueError("Prioridad duplicada.")
+
+        # Retira el evento antes de modificar su prioridad.
         self.cancelar(evento_id)
+
+        # Conserva los valores anteriores para el historial.
         self._registrar(CambioAtributo(evento, "tiempo"))
+        self._registrar(CambioAtributo(evento, "secuencia"))
+
         evento.tiempo = nuevo_tiempo
+        evento.secuencia = self._secuencia
+
+        # programar() inserta el evento y actualiza el contador.
         self.programar(evento)

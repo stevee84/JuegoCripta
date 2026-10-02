@@ -13,65 +13,39 @@ class ComportamientoEnemigos:
 
     def decidir_accion(self, enemigo, estado):
         """
-        Determina la próxima acción del enemigo.
+        Si comparte sala con el jugador vivo, ataca.
 
-        Tipos de comportamiento:
-
-            guardian:
-                Ataca si comparte sala con el jugador.
-
-            errante:
-                Se mueve hacia una sala disponible.
-
-            rastreador:
-                Busca rastros recientes del jugador.
-
-        Retorna un diccionario con la acción seleccionada.
+        En caso contrario, decide según su comportamiento:
+        guardián, errante o rastreador.
         """
+        jugador = estado.jugador
+
         if not enemigo.esta_vivo():
             return {"tipo": "ESPERAR"}
+
+        if (
+            jugador is not None
+            and jugador.esta_vivo()
+            and enemigo.sala_actual is not None
+            and enemigo.sala_actual is jugador.sala_actual
+        ):
+            return {
+                "tipo": "ATACAR",
+                "objetivo": jugador.id_actor
+            }
+
         comportamiento = enemigo.comportamiento.lower()
 
         if comportamiento == "guardian":
-            return self._accion_guardian(enemigo,estado)
+            return {"tipo": "ESPERAR"}
 
         if comportamiento == "errante":
-            return self._accion_errante(enemigo,estado)
+            return self._accion_errante(enemigo, estado)
 
         if comportamiento == "rastreador":
-            return self._accion_rastreador(enemigo,estado)
+            return self._accion_rastreador(enemigo, estado)
 
-        return {
-            "tipo": "ESPERAR"
-        }
-
-
-
-    def _accion_guardian(self, enemigo, estado):
-        """
-        Comportamiento del guardián.
-
-        Si el jugador está en la misma sala,
-        intenta atacar.
-        """
-
-        if (
-            enemigo.sala_actual is not None
-            and estado.jugador is not None
-            and estado.jugador.esta_vivo()
-            and enemigo.sala_actual == estado.jugador.sala_actual
-        ):
-
-            return {
-                "tipo": "ATACAR",
-                "objetivo": estado.jugador.id_actor
-            }
-
-
-        return {
-            "tipo": "ESPERAR"
-        }
-
+        return {"tipo": "ESPERAR"}
 
 
     def _accion_errante(self, enemigo, estado):

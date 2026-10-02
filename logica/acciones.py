@@ -13,7 +13,6 @@ COSTO_SOLTAR = 25
 COSTO_RETROCEDER = 0
 
 def costo_base(tipo):
-    # No se aplica una fórmula de velocidad sin su especificación.
     for nombre, costo in (
         ("MOVER", COSTO_MOVER), ("ATACAR", COSTO_ATACAR),
         ("ESPERAR", COSTO_ESPERAR), ("USAR", COSTO_USAR),
@@ -24,3 +23,18 @@ def costo_base(tipo):
         if nombre == tipo:
             return costo
     raise ValueError("Acción desconocida.")
+
+def calcular_intervalo(costo: int, velocidad: int) -> int:
+    """
+    Calcula cuánto tiempo virtual debe esperar un actor
+    antes de poder actuar nuevamente.
+
+    Fórmula definida en la sección 2.3 del enunciado.
+    """
+    if type(costo) is not int or costo <= 0:
+        raise ValueError("El costo debe ser un entero positivo.")
+
+    if type(velocidad) is not int or velocidad <= 0:
+        raise ValueError("La velocidad debe ser un entero positivo.")
+
+    return max(1, costo * 100 // velocidad)

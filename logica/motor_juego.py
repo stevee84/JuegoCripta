@@ -2,7 +2,7 @@ from contratos.motor_juego import MotorJuegoContrato
 from dto.accion import Accion, ResultadoAccion
 from dto.actor import Actor, Enemigo
 from dto.sala import Puerta, Trampa
-from logica.acciones import costo_base
+from logica.acciones import costo_base, calcular_intervalo
 from logica.agenda_eventos import AgendaEventos
 from logica.cambios import CambioAzar
 from logica.comportamiento_enemigos import ComportamientoEnemigos
@@ -20,7 +20,7 @@ class MotorJuego(MotorJuegoContrato):
     def __init__(self):
         self.estado = None
         self.combate = ReglasCombate()
-        self.efectos = GestorEfectos()
+        self.efectos = GestorEfectos(self.cambiar_velocidad)
         self.comportamientos = ComportamientoEnemigos()
 
     def iniciar(self, estado) -> None:
@@ -53,7 +53,11 @@ class MotorJuego(MotorJuegoContrato):
             estado.registro_rastro = RegistroRastro(estado.mapa)
         if not estado.iniciada:
             if estado.jugador is not None and estado.jugador.sala_actual is not None:
-                self._registrar_presencia(estado.jugador.sala_actual)
+                sala_inicial = estado.jugador.sala_actual
+
+                self._registrar_presencia(sala_inicial)
+                self.activar_enemigos_sala(sala_inicial)
+
             estado.iniciada = True
         if estado.jugador is not None and not estado.jugador.esta_vivo():
             self.combate.procesar_muerte(estado.jugador, estado)
@@ -70,6 +74,94 @@ class MotorJuego(MotorJuegoContrato):
         estado.registro_rastro.actualizar(sala, estado.reloj, estado)
         if sala.id_sala not in estado.salas_visitadas:
             agregar(estado, estado.salas_visitadas, sala.id_sala)
+
+    def cambiar_velocidad(self, actor, nueva_velocidad: int):
+        """
+        Cambia la velocidad y reajusta la próxima acción del actor.
+
+        Conserva el progreso realizado y registra los cambios
+        para que puedan deshacerse dentro de una transacción.
+        """
+        estado = self.estado
+
+        if estado is None:
+            raise ValueError("La partida no ha sido iniciada.")
+
+        if type(nueva_velocidad) is not int or nueva_velocidad <= 0:
+            raise ValueError("La velocidad debe ser un entero positivo.")
+
+        if not isinstance(actor, Actor) or not actor.esta_vivo():
+            raise ValueError("Se requiere un actor vivo.")
+
+        # Comprueba que sea un actor de esta partida.
+        pertenece = actor is estado.jugador
+
+        if not pertenece and isinstance(actor, Enemigo):
+            sala = actor.sala_actual
+
+            pertenece = (
+                sala is not None
+                and estado.mapa is not None
+                and estado.mapa.obtener_sala(sala.id_sala) is sala
+                and any(enemigo is actor for enemigo in sala.enemigos)
+            )
+
+        if not pertenece:
+            raise ValueError("El actor no pertenece a esta partida.")
+
+        velocidad_anterior = actor.velocidad
+
+        if type(velocidad_anterior) is not int or velocidad_anterior <= 0:
+            raise ValueError("La velocidad actual del actor no es válida.")
+
+        if nueva_velocidad == velocidad_anterior:
+            return
+
+        # Solo busca la próxima acción del actor.
+        # Los eventos de veneno, regeneración u otros efectos
+        # mantienen sus propios tiempos.
+        tipo_evento = (
+            "JUGADOR_DISPONIBLE"
+            if actor is estado.jugador
+            else "ENEMIGO"
+        )
+
+        pendientes = [
+            evento
+            for evento in estado.agenda.recorrer()
+            if evento.destinatario_id == actor.id_actor
+            and evento.tipo == tipo_evento
+        ]
+
+        if len(pendientes) > 1:
+            raise ValueError("El actor tiene varias acciones pendientes.")
+
+        evento = pendientes[0] if pendientes else None
+
+        if evento is not None and evento.tiempo < estado.reloj:
+            raise ValueError("La próxima acción está antes del reloj actual.")
+
+        atributo(estado, actor, "velocidad", nueva_velocidad)
+
+        if evento is not None:
+            restante = evento.tiempo - estado.reloj
+
+            restante_nuevo = max(
+                1,
+                restante * velocidad_anterior // nueva_velocidad
+            )
+
+            estado.agenda.reprogramar(
+                evento.id_evento,
+                estado.reloj + restante_nuevo
+            )
+
+            atributo(
+                estado,
+                estado,
+                "secuencia",
+                evento.secuencia + 1
+            )
 
     def _programar(self, demora, tipo, destinatario_id, datos=None):
         if type(demora) is not int or demora <= 0:
@@ -146,7 +238,8 @@ class MotorJuego(MotorJuegoContrato):
                 historial.registrar(cambio)
             atributo(estado, estado, "acciones_ejecutadas", estado.acciones_ejecutadas + 1)
             atributo(estado, estado, "jugador_disponible", False)
-            evento = self._programar(resultado.costo, "JUGADOR_DISPONIBLE", estado.jugador.id_actor)
+            intervalo = calcular_intervalo(resultado.costo,estado.jugador.velocidad)
+            evento = self._programar(intervalo,"JUGADOR_DISPONIBLE",estado.jugador.id_actor)
             atributo(estado, estado, "evento_decision_id", evento.id_evento)
             resultado.notificaciones.extend(self.avanzar_hasta_decision())
             resultado.cambios = historial.cambios_actuales()
@@ -166,6 +259,7 @@ class MotorJuego(MotorJuegoContrato):
         elif accion.tipo == "MOVER":
             destino = estado.mapa.obtener_sala(sala.obtener_salida(accion.direccion).destino_sala_id)
             self._registrar_presencia(sala)
+            self.activar_enemigos_sala(destino)
             atributo(estado, jugador, "sala_actual", destino)
             self._registrar_presencia(destino)
             notificaciones.append({"tipo": "CAMBIO_SALA", "sala": destino.id_sala})
@@ -182,6 +276,33 @@ class MotorJuego(MotorJuegoContrato):
         return ResultadoAccion(True, f"{accion.tipo} ejecutado.", costo=costo_base(accion.tipo),
                                notificaciones=notificaciones)
 
+    def activar_enemigos_sala(self, sala):
+        """
+        Activa los enemigos vivos de una sala en orden de ID.
+
+        Usa ordenamiento por inserción sobre una lista auxiliar
+        para conservar el orden original de sala.enemigos.
+        """
+        pendientes = []
+
+        for enemigo in sala.enemigos:
+            if enemigo.esta_vivo() and not enemigo.activo:
+                pendientes.append(enemigo)
+
+        # Ordenamiento manual por ID ascendente.
+        for i in range(1, len(pendientes)):
+            actual = pendientes[i]
+            j = i - 1
+
+            while j >= 0 and pendientes[j].id_actor > actual.id_actor:
+                pendientes[j + 1] = pendientes[j]
+                j -= 1
+
+            pendientes[j + 1] = actual
+
+        for enemigo in pendientes:
+            self.activar_enemigo(enemigo)
+
     def activar_enemigo(self, enemigo):
         estado = self.estado
         if (estado is None or not isinstance(enemigo, Enemigo) or not enemigo.esta_vivo()
@@ -192,7 +313,8 @@ class MotorJuego(MotorJuegoContrato):
         for evento in estado.agenda.recorrer():
             if evento.tipo == "ENEMIGO" and evento.destinatario_id == enemigo.id_actor:
                 return True
-        self._programar(costo_base("ESPERAR"), "ENEMIGO", enemigo.id_actor, enemigo)
+        intervalo = calcular_intervalo(costo_base("ESPERAR"),enemigo.velocidad)
+        self._programar(intervalo,"ENEMIGO",enemigo.id_actor,enemigo)
         return True
 
     def _turno_enemigo(self, enemigo):
@@ -224,7 +346,8 @@ class MotorJuego(MotorJuegoContrato):
                     break
         if estado.partida_activa and enemigo.esta_activo():
             costo = costo_base("MOVER" if tipo == "SEGUIR_RASTRO" else tipo)
-            self._programar(costo, "ENEMIGO", enemigo.id_actor, enemigo)
+            intervalo = calcular_intervalo(costo,enemigo.velocidad)
+            self._programar(intervalo,"ENEMIGO",enemigo.id_actor,enemigo)
         return resultado
 
     def activar_trampa(self, trampa, objetivo, daño):

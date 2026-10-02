@@ -9,7 +9,13 @@ class GestorEfectos:
     Hasta contar con las fichas se admiten veneno y regeneración, cuyos
     valores ya consumía este módulo. Los tiempos de pulso son absolutos.
     """
-
+    def __init__(self, cambiar_velocidad=None):
+        """
+        Recibe la operación que modifica la velocidad y reajusta
+        la próxima acción del actor.
+        """
+        self._cambiar_velocidad = cambiar_velocidad
+        
     def _objetivo_valido(self, objetivo, estado):
         if not isinstance(objetivo, Actor) or not objetivo.esta_vivo():
             return False
@@ -53,17 +59,127 @@ class GestorEfectos:
         estado.agenda.crear_evento(fin, "VENCER_EFECTO", objetivo.id_actor, efecto)
         return [{"tipo": "EFECTO_APLICADO", "efecto": efecto}]
 
+    def aplicar_velocidad(
+        self,
+        efecto_id,
+        objetivo,
+        nueva_velocidad: int,
+        duracion: int,
+        estado
+    ) -> list:
+        """
+        Aplica una velocidad temporal y programa su vencimiento.
+
+        nueva_velocidad representa la velocidad final del actor.
+        """
+        if self._cambiar_velocidad is None:
+            raise ValueError("Falta conectar el cambio de velocidad con el motor.")
+
+        if not isinstance(efecto_id, str) or not efecto_id:
+            raise ValueError("El efecto necesita un ID válido.")
+
+        if not self._objetivo_valido(objetivo, estado):
+            raise ValueError("El objetivo debe ser un actor vivo de la partida.")
+
+        if type(nueva_velocidad) is not int or nueva_velocidad <= 0:
+            raise ValueError("La velocidad debe ser un entero positivo.")
+
+        if type(duracion) is not int or duracion <= 0:
+            raise ValueError("La duración debe ser un entero positivo.")
+
+        if estado.agenda is None:
+            raise ValueError("La partida necesita una agenda inicializada.")
+
+        for activo in estado.efectos_activos:
+            if activo.get("id") == efecto_id:
+                raise ValueError("Ya existe un efecto con ese ID.")
+
+            if (
+                activo.get("tipo") == "VELOCIDAD"
+                and activo.get("objetivo") is objetivo
+            ):
+                raise ValueError(
+                    "El actor ya tiene un efecto de velocidad activo."
+                )
+
+        efecto = {
+            "id": efecto_id,
+            "tipo": "VELOCIDAD",
+            "objetivo": objetivo,
+            "velocidad_anterior": objetivo.velocidad,
+            "duracion": duracion,
+            "inicio": estado.reloj,
+            "vencimiento": estado.reloj + duracion
+        }
+
+        # Cambia la velocidad y reajusta la próxima acción.
+        self._cambiar_velocidad(objetivo, nueva_velocidad)
+
+        agregar(estado, estado.efectos_activos, efecto)
+
+        estado.agenda.crear_evento(
+            efecto["vencimiento"],
+            "VENCER_EFECTO",
+            objetivo.id_actor,
+            efecto
+        )
+
+        return [
+            {
+                "tipo": "EFECTO_APLICADO",
+                "efecto": efecto
+            }
+        ]
+
     def cancelar(self, efecto_id, estado) -> list:
+        """
+        Retira el efecto y cancela sus eventos pendientes.
+
+        Si era un efecto de velocidad, restaura la velocidad anterior.
+        """
         eliminados = []
+
         for i in range(len(estado.efectos_activos) - 1, -1, -1):
             efecto = estado.efectos_activos[i]
+
             if efecto.get("id") != efecto_id:
                 continue
+
+            if efecto.get("tipo") == "VELOCIDAD":
+                objetivo = efecto["objetivo"]
+                velocidad_anterior = efecto["velocidad_anterior"]
+
+                if objetivo.esta_vivo():
+                    if self._cambiar_velocidad is None:
+                        raise ValueError(
+                            "Falta conectar el cambio de velocidad con el motor."
+                        )
+
+                    self._cambiar_velocidad(
+                        objetivo,
+                        velocidad_anterior
+                    )
+                else:
+                    # Un actor muerto no necesita reprogramar su acción.
+                    atributo(
+                        estado,
+                        objetivo,
+                        "velocidad",
+                        velocidad_anterior
+                    )
+
             if estado.agenda is not None:
                 for evento in estado.agenda.recorrer():
-                    if evento.tipo in ("EFECTO", "VENCER_EFECTO") and evento.datos is efecto:
+                    if (
+                        evento.tipo in ("EFECTO", "VENCER_EFECTO")
+                        and evento.datos is efecto
+                    ):
                         estado.agenda.cancelar(evento.id_evento)
-            eliminados.append(quitar(estado, estado.efectos_activos, i))
+
+            eliminados.append(
+                quitar(estado, estado.efectos_activos, i)
+            )
+
         return eliminados
 
     def procesar_evento(self, evento, estado) -> list:
