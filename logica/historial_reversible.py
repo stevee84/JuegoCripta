@@ -74,6 +74,40 @@ class HistorialReversible:
             antiguo = self._intervalos.ultimo
             self._intervalos.quitar_nodo(antiguo)
 
+    def descartar_intervalo(self):
+        """Descarta únicamente un intervalo vacío de una acción rechazada."""
+        if self._actual is not None and not self._actual.esta_vacia():
+            raise ValueError("No se pueden descartar cambios sin invertirlos.")
+        self._actual = None
+
+    def validar_deshacer(self, inventario, espacios=0):
+        if self.hay_intervalo_abierto():
+            raise ValueError("Debes cerrar el intervalo antes de deshacer.")
+        if self.esta_vacio():
+            raise ValueError("No hay acciones cerradas para deshacer.")
+        self._intervalos.primero.valor.validar_capacidad(inventario, espacios)
+        self._intervalos.primero.valor.validar_transferencias()
+
+    def objetos_referenciados(self):
+        objetos = []
+        nodo = self._intervalos.primero
+        while nodo is not None:
+            objetos.extend(nodo.valor.objetos_referenciados())
+            nodo = nodo.siguiente
+        if self._actual is not None:
+            objetos.extend(self._actual.objetos_referenciados())
+        return objetos
+
+    def exportar_representacion(self):
+        intervalos = []
+        nodo = self._intervalos.primero
+        while nodo is not None:
+            intervalos.append(nodo.valor.exportar_representacion())
+            nodo = nodo.siguiente
+        return {"limite": self.LIMITE, "orden": "mas_reciente_primero",
+                "cerrados": intervalos,
+                "actual": None if self._actual is None else self._actual.exportar_representacion()}
+
     def deshacer_ultimo(self, estado) -> bool:
         # Solo se permite deshacer entre intervalos completos.
         if self.hay_intervalo_abierto():

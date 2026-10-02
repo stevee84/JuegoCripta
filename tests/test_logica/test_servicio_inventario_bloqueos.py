@@ -19,13 +19,12 @@ def test_operaciones_sin_reglas_disponibles_fallan_sin_mutaciones(operacion):
     estado = EstadoPartida(semilla=17)
     cursor = inventario._cursor
     antes = pickle.dumps((inventario, estado))
-    # Prueba de bloqueo, no una afirmación de que el equipamiento funciona.
+    # Validación de una conexión ausente; el funcionamiento se prueba aparte.
     for _ in range(2):
-        with pytest.raises(NotImplementedError):
-            if operacion == "usar":
-                servicio.usar(estado)
-            else:
-                servicio.equipar()
+        resultado = servicio.usar(estado) if operacion == "usar" else servicio.equipar()
+        assert not resultado.exito
+        assert resultado.costo == 0
+        assert resultado.cambios == []
         assert inventario._cursor is cursor
         assert pickle.dumps((inventario, estado)) == antes
 

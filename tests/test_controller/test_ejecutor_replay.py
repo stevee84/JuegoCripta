@@ -90,7 +90,7 @@ def test_consola_y_replay_comparten_resolucion_ejecucion_e_inicializacion(contex
 @pytest.mark.parametrize("linea", [
     "\n", "no-json\n", "[]\n",
     '{"registro":"cabecera"}\n',
-    '{"registro":"accion","tipo":"USAR","objetivo":"o1","direccion":null}\n',
+    '{"registro":"accion","tipo":"USAR","objetivo":true,"direccion":null}\n',
     '{"registro":"accion","tipo":"MOVER","objetivo":"p1","direccion":"N"}\n',
     '{"registro":"accion","tipo":"ATACAR","objetivo":true,"direccion":null}\n',
     '{"registro":"accion","tipo":"ATACAR","objetivo":"e1","direccion":null,"extra":1}\n',
@@ -193,7 +193,7 @@ def test_replay_sin_fabrica_no_finge_haber_reproducido(contexto):
     replay = EjecutorReplay()
     replay.conectar_servicio(sin_fabrica)
     semilla = sin_fabrica._semilla
-    with pytest.raises(NotImplementedError, match="Inicialización bloqueada"):
+    with pytest.raises(ValueError, match="Inicialización bloqueada"):
         replay.reproducir(str(ruta))
     assert pickle.dumps(sin_fabrica.obtener_estado()) == antes
     assert sin_fabrica._semilla == semilla

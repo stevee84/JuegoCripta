@@ -17,7 +17,7 @@ class ControladorJuego:
 
     No promete turnos, retroceso de combate ni restauración binaria.
     RegistroPartida documenta primitivas, no una simulación temporal completa.
-    Guardar exporta exclusivamente el binario parcial existente.
+    exportar_parcial permite inspección; guardar/cargar completos se bloquean.
     """
 
     def __init__(self, motor, vista, fuente, historial=None):
@@ -36,6 +36,13 @@ class ControladorJuego:
             raise ValueError("El inicializador debe ser una fábrica invocable.")
         self._servicio.configurar_semilla(semilla)
         self._servicio.conectar_inicializador(inicializador)
+
+    def conectar_inventario(self, inventario, catalogo, adaptador=None):
+        self._servicio.conectar_inventario(inventario, catalogo, self._historial, adaptador)
+
+    def configurar_arranque(self, semilla=0, cache=None):
+        self._servicio.configurar_semilla(semilla)
+        self._servicio._cache = cache
 
     def iniciar(self) -> None:
         self._vista.mostrar_mensaje(
@@ -63,16 +70,28 @@ class ControladorJuego:
             if not partes:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
-            consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir")
-            acciones = ("mover", "atacar", "cripta", "guardar", "cargar", "registro")
+            consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
+            acciones = ("mover", "atacar", "cripta", "guardar", "cargar", "registro", "exportar_parcial")
             if operacion in consultas and len(partes) != 1:
                 raise ValueError("La consulta no recibe argumentos.")
             if operacion in acciones and len(partes) != 2:
                 raise ValueError("El comando requiere exactamente un argumento.")
+            if operacion == "inventario" and len(partes) not in (1, 2):
+                raise ValueError("inventario acepta opcionalmente peso, valor o nombre.")
+            if operacion in ("usar", "retroceder") and len(partes) not in (1, 2):
+                raise ValueError("usar/retroceder acepta opcionalmente el ID del pergamino.")
 
             if operacion == "estado":
                 self._vista.mostrar_estado(self._servicio.obtener_estado())
+                self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
                 resultado = ResultadoAccion(True, "Estado mostrado.")
+            elif operacion == "inventario":
+                objetos = self._servicio.consultar_inventario(partes[1] if len(partes) == 2 else None)
+                self._vista.mostrar_inventario(objetos, self._servicio._inventario.obtener_actual())
+                resultado = ResultadoAccion(True, "Vista de inventario mostrada.")
+            elif operacion in ("siguiente", "anterior"):
+                objeto = self._servicio.recorrer_inventario(operacion)
+                resultado = ResultadoAccion(True, "Inventario vacío." if objeto is None else f"Seleccionado: {objeto.id_instancia}")
             elif operacion == "criptas":
                 datos = self._servicio.listar_criptas()
                 self._vista.mostrar_mensaje(json.dumps(datos, ensure_ascii=False))
@@ -90,9 +109,11 @@ class ControladorJuego:
                 self._vista.mostrar_mensaje(
                     "Consultas: estado, criptas, puntajes, bitacora, ayuda, salir. "
                     "Primitivas: mover DIRECCION, atacar ID. "
+                    "Inventario: siguiente, anterior, inventario [peso|valor|nombre]. "
                     "registro RUTA inicia un log nuevo antes de la primera acción. "
-                    "guardar RUTA exporta un binario parcial, no reanudable. "
-                    "Pendientes: cripta ID sin fábrica, cargar RUTA y retroceder."
+                    "exportar_parcial RUTA exporta un binario no reanudable. "
+                    "usar/retroceder [ID]: pergamino con historial conectado, sin tiempo. "
+                    "Pendientes: inicialización de datos, guardar/cargar completos y turnos."
                 )
                 resultado = ResultadoAccion(True, "Ayuda mostrada.")
             elif operacion == "salir":
@@ -111,6 +132,17 @@ class ControladorJuego:
                 resultado = ResultadoAccion(
                     True, "Registro de primitivas iniciado; no simula turnos completos."
                 )
+            elif operacion in ("usar", "retroceder"):
+                if len(partes) == 2:
+                    objetivo = self._servicio.resolver_objeto_consola(partes[1])
+                else:
+                    inv = self._servicio._inventario
+                    objeto = inv.obtener_actual() if inv is not None else None
+                    if objeto is None:
+                        raise ValueError("No hay un objeto seleccionado.")
+                    objetivo = objeto.id_instancia
+                accion = self._servicio.resolver_accion("USAR", objetivo=objetivo)
+                resultado = self._servicio.ejecutar_accion(accion)
             elif operacion in ("mover", "atacar"):
                 if self._historial is not None and (
                     not self._historial.esta_vacio()
@@ -128,21 +160,29 @@ class ControladorJuego:
                 resultado = self._servicio.ejecutar_accion(accion)
             elif operacion == "guardar":
                 self.guardar(partes[1])
+                resultado = ResultadoAccion(True, "Partida guardada.")
+            elif operacion == "exportar_parcial":
+                self.exportar_parcial(partes[1])
                 resultado = ResultadoAccion(
                     True, "Binario parcial exportado; no permite reanudar la partida."
                 )
             elif operacion == "cargar":
                 self.cargar(partes[1])
                 resultado = ResultadoAccion(True, "Partida cargada.")
-            elif operacion in ("retroceder", "equipar", "usar", "recoger", "soltar"):
-                raise NotImplementedError(
-                    "Operación no integrada: faltan reglas de catálogo y "
-                    "turnos/cambios reversibles del motor."
+            elif operacion in ("equipar", "recoger", "soltar", "esperar", "abrir"):
+                raise ValueError(
+                    "Operación de juego no integrada: MotorJuego.ejecutar_accion "
+                    "no despacha inventario/esperar/abrir ni delimita turnos reversibles."
                 )
             else:
                 raise ValueError("Comando desconocido. Consulta ayuda.")
         except (ValueError, TypeError, OSError, NotImplementedError, struct.error) as error:
             resultado = ResultadoAccion(False, str(error))
+
+        try:
+            self._servicio.registrar_final(self._puntajes)
+        except (ValueError, TypeError, OSError) as error:
+            self._vista.mostrar_error(f"No se pudo registrar el resultado: {error}")
 
         self._bitacora.agregar(resultado.mensaje)
         if resultado.exito:
@@ -152,6 +192,13 @@ class ControladorJuego:
         return resultado
 
     def guardar(self, ruta: str) -> None:
+        raise ValueError(
+            "Guardado completo bloqueado: versión 1 omite inventario/equipo, "
+            "historial, agenda, efectos y estado del azar. Usa exportar_parcial "
+            "solo para inspección, no para reanudar."
+        )
+
+    def exportar_parcial(self, ruta):
         # La versión 1 omite inventario/equipo, agenda, efectos, historial
         # y estado del azar. Solo exportar el formato real, sin ampliarlo.
         estado = self._servicio.obtener_estado()

@@ -159,7 +159,7 @@ def test_inicializacion_sin_esquema_falla_sin_reemplazar_la_partida(tmp_path):
     servicio = JuegoService(motor=motor, fuente=FuenteOffline(str(tmp_path)))
     estado = motor.estado
     antes = pickle.dumps(estado)
-    with pytest.raises(NotImplementedError, match="esquema"):
+    with pytest.raises(ValueError, match="inventario_max"):
         servicio.iniciar_partida("c1")
     assert motor.estado is estado
     assert pickle.dumps(estado) == antes

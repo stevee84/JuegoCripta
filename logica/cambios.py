@@ -78,6 +78,8 @@ class TransaccionAccion:
             raise ValueError(
                 "No se pueden registrar cambios después de revertir."
             )
+        if not callable(getattr(cambio, "deshacer", None)):
+            raise ValueError("Se requiere un CambioReversible; una descripción no es un inverso.")
 
         # El cambio más reciente queda primero.
         self._cambios.insertar(cambio)
@@ -87,6 +89,48 @@ class TransaccionAccion:
 
     def esta_vacia(self) -> bool:
         return self._cambios.cantidad == 0
+
+    def objetos_referenciados(self):
+        objetos = []
+        nodo = self._cambios.primero
+        while nodo is not None:
+            obtener = getattr(nodo.valor, "objetos_referenciados", None)
+            if obtener is not None:
+                objetos.extend(obtener())
+            nodo = nodo.siguiente
+        return objetos
+
+    def exportar_representacion(self):
+        cambios = []
+        nodo = self._cambios.primero
+        while nodo is not None:
+            cambios.append(exportar_cambio_local(nodo.valor))
+            nodo = nodo.siguiente
+        return {"orden": "inverso", "revertida": self._revertida, "cambios": cambios}
+
+    def validar_capacidad(self, inventario, espacios=0):
+        cantidad = inventario.get_cantidad() - espacios
+        nodo = self._cambios.primero
+        while nodo is not None:
+            cambio = nodo.valor
+            if getattr(cambio, "_inventario", None) is inventario:
+                cantidad += getattr(cambio, "delta_inverso", 0)
+                if cantidad > inventario.get_capacidad():
+                    raise ValueError(
+                        "Retroceso excedería inventario_max por objetos conservados; "
+                        "no hay política acordada para este caso."
+                    )
+            nodo = nodo.siguiente
+
+    def validar_transferencias(self):
+        nodo = self._cambios.primero
+        while nodo is not None:
+            cambio = nodo.valor
+            if isinstance(cambio, CambioSoltarObjeto) and not any(
+                o is cambio._objeto for o in cambio._sala.objetos
+            ):
+                raise ValueError("El objeto que se desea restaurar no está en la sala.")
+            nodo = nodo.siguiente
 
     def revertir(self, estado) -> None:
         # Evita ejecutar dos veces los mismos cambios.
@@ -126,6 +170,11 @@ class CambioRecogerObjeto(CambioReversible):
         self._cursor_anterior = inventario._cursor
         self._ubicacion_anterior = objeto.ubicacion
         self._deshecho = False
+
+    delta_inverso = -1
+
+    def objetos_referenciados(self):
+        return [self._objeto]
 
     def deshacer(self, estado) -> None:
         if self._deshecho:
@@ -197,6 +246,7 @@ class CambioSoltarObjeto(CambioReversible):
     def __init__(self, retiro, sala):
         # El registro contiene el inventario y el nodo retirado.
         self._retiro = retiro
+        self._inventario = retiro.inventario
         self._sala = sala
         self._objeto = retiro.nodo.valor
         self._marca_suelo_anterior = getattr(self._objeto, "_marca_orden_suelo", None)
@@ -205,6 +255,11 @@ class CambioSoltarObjeto(CambioReversible):
         # Debe capturarse antes de cambiar la ubicación a la sala.
         self._ubicacion_anterior = self._objeto.ubicacion
         self._deshecho = False
+
+    delta_inverso = 1
+
+    def objetos_referenciados(self):
+        return [self._objeto]
 
     def deshacer(self, estado) -> None:
         if self._deshecho:
@@ -233,3 +288,127 @@ class CambioSoltarObjeto(CambioReversible):
         self._objeto.ubicacion = self._ubicacion_anterior
 
         self._deshecho = True
+
+
+class CambioPosicionInventario(CambioReversible):
+    """Posición/cursor del nodo equipado; no copia el inventario."""
+
+    def __init__(self, inventario):
+        self._inventario = inventario
+        self._nodo = inventario._cursor
+        self._orden = self._nodo._orden_inventario
+        self._deshecho = False
+
+    def objetos_referenciados(self):
+        return [self._nodo.valor]
+
+    def deshacer(self, estado):
+        if not self._deshecho:
+            self._inventario.restaurar_posicion(self._nodo, self._orden)
+            self._inventario._cursor = self._nodo
+            self._deshecho = True
+
+
+class CambioEquipo(CambioReversible):
+    """Un puesto de equipo, su bono y como máximo dos ubicaciones."""
+
+    def __init__(self, servicio, clase, nuevo=None):
+        self._servicio = servicio
+        self._clase = clase
+        self._anterior = servicio._equipo[clase]
+        self._bono = servicio._bonos[clase]
+        self._atributo = "ataque" if clase == "arma" else "defensa"
+        self._valor = getattr(servicio._jugador, self._atributo)
+        self._ubicaciones = [
+            (objeto, objeto.ubicacion) for objeto in (self._anterior, nuevo)
+            if objeto is not None
+        ]
+        self._deshecho = False
+
+    def objetos_referenciados(self):
+        return [objeto for objeto, _ in self._ubicaciones]
+
+    def deshacer(self, estado):
+        if self._deshecho:
+            return
+        servicio = self._servicio
+        setattr(servicio._jugador, self._atributo, self._valor)
+        servicio._equipo[self._clase] = self._anterior
+        servicio._bonos[self._clase] = self._bono
+        for objeto, ubicacion in self._ubicaciones:
+            objeto.ubicacion = ubicacion
+        self._deshecho = True
+
+
+class CambioConsumirObjeto(CambioReversible):
+    """Restituye solo el nodo de un consumible normal, nunca pergaminos."""
+
+    delta_inverso = 1
+
+    def __init__(self, retiro):
+        self._retiro = retiro
+        self._inventario = retiro.inventario
+        self._objeto = retiro.nodo.valor
+        self._ubicacion = self._objeto.ubicacion
+        self._deshecho = False
+
+    def objetos_referenciados(self):
+        return [self._objeto]
+
+    def deshacer(self, estado):
+        if not self._deshecho:
+            self._inventario.restaurar_retiro(self._retiro)
+            self._objeto.ubicacion = self._ubicacion
+            self._deshecho = True
+
+
+class CambioPuerta(CambioReversible):
+    """Únicamente el estado de apertura producido al usar una llave."""
+
+    def __init__(self, puerta):
+        self._puerta = puerta
+        self._abierta = puerta.abierta
+
+    def deshacer(self, estado):
+        self._puerta.abierta = self._abierta
+
+
+def exportar_cambio_local(cambio):
+    """Metadatos de inversos propios para el responsable del binario.
+
+    No serializa objetos de simulación desconocidos ni dice restaurarlos.
+    Sus referencias se representan por IDs; el receptor debe reenlazarlas.
+    """
+    registro = {"tipo": type(cambio).__name__, "datos_locales_disponibles": True}
+    if isinstance(cambio, CambioEquipo):
+        registro.update(clase=cambio._clase, bono=cambio._bono, atributo=cambio._atributo,
+                        valor=cambio._valor, anterior=getattr(cambio._anterior, "id_instancia", None),
+                        ubicaciones=[(o.id_instancia, u) for o, u in cambio._ubicaciones])
+    elif isinstance(cambio, CambioPosicionInventario):
+        registro.update(objeto=cambio._nodo.valor.id_instancia, orden=cambio._orden)
+    elif isinstance(cambio, (CambioConsumirObjeto, CambioSoltarObjeto)):
+        retiro = cambio._retiro
+        registro.update(objeto=cambio._objeto.id_instancia, orden=retiro._orden,
+                        restaurado=retiro.restaurado)
+        if isinstance(cambio, CambioSoltarObjeto):
+            registro.update(sala=cambio._sala.id_sala, ubicacion=cambio._ubicacion_anterior,
+                            marca_suelo=(None if cambio._marca_suelo_anterior is None else
+                                         (cambio._marca_suelo_anterior[0].id_sala, cambio._marca_suelo_anterior[1])))
+        else:
+            registro["ubicacion"] = cambio._ubicacion
+    elif isinstance(cambio, CambioRecogerObjeto):
+        registro.update(objeto=cambio._objeto.id_instancia, sala=cambio._sala.id_sala,
+                        posicion=cambio._posicion, ubicacion=cambio._ubicacion_anterior,
+                        cursor=getattr(getattr(cambio._cursor_anterior, "valor", None), "id_instancia", None),
+                        marca_suelo=None if cambio._marca_suelo is None else cambio._marca_suelo[1])
+    elif isinstance(cambio, CambioVida):
+        registro.update(actor=cambio._actor.id_actor, vida=cambio._vida_anterior)
+    elif isinstance(cambio, CambioReloj):
+        registro["reloj"] = cambio._reloj_anterior
+    elif isinstance(cambio, CambioPuerta):
+        registro.update(puerta=cambio._puerta.id_puerta, abierta=cambio._abierta)
+    else:
+        registro["datos_locales_disponibles"] = False
+    if hasattr(cambio, "_deshecho"):
+        registro["deshecho"] = cambio._deshecho
+    return registro

@@ -4,6 +4,7 @@ from datos.registro_partida import RegistroPartida
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
 from logica.inventario import Inventario
+from logica.servicio_inventario import ServicioInventario
 
 
 class JuegoService:
@@ -29,6 +30,8 @@ class JuegoService:
         self._error_registro = None
         self._estado_inicial = None
         self._acciones_coordinadas = 0
+        self._operaciones_inventario = None
+        self._resultado_registrado = None
 
     def iniciar_partida(self, cripta_id: str):
         if not isinstance(cripta_id, str) or not cripta_id.strip():
@@ -36,12 +39,19 @@ class JuegoService:
         if self._fuente is None:
             raise ValueError("No hay una fuente de datos conectada.")
         # DecodificadorDatos solo convierte salas/contenido/fichas. No hay
-        # contrato para generales, páginas, jugador inicial o capacidad.
+        # contrato confirmado para páginas, jugador inicial o sala inicial.
         # No elegir una sala arbitraria ni inventar estadísticas por defecto.
         if self._inicializador is None:
-            raise NotImplementedError(
-                "Inicialización bloqueada: falta el esquema de generales/páginas, "
-                "jugador inicial y capacidad de inventario del PDF de requisitos."
+            generales = self._fuente.obtener_generales(cripta_id)
+            if not isinstance(generales, dict) or "inventario_max" not in generales:
+                raise ValueError("Inicialización bloqueada: generales no contiene inventario_max.")
+            capacidad = generales["inventario_max"]
+            if type(capacidad) is not int or capacidad < 0:
+                raise ValueError("generales.inventario_max debe ser un entero no negativo.")
+            raise ValueError(
+                "Inicialización bloqueada: falta confirmar el esquema de jugador "
+                "(ID, nombre, vida, ataque, defensa, velocidad), sala inicial, "
+                "paginación y colección de salas. inventario_max sí está definido."
             )
         if self._motor is None:
             raise ValueError("No hay un motor conectado.")
@@ -78,7 +88,59 @@ class JuegoService:
         self._ruta_registro = None
         self._marca_registro = None
         self._error_registro = None
+        self._operaciones_inventario = None
+        self._resultado_registrado = None
         return estado
+
+    def conectar_inventario(self, inventario, catalogo, historial=None, adaptador=None):
+        estado = self.obtener_estado()
+        if estado is None or estado.jugador is None:
+            raise ValueError("Se requiere una partida inicializada para conectar inventario.")
+        if self._operaciones_inventario is not None and any(
+            self._operaciones_inventario.obtener_equipo().values()
+        ):
+            raise ValueError("No se reemplaza un contexto que todavía tiene equipo aplicado.")
+        operaciones = ServicioInventario(inventario)
+        operaciones.conectar_contexto(
+            estado.jugador, catalogo, historial, adaptador, self._cache
+        )
+        self._inventario = inventario
+        self._operaciones_inventario = operaciones
+        operaciones.sincronizar_referencias()
+
+    def consultar_inventario(self, criterio=None):
+        if self._inventario is None:
+            raise ValueError("No hay un inventario conectado.")
+        if criterio is None:
+            return self._inventario.obtener_objetos()
+        if self._operaciones_inventario is None:
+            raise ValueError("Se requiere un catálogo conectado para ordenar las fichas.")
+        return self._operaciones_inventario.vista_ordenada(criterio)
+
+    def recorrer_inventario(self, sentido):
+        if self._inventario is None:
+            raise ValueError("No hay un inventario conectado.")
+        if sentido not in ("siguiente", "anterior"):
+            raise ValueError("Sentido de cursor desconocido.")
+        return getattr(self._inventario, sentido)()
+
+    def registrar_final(self, repositorio):
+        """Solo una partida realmente finalizada; salir de la consola no gana/pierde."""
+        estado = self.obtener_estado()
+        if estado is None or estado.jugador is None or estado.partida_activa:
+            return False
+        if self._resultado_registrado is estado:
+            return False
+        versiones = self._versiones or self.obtener_versiones(estado.cripta_id)
+        repositorio.registrar_resultado({
+            "nombre": estado.jugador.nombre, "cripta_id": estado.cripta_id,
+            "version_cripta": versiones[0],
+            "acciones_ejecutadas": estado.acciones_ejecutadas,
+            "enemigos_derrotados": estado.enemigos_derrotados,
+            "reloj_final": estado.reloj,
+        })
+        self._resultado_registrado = estado
+        return True
 
     def conectar_inicializador(self, inicializador):
         """Fábrica (cripta_id, semilla, fuente, cache) -> (estado, inventario).
@@ -104,13 +166,15 @@ class JuegoService:
             return ResultadoAccion(False, "La partida no ha sido iniciada.")
         if not estado.partida_activa or not estado.jugador.esta_vivo():
             return ResultadoAccion(False, "La partida no permite acciones.")
-        if accion.tipo not in ("MOVER", "ATACAR"):
+        if accion.tipo not in ("MOVER", "ATACAR", "USAR"):
             return ResultadoAccion(False, "El motor solo admite MOVER y ATACAR.")
         if self._error_registro is not None:
             return ResultadoAccion(
                 False, "Log incompleto: no se ejecutarán más acciones en esta partida. "
                 + self._error_registro
             )
+        if accion.tipo == "USAR":
+            return self._ejecutar_pergamino(accion, estado)
         if estado.agenda is not None and estado.agenda.tiene_eventos():
             return ResultadoAccion(
                 False, "Hay eventos pendientes: el avance temporal aún no está integrado."
@@ -146,6 +210,7 @@ class JuegoService:
 
         # Se conserva el ResultadoAccion real, incluidos sus costos actuales.
         # No se avanza el reloj/agenda ni se inventan estadísticas aquí.
+        accion_log = None
         if self._ruta_registro is not None:
             if estado is not self._estado_inicial:
                 return ResultadoAccion(False, "El log pertenece a otra partida.")
@@ -162,6 +227,9 @@ class JuegoService:
                 return ResultadoAccion(False, str(error))
 
         resultado = self._motor.ejecutar_accion(accion)
+        return self._cerrar_accion(accion_log, resultado)
+
+    def _cerrar_accion(self, accion_log, resultado):
         if resultado.exito:
             self._acciones_coordinadas += 1
             if self._ruta_registro is not None:
@@ -177,6 +245,40 @@ class JuegoService:
                         "; acción ejecutada, pero falló su registro. "
                         "Log incompleto; siguientes acciones bloqueadas: " + str(error)
                     )
+        return resultado
+
+    def _ejecutar_pergamino(self, accion, estado):
+        operaciones = self._operaciones_inventario
+        if operaciones is None:
+            return ResultadoAccion(False, "No hay un servicio de inventario conectado.")
+        if accion.direccion is not None:
+            return ResultadoAccion(False, "USAR no recibe dirección.")
+        nodo = self._inventario._lista.primero
+        while nodo is not None and nodo.valor is not accion.objetivo:
+            nodo = nodo.siguiente
+        if nodo is None:
+            return ResultadoAccion(False, "El objeto no está en el inventario.")
+        try:
+            if operaciones._adaptador.categoria(operaciones._ficha(accion.objetivo)) != "pergamino_retroceso":
+                return ResultadoAccion(False, "Consumibles con costo requieren despacho temporal de MotorJuego.")
+            if self._ruta_registro is not None:
+                if estado is not self._estado_inicial or self._marca_archivo() != self._marca_registro:
+                    return ResultadoAccion(False, "El log fue reemplazado o pertenece a otra partida.")
+                self.resolver_accion("USAR", accion.objetivo.id_instancia)
+            accion_log = Accion("USAR", accion.objetivo.id_instancia)
+        except (ValueError, TypeError, OSError) as error:
+            return ResultadoAccion(False, str(error))
+        cursor = self._inventario._cursor
+        self._inventario._cursor = nodo
+        resultado = operaciones.usar(estado)
+        if not resultado.exito:
+            self._inventario._cursor = cursor
+        resultado = self._cerrar_accion(accion_log, resultado)
+        if resultado.exito:
+            try:
+                operaciones.sincronizar_referencias()
+            except (ValueError, TypeError, RuntimeError) as error:
+                resultado.mensaje += f"; no se actualizaron referencias de caché: {error}"
         return resultado
 
     def iniciar_registro(self, ruta):
@@ -258,7 +360,7 @@ class JuegoService:
 
     def resolver_accion(self, tipo, objetivo=None, direccion=None):
         """Resuelve IDs contra instancias vigentes; común a consola y replay."""
-        if not isinstance(tipo, str) or tipo.upper() not in ("MOVER", "ATACAR"):
+        if not isinstance(tipo, str) or tipo.upper() not in ("MOVER", "ATACAR", "USAR"):
             raise ValueError("El motor solo admite MOVER y ATACAR.")
         tipo = tipo.upper()
         if tipo == "MOVER":
@@ -269,13 +371,21 @@ class JuegoService:
                 raise ValueError("MOVER requiere dirección y no recibe objetivo.")
             return Accion(tipo, direccion=direccion)
         if type(objetivo) not in (str, int) or objetivo == "" or direccion is not None:
-            raise ValueError("ATACAR requiere un ID de enemigo y no recibe dirección.")
+            raise ValueError(f"{tipo} requiere un ID estable y no recibe dirección.")
         estado = self.obtener_estado()
         if (
             estado is None or estado.jugador is None
             or estado.jugador.sala_actual is None
         ):
             raise ValueError("No hay una sala actual para resolver el objetivo.")
+        if tipo == "USAR":
+            if self._inventario is None:
+                raise ValueError("No hay un inventario conectado.")
+            encontrados = [o for o in self._inventario.obtener_objetos()
+                           if type(o.id_instancia) is type(objetivo) and o.id_instancia == objetivo]
+            if len(encontrados) != 1:
+                raise ValueError("El ID debe identificar un único objeto del inventario.")
+            return Accion(tipo, objetivo=encontrados[0])
         encontrados = [
             enemigo for enemigo in estado.jugador.sala_actual.enemigos
             if type(enemigo.id_actor) is type(objetivo) and enemigo.id_actor == objetivo
@@ -302,4 +412,12 @@ class JuegoService:
         ]
         if len(ids) != 1:
             raise ValueError("El texto debe identificar un único enemigo de la sala.")
+        return ids[0]
+
+    def resolver_objeto_consola(self, texto):
+        objetos = self.consultar_inventario()
+        ids = [o.id_instancia for o in objetos
+               if type(o.id_instancia) in (str, int) and str(o.id_instancia) == texto]
+        if len(ids) != 1:
+            raise ValueError("El texto debe identificar un único objeto del inventario.")
         return ids[0]

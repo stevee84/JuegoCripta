@@ -37,6 +37,8 @@ class Inventario:
     """
     
     def __init__(self, capacidad: int, lista_doble=None):
+        if type(capacidad) is not int or capacidad < 0:
+            raise ValueError("La capacidad debe ser un entero no negativo.")
         # La capacidad máxima viene de los datos de la cripta.
         self._capacidad = capacidad
 
@@ -145,6 +147,25 @@ class Inventario:
             actual = actual.siguiente
 
         return objetos
+
+    def restaurar_posicion(self, nodo, orden):
+        """Restituye la posición del mismo nodo, incluso si faltan pergaminos.
+
+        La búsqueda de vecinos vigentes cuesta O(n); los enlaces se cambian
+        en O(1). No altera cantidad ni reinicia las marcas de nuevas entradas.
+        """
+        actual = self._lista.primero
+        while actual is not None and actual is not nodo:
+            actual = actual.siguiente
+        if actual is None:
+            raise ValueError("El nodo que se desea reordenar no está en el inventario.")
+        self._lista.quitar_nodo(nodo)
+        anterior = None
+        siguiente = self._lista.primero
+        while siguiente is not None and siguiente._orden_inventario < orden:
+            anterior, siguiente = siguiente, siguiente.siguiente
+        self._lista.reinsertar_nodo(nodo, anterior, siguiente)
+        nodo._orden_inventario = orden
 
     def retirar_actual_con_registro(self):
         """

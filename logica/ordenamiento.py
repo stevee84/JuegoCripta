@@ -13,15 +13,16 @@ class OrdenadorAdaptativo(OrdenadorAdaptativoContrato):
     del intento de Insertion sort. Si supera el límite, se utiliza
     Merge sort sobre los datos originales.
 
-    Los umbrales iniciales son provisionales y deberán ajustarse
-    mediante las mediciones del proyecto.
+    Umbrales calibrados con benchmarks/integrante3.py (ver documentos
+    de integrante 3): 16 elementos y n desplazamientos. Son dependientes
+    del entorno, no constantes óptimas universales.
 
     Se devuelve una lista nueva sin modificar la recibida.
     Los elementos con igual criterio mantienen su orden relativo.
     """
 
-    LIMITE_PEQUENO = 32
-    FACTOR_DESPLAZAMIENTOS = 4
+    LIMITE_PEQUENO = 16
+    FACTOR_DESPLAZAMIENTOS = 1
 
     def ordenar(self, elementos: list, criterio) -> list:
         cantidad = len(elementos)
@@ -31,16 +32,20 @@ class OrdenadorAdaptativo(OrdenadorAdaptativoContrato):
 
         limite = cantidad * self.FACTOR_DESPLAZAMIENTOS
 
+        # Una sola evaluación de cada criterio incluso al abandonar
+        # Insertion: evita duplicar resolución de fichas/criterios costosos.
+        pares = [(criterio(elemento), elemento) for elemento in elementos]
+
         # Prueba si los datos pueden ordenarse con pocos movimientos.
         resultado = self._insertion_sort(
-            elementos, criterio, limite
+            pares, lambda par: par[0], limite
         )
 
         if resultado is not None:
-            return resultado
+            return [par[1] for par in resultado]
 
         # El intento anterior solo modificó su propia copia.
-        return self._merge_sort(elementos, criterio)
+        return [par[1] for par in self._merge_sort(pares, lambda par: par[0])]
 
     def _insertion_sort(
         self, elementos: list, criterio, limite=None

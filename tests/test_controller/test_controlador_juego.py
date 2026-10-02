@@ -95,7 +95,7 @@ def test_seleccion_de_cripta_bloqueada_no_reemplaza_estado(controlador):
 
 def test_guardado_exporta_binario_real_sin_anunciar_restauracion_completa(controlador, tmp_path):
     antes = pickle.dumps(controlador._motor.estado)
-    resultado = controlador.procesar_comando('guardar "partida.dat"')
+    resultado = controlador.procesar_comando('exportar_parcial "partida.dat"')
     assert resultado.exito
     assert "Binario parcial" in resultado.mensaje
     assert "no permite reanudar" in resultado.mensaje
@@ -111,7 +111,7 @@ def test_error_de_exportacion_no_sobrescribe_un_archivo(controlador, tmp_path):
     ruta.write_bytes(b"archivo previo")
     controlador._motor.estado.reloj = -1  # No representable en el formato real.
     antes = pickle.dumps(controlador._motor.estado)
-    resultado = controlador.procesar_comando('guardar "partida.dat"')
+    resultado = controlador.procesar_comando('exportar_parcial "partida.dat"')
     assert not resultado.exito
     assert ruta.read_bytes() == b"archivo previo"
     assert pickle.dumps(controlador._motor.estado) == antes
@@ -208,7 +208,7 @@ def test_guardar_no_puede_sobrescribir_el_log_activo(controlador, tmp_path):
     ruta = tmp_path / "partida.log"
     antes = ruta.read_bytes()
     estado = pickle.dumps(controlador._motor.estado)
-    resultado = controlador.procesar_comando("guardar partida.log")
+    resultado = controlador.procesar_comando("exportar_parcial partida.log")
     assert not resultado.exito
     assert "registro activo" in resultado.mensaje
     assert ruta.read_bytes() == antes

@@ -113,9 +113,9 @@ class EjecutorReplay:
                         if tipo == "MOVER":
                             if objetivo is not None or not isinstance(direccion, str) or not direccion.strip():
                                 raise ValueError("MOVER requiere dirección y no recibe objetivo.")
-                        elif tipo == "ATACAR":
+                        elif tipo in ("ATACAR", "USAR"):
                             if type(objetivo) not in (str, int) or objetivo == "" or direccion is not None:
-                                raise ValueError("ATACAR requiere un ID y no recibe dirección.")
+                                raise ValueError(f"{tipo} requiere un ID y no recibe dirección.")
                         else:
                             raise ValueError("Acción no disponible en el motor actual.")
                         acciones.append((numero, registro))
