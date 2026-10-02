@@ -1,5 +1,124 @@
+import json
+
+from datos.fuente_offline import FuenteOffline
+from logica.motor_juego import MotorJuego
+from service.juego_service import JuegoService
+
+
+def _sin_claves_duplicadas(pares):
+    resultado = {}
+    for clave, valor in pares:
+        if clave in resultado:
+            raise ValueError(f"Clave duplicada: {clave}")
+        resultado[clave] = valor
+    return resultado
+
+
 class EjecutorReplay:
-    """Integrante 3. Reproduce un log de partida sin VistaConsola."""
+    """Replay de primitivas disponibles, sin vista, entradas ni escrituras.
+
+    Comparte JuegoService con la consola. La ejecución requiere una fábrica
+    explícita de partida: no inventa datos iniciales ni convierte el replay
+    de primitivas en una simulación temporal completa.
+    """
+
+    def conectar_servicio(self, servicio):
+        if not isinstance(servicio, JuegoService):
+            raise ValueError("Se requiere un JuegoService conectado.")
+        self._servicio = servicio
 
     def reproducir(self, ruta: str) -> None:
-        pass  # TODO(Integrante3)
+        cabecera, acciones = self._leer_log(ruta)
+        servicio = getattr(self, "_servicio", None)
+        if servicio is None:
+            servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline("datos/"))
+        esperadas = (cabecera["version_cripta"], cabecera["version_catalogo"])
+        try:
+            compatibles = servicio.obtener_versiones(cabecera["cripta_id"]) == esperadas
+        except ValueError:
+            compatibles = False
+        if not compatibles:
+            # Solo la copia local existente; no adivinar URLs ni versiones.
+            fuente_local = FuenteOffline("datos/")
+            candidato = JuegoService(motor=MotorJuego(), fuente=fuente_local)
+            try:
+                compatibles = candidato.obtener_versiones(cabecera["cripta_id"]) == esperadas
+            except ValueError:
+                compatibles = False
+            if not compatibles:
+                raise ValueError("No hay una copia local con versiones compatibles con el log.")
+            # La fuente local compatible aún requiere la misma fábrica de
+            # datos. Sin ella, iniciar_partida falla sin ejecutar acciones.
+            if servicio._inicializador is not None:
+                candidato.conectar_inicializador(servicio._inicializador)
+            servicio = candidato
+
+        semilla_anterior = servicio._semilla
+        versiones_anteriores = servicio._versiones_exigidas
+        servicio._versiones_exigidas = esperadas
+        try:
+            servicio.configurar_semilla(cabecera["semilla"])
+            servicio.iniciar_partida(cabecera["cripta_id"])
+        except Exception:
+            servicio.configurar_semilla(semilla_anterior)
+            raise
+        finally:
+            servicio._versiones_exigidas = versiones_anteriores
+        for numero, registro in acciones:
+            try:
+                accion = servicio.resolver_accion(
+                    registro["tipo"], registro["objetivo"], registro["direccion"]
+                )
+                resultado = servicio.ejecutar_accion(accion)
+                if not resultado.exito:
+                    raise ValueError(resultado.mensaje)
+            except ValueError as error:
+                raise ValueError(f"Línea {numero}: acción imposible: {error}") from error
+        self._servicio = servicio
+
+    def _leer_log(self, ruta):
+        # Valida todo el formato antes de inicializar o ejecutar la partida.
+        cabecera = None
+        acciones = []
+        with open(ruta, "r", encoding="utf-8") as archivo:
+            for numero, linea in enumerate(archivo, 1):
+                try:
+                    registro = json.loads(linea, object_pairs_hook=_sin_claves_duplicadas)
+                    if not isinstance(registro, dict):
+                        raise ValueError("El registro debe ser un objeto JSON.")
+                    if numero == 1:
+                        campos = (
+                            "registro", "cripta_id", "version_cripta", "version_catalogo", "semilla"
+                        )
+                        if len(registro) != len(campos) or not all(c in registro for c in campos):
+                            raise ValueError("Cabecera incompleta o con campos desconocidos.")
+                        if registro["registro"] != "cabecera":
+                            raise ValueError("El primer registro debe ser la cabecera.")
+                        if any(
+                            not isinstance(registro[c], str) or not registro[c].strip()
+                            for c in ("cripta_id", "version_cripta", "version_catalogo")
+                        ) or type(registro["semilla"]) is not int:
+                            raise ValueError("Identificadores/versiones/semilla inválidos.")
+                        cabecera = registro
+                    else:
+                        campos = ("registro", "tipo", "objetivo", "direccion")
+                        if len(registro) != len(campos) or not all(c in registro for c in campos):
+                            raise ValueError("Acción incompleta o con campos desconocidos.")
+                        if registro["registro"] != "accion" or not isinstance(registro["tipo"], str):
+                            raise ValueError("Se esperaba un registro de acción.")
+                        tipo = registro["tipo"].upper()
+                        objetivo, direccion = registro["objetivo"], registro["direccion"]
+                        if tipo == "MOVER":
+                            if objetivo is not None or not isinstance(direccion, str) or not direccion.strip():
+                                raise ValueError("MOVER requiere dirección y no recibe objetivo.")
+                        elif tipo == "ATACAR":
+                            if type(objetivo) not in (str, int) or objetivo == "" or direccion is not None:
+                                raise ValueError("ATACAR requiere un ID y no recibe dirección.")
+                        else:
+                            raise ValueError("Acción no disponible en el motor actual.")
+                        acciones.append((numero, registro))
+                except ValueError as error:
+                    raise ValueError(f"Línea {numero}: registro inválido: {error}") from error
+        if cabecera is None:
+            raise ValueError("El log está vacío: falta la cabecera.")
+        return cabecera, acciones
