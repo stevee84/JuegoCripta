@@ -104,16 +104,15 @@ class ComportamientoEnemigos:
              "tipo": "ESPERAR"
             }
 
-        vecinos = estado.mapa.vecinos_abiertos(
-            enemigo.sala_actual
-        )
-
-
         mejor_sala = None
         mejor_tiempo = -1
 
 
-        for sala in vecinos:
+        # El motor vincula destinos al iniciar: aquí solo se recorren conexiones locales.
+        for puerta in enemigo.sala_actual.puertas:
+            if not puerta.abierta or puerta.destino_sala is None:
+                continue
+            sala = puerta.destino_sala
 
             tiempo_rastro = rastro.obtener_tiempo(
                 sala
@@ -122,7 +121,11 @@ class ComportamientoEnemigos:
 
             if tiempo_rastro is not None:
 
-                if (0 <= estado.reloj - tiempo_rastro < 400 and tiempo_rastro > mejor_tiempo):
+                # IDs de sala son cadenas: empate por comparación lexicográfica.
+                if (0 <= estado.reloj - tiempo_rastro < 400
+                        and (mejor_sala is None or tiempo_rastro > mejor_tiempo
+                             or (tiempo_rastro == mejor_tiempo
+                                 and sala.id_sala < mejor_sala.id_sala))):
 
                     mejor_tiempo = tiempo_rastro
                     mejor_sala = sala

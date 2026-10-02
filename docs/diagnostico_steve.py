@@ -48,8 +48,8 @@ def test_muerte_cancela_solo_eventos_del_actor():
     motor = MotorJuego()
     motor.iniciar(estado)
     estado.agenda.programar(Evento("e1", 1, 1, "TURNO", "e"))
-    # Posterior a la decisión: debe conservarse, no consumirse ni cancelarse.
-    estado.agenda.programar(Evento("e2", 200, 2, "TURNO", "j"))
+    # Ataque con velocidad 1: decisión en 10000. El ajeno debe quedar después.
+    estado.agenda.programar(Evento("e2", 20000, 2, "TURNO", "j"))
     estado.agenda.programar(Evento("e3", 3, 3, "TURNO", "e"))
     assert motor.ejecutar_accion(Accion("ATACAR", enemigo)).exito
     assert estado.agenda.extraer_siguiente().id_evento == "e2"

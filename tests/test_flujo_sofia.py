@@ -27,7 +27,8 @@ def test_controlador_servicios_vista_y_motor_hasta_terminacion(monkeypatch, caps
     controlador.iniciar(estado)
     assert estado.historial is historial
     assert estado.acciones_ejecutadas == 4 and historial.get_cantidad() == 4
-    assert estado.reloj == 200 and estado.jugador.vida == 0
+    # La demo conserva velocidad 1: cada intervalo base se multiplica por 100.
+    assert estado.reloj == 20000 and estado.jugador.vida == 0
     assert not estado.partida_activa and not estado.jugador_disponible
     assert estado.inventario.esta_vacio()
     assert estado.mapa.obtener_sala("entrada").objetos[0].id_instancia == "moneda"
@@ -42,7 +43,7 @@ def test_arranque_real_demo_por_subproceso():
         text=True, capture_output=True, timeout=10,
     )
     assert resultado.returncode == 0, resultado.stderr
-    assert "Tiempo: 200 | Vida: 0/12" in resultado.stdout
+    assert "Tiempo: 20000 | Vida: 0/12" in resultado.stdout
     assert "Partida terminada." in resultado.stdout
 
 
@@ -51,16 +52,16 @@ def test_servicio_no_consume_costo_dos_veces_y_reanuda_azar_actual():
     servicio = JuegoService(MotorJuego())
     servicio.iniciar_partida(estado.cripta_id, estado)
     assert servicio.ejecutar_accion(Accion("MOVER", direccion="NORTE")).exito
-    assert estado.reloj == 100
+    assert estado.reloj == 10000
     azar = estado.azar.getstate()
     eventos = list(estado.agenda.recorrer())
     segundo = JuegoService(MotorJuego())
     segundo.iniciar_partida(estado.cripta_id, estado)
     assert estado.azar.getstate() == azar
     assert list(estado.agenda.recorrer()) == eventos
-    assert estado.reloj == 100
+    assert estado.reloj == 10000
     segundo.ejecutar_accion(Accion("ESPERAR"))
-    assert estado.reloj == 200 and not estado.partida_activa
+    assert estado.reloj == 20000 and not estado.partida_activa
 
 
 def test_guardado_v1_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(tmp_path):

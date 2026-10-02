@@ -236,6 +236,10 @@ class MotorJuego(MotorJuegoContrato):
                 return resultado
             for cambio in resultado.cambios:
                 historial.registrar(cambio)
+            # Presencia al ejecutar, antes de los eventos posteriores.
+            # El retroceso restaura el historial, no deja un rastro nuevo.
+            if accion.tipo != "RETROCEDER":
+                self._registrar_presencia(estado.jugador.sala_actual)
             atributo(estado, estado, "acciones_ejecutadas", estado.acciones_ejecutadas + 1)
             atributo(estado, estado, "jugador_disponible", False)
             intervalo = calcular_intervalo(resultado.costo,estado.jugador.velocidad)
@@ -261,7 +265,6 @@ class MotorJuego(MotorJuegoContrato):
             self._registrar_presencia(sala)
             self.activar_enemigos_sala(destino)
             atributo(estado, jugador, "sala_actual", destino)
-            self._registrar_presencia(destino)
             notificaciones.append({"tipo": "CAMBIO_SALA", "sala": destino.id_sala})
         elif accion.tipo == "ABRIR":
             puerta = sala.obtener_salida(accion.direccion)

@@ -25,14 +25,17 @@ def partida(vida_enemigo=30, activo=False):
     a.puertas.append(puerta)
     estado.mapa.agregar_sala(a)
     estado.mapa.agregar_sala(b)
-    estado.jugador = Jugador("j", "Jugador", 100, 20, 0, 1)
+    # Velocidad 100: intervalo = costo * 100 / 100 en estos escenarios.
+    estado.jugador = Jugador("j", "Jugador", 100, 20, 0, 100)
     estado.jugador.sala_actual = a
-    enemigo = Enemigo("e", "Guardián", vida_enemigo, 4, 0, 1)
+    enemigo = Enemigo("e", "Guardián", vida_enemigo, 4, 0, 100)
     enemigo.activo = activo
     a.enemigos.append(enemigo)
     estado.inventario = Inventario(3)
     motor = MotorJuego()
     motor.iniciar(estado)
+    # La entrada en la sala activa incluso al enemigo inicialmente inactivo.
+    assert enemigo.activo == enemigo.esta_vivo()
     return motor, estado, a, b, enemigo
 
 
@@ -171,8 +174,12 @@ def test_evento_cancelado_o_reemplazado_no_daña(reemplazar):
     else:
         motor.efectos.cancelar("v", estado)
     assert motor.efectos.procesar_evento(pendiente, estado) == []
-    assert motor.ejecutar_accion(Accion("ESPERAR")).exito
-    assert estado.jugador.vida == 100
+    resultado = motor.ejecutar_accion(Accion("ESPERAR"))
+    assert resultado.exito
+    assert not any(n["tipo"] == "DAÑO_VENENO" for n in resultado.notificaciones)
+    ataques = [n for n in resultado.notificaciones if n["tipo"] == "ATAQUE"]
+    assert len(ataques) == 1 and ataques[0]["daño"] == 6
+    assert estado.jugador.vida == 94  # Solo el guardián activado al iniciar.
 
 
 def test_duracion_temporal_pulsos_y_empate_siguiente_decision():
@@ -180,15 +187,16 @@ def test_duracion_temporal_pulsos_y_empate_siguiente_decision():
     efecto = veneno(estado, duracion=250)
     motor.efectos.aplicar(efecto, estado, [50, 100, 150])
     assert motor.ejecutar_accion(Accion("ESPERAR")).exito
-    assert estado.reloj == 100 and estado.jugador.vida == 94
+    assert estado.reloj == 100 and estado.jugador.vida == 88  # 6 de veneno + 6 de ataque.
     assert efecto["duracion"] == 250
     assert estado.agenda.ver_siguiente().tiempo == 150
     assert motor.avanzar_hasta_decision() == []
     assert estado.reloj == 100
     assert motor.ejecutar_accion(Accion("ESPERAR")).exito
-    assert estado.jugador.vida == 91 and estado.reloj == 200
+    assert estado.jugador.vida == 80 and estado.reloj == 200  # 3 de veneno + 5 de ataque.
     assert motor.ejecutar_accion(Accion("ESPERAR")).exito
     assert estado.efectos_activos == [] and estado.reloj == 300
+    assert estado.jugador.vida == 73  # Sin otro pulso; ataque de 7 con semilla 7.
 
 
 def test_enemigo_actua_y_guardian_permanece_en_sala():
@@ -210,6 +218,8 @@ def test_rastreador_solo_vecinos_accesibles_frescos_con_costo_local(tiempo, espe
     lejana = Sala("lejana")
     lejana.ultimo_rastro = 499
     estado.mapa.agregar_sala(lejana)
+    # El rastreo se decide solo cuando no comparte sala con el jugador.
+    estado.jugador.sala_actual = lejana
     estado.mapa.vincular_salidas()
     def busqueda_prohibida(_):
         pytest.fail("El rastreador recorrió el índice global del mapa.")
@@ -228,6 +238,7 @@ def test_rastreador_descarta_exactamente_400_y_prefiere_el_mas_reciente():
     p.abierta = True
     a.puertas.append(p)
     estado.mapa.agregar_sala(c)
+    estado.jugador.sala_actual = c
     estado.mapa.vincular_salidas()
     estado.reloj = 400
     enemigo.comportamiento = "rastreador"
@@ -280,7 +291,7 @@ def test_trampa_evento_rearme_y_muerte_compartida():
         "trampa": trampa, "objetivo": estado.jugador, "daño": 10})
     antes = huella(estado)
     motor.ejecutar_accion(Accion("ESPERAR"))
-    assert estado.jugador.vida == 90 and trampa.armada
+    assert estado.jugador.vida == 84 and trampa.armada  # Trampa 10 + guardián 6.
     estado.historial.deshacer_ultimo(estado)
     assert huella(estado) == antes and trampa.armada
     motor.activar_trampa(trampa, estado.jugador, 100)
@@ -370,7 +381,7 @@ def test_error_en_evento_revierte_dano_previo_agenda_y_secuencias():
     assert huella(estado) == antes and efecto["ultimo_pulso"] is None
     estado.agenda.cancelar(desconocido.id_evento)
     resultado = motor.ejecutar_accion(Accion("ESPERAR"))
-    assert resultado.exito and estado.jugador.vida == 97
+    assert resultado.exito and estado.jugador.vida == 91  # Veneno 3 + guardián 6.
 
 
 def test_no_se_acepta_efecto_sobre_actor_ajeno():
