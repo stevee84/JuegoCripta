@@ -1,4 +1,5 @@
 from logica.mutaciones import atributo, agregar, quitar
+from dto.sala import Sala, validar_id_sala
 
 
 class RegistroRastro:
@@ -12,15 +13,18 @@ class RegistroRastro:
         self._presencias = []
 
     def _sala(self, sala):
-        if not isinstance(sala, str):
+        if isinstance(sala, Sala):
             return sala
+        validar_id_sala(sala)
         return self._mapa.obtener_sala(sala) if self._mapa is not None else None
 
     def obtener_tiempo(self, id_sala):
-        if not isinstance(id_sala, str):
+        if isinstance(id_sala, Sala):
             if self._mapa is not None or id_sala.ultimo_rastro is not None:
                 return id_sala.ultimo_rastro
             id_sala = id_sala.id_sala
+        else:
+            validar_id_sala(id_sala)
         sala = self._sala(id_sala)
         if sala is not None:
             return sala.ultimo_rastro

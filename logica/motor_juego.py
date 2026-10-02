@@ -25,7 +25,7 @@ class MotorJuego(MotorJuegoContrato):
 
     def iniciar(self, estado) -> None:
         if not estado.reanudable:
-            raise ValueError("El guardado v1 no contiene agenda, historial ni estado actual del azar; no es reanudable.")
+            raise ValueError("El guardado no contiene agenda, historial ni estado actual del azar; no es reanudable.")
         if estado.reloj < 0:
             raise ValueError("El reloj no puede ser negativo.")
         ids = [estado.jugador.id_actor] if estado.jugador is not None else []

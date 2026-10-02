@@ -121,7 +121,7 @@ class ComportamientoEnemigos:
 
             if tiempo_rastro is not None:
 
-                # IDs de sala son cadenas: empate por comparación lexicográfica.
+                # Los IDs de sala son enteros: el empate usa su orden numérico.
                 if (0 <= estado.reloj - tiempo_rastro < 400
                         and (mejor_sala is None or tiempo_rastro > mejor_tiempo
                              or (tiempo_rastro == mejor_tiempo

@@ -21,6 +21,8 @@ class Actor:
         velocidad: int
     ):
 
+        if not isinstance(id_actor, str):
+            raise TypeError("El ID de instancia del actor debe ser una cadena.")
         self.id_actor = id_actor
         self.nombre = nombre
 

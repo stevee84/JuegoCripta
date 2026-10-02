@@ -16,7 +16,7 @@ class TestComportamientoEnemigos(unittest.TestCase):
         comportamiento = ComportamientoEnemigos()
 
 
-        sala = Sala("S1")
+        sala = Sala(1)
 
 
         jugador = Jugador(
@@ -72,13 +72,13 @@ class TestComportamientoEnemigos(unittest.TestCase):
         comportamiento = ComportamientoEnemigos()
 
 
-        sala1 = Sala("S1")
-        sala2 = Sala("S2")
+        sala1 = Sala(1)
+        sala2 = Sala(2)
 
 
         puerta = Puerta(
             "P1",
-            "S2",
+            2,
             "NORTE"
         )
 
@@ -125,7 +125,7 @@ class TestComportamientoEnemigos(unittest.TestCase):
 
         self.assertEqual(
             accion["destino"],
-            "S2"
+            2
         )
 
 

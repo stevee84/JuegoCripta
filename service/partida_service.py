@@ -6,9 +6,9 @@ from logica.mapa_cripta import MapaCripta
 
 
 class PartidaService:
-    """Coordina el formato v1 existente y su reconstrucción para inspección.
+    """Coordina el formato binario existente y su reconstrucción para inspección.
 
-    No fabrica datos que v1 nunca guardó. Una continuación determinista
+    No fabrica datos que el formato todavía no guarda. Una continuación determinista
     necesita acordar el siguiente formato antes de habilitarse.
     """
 

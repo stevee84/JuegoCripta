@@ -18,7 +18,9 @@ def fuente(tmp_path):
     (c1 / "generales.json").write_text(json.dumps({"titulo": "C1"}), encoding="utf-8")
     (c1 / "pagina_1.json").write_text(json.dumps({"pag": 1}), encoding="utf-8")
     (c1 / "contenido.json").write_text(
-        json.dumps({"s1": {"dato": "a"}, "s2": {"dato": "b"}}), encoding="utf-8"
+        json.dumps({"contenido": [
+            {"sala": 1, "dato": "a"}, {"sala": 2, "dato": "b"}
+        ]}), encoding="utf-8"
     )
     (c1 / "version.txt").write_text("  v3  ", encoding="utf-8")
 
@@ -52,8 +54,8 @@ def test_obtener_pagina_no_existe(fuente):
 
 
 def test_obtener_contenido_filtrado(fuente):
-    r = fuente.obtener_contenido("c1", ["s1"])
-    assert r == {"s1": {"dato": "a"}}
+    r = fuente.obtener_contenido("c1", [1])
+    assert r == {"contenido": [{"sala": 1, "dato": "a"}]}
 
 
 def test_obtener_contenido_sin_filtro(fuente):

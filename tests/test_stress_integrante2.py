@@ -86,9 +86,9 @@ class TestDecodificadorStress:
         dec = DecodificadorDatos()
         for i in range(100):
             datos = {
-                "id_sala": f"sala_{i}",
+                "id_sala": i,
                 "puertas": [
-                    {"id_puerta": f"p{j}", "destino_sala_id": f"sala_{j}", "direccion": "NORTE"}
+                    {"id_puerta": f"p{j}", "destino_sala_id": j, "direccion": "NORTE"}
                     for j in range(5)
                 ],
                 "trampas": [
@@ -96,7 +96,7 @@ class TestDecodificadorStress:
                 ],
             }
             sala = dec.convertir_sala(datos)
-            assert sala.id_sala == f"sala_{i}"
+            assert sala.id_sala == i
             assert len(sala.puertas) == 5
             assert len(sala.trampas) == 3
 
@@ -104,7 +104,7 @@ class TestDecodificadorStress:
         dec = DecodificadorDatos()
         datos = {}
         for i in range(50):
-            datos[f"sala_{i}"] = {
+            datos[i] = {
                 "enemigos": [
                     {"id_actor": f"e{j}", "nombre": f"Esqueleto{j}",
                      "vida": 50, "ataque": 10, "defensa": 5, "velocidad": 3}
@@ -118,7 +118,7 @@ class TestDecodificadorStress:
             }
         resultado = dec.convertir_contenido(datos)
         assert len(resultado) == 50
-        assert len(resultado["sala_0"]["enemigos"]) == 10
+        assert len(resultado[0]["enemigos"]) == 10
 
 
 class TestAlmacenStress:
@@ -160,19 +160,19 @@ class TestGuardadoBinarioStress:
         estado.jugador = Jugador("j1", "Héroe", 100, 20, 10, 5)
         estado.salas = {}
         for i in range(num_salas):
-            sala = Sala(f"sala_{i}")
+            sala = Sala(i)
             if i + 1 < num_salas:
-                sala.puertas.append(Puerta(f"p_{i}", f"sala_{i+1}", "NORTE"))
+                sala.puertas.append(Puerta(f"p_{i}", i + 1, "NORTE"))
             for j in range(enemigos_por_sala):
                 sala.enemigos.append(
                     Enemigo(f"e_{i}_{j}", f"Zombie_{j}", 30, 8, 3, 2)
                 )
             for j in range(objetos_por_sala):
                 obj = ObjetoInstancia(f"o_{i}_{j}", f"tipo_{j}")
-                obj.ubicacion = f"sala_{i}"
+                obj.ubicacion = i
                 sala.objetos.append(obj)
             sala.trampas.append(Trampa(f"t_{i}", "pinchos"))
-            estado.salas[f"sala_{i}"] = sala
+            estado.salas[i] = sala
         return estado
 
     def test_100_salas_round_trip(self, tmp_path):
@@ -184,7 +184,7 @@ class TestGuardadoBinarioStress:
         assert cargado is not None
         assert cargado["cripta_id"] == "cripta_stress"
         assert len(cargado["salas"]) == 100
-        sala_50 = cargado["salas"]["sala_50"]
+        sala_50 = cargado["salas"][50]
         assert len(sala_50["enemigos"]) == 5
         assert len(sala_50["objetos"]) == 3
         assert len(sala_50["trampas"]) == 1
@@ -194,9 +194,9 @@ class TestGuardadoBinarioStress:
         estado = self._crear_estado(100, 3, 2)
         ruta = str(tmp_path / "save2.crpt")
         gb.guardar(ruta, estado)
-        sala = gb.leer_sala(ruta, "sala_99")
+        sala = gb.leer_sala(ruta, 99)
         assert sala is not None
-        assert sala["id_sala"] == "sala_99"
+        assert sala["id_sala"] == 99
         assert len(sala["enemigos"]) == 3
         assert len(sala["objetos"]) == 2
 

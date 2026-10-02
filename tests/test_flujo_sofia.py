@@ -31,7 +31,7 @@ def test_controlador_servicios_vista_y_motor_hasta_terminacion(monkeypatch, caps
     assert estado.reloj == 20000 and estado.jugador.vida == 0
     assert not estado.partida_activa and not estado.jugador_disponible
     assert estado.inventario.esta_vacio()
-    assert estado.mapa.obtener_sala("entrada").objetos[0].id_instancia == "moneda"
+    assert estado.mapa.obtener_sala(1).objetos[0].id_instancia == "moneda"
     assert "Partida terminada." in capsys.readouterr().out
     assert any("JUGADOR_DERROTADO" in mensaje for mensaje in vista.bitacora.obtener_mensajes())
 
@@ -64,17 +64,17 @@ def test_servicio_no_consume_costo_dos_veces_y_reanuda_azar_actual():
     assert estado.reloj == 20000 and not estado.partida_activa
 
 
-def test_guardado_v1_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(tmp_path):
+def test_guardado_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(tmp_path):
     estado = crear_partida_minima()
     estado.reloj = 123
     muerto = Enemigo("muerto", "Muerto", 0, 1, 0, 1)
-    estado.mapa.obtener_sala("entrada").enemigos.append(muerto)
-    ruta = tmp_path / "v1.bin"
+    estado.mapa.obtener_sala(1).enemigos.append(muerto)
+    ruta = tmp_path / "v2.bin"
     servicio = PartidaService()
     servicio.guardar(estado, ruta)
     reconstruido = servicio.cargar(ruta)
-    entrada = reconstruido.mapa.obtener_sala("entrada")
-    cripta = reconstruido.mapa.obtener_sala("cripta")
+    entrada = reconstruido.mapa.obtener_sala(1)
+    cripta = reconstruido.mapa.obtener_sala(2)
     assert reconstruido.reloj == 123
     assert reconstruido.jugador.sala_actual is entrada
     assert entrada.puertas[0].destino_sala is cripta
@@ -85,14 +85,14 @@ def test_guardado_v1_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(
         MotorJuego().iniciar(reconstruido)
 
 
-def test_formato_v1_no_puede_preservar_azar_actual(tmp_path):
+def test_formato_actual_no_puede_preservar_azar_actual(tmp_path):
     primero, segundo = crear_partida_minima(), crear_partida_minima()
     segundo.azar.randint(0, 4)
     a, b = tmp_path / "a.bin", tmp_path / "b.bin"
     guardado = GuardadoBinario()
     guardado.guardar(a, primero)
     guardado.guardar(b, segundo)
-    # Evidencia del bloqueo: estados distintos producen exactamente el mismo v1.
+    # Evidencia del bloqueo: estados distintos producen exactamente los mismos bytes.
     assert primero.azar.getstate() != segundo.azar.getstate()
     assert a.read_bytes() == b.read_bytes()
     assert not PartidaService().cargar(a).reanudable
@@ -112,7 +112,7 @@ def test_carga_no_reanudable_no_reemplaza_partida_actual(tmp_path):
 
 @pytest.mark.parametrize("corrupcion", ["version", "indice", "offset", "jugador", "contenido"])
 def test_binario_corrupto_no_lanza_error_de_struct(tmp_path, corrupcion):
-    ruta = tmp_path / "v1.bin"
+    ruta = tmp_path / "v2.bin"
     guardado = GuardadoBinario()
     guardado.guardar(ruta, crear_partida_minima())
     datos = bytearray(ruta.read_bytes())
@@ -130,11 +130,11 @@ def test_binario_corrupto_no_lanza_error_de_struct(tmp_path, corrupcion):
         struct.pack_into("<H", datos, offset + 32, 65535)
     ruta.write_bytes(datos)
     assert guardado.cargar(ruta) is None
-    assert guardado.leer_sala(ruta, "entrada") is None
+    assert guardado.leer_sala(ruta, 1) is None
 
 
 def test_guardado_fallido_conserva_archivo_anterior(tmp_path):
-    ruta = tmp_path / "v1.bin"
+    ruta = tmp_path / "v2.bin"
     guardado = GuardadoBinario()
     estado = crear_partida_minima()
     guardado.guardar(ruta, estado)

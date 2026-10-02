@@ -67,16 +67,17 @@ Las tres prioridades de ataque compartiendo sala se prueban separadamente en
 
 ## Identificadores
 
-`Sala.__init__(id_sala: str)`, `Puerta.destino_sala_id: str` y
-`MapaCripta.obtener_sala(id_sala: str)` establecen cadenas como convención.
-El decodificador conserva `datos["id_sala"]` sin convertirlo. Las salas reales
-de las fixtures usan IDs como `S1`, `sala_inicio`, `entrada`, no números.
+El contrato oficial de `docs/enunciado.pdf`, páginas 11 y 12, publica los IDs de
+sala como enteros (`sala_inicial: 1`, salas `1`, `2`, `19` y referencias
+`"sala": 2`). Los IDs de instancia de enemigos, objetos y trampas permanecen
+como cadenas (`"e-201"`, `"itm_daga_oxidada"`, `"t-17"`).
 
-No se encontró enunciado que exija orden numérico. Se mantiene `<` directamente
-sobre los IDs del proyecto: comparación lexicográfica, por lo que `S10 < S2`.
-La prueba de empate cubre ambos órdenes de vecinos; no se usa `str(id)`, extracción
-de sufijos ni ordenamiento. Esta es la convención existente, no una afirmación
-de que se haya leído una regla académica ausente.
+`Sala`, `Puerta`, `MapaCripta`, el registro de rastro, las fuentes de datos y el
+guardado exigen ahora IDs de sala `int` y rechazan cadenas; no los convierten de
+forma implícita. El rastreador mantiene la comparación directa
+`sala.id_sala < mejor_sala.id_sala`, que por tanto aplica orden numérico. La
+regresión usa las salas 10 y 2 con igual tiempo y comprueba, en ambos órdenes de
+conexión, que se elige la sala 2 sin ordenar los vecinos.
 
 ## Archivos modificados en este cierre
 
@@ -88,8 +89,20 @@ de que se haya leído una regla académica ausente.
   activación/ataque y vencimiento de velocidad con reversión.
 - `docs/cierre_verificacion_parte1.md`: esta clasificación y evidencia.
 
-No se necesitó modificar código de producción adicional al trabajo de parte 1.
-Los cambios locales previos en motor y comportamiento permanecen conservados.
+Después de leer el enunciado completo se alinearon los modelos, contratos,
+decodificador, persistencia y fixtures con IDs de sala enteros. El formato binario
+subió a v2 para detectar como incompatible la representación anterior con IDs de
+sala textuales. Los cambios locales previos permanecen conservados.
+
+Los archivos de producción afectados por esa alineación son `dto/sala.py`,
+`dto/actor.py`, `dto/objeto_instancia.py`, `logica/mapa_cripta.py`, `logica/registro_rastro.py`,
+`logica/comportamiento_enemigos.py`, `contratos/fuente_datos.py`,
+`datos/decodificador_datos.py`, `datos/cliente_api.py`,
+`datos/fuente_offline.py`, `datos/guardado_binario.py`,
+`service/planificador_precarga.py` y los mensajes/documentación del formato en
+motor, controlador, estado y servicio de partida. También se actualizaron todas
+las fixtures que construyen o consultan salas; los IDs de actores, enemigos,
+objetos, trampas y puertas continúan siendo cadenas.
 
 ## Comandos y resultados
 
@@ -97,18 +110,21 @@ Intérprete: `/tmp/opencode/juegocripta-venv/bin/python`.
 
 ```bash
 /tmp/opencode/juegocripta-venv/bin/python -m pytest -q tests/test_integracion_sofia.py tests/test_flujo_sofia.py tests/test_logica/test_rastro_parte1.py tests/test_logica/test_velocidad.py tests/test_logica/test_agenda_eventos.py tests/test_logica/test_contratos_compartidos.py
+/tmp/opencode/juegocripta-venv/bin/python -m pytest -q tests/test_datos/test_decodificador.py tests/test_datos/test_guardado_binario.py tests/test_datos/test_fuente_offline.py tests/test_datos/test_cliente_api.py tests/test_logica/test_mapa_cripta.py tests/test_logica/test_registro_rastro.py tests/test_logica/test_comportamiento_enemigos.py tests/test_logica/test_rastro_parte1.py tests/test_service/test_planificador_precarga.py tests/test_logica/test_adaptacion_compartida.py tests/test_integracion_sofia.py tests/test_flujo_sofia.py tests/test_stress_integrante2.py
 /tmp/opencode/juegocripta-venv/bin/python -m pytest -q
 ```
 
 - Antes del cierre: **353 aprobadas, 20 fallidas**, ejecución de la parte 1.
 - Pruebas relacionadas después de ajustar expectativas: **87 aprobadas**.
 - Pruebas relacionadas con las seis verificaciones adicionales: **93 aprobadas**.
-- Suite completa final: **379 aprobadas, 0 fallidas, sin skips ni xfail**.
+- Suite relacionada con la alineación de IDs: **160 aprobadas**.
+- Suite completa antes de la alineación: **379 aprobadas**.
+- Suite completa final: **384 aprobadas, 0 fallidas, sin skips ni xfail**.
 
 ## Pendientes y alcance
 
-No quedan fallos en la suite ejecutada. Falta el texto del enunciado completo para
-contrastar documentalmente su sección 2.3 y una eventual regla distinta de IDs.
+El enunciado completo ya está disponible en `docs/enunciado.pdf`; se contrastaron
+la fórmula de §2.3 y el esquema de IDs de las páginas 11 y 12.
 RETROCEDER mediante pergamino sigue sin implementarse; la reversión se verifica
 por el historial existente. No se han cambiado sus reglas, ni ampliado veneno,
 regeneración, trampas, persistencia u otras funcionalidades. El informe anterior

@@ -4,6 +4,7 @@ import uuid
 import requests
 
 from contratos.fuente_datos import FuenteDatos
+from dto.sala import validar_id_sala
 
 
 class CriptaAPIError(Exception):
@@ -98,7 +99,9 @@ class ClienteAPI(FuenteDatos):
             f"{self._url_base}/criptas/{cripta_id}/paginas/{pagina}",
         )
 
-    def obtener_contenido(self, cripta_id: str, sala_ids: list[str]) -> dict:
+    def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
+        for sala_id in sala_ids:
+            validar_id_sala(sala_id)
         return self._solicitar(
             "POST",
             f"{self._url_base}/criptas/{cripta_id}/contenido",

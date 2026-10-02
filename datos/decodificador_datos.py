@@ -1,4 +1,4 @@
-from dto.sala import Sala, Puerta, Trampa
+from dto.sala import Sala, Puerta, Trampa, validar_id_sala
 from dto.actor import Enemigo
 from dto.objeto_instancia import ObjetoInstancia
 
@@ -8,9 +8,25 @@ class DecodificadorDatos:
 
     def convertir_sala(self, datos: dict):
         """Crea un objeto Sala a partir de un dict JSON con puertas y trampas."""
-        sala = Sala(datos["id_sala"])
+        # El API usa ``id``/``salidas``; el guardado reconstruido usa los
+        # nombres internos ``id_sala``/``puertas``. Ambos conservan IDs int.
+        id_sala = datos["id"] if "id" in datos else datos["id_sala"]
+        sala = Sala(id_sala)
 
-        for p in datos.get("puertas", []):
+        puertas = datos.get("puertas", [])
+        if "salidas" in datos:
+            puertas = []
+            for direccion, salida in datos["salidas"].items():
+                puertas.append({
+                    "id_puerta": f"{id_sala}:{direccion}",
+                    "destino_sala_id": salida["sala"],
+                    "direccion": direccion,
+                    "abierta": not salida.get("cerrada", False),
+                    "llave_requerida": salida.get("llave"),
+                    "cierre_automatico": salida.get("cierre_automatico"),
+                })
+
+        for p in puertas:
             puerta = Puerta(p["id_puerta"], p["destino_sala_id"], p["direccion"])
             if "llave_requerida" in p:
                 puerta.llave_requerida = p["llave_requerida"]
@@ -34,6 +50,7 @@ class DecodificadorDatos:
         """Convierte dict {sala_id: {enemigos, objetos, trampas}} a objetos DTO."""
         resultado = {}
         for sala_id, contenido in datos.items():
+            validar_id_sala(sala_id)
             entrada = {"enemigos": [], "objetos": [], "trampas": []}
 
             for e in contenido.get("enemigos", []):

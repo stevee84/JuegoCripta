@@ -17,7 +17,7 @@ from logica.motor_juego import MotorJuego
 def crear_partida():
     estado = EstadoPartida(7)
     estado.mapa = MapaCripta()
-    origen, destino, lejana = Sala("S0"), Sala("S2"), Sala("S10")
+    origen, destino, lejana = Sala(0), Sala(2), Sala(10)
     for sala in (origen, destino, lejana):
         estado.mapa.agregar_sala(sala)
     puerta = Puerta("p", destino.id_sala, "NORTE")
@@ -42,7 +42,7 @@ def preparar_rastreador():
 
 
 @pytest.mark.parametrize("invertir", [False, True])
-def test_empate_por_id_cadena_independiente_del_orden(invertir, monkeypatch):
+def test_empate_por_id_entero_independiente_del_orden(invertir, monkeypatch):
     motor, estado, origen, destino, lejana, enemigo = preparar_rastreador()
     puerta = Puerta("otra", lejana.id_sala, "SUR")
     puerta.abierta = True
@@ -60,7 +60,7 @@ def test_empate_por_id_cadena_independiente_del_orden(invertir, monkeypatch):
     monkeypatch.setattr(estado.mapa, "obtener_salas", prohibida)
     monkeypatch.setattr(estado.mapa, "vincular_salidas", prohibida)
     assert motor.comportamientos.decidir_accion(enemigo, estado) == {
-        "tipo": "SEGUIR_RASTRO", "destino": "S10"}
+        "tipo": "SEGUIR_RASTRO", "destino": 2}
 
 
 def test_mas_reciente_tiene_prioridad_sobre_id_menor():
@@ -72,7 +72,7 @@ def test_mas_reciente_tiene_prioridad_sobre_id_menor():
     estado.registro_rastro.actualizar(destino, 500)
     estado.registro_rastro.actualizar(lejana, 499)
     assert motor.comportamientos.decidir_accion(enemigo, estado) == {
-        "tipo": "SEGUIR_RASTRO", "destino": "S2"}
+        "tipo": "SEGUIR_RASTRO", "destino": 2}
 
 
 @pytest.mark.parametrize("tiempo,abierta,seguir", [
@@ -87,14 +87,14 @@ def test_limites_frescura_conexiones_y_espera(tiempo, abierta, seguir):
         estado.registro_rastro.actualizar(destino, tiempo)
     # El rastro fresco de una sala no vecina no debe influir.
     estado.registro_rastro.actualizar(lejana, 500)
-    esperado = {"tipo": "SEGUIR_RASTRO", "destino": "S2"} if seguir else {"tipo": "ESPERAR"}
+    esperado = {"tipo": "SEGUIR_RASTRO", "destino": 2} if seguir else {"tipo": "ESPERAR"}
     assert motor.comportamientos.decidir_accion(enemigo, estado) == esperado
 
 
 @pytest.mark.parametrize("tipo", ["guardian", "errante", "rastreador"])
 def test_ataque_prioritario_sin_consultar_mapa(tipo):
     estado = EstadoPartida()
-    sala = Sala("S1")
+    sala = Sala(1)
     estado.jugador = Jugador("J1", "Jugador", 100, 10, 5, 100)
     estado.jugador.sala_actual = sala
     enemigo = Enemigo("E1", "Enemigo", 20, 5, 2, 100, tipo)

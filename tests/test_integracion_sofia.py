@@ -19,8 +19,8 @@ from logica.motor_juego import MotorJuego
 def partida(vida_enemigo=30, activo=False):
     estado = EstadoPartida(7, "prueba")
     estado.mapa = MapaCripta()
-    a, b = Sala("a"), Sala("b")
-    puerta = Puerta("ab", "b", "NORTE")
+    a, b = Sala(1), Sala(2)
+    puerta = Puerta("ab", 2, "NORTE")
     puerta.abierta = True
     a.puertas.append(puerta)
     estado.mapa.agregar_sala(a)
@@ -119,7 +119,7 @@ def test_movimiento_rechazado_conserva_ubicacion(motivo):
     if motivo == "cerrada":
         a.puertas[0].abierta = False
     elif motivo == "sin_destino":
-        a.puertas[0].destino_sala_id = "ausente"
+        a.puertas[0].destino_sala_id = 999
     antes = huella(estado)
     direccion = "SUR" if motivo == "sin_salida" else "NORTE"
     assert not motor.ejecutar_accion(Accion("MOVER", direccion=direccion)).exito
@@ -136,7 +136,7 @@ def test_movimiento_rastros_visitas_y_eventos_se_revierten_juntos():
     assert resultado.costo == estado.reloj == 100
     assert estado.jugador.sala_actual is enemigo.sala_actual is b
     assert a.enemigos == [] and b.enemigos == [enemigo]
-    assert estado.salas_visitadas == ["a", "b"] and b.ultimo_rastro == 0
+    assert estado.salas_visitadas == [1, 2] and b.ultimo_rastro == 0
     assert estado.historial.deshacer_ultimo(estado)
     assert huella(estado) == antes
 
@@ -215,7 +215,7 @@ def test_rastreador_solo_vecinos_accesibles_frescos_con_costo_local(tiempo, espe
     enemigo.comportamiento = "rastreador"
     estado.reloj = 499
     b.ultimo_rastro = tiempo
-    lejana = Sala("lejana")
+    lejana = Sala(3)
     lejana.ultimo_rastro = 499
     estado.mapa.agregar_sala(lejana)
     # El rastreo se decide solo cuando no comparte sala con el jugador.
@@ -233,8 +233,8 @@ def test_rastreador_solo_vecinos_accesibles_frescos_con_costo_local(tiempo, espe
 
 def test_rastreador_descarta_exactamente_400_y_prefiere_el_mas_reciente():
     motor, estado, a, b, enemigo = partida()
-    c = Sala("c")
-    p = Puerta("ac", "c", "SUR")
+    c = Sala(3)
+    p = Puerta("ac", 3, "SUR")
     p.abierta = True
     a.puertas.append(p)
     estado.mapa.agregar_sala(c)
@@ -243,27 +243,27 @@ def test_rastreador_descarta_exactamente_400_y_prefiere_el_mas_reciente():
     estado.reloj = 400
     enemigo.comportamiento = "rastreador"
     b.ultimo_rastro, c.ultimo_rastro = 0, 1
-    assert motor.comportamientos.decidir_accion(enemigo, estado)["destino"] == "c"
+    assert motor.comportamientos.decidir_accion(enemigo, estado)["destino"] == 3
     b.ultimo_rastro = 400
-    assert motor.comportamientos.decidir_accion(enemigo, estado)["destino"] == "b"
+    assert motor.comportamientos.decidir_accion(enemigo, estado)["destino"] == 2
 
 
 def test_recoger_soltar_costos_cursor_y_reversion():
     motor, estado, a, *_ = partida()
     objeto = ObjetoInstancia("o", "ficha_sin_reglas_de_uso")
-    objeto.ubicacion = "a"
+    objeto.ubicacion = 1
     a.objetos.append(objeto)
     antes = huella(estado)
     assert motor.ejecutar_accion(Accion("RECOGER", objeto)).costo == 25
     recogido = huella(estado)
     assert estado.reloj == 25
     assert motor.ejecutar_accion(Accion("SOLTAR")).costo == 25
-    assert estado.reloj == 50 and objeto.ubicacion == "a"
+    assert estado.reloj == 50 and objeto.ubicacion == 1
     assert estado.historial.deshacer_ultimo(estado)
     assert huella(estado) == recogido
     assert objeto.ubicacion == "inventario"
     assert estado.historial.deshacer_ultimo(estado)
-    assert huella(estado) == antes and objeto.ubicacion == "a"
+    assert huella(estado) == antes and objeto.ubicacion == 1
 
 
 def test_abrir_cierre_automatico_y_reversion():

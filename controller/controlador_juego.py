@@ -50,7 +50,7 @@ class ControladorJuego:
             try:
                 if tipo == "GUARDAR":
                     self.guardar(argumento)
-                    return ResultadoAccion(True, "Instantánea v1 exportada; no conserva una partida reanudable.")
+                    return ResultadoAccion(True, "Instantánea exportada; no conserva una partida reanudable.")
                 self.cargar(argumento)
                 return ResultadoAccion(True, "Partida cargada.")
             except (ValueError, OSError) as error:

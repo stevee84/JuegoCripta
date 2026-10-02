@@ -65,6 +65,6 @@ class EstadoPartida:
         self.iniciada = False
         self.jugador_disponible = True
         self.evento_decision_id = None
-        # El formato v1 solo permite inspección, no una reanudación fiel.
+        # El formato actual solo permite inspección, no una reanudación fiel.
         self.reanudable = True
         self.limitaciones_carga = ()

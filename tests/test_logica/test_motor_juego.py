@@ -74,7 +74,7 @@ class TestMotorJuego(unittest.TestCase):
         estado.jugador = jugador
 
         # Un ataque válido requiere ubicación compartida y pertenencia al mapa.
-        sala = Sala("S1")
+        sala = Sala(1)
         sala.enemigos.append(enemigo)
         jugador.sala_actual = sala
         estado.mapa = MapaCripta()
@@ -117,13 +117,13 @@ class TestMotorJuego(unittest.TestCase):
         estado = EstadoPartida()
 
 
-        sala1 = Sala("S1")
-        sala2 = Sala("S2")
+        sala1 = Sala(1)
+        sala2 = Sala(2)
 
 
         puerta = Puerta(
             "P1",
-            "S2",
+            2,
             "NORTE"
         )
 
@@ -186,7 +186,7 @@ class TestMotorJuego(unittest.TestCase):
 
         self.assertEqual(
             jugador.sala_actual.id_sala,
-            "S2"
+            2
         )
 
 

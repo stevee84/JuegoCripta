@@ -11,8 +11,8 @@ from logica.mapa_cripta import MapaCripta
 def crear_partida_minima(semilla=7):
     estado = EstadoPartida(semilla, "demostracion_integracion")
     estado.mapa = MapaCripta()
-    entrada, cripta = Sala("entrada"), Sala("cripta")
-    puerta = Puerta("paso", "cripta", "NORTE")
+    entrada, cripta = Sala(1), Sala(2)
+    puerta = Puerta("paso", 2, "NORTE")
     puerta.abierta = True
     entrada.puertas.append(puerta)
     estado.mapa.agregar_sala(entrada)

@@ -1,3 +1,5 @@
+from dto.sala import Sala, validar_id_sala
+
 #SOFIA
 class MapaCripta:
     """
@@ -26,7 +28,8 @@ class MapaCripta:
                 return
         self._salas.append(sala)
 
-    def obtener_sala(self, id_sala: str):
+    def obtener_sala(self, id_sala: int):
+        validar_id_sala(id_sala)
         for sala in self._salas:
             if sala.id_sala == id_sala:
                 return sala
@@ -57,7 +60,11 @@ class MapaCripta:
 
         if not self._enlaces_listos:
             self.vincular_salidas()
-        sala = self.obtener_sala(id_sala) if isinstance(id_sala, str) else id_sala
+        if isinstance(id_sala, Sala):
+            sala = id_sala
+        else:
+            validar_id_sala(id_sala)
+            sala = self.obtener_sala(id_sala)
 
         if sala is None:
             return []

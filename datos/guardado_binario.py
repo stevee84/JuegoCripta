@@ -2,12 +2,15 @@ import struct
 import os
 import tempfile
 
+from dto.sala import validar_id_sala
+
 
 class GuardadoBinario:
     """Integrante 2. Formato propio con cabecera, version, indice de salas y registros."""
 
     MAGIC = b"CRPT"
-    VERSION = 1
+    # v2 cambia los IDs de sala de cadenas a enteros, conforme al API oficial.
+    VERSION = 2
     HEADER_FORMAT = "<4sH32sqIIII"
     HEADER_SIZE = struct.calcsize("<4sH32sqIIII")
     STR_SIZE = 32
@@ -17,11 +20,50 @@ class GuardadoBinario:
     def _empaquetar_cadena(self, s, size):
         data = s.encode("utf-8") if s else b""
         if len(data) > size:
-            raise ValueError(f"La cadena excede los {size} bytes del formato v1.")
+            raise ValueError(f"La cadena excede los {size} bytes del formato v2.")
         return data.ljust(size, b"\x00")
 
     def _desempaquetar_cadena(self, data):
         return data.decode("utf-8", errors="replace").rstrip("\x00")
+
+    def _empaquetar_id_sala(self, id_sala, permitir_ninguno=False):
+        if id_sala is None and permitir_ninguno:
+            return b"\x00" * 32
+        validar_id_sala(id_sala)
+        return struct.pack("<Bq", 1, id_sala) + b"\x00" * 23
+
+    def _desempaquetar_id_sala(self, data, permitir_ninguno=False):
+        if len(data) != 32:
+            raise ValueError("ID de sala truncado.")
+        marca = data[0]
+        if marca == 0 and permitir_ninguno and data[1:] == b"\x00" * 31:
+            return None
+        if marca != 1 or data[9:] != b"\x00" * 23:
+            raise ValueError("ID de sala inválido en el guardado.")
+        return struct.unpack_from("<q", data, 1)[0]
+
+    def _empaquetar_ubicacion(self, ubicacion):
+        if ubicacion is None:
+            return b"\x00" * 32
+        if type(ubicacion) is int:
+            return struct.pack("<Bq", 1, ubicacion) + b"\x00" * 23
+        if isinstance(ubicacion, str):
+            datos = ubicacion.encode("utf-8")
+            if len(datos) > 31:
+                raise ValueError("La ubicación excede los 31 bytes del formato v2.")
+            return b"\x02" + datos.ljust(31, b"\x00")
+        raise TypeError("La ubicación debe ser un ID de sala entero o una etiqueta.")
+
+    def _desempaquetar_ubicacion(self, data):
+        if len(data) != 32:
+            raise ValueError("Ubicación truncada.")
+        if data[0] == 0 and data[1:] == b"\x00" * 31:
+            return None
+        if data[0] == 1 and data[9:] == b"\x00" * 23:
+            return struct.unpack_from("<q", data, 1)[0]
+        if data[0] == 2:
+            return self._desempaquetar_cadena(data[1:])
+        raise ValueError("Ubicación inválida en el guardado.")
 
     # --- guardar ---
 
@@ -46,12 +88,13 @@ class GuardadoBinario:
         else:
             salas = []
         jugador = estado.jugador
-        sala_actual_id = ""
+        sala_actual_id = None
         if jugador.sala_actual is not None:
             if hasattr(jugador.sala_actual, "id_sala"):
                 sala_actual_id = jugador.sala_actual.id_sala
             else:
-                sala_actual_id = str(jugador.sala_actual)
+                validar_id_sala(jugador.sala_actual)
+                sala_actual_id = jugador.sala_actual
 
         with open(ruta, "wb") as f:
             # header placeholder
@@ -75,7 +118,7 @@ class GuardadoBinario:
             f.write(struct.pack("<iiiii",
                 jugador.vida, jugador.vida_max, jugador.ataque,
                 jugador.defensa, jugador.velocidad))
-            f.write(self._empaquetar_cadena(sala_actual_id, 32))
+            f.write(self._empaquetar_id_sala(sala_actual_id, permitir_ninguno=True))
 
             # rooms
             offsets_salas = []
@@ -86,7 +129,7 @@ class GuardadoBinario:
             # index
             offset_indice = f.tell()
             for id_sala, offset in offsets_salas:
-                f.write(self._empaquetar_cadena(id_sala, 32))
+                f.write(self._empaquetar_id_sala(id_sala))
                 f.write(struct.pack("<I", offset))
 
             # patch header
@@ -110,13 +153,13 @@ class GuardadoBinario:
         objetos = sala.objetos if sala.objetos else []
         trampas = sala.trampas if sala.trampas else []
 
-        f.write(self._empaquetar_cadena(sala.id_sala, 32))
+        f.write(self._empaquetar_id_sala(sala.id_sala))
         f.write(struct.pack("<HHHH",
             len(puertas), len(enemigos), len(objetos), len(trampas)))
 
         for p in puertas:
             f.write(self._empaquetar_cadena(p.id_puerta, 32))
-            f.write(self._empaquetar_cadena(p.destino_sala_id, 32))
+            f.write(self._empaquetar_id_sala(p.destino_sala_id))
             f.write(self._empaquetar_cadena(p.direccion, 32))
             f.write(struct.pack("<B", 1 if p.abierta else 0))
 
@@ -131,7 +174,7 @@ class GuardadoBinario:
         for o in objetos:
             f.write(self._empaquetar_cadena(o.id_instancia, 32))
             f.write(self._empaquetar_cadena(o.tipo_ficha_id, 32))
-            f.write(self._empaquetar_cadena(o.ubicacion or "", 32))
+            f.write(self._empaquetar_ubicacion(o.ubicacion))
 
         for t in trampas:
             f.write(self._empaquetar_cadena(t.id_trampa, 32))
@@ -179,7 +222,7 @@ class GuardadoBinario:
         try:
             for i in range(num_salas):
                 idx_offset = offset_indice + i * 36
-                id_sala = self._desempaquetar_cadena(data[idx_offset:idx_offset + 32])
+                id_sala = self._desempaquetar_id_sala(data[idx_offset:idx_offset + 32])
                 room_offset = struct.unpack_from("<I", data, idx_offset + 32)[0]
                 if room_offset < offset_jugador + 116 or room_offset >= offset_indice:
                     return None
@@ -206,7 +249,8 @@ class GuardadoBinario:
         nombre = self._desempaquetar_cadena(data[o:o+32]); o += 32
         vida, vida_max, ataque, defensa, velocidad = struct.unpack_from("<iiiii", data, o)
         o += 20
-        sala_actual_id = self._desempaquetar_cadena(data[o:o+32])
+        sala_actual_id = self._desempaquetar_id_sala(
+            data[o:o+32], permitir_ninguno=True)
         return {
             "id_actor": id_actor,
             "nombre": nombre,
@@ -222,7 +266,7 @@ class GuardadoBinario:
         if offset < 0 or offset + 40 > len(data):
             raise ValueError("Registro de sala truncado.")
         o = offset
-        id_sala = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        id_sala = self._desempaquetar_id_sala(data[o:o+32]); o += 32
         np, ne, no_, nt = struct.unpack_from("<HHHH", data, o); o += 8
         if o + np * 97 + ne * 117 + no_ * 96 + nt * 69 > len(data):
             raise ValueError("Contenido de sala truncado.")
@@ -230,7 +274,7 @@ class GuardadoBinario:
         puertas = []
         for _ in range(np):
             id_p = self._desempaquetar_cadena(data[o:o+32]); o += 32
-            dest = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            dest = self._desempaquetar_id_sala(data[o:o+32]); o += 32
             dire = self._desempaquetar_cadena(data[o:o+32]); o += 32
             abierta = struct.unpack_from("<B", data, o)[0]; o += 1
             puertas.append({
@@ -256,10 +300,10 @@ class GuardadoBinario:
         for _ in range(no_):
             id_o = self._desempaquetar_cadena(data[o:o+32]); o += 32
             tipo = self._desempaquetar_cadena(data[o:o+32]); o += 32
-            ubic = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            ubic = self._desempaquetar_ubicacion(data[o:o+32]); o += 32
             objetos.append({
                 "id_instancia": id_o, "tipo_ficha_id": tipo,
-                "ubicacion": ubic if ubic else None,
+                "ubicacion": ubic,
             })
 
         trampas = []
@@ -284,7 +328,8 @@ class GuardadoBinario:
 
     # --- leer_sala ---
 
-    def leer_sala(self, ruta: str, id_sala: str):
+    def leer_sala(self, ruta: str, id_sala: int):
+        validar_id_sala(id_sala)
         try:
             with open(ruta, "rb") as f:
                 header = struct.unpack(self.HEADER_FORMAT, f.read(self.HEADER_SIZE))
@@ -300,7 +345,7 @@ class GuardadoBinario:
                 f.seek(offset_indice)
                 for _ in range(num_salas):
                     entrada = f.read(36)
-                    rid = self._desempaquetar_cadena(entrada[:32])
+                    rid = self._desempaquetar_id_sala(entrada[:32])
                     offset = struct.unpack("<I", entrada[32:])[0]
                     if rid != id_sala:
                         continue
