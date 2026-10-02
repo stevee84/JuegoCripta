@@ -18,12 +18,16 @@ La demostración usa datos sintéticos identificados como tales.
 ## 2. Diagnóstico inicial y fuentes
 
 - Repositorio: JuegoCripta; rama `Sofia`.
-- HEAD inicial y final: `74d01ecb3e66360c7488249f6b05bb530f8a03e5`.
+- HEAD inicial: `74d01ecb3e66360c7488249f6b05bb530f8a03e5`.
+- Durante la comprobación final apareció el commit externo
+  `c60677603db8afc584517a40b5ce60d86d3b6f11` (`cambios de opencode`),
+  atribuido a Sofía y sincronizado con `origin/Sofia`. Ese es el HEAD final
+  probado; el agente no ejecutó el commit ni el push.
 - Se verificaron ruta de trabajo, rama, commit y estado del árbol antes de editar.
 - Git ya marcaba numerosos archivos modificados. El diff inicial con
   `--ignore-space-at-eol` no mostraba diferencias de contenido. Se conservaron
   los archivos y modificaciones previas fuera de los cambios funcionales.
-- No se realizaron reset, limpieza, merge, rebase, commit ni push.
+- El agente no realizó reset, limpieza, merge, rebase, commit ni push.
 - No se encontró `AGENTS.md` en el repositorio ni en sus ascendentes.
 - Se leyeron `EQUIPO.md`, todos los contratos, los dos informes históricos de
   integración y `docs/distribucion_cripta.pdf`.
