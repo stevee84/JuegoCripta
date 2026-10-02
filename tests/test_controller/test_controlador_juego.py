@@ -1,3 +1,4 @@
+import json
 import pickle
 
 import pytest
@@ -7,7 +8,8 @@ from datos.fuente_offline import FuenteOffline
 from datos.guardado_binario import GuardadoBinario
 from logica.cambios import CambioVida
 from logica.historial_reversible import HistorialReversible
-from tests.test_service.test_juego_service import preparar_motor
+from logica.inventario import Inventario
+from tests.test_service.test_juego_service import preparar_estado, preparar_motor
 from vista.vista_consola import VistaConsola
 
 
@@ -164,4 +166,66 @@ def test_fin_de_entrada_no_simula_derrota_ni_victoria(controlador, monkeypatch):
     monkeypatch.setattr("builtins.input", entrada)
     controlador.iniciar()
     assert not controlador._en_ejecucion
+    assert pickle.dumps(controlador._motor.estado) == antes
+
+
+def conectar_partida(controlador, tmp_path):
+    (tmp_path / "c1").mkdir()
+    (tmp_path / "catalogo").mkdir()
+    (tmp_path / "c1/version.txt").write_text("v1", encoding="utf-8")
+    (tmp_path / "catalogo/version.txt").write_text("cat1", encoding="utf-8")
+    controlador.conectar_inicializador(
+        lambda cripta, semilla, fuente, cache: (preparar_estado(semilla), Inventario(3)),
+        semilla=91,
+    )
+    assert controlador.procesar_comando("cripta c1").exito
+
+
+def test_registro_conectado_al_controlador_sin_duplicacion(controlador, tmp_path):
+    conectar_partida(controlador, tmp_path)
+    assert controlador.procesar_comando('registro "mi partida.log"').exito
+    ruta = tmp_path / "mi partida.log"
+    cabecera = ruta.read_bytes()
+    for consulta in ("estado", "criptas", "puntajes", "bitacora", "ayuda"):
+        assert controlador.procesar_comando(consulta).exito
+    for rechazo in ("atacar ausente", "mover X", "equipar"):
+        assert not controlador.procesar_comando(rechazo).exito
+    assert ruta.read_bytes() == cabecera
+    resultado = controlador.procesar_comando("atacar e1")
+    assert resultado.exito
+    assert controlador._motor.estado.jugador.sala_actual.enemigos[0].vida == 6
+    registros = [json.loads(linea) for linea in ruta.read_text(encoding="utf-8").splitlines()]
+    assert len(registros) == 2
+    assert registros[0]["semilla"] == 91
+    assert registros[1] == {
+        "registro": "accion", "tipo": "ATACAR", "objetivo": "e1", "direccion": None,
+    }
+
+
+def test_guardar_no_puede_sobrescribir_el_log_activo(controlador, tmp_path):
+    conectar_partida(controlador, tmp_path)
+    assert controlador.procesar_comando("registro partida.log").exito
+    ruta = tmp_path / "partida.log"
+    antes = ruta.read_bytes()
+    estado = pickle.dumps(controlador._motor.estado)
+    resultado = controlador.procesar_comando("guardar partida.log")
+    assert not resultado.exito
+    assert "registro activo" in resultado.mensaje
+    assert ruta.read_bytes() == antes
+    assert pickle.dumps(controlador._motor.estado) == estado
+
+
+def test_controlador_usa_identificadores_enteros_reales(controlador):
+    enemigo = controlador._motor.estado.jugador.sala_actual.enemigos[0]
+    enemigo.id_actor = 17
+    resultado = controlador.procesar_comando("atacar 17")
+    assert resultado.exito
+    assert enemigo.vida == 6
+
+
+@pytest.mark.parametrize("comando", ["registro", "registro log1 log2"])
+def test_comando_registro_exige_una_ruta(controlador, comando):
+    antes = pickle.dumps(controlador._motor.estado)
+    resultado = controlador.procesar_comando(comando)
+    assert not resultado.exito
     assert pickle.dumps(controlador._motor.estado) == antes

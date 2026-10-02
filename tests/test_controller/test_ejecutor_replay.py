@@ -221,3 +221,107 @@ def test_version_cambiada_antes_de_inicializar_no_publica_otra_partida(contexto,
     assert llamadas == []
     assert pickle.dumps(servicio.obtener_estado()) == antes
     assert servicio._versiones_exigidas is None
+
+
+def test_replay_de_log_normal_no_escribe_ni_reemplaza_la_partida_activa(contexto, monkeypatch):
+    servicio, ruta, registro, llamadas = contexto
+    servicio.configurar_semilla(91)
+    servicio.iniciar_partida("c1")
+    log_normal = ruta.with_name("normal.log")
+    servicio.iniciar_registro(log_normal)
+    assert servicio.ejecutar_accion(servicio.resolver_accion("ATACAR", "e1")).exito
+    normal = servicio.obtener_estado()
+    antes = pickle.dumps(normal)
+    contenido = log_normal.read_bytes()
+
+    def no_anexar(*args, **kwargs):
+        raise AssertionError("Replay no debe anexar acciones a ningún log")
+
+    monkeypatch.setattr(RegistroPartida, "anexar_accion", no_anexar)
+    replay = EjecutorReplay()
+    replay.conectar_servicio(servicio)
+    replay.reproducir(str(log_normal))
+    assert log_normal.read_bytes() == contenido
+    assert servicio.obtener_estado() is normal
+    assert pickle.dumps(normal) == antes
+    assert servicio.tiene_registro()
+    assert replay._servicio is not servicio
+    assert not replay._servicio.tiene_registro()
+    assert pickle.dumps(replay._servicio.obtener_estado()) == antes
+
+
+def test_consola_registra_y_replay_reproduce_el_mismo_log_real(contexto, monkeypatch):
+    servicio, ruta, registro, llamadas = contexto
+    controlador = ControladorJuego(preparar_motor(), VistaConsola(), servicio._fuente)
+    controlador.conectar_inicializador(servicio._inicializador, semilla=91)
+    assert controlador.procesar_comando("cripta c1").exito
+    assert controlador.procesar_comando("registro consola.log").exito
+    assert controlador.procesar_comando("estado").exito
+    assert not controlador.procesar_comando("atacar inexistente").exito
+    for comando in ("atacar e1", "atacar e1", "mover N"):
+        assert controlador.procesar_comando(comando).exito
+    with open("consola.log", "rb") as archivo:
+        original = archivo.read()
+    assert len(original.splitlines()) == 4
+    normal = pickle.dumps(controlador._motor.estado)
+    replay = EjecutorReplay()
+    replay.conectar_servicio(controlador._servicio)
+
+    def no_input(*args):
+        raise AssertionError("Replay no debe solicitar entrada")
+
+    monkeypatch.setattr("builtins.input", no_input)
+    replay.reproducir("consola.log")
+    assert pickle.dumps(replay._servicio.obtener_estado()) == normal
+    assert pickle.dumps(controlador._motor.estado) == normal
+    with open("consola.log", "rb") as archivo:
+        assert archivo.read() == original
+
+
+def test_replay_respeta_id_json_entero_sin_convertirlo_a_texto(contexto):
+    servicio, ruta, registro, llamadas = contexto
+
+    def fabrica(cripta, semilla, fuente, cache):
+        estado = preparar_estado(semilla)
+        estado.jugador.sala_actual.enemigos[0].id_actor = 7
+        return estado, Inventario(3)
+
+    servicio.conectar_inicializador(fabrica)
+    registro.anexar_accion(str(ruta), Accion("ATACAR", 7))
+    replay = EjecutorReplay()
+    replay.conectar_servicio(servicio)
+    replay.reproducir(str(ruta))
+    enemigo = servicio.obtener_estado().jugador.sala_actual.enemigos[0]
+    assert enemigo.id_actor == 7
+    assert type(enemigo.id_actor) is int
+    assert enemigo.vida == 6
+
+
+def test_eventos_pendientes_no_se_ignoran_en_el_replay(contexto):
+    from dto.evento import Evento
+    from logica.agenda_eventos import AgendaEventos
+
+    servicio, ruta, registro, llamadas = contexto
+    eventos = []
+
+    def fabrica(cripta, semilla, fuente, cache):
+        estado = preparar_estado(semilla)
+        estado.agenda = AgendaEventos()
+        evento = Evento("ev1", 10, 0, "EFECTO", "j1")
+        estado.agenda.programar(evento)
+        eventos.append(evento)
+        return estado, Inventario(3)
+
+    servicio.conectar_inicializador(fabrica)
+    registro.anexar_accion(str(ruta), Accion("ATACAR", "e1"))
+    replay = EjecutorReplay()
+    replay.conectar_servicio(servicio)
+    contenido = ruta.read_bytes()
+    with pytest.raises(ValueError, match="Línea 2: acción imposible: Hay eventos pendientes"):
+        replay.reproducir(str(ruta))
+    estado = servicio.obtener_estado()
+    assert estado.reloj == 0
+    assert estado.jugador.sala_actual.enemigos[0].vida == 12
+    assert estado.agenda.extraer_siguiente() is eventos[0]
+    assert not estado.agenda.tiene_eventos()
+    assert ruta.read_bytes() == contenido

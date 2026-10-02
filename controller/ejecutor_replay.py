@@ -32,6 +32,10 @@ class EjecutorReplay:
         servicio = getattr(self, "_servicio", None)
         if servicio is None:
             servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline("datos/"))
+        elif servicio.tiene_registro():
+            # Nunca inicializar ni registrar replay sobre la partida normal
+            # que tiene un log conectado, aunque sea el propio log leído.
+            servicio = servicio.crear_servicio_replay()
         esperadas = (cabecera["version_cripta"], cabecera["version_catalogo"])
         try:
             compatibles = servicio.obtener_versiones(cabecera["cripta_id"]) == esperadas
@@ -40,17 +44,15 @@ class EjecutorReplay:
         if not compatibles:
             # Solo la copia local existente; no adivinar URLs ni versiones.
             fuente_local = FuenteOffline("datos/")
-            candidato = JuegoService(motor=MotorJuego(), fuente=fuente_local)
+            candidato = servicio.crear_servicio_replay(fuente=fuente_local)
             try:
                 compatibles = candidato.obtener_versiones(cabecera["cripta_id"]) == esperadas
             except ValueError:
                 compatibles = False
             if not compatibles:
                 raise ValueError("No hay una copia local con versiones compatibles con el log.")
-            # La fuente local compatible aún requiere la misma fábrica de
-            # datos. Sin ella, iniciar_partida falla sin ejecutar acciones.
-            if servicio._inicializador is not None:
-                candidato.conectar_inicializador(servicio._inicializador)
+            # La copia compatible reutiliza el inicializador, no un log ni
+            # una caché de otra versión. Sin esquema sigue bloqueada.
             servicio = candidato
 
         semilla_anterior = servicio._semilla

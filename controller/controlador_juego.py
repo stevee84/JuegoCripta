@@ -15,8 +15,9 @@ from service.juego_service import JuegoService
 class ControladorJuego:
     """Consola parcial: consultas y primitivas del motor ya inicializado.
 
-    No promete turnos, retroceso de combate, log completo ni restauración
-    binaria. Guardar exporta exclusivamente el binario parcial existente.
+    No promete turnos, retroceso de combate ni restauración binaria.
+    RegistroPartida documenta primitivas, no una simulación temporal completa.
+    Guardar exporta exclusivamente el binario parcial existente.
     """
 
     def __init__(self, motor, vista, fuente, historial=None):
@@ -39,7 +40,8 @@ class ControladorJuego:
     def iniciar(self) -> None:
         self._vista.mostrar_mensaje(
             "Modo parcial: el motor admite primitivas MOVER/ATACAR, "
-            "sin turnos, historial ni registro de partida integrados."
+            "sin turnos ni historial integrados. registro RUTA documenta "
+            "las primitivas desde una partida nueva, no una simulación completa."
         )
         self.procesar_comando("criptas")
         self._vista.mostrar_mensaje("Seleccionar: cripta ID. Consultar comandos: ayuda.")
@@ -62,7 +64,7 @@ class ControladorJuego:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
             consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir")
-            acciones = ("mover", "atacar", "cripta", "guardar", "cargar")
+            acciones = ("mover", "atacar", "cripta", "guardar", "cargar", "registro")
             if operacion in consultas and len(partes) != 1:
                 raise ValueError("La consulta no recibe argumentos.")
             if operacion in acciones and len(partes) != 2:
@@ -88,6 +90,7 @@ class ControladorJuego:
                 self._vista.mostrar_mensaje(
                     "Consultas: estado, criptas, puntajes, bitacora, ayuda, salir. "
                     "Primitivas: mover DIRECCION, atacar ID. "
+                    "registro RUTA inicia un log nuevo antes de la primera acción. "
                     "guardar RUTA exporta un binario parcial, no reanudable. "
                     "Pendientes: cripta ID sin fábrica, cargar RUTA y retroceder."
                 )
@@ -103,6 +106,11 @@ class ControladorJuego:
                     raise NotImplementedError("No se reemplaza una partida con historial vigente.")
                 self._servicio.iniciar_partida(partes[1])
                 resultado = ResultadoAccion(True, "Partida iniciada.")
+            elif operacion == "registro":
+                self._servicio.iniciar_registro(partes[1])
+                resultado = ResultadoAccion(
+                    True, "Registro de primitivas iniciado; no simula turnos completos."
+                )
             elif operacion in ("mover", "atacar"):
                 if self._historial is not None and (
                     not self._historial.esta_vacio()
@@ -115,7 +123,8 @@ class ControladorJuego:
                 if operacion == "mover":
                     accion = self._servicio.resolver_accion("MOVER", direccion=partes[1])
                 else:
-                    accion = self._servicio.resolver_accion("ATACAR", objetivo=partes[1])
+                    objetivo = self._servicio.resolver_identificador_consola(partes[1])
+                    accion = self._servicio.resolver_accion("ATACAR", objetivo=objetivo)
                 resultado = self._servicio.ejecutar_accion(accion)
             elif operacion == "guardar":
                 self.guardar(partes[1])
@@ -149,6 +158,8 @@ class ControladorJuego:
         if estado is None or estado.jugador is None or estado.mapa is None:
             raise ValueError("No hay una partida inicializada para exportar.")
         destino = Path(ruta)
+        if self._servicio.es_ruta_registro(destino):
+            raise ValueError("El guardado no puede sobrescribir el registro activo.")
         with tempfile.NamedTemporaryFile(
             dir=destino.parent, prefix=".cripta-", suffix=".tmp", delete=False
         ) as archivo:
