@@ -2,6 +2,25 @@ from contratos.cambio_reversible import CambioReversible
 from estructuras.lista_doble import ListaDobleImpl
 
 
+def _preparar_orden_suelo(sala):
+    """Asigna marcas de orden sin copiar los objetos de la sala."""
+    siguiente = getattr(sala, "_siguiente_orden_suelo", 0)
+    for objeto in sala.objetos:
+        marca = getattr(objeto, "_marca_orden_suelo", None)
+        if marca is None or marca[0] is not sala:
+            objeto._marca_orden_suelo = (sala, siguiente)
+            siguiente += 1
+    sala._siguiente_orden_suelo = siguiente
+
+
+def _marcar_objeto_soltado(sala, objeto):
+    """Un objeto soltado ocupa una posición nueva al final del suelo."""
+    _preparar_orden_suelo(sala)
+    orden = sala._siguiente_orden_suelo
+    objeto._marca_orden_suelo = (sala, orden)
+    sala._siguiente_orden_suelo += 1
+
+
 class CambioVida(CambioReversible):
     """
     Conserva la vida anterior de un actor para restaurarla
@@ -87,7 +106,7 @@ class TransaccionAccion:
 class CambioRecogerObjeto(CambioReversible):
     """Restaura el suelo y el cursor anteriores a una recolección.
 
-    Guarda referencias y una posición, sin copiar el inventario.
+    Guarda referencias y una marca de orden, sin copiar el inventario.
     Valida el nodo recogido y la selección recorriendo el inventario
     en O(n); desconectar el nodo cuesta O(1). Reinsertar en el suelo
     cuesta O(m), porque Sala.objetos es una lista de Python.
@@ -98,6 +117,10 @@ class CambioRecogerObjeto(CambioReversible):
         self._objeto = objeto
         self._sala = sala
         self._posicion = posicion
+        _preparar_orden_suelo(sala)
+        self._marca_suelo = None
+        if 0 <= posicion < len(sala.objetos) and sala.objetos[posicion] is objeto:
+            self._marca_suelo = objeto._marca_orden_suelo
         # El servicio entrega el nodo después de agregar el objeto.
         self._nodo = None
         self._cursor_anterior = inventario._cursor
@@ -137,7 +160,20 @@ class CambioRecogerObjeto(CambioReversible):
         inventario._lista.quitar_nodo(nodo)
         inventario._cantidad -= 1
         inventario._cursor = cursor or inventario._lista.primero
-        self._sala.objetos.insert(self._posicion, self._objeto)
+        # Las marcas permanecen estables aunque se retiren pergaminos.
+        # Busca el espacio entre los objetos que siguen en el suelo.
+        posicion = self._posicion
+        if self._marca_suelo is not None:
+            _preparar_orden_suelo(self._sala)
+            posicion = 0
+            while (
+                posicion < len(self._sala.objetos)
+                and self._sala.objetos[posicion]._marca_orden_suelo[1]
+                < self._marca_suelo[1]
+            ):
+                posicion += 1
+            self._objeto._marca_orden_suelo = self._marca_suelo
+        self._sala.objetos.insert(posicion, self._objeto)
         self._objeto.ubicacion = self._ubicacion_anterior
         self._deshecho = True
 
@@ -163,6 +199,8 @@ class CambioSoltarObjeto(CambioReversible):
         self._retiro = retiro
         self._sala = sala
         self._objeto = retiro.nodo.valor
+        self._marca_suelo_anterior = getattr(self._objeto, "_marca_orden_suelo", None)
+        _marcar_objeto_soltado(sala, self._objeto)
 
         # Debe capturarse antes de cambiar la ubicación a la sala.
         self._ubicacion_anterior = self._objeto.ubicacion
@@ -191,6 +229,7 @@ class CambioSoltarObjeto(CambioReversible):
 
         # Completa el traslado inverso.
         self._sala.objetos.pop(posicion)
+        self._objeto._marca_orden_suelo = self._marca_suelo_anterior
         self._objeto.ubicacion = self._ubicacion_anterior
 
         self._deshecho = True
