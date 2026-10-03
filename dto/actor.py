@@ -33,6 +33,8 @@ class Actor:
         self.defensa = defensa
         self.velocidad = velocidad
         self.muerte_procesada = False
+        # Referencia a la ficha ya resuelta del catálogo, cuando esté disponible.
+        self.ficha = None
 
         # Referencia a la sala donde se encuentra actualmente.
         # Será asignada por el mapa de la cripta.

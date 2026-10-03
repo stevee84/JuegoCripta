@@ -234,3 +234,20 @@ class CambioSoltarObjeto(CambioReversible):
         self._objeto.ubicacion = self._ubicacion_anterior
 
         self._deshecho = True
+
+
+class CambioConsumirObjeto(CambioReversible):
+    """Restaura exactamente el nodo retirado al consumir un objeto."""
+
+    def __init__(self, retiro, objeto):
+        self._retiro = retiro
+        self._objeto = objeto
+        self._ubicacion_anterior = objeto.ubicacion
+        self._deshecho = False
+
+    def deshacer(self, estado) -> None:
+        if self._deshecho:
+            return
+        self._retiro.inventario.restaurar_retiro(self._retiro)
+        self._objeto.ubicacion = self._ubicacion_anterior
+        self._deshecho = True

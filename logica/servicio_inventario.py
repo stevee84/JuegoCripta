@@ -1,6 +1,8 @@
 from dto.accion import ResultadoAccion
-from logica.acciones import COSTO_RECOGER, COSTO_SOLTAR
-from logica.cambios import CambioRecogerObjeto, CambioSoltarObjeto
+from logica.acciones import COSTO_RECOGER, COSTO_SOLTAR, COSTO_USAR
+from logica.cambios import (
+    CambioConsumirObjeto, CambioRecogerObjeto, CambioSoltarObjeto,
+)
 
 
 class ServicioInventario:
@@ -19,13 +21,14 @@ class ServicioInventario:
     el costo base. El avance del reloj corresponde al motor.
 
     Recoger y soltar devuelven cambios para el historial. El
-    coordinador indica reversible=False para movimientos de pergaminos;
-    la instancia no contiene la categoría de su ficha de catálogo.
-    El equipamiento y el uso de objetos siguen pendientes.
+    coordinador indica reversible=False para movimientos de pergaminos.
+    El uso exige que la instancia tenga su ficha de catálogo resuelta.
+    Implementa únicamente antídoto, antorcha y poción de velocidad.
     """
 
-    def __init__(self, inventario):
+    def __init__(self, inventario, gestor_efectos=None):
         self._inventario = inventario
+        self._efectos = gestor_efectos
 
     def recoger(self, objeto, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
@@ -111,7 +114,83 @@ class ServicioInventario:
             "Falta implementar el equipamiento y sus efectos."
         )
 
+    def validar_uso(self, estado):
+        if self._inventario is None:
+            return "Falta el inventario."
+        if self._efectos is None:
+            return "Falta el gestor de efectos."
+        objeto = self._inventario.obtener_actual()
+        if objeto is None:
+            return "No hay un objeto seleccionado."
+        if objeto.ubicacion != "inventario":
+            return "El objeto seleccionado no está disponible en el inventario."
+        ficha = getattr(objeto, "ficha", None)
+        if not isinstance(ficha, dict) or ficha.get("id") != objeto.tipo_ficha_id:
+            return "La ficha del objeto no está resuelta."
+        clase = ficha.get("clase")
+        if clase == "antidoto":
+            if not any(
+                    efecto.get("tipo") == "VENENO"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "El jugador no tiene veneno activo."
+            return None
+        if clase == "antorcha":
+            duracion = ficha.get("duracion")
+            if type(duracion) is not int or duracion <= 0:
+                return "La duración de la antorcha debe ser positiva."
+            if any(
+                    efecto.get("tipo") == "ANTORCHA"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "Ya hay una antorcha encendida."
+            return None
+        if clase == "pocion" and "modificador_velocidad" in ficha:
+            modificador = ficha.get("modificador_velocidad")
+            duracion = ficha.get("duracion")
+            if type(modificador) is not int or modificador == 0:
+                return "El modificador de velocidad debe ser un entero no nulo."
+            if type(duracion) is not int or duracion <= 0:
+                return "La duración del cambio de velocidad debe ser positiva."
+            if type(estado.jugador.velocidad) is not int \
+                    or estado.jugador.velocidad + modificador <= 0:
+                return "La velocidad resultante debe ser positiva."
+            if any(
+                    efecto.get("tipo") == "VELOCIDAD"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "El jugador ya tiene un efecto de velocidad activo."
+            return None
+        return "El objeto seleccionado no tiene un uso implementado en esta parte."
+
     def usar(self, estado) -> ResultadoAccion:
-        raise NotImplementedError(
-            "Falta implementar el uso de objetos."
-        )
+        error = self.validar_uso(estado)
+        if error:
+            return ResultadoAccion(False, error)
+        objeto = self._inventario.obtener_actual()
+        ficha = objeto.ficha
+        clase = ficha["clase"]
+        notificaciones = []
+        if clase == "antidoto":
+            cancelados = self._efectos.cancelar_venenos(estado.jugador, estado)
+            notificaciones.append({
+                "tipo": "ANTIDOTO_USADO",
+                "efectos_cancelados": len(cancelados),
+            })
+        elif clase == "antorcha":
+            notificaciones.extend(self._efectos.aplicar_antorcha(
+                f"antorcha:{objeto.id_instancia}", estado.jugador,
+                ficha["duracion"], estado))
+        else:
+            velocidad_final = (
+                estado.jugador.velocidad + ficha["modificador_velocidad"])
+            notificaciones.extend(self._efectos.aplicar_velocidad(
+                f"velocidad:{objeto.id_instancia}", estado.jugador,
+                velocidad_final, ficha["duracion"], estado))
+
+        retiro = self._inventario.retirar_actual_con_registro()
+        cambio = CambioConsumirObjeto(retiro, objeto)
+        objeto.ubicacion = "consumido"
+        return ResultadoAccion(
+            True, "Objeto usado.", cambios=[cambio], costo=COSTO_USAR,
+            notificaciones=notificaciones)

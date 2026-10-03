@@ -38,6 +38,7 @@ class DecodificadorDatos:
 
         for t in datos.get("trampas", []):
             trampa = Trampa(t["id_trampa"], t["tipo"])
+            trampa.ficha = t.get("ficha")
             if "armada" in t:
                 trampa.armada = t["armada"]
             if "tiempo_rearme" in t:
@@ -64,6 +65,7 @@ class DecodificadorDatos:
                     comportamiento=e.get("comportamiento", "guardian"),
                 )
                 entrada["enemigos"].append(enemigo)
+                enemigo.ficha = e.get("ficha")
                 enemigo.vida_max = e.get("vida_max", enemigo.vida_max)
                 enemigo.activo = e.get("activo", False)
                 enemigo.muerte_procesada = not enemigo.esta_vivo()
@@ -75,10 +77,12 @@ class DecodificadorDatos:
                 )
                 if "ubicacion" in o:
                     obj.ubicacion = o["ubicacion"]
+                obj.ficha = o.get("ficha")
                 entrada["objetos"].append(obj)
 
             for t in contenido.get("trampas", []):
                 trampa = Trampa(t["id_trampa"], t["tipo"])
+                trampa.ficha = t.get("ficha")
                 if "armada" in t:
                     trampa.armada = t["armada"]
                 if "tiempo_rearme" in t:

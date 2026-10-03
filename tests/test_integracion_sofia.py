@@ -339,17 +339,20 @@ def test_efectos_invalidos_no_cambian_estado(duracion, valor):
 
 
 def test_regeneracion_no_revive_y_evento_repetido_no_repite_pulso():
-    motor, estado, *_ = partida()
-    estado.jugador.vida = 95
+    motor, estado, _, _, enemigo = partida()
+    enemigo.ficha = {"id": "ent_guardian", "clase": "enemigo", "regeneracion": 10}
+    enemigo.vida_max = 100
+    enemigo.vida = 95
     efecto = veneno(estado, 10)
     efecto["tipo"] = "REGENERACION"
+    efecto["objetivo"] = enemigo
     motor.efectos.aplicar(efecto, estado, [20])
     evento = estado.agenda.extraer_siguiente()
     motor.efectos.procesar_evento(evento, estado)
-    assert estado.jugador.vida == 100
-    estado.jugador.vida = 90
+    assert enemigo.vida == 100
+    enemigo.vida = 90
     assert motor.efectos.procesar_evento(evento, estado) == []
-    assert estado.jugador.vida == 90
+    assert enemigo.vida == 90
     estado.jugador.vida = 0
     with pytest.raises(ValueError):
         motor.efectos.aplicar(veneno(estado), estado)

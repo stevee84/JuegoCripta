@@ -6,5 +6,7 @@ class ObjetoInstancia:
             raise TypeError("El ID de instancia del objeto debe ser una cadena.")
         self.id_instancia = id_instancia
         self.tipo_ficha_id = tipo_ficha_id
+        # La simulación solo usa objetos cuya ficha de catálogo fue resuelta.
+        self.ficha = None
         # Los IDs de sala son enteros; los estados del inventario son etiquetas.
         self.ubicacion: int | str | None = None

@@ -88,7 +88,11 @@ class Trampa:
 
         self.id_trampa = id_trampa
         self.tipo = tipo
+        # Referencia a la ficha ya resuelta del catálogo.
+        self.ficha = None
 
         self.armada = True
 
         self.tiempo_rearme = 300
+        # Evita programar más de un rearme para la misma activación.
+        self.evento_rearme_id = None
