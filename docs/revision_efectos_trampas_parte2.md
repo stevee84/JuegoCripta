@@ -100,10 +100,10 @@ lo que no hay doble cobro.
 
 - Cancelar un efecto ya no recorre toda la agenda para descubrir sus eventos.
   Recorre su pequeña lista de IDs pendientes.
-- `AgendaEventos.cancelar(id)` sigue buscando y eliminando linealmente dentro del
-  montículo manual; cancelar `k` eventos cuesta `O(k n)`. También localizar la
-  próxima acción al cambiar velocidad cuesta `O(n)`. Corregirlo exige una decisión
-  estructural de agenda fuera de esta parte; no se añadió índice hash.
+- Esta revisión de parte 2 dejó como pendiente la cancelación lineal. La parte 3
+  la sustituyó por índices AVL propios y posiciones actualizadas del montículo:
+  cancelar `k` eventos cuesta ahora `O(k log n)` y localizar las acciones de un
+  actor cuesta `O(log n + k)`, sin añadir tabla hash.
 - La regeneración conserva un solo evento futuro por enemigo, por lo que su lista
   de IDs no crece con el tiempo.
 - El guardado binario permanece en versión 2 y detecta versiones incompatibles,

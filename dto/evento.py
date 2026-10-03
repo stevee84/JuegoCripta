@@ -54,6 +54,8 @@ class Evento:
         # }
         #
         self.datos = datos
+        # Posición actual en el montículo; no forma parte de la prioridad.
+        self._indice_monticulo = None
 
 
 

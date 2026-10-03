@@ -34,7 +34,7 @@ class Inventario:
     Así se pueden ordenar las referencias a los objetos sin
     modificar el orden real del inventario.
     """
-    
+
     def __init__(self, capacidad: int, lista_doble=None):
         # La capacidad máxima viene de los datos de la cripta.
         self._capacidad = capacidad
@@ -176,12 +176,46 @@ class Inventario:
                 "Este retiro ya fue restaurado."
             )
 
-        # La lista valida la posición antes de modificar los enlaces.
-        self._lista.reinsertar_nodo(
-            registro.nodo,
-            registro.anterior,
-            registro.siguiente
-        )
+        anterior = registro.anterior
+        siguiente = registro.siguiente
+
+        def contiene(nodo):
+            actual = self._lista.primero
+            while actual is not None:
+                if actual is nodo:
+                    return True
+                actual = actual.siguiente
+            return False
+
+        anterior_presente = anterior is not None and contiene(anterior)
+        siguiente_presente = siguiente is not None and contiene(siguiente)
+        anterior_original = registro.anterior
+        siguiente_original = registro.siguiente
+        posicion_exacta = (
+            (anterior_presente and anterior.siguiente is siguiente
+             and (siguiente is None or siguiente_presente))
+            or (anterior is None and self._lista.primero is siguiente
+                and (siguiente is None or siguiente_presente)))
+        if posicion_exacta:
+            pass
+        elif anterior_original is None and siguiente_original is None \
+                and not self.esta_vacio():
+            raise ValueError("La posición original ya no está libre.")
+        elif (anterior_original is None and siguiente_presente) \
+                or (siguiente_original is None and anterior_presente) \
+                or (anterior_presente and siguiente_presente):
+            raise ValueError("La posición original ya no está libre.")
+        elif anterior_presente:
+            siguiente = anterior.siguiente
+        elif siguiente_presente:
+            anterior = siguiente.anterior
+        else:
+            anterior = None
+            siguiente = self._lista.primero
+
+        # Si un pergamino vecino fue consumido de forma irreversible, se usa
+        # el vecino superviviente sin dejar enlaces o cantidades inconsistentes.
+        self._lista.reinsertar_nodo(registro.nodo, anterior, siguiente)
 
         self._cantidad += 1
 

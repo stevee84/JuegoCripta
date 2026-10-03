@@ -235,7 +235,7 @@ class GestorEfectos:
         return eliminados
 
     def cancelar(self, efecto_id, estado) -> list:
-        """Cancela por los IDs guardados; cada cancelación del heap sigue en O(n)."""
+        """Cancela por IDs guardados; cada cancelación de agenda cuesta O(log n)."""
         eliminados = []
         for i in range(len(estado.efectos_activos) - 1, -1, -1):
             efecto = estado.efectos_activos[i]

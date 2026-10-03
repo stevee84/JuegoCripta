@@ -30,6 +30,38 @@ class ServicioInventario:
         self._inventario = inventario
         self._efectos = gestor_efectos
 
+    @staticmethod
+    def es_pergamino(objeto):
+        ficha = getattr(objeto, "ficha", None)
+        return (isinstance(ficha, dict)
+                and ficha.get("id") == getattr(objeto, "tipo_ficha_id", None)
+                and ficha.get("clase") == "pergamino_retroceso")
+
+    def validar_pergamino(self):
+        objeto = None if self._inventario is None else self._inventario.obtener_actual()
+        if objeto is None:
+            return "No hay un pergamino seleccionado."
+        if objeto.ubicacion != "inventario" or not self.es_pergamino(objeto):
+            return "El objeto seleccionado no es un pergamino de retroceso."
+        return None
+
+    def consumir_pergamino(self):
+        error = self.validar_pergamino()
+        if error:
+            return ResultadoAccion(False, error)
+        objeto = self._inventario.obtener_actual()
+        retiro = self._inventario.retirar_actual_con_registro()
+        objeto.ubicacion = "consumido"
+        # El retiro se devuelve solo para recuperar ante un fallo inesperado;
+        # nunca se incorpora al historial reversible.
+        resultado = ResultadoAccion(
+            True, "Pergamino consumido.", costo=0,
+            notificaciones=[{"tipo": "PERGAMINO_CONSUMIDO",
+                             "objeto": objeto.id_instancia}])
+        resultado.retiro_irreversible = retiro
+        resultado.objeto_consumido = objeto
+        return resultado
+
     def recoger(self, objeto, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
             return ResultadoAccion(

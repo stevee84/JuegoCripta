@@ -21,7 +21,7 @@ class Actor:
         velocidad: int
     ):
 
-        if not isinstance(id_actor, str):
+        if not isinstance(id_actor, str) or not id_actor:
             raise TypeError("El ID de instancia del actor debe ser una cadena.")
         self.id_actor = id_actor
         self.nombre = nombre
@@ -35,6 +35,9 @@ class Actor:
         self.muerte_procesada = False
         # Referencia a la ficha ya resuelta del catálogo, cuando esté disponible.
         self.ficha = None
+        self.tipo_ficha_id = None
+        # Instancias de botín preparadas antes de iniciar la simulación.
+        self.botin_preparado = []
 
         # Referencia a la sala donde se encuentra actualmente.
         # Será asignada por el mapa de la cripta.

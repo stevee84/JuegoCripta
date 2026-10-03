@@ -29,18 +29,71 @@ class MotorJuego(MotorJuegoContrato):
         if estado.reloj < 0:
             raise ValueError("El reloj no puede ser negativo.")
         ids = [estado.jugador.id_actor] if estado.jugador is not None else []
+        ids_objetos = []
+        exigir_fichas = getattr(estado, "exigir_fichas_resueltas", False)
         if estado.mapa is not None:
+            if (estado.sala_salida_id is not None
+                    and estado.mapa.obtener_sala(estado.sala_salida_id) is None):
+                raise ValueError("La sala de salida no existe en el mapa.")
             for sala in estado.mapa.obtener_salas():
+                for objeto in sala.objetos:
+                    if objeto.id_instancia in ids_objetos:
+                        raise ValueError("Los objetos deben tener IDs únicos.")
+                    ids_objetos.append(objeto.id_instancia)
+                    if (exigir_fichas and objeto.ficha is None) or (
+                            objeto.ficha is not None and (
+                                not isinstance(objeto.ficha, dict)
+                                or objeto.ficha.get("id") != objeto.tipo_ficha_id)):
+                        raise ValueError("La ficha de un objeto no coincide con su tipo.")
+                for trampa in sala.trampas:
+                    if (exigir_fichas and trampa.ficha is None) or (
+                            trampa.ficha is not None and (
+                                not isinstance(trampa.ficha, dict)
+                                or trampa.ficha.get("id") != trampa.tipo
+                                or trampa.ficha.get("clase") != "trampa")):
+                        raise ValueError("La ficha de una trampa no está resuelta.")
                 for enemigo in sala.enemigos:
                     if enemigo.id_actor in ids:
                         raise ValueError("Los actores deben tener IDs únicos.")
                     ids.append(enemigo.id_actor)
                     ficha = getattr(enemigo, "ficha", None)
+                    if (exigir_fichas and ficha is None) or (
+                            ficha is not None and (
+                                not isinstance(ficha, dict)
+                                or ficha.get("clase") != "enemigo")):
+                        raise ValueError("La ficha de un enemigo no está resuelta.")
+                    if exigir_fichas:
+                        suelta = ficha.get("suelta") or []
+                        if len(suelta) != len(enemigo.botin_preparado):
+                            raise ValueError(
+                                "El botín del enemigo no fue preparado completamente.")
+                        for posicion, ficha_id in enumerate(suelta):
+                            if enemigo.botin_preparado[posicion].tipo_ficha_id != ficha_id:
+                                raise ValueError(
+                                    "El botín preparado no coincide con la ficha.")
+                    for objeto in enemigo.botin_preparado:
+                        if objeto.id_instancia in ids_objetos:
+                            raise ValueError("Los objetos deben tener IDs únicos.")
+                        ids_objetos.append(objeto.id_instancia)
+                        if (not isinstance(objeto.ficha, dict)
+                                or objeto.ficha.get("id") != objeto.tipo_ficha_id):
+                            raise ValueError(
+                                "El botín debe estar resuelto antes de simular.")
                     if isinstance(ficha, dict) and "regeneracion" in ficha:
                         cantidad = ficha["regeneracion"]
                         if type(cantidad) is not int or cantidad <= 0:
                             raise ValueError(
                                 "La regeneración de la ficha debe ser positiva.")
+        if estado.inventario is not None:
+            for objeto in estado.inventario.obtener_objetos():
+                if objeto.id_instancia in ids_objetos:
+                    raise ValueError("Los objetos deben tener IDs únicos.")
+                ids_objetos.append(objeto.id_instancia)
+                if (exigir_fichas and objeto.ficha is None) or (
+                        objeto.ficha is not None and (
+                            not isinstance(objeto.ficha, dict)
+                            or objeto.ficha.get("id") != objeto.tipo_ficha_id)):
+                    raise ValueError("La ficha de un objeto no coincide con su tipo.")
         self.estado = estado
         if estado.historial is None:
             estado.historial = HistorialReversible()
@@ -80,6 +133,42 @@ class MotorJuego(MotorJuegoContrato):
         estado.registro_rastro.actualizar(sala, estado.reloj, estado)
         if sala.id_sala not in estado.salas_visitadas:
             agregar(estado, estado.salas_visitadas, sala.id_sala)
+
+    @staticmethod
+    def _es_ficha(objeto, ficha_id, clase=None):
+        ficha = getattr(objeto, "ficha", None)
+        return (getattr(objeto, "tipo_ficha_id", None) == ficha_id
+                and isinstance(ficha, dict)
+                and ficha.get("id") == ficha_id
+                and (clase is None or ficha.get("clase") == clase))
+
+    def _buscar_llave(self, ficha_id):
+        inventario = self.estado.inventario
+        if inventario is None:
+            return None
+        for objeto in inventario.obtener_objetos():
+            if objeto.ubicacion == "inventario" \
+                    and self._es_ficha(objeto, ficha_id, "llave"):
+                return objeto
+        return None
+
+    def _cumple_salida(self, puerta, destino):
+        estado = self.estado
+        if estado.sala_salida_id is None or destino.id_sala != estado.sala_salida_id:
+            return False
+        requerida = estado.llave_salida_id
+        if requerida is None:
+            return puerta.llave_requerida is None or puerta.abierta
+        return puerta.llave_requerida == requerida \
+            and self._buscar_llave(requerida) is not None
+
+    def _declarar_victoria(self):
+        estado = self.estado
+        atributo(estado, estado, "victoria", True)
+        atributo(estado, estado, "fin_partida", "VICTORIA")
+        atributo(estado, estado, "partida_activa", False)
+        atributo(estado, estado, "jugador_disponible", False)
+        atributo(estado, estado, "evento_decision_id", None)
 
     def cambiar_velocidad(self, actor, nueva_velocidad: int):
         """
@@ -132,12 +221,8 @@ class MotorJuego(MotorJuegoContrato):
             else "ENEMIGO"
         )
 
-        pendientes = [
-            evento
-            for evento in estado.agenda.recorrer()
-            if evento.destinatario_id == actor.id_actor
-            and evento.tipo == tipo_evento
-        ]
+        pendientes = estado.agenda.buscar_por_actor_tipo(
+            actor.id_actor, tipo_evento)
 
         if len(pendientes) > 1:
             raise ValueError("El actor tiene varias acciones pendientes.")
@@ -181,6 +266,18 @@ class MotorJuego(MotorJuegoContrato):
         estado = self.estado
         if estado is None:
             return "La partida no ha sido iniciada."
+        if not isinstance(accion, Accion):
+            return "Acción inválida."
+        if accion.tipo == "RETROCEDER":
+            if estado.historial is None or estado.historial.esta_vacio():
+                return "No hay un intervalo completo para retroceder."
+            if estado.historial.hay_intervalo_abierto():
+                return "Hay una acción pendiente de completar."
+            if estado.partida_activa and not estado.jugador_disponible:
+                return "El jugador todavía no puede decidir."
+            if estado.inventario is None:
+                return "Falta el inventario."
+            return ServicioInventario(estado.inventario).validar_pergamino()
         if not estado.partida_activa:
             return "La partida ha terminado."
         jugador = estado.jugador
@@ -188,8 +285,6 @@ class MotorJuego(MotorJuegoContrato):
             return "No hay un jugador vivo."
         if not estado.jugador_disponible:
             return "El jugador todavía no puede decidir."
-        if not isinstance(accion, Accion):
-            return "Acción inválida."
         sala = jugador.sala_actual
         if (sala is None or estado.mapa is None
                 or estado.mapa.obtener_sala(sala.id_sala) is not sala):
@@ -226,10 +321,13 @@ class MotorJuego(MotorJuegoContrato):
                 if puerta.abierta:
                     return "La puerta ya está abierta."
                 if puerta.llave_requerida is not None:
-                    return "Falta especificar la ficha y regla de la llave requerida."
+                    if self._buscar_llave(puerta.llave_requerida) is None:
+                        return "No tienes la llave correcta para esta puerta."
                 cierre = puerta.cierre_automatico
                 if cierre is not None and (type(cierre) is not int or cierre <= 0):
                     return "El plazo de cierre debe ser positivo."
+                if puerta.evento_cierre_id is not None:
+                    return "La puerta ya tiene un cierre automático pendiente."
         elif accion.tipo in ("RECOGER", "SOLTAR"):
             if estado.inventario is None or sala is None:
                 return "Falta inventario o ubicación del jugador."
@@ -238,7 +336,7 @@ class MotorJuego(MotorJuegoContrato):
                 return "Falta el inventario."
             return ServicioInventario(
                 estado.inventario, self.efectos).validar_uso(estado)
-        elif accion.tipo in ("EQUIPAR", "RETROCEDER"):
+        elif accion.tipo == "EQUIPAR":
             return "Esta acción requiere fichas y reglas aún no especificadas."
         elif accion.tipo != "ESPERAR":
             return "Acción no reconocida."
@@ -250,6 +348,19 @@ class MotorJuego(MotorJuegoContrato):
             return ResultadoAccion(False, error)
         estado = self.estado
         historial = estado.historial
+        if accion.tipo == "RETROCEDER":
+            servicio = ServicioInventario(estado.inventario)
+            consumo = servicio.consumir_pergamino()
+            try:
+                if not historial.deshacer_ultimo(estado):
+                    raise ValueError("No hay un intervalo completo para retroceder.")
+            except Exception:
+                estado.inventario.restaurar_retiro(consumo.retiro_irreversible)
+                consumo.objeto_consumido.ubicacion = "inventario"
+                raise
+            consumo.mensaje = "Último intervalo retrocedido."
+            consumo.notificaciones.append({"tipo": "RETROCESO"})
+            return consumo
         if historial.hay_intervalo_abierto():
             return ResultadoAccion(False, "Hay una acción pendiente de completar.")
         historial.iniciar_intervalo()
@@ -289,23 +400,36 @@ class MotorJuego(MotorJuegoContrato):
             notificaciones.append(self.combate.atacar(jugador, accion.objetivo, estado.azar, estado))
             notificaciones.extend(self.combate.procesar_muerte(accion.objetivo, estado))
         elif accion.tipo == "MOVER":
-            destino = estado.mapa.obtener_sala(sala.obtener_salida(accion.direccion).destino_sala_id)
+            puerta = sala.obtener_salida(accion.direccion)
+            destino = estado.mapa.obtener_sala(puerta.destino_sala_id)
             self._registrar_presencia(sala)
             atributo(estado, jugador, "sala_actual", destino)
             self._registrar_presencia(destino)
             self.activar_enemigos_sala(destino)
             notificaciones.append({"tipo": "CAMBIO_SALA", "sala": destino.id_sala})
             notificaciones.extend(self.activar_trampas_sala(destino, jugador))
+            if jugador.esta_vivo() and self._cumple_salida(puerta, destino):
+                self._declarar_victoria()
+                notificaciones.append({"tipo": "VICTORIA", "sala": destino.id_sala})
         elif accion.tipo == "ABRIR":
             puerta = sala.obtener_salida(accion.direccion)
             atributo(estado, puerta, "abierta", True)
             if puerta.cierre_automatico is not None:
-                self._programar(puerta.cierre_automatico, "CERRAR_PUERTA", puerta.id_puerta, puerta)
+                evento = self._programar(
+                    puerta.cierre_automatico, "CERRAR_PUERTA",
+                    puerta.id_puerta, puerta)
+                atributo(estado, puerta, "evento_cierre_id", evento.id_evento)
+                atributo(estado, puerta, "evento_cierre", evento)
             notificaciones.append({"tipo": "PUERTA_ABIERTA", "puerta": puerta.id_puerta})
         elif accion.tipo == "RECOGER":
-            return ServicioInventario(estado.inventario).recoger(accion.objetivo, sala)
+            reversible = not ServicioInventario.es_pergamino(accion.objetivo)
+            return ServicioInventario(estado.inventario).recoger(
+                accion.objetivo, sala, reversible=reversible)
         elif accion.tipo == "SOLTAR":
-            return ServicioInventario(estado.inventario).soltar(sala)
+            reversible = not ServicioInventario.es_pergamino(
+                estado.inventario.obtener_actual())
+            return ServicioInventario(estado.inventario).soltar(
+                sala, reversible=reversible)
         elif accion.tipo == "USAR":
             return ServicioInventario(
                 estado.inventario, self.efectos).usar(estado)
@@ -346,11 +470,8 @@ class MotorJuego(MotorJuegoContrato):
                 or not any(e is enemigo for e in enemigo.sala_actual.enemigos)):
             return False
         atributo(estado, enemigo, "activo", True)
-        accion_pendiente = False
-        for evento in estado.agenda.recorrer():
-            if evento.tipo == "ENEMIGO" and evento.destinatario_id == enemigo.id_actor:
-                accion_pendiente = True
-                break
+        accion_pendiente = bool(estado.agenda.buscar_por_actor_tipo(
+            enemigo.id_actor, "ENEMIGO"))
         if not accion_pendiente:
             intervalo = calcular_intervalo(costo_base("ESPERAR"),enemigo.velocidad)
             self._programar(intervalo,"ENEMIGO",enemigo.id_actor,enemigo)
@@ -415,6 +536,7 @@ class MotorJuego(MotorJuegoContrato):
         evento = self._programar(
             rearme, "REARMAR_TRAMPA", trampa.id_trampa, trampa)
         atributo(estado, trampa, "evento_rearme_id", evento.id_evento)
+        atributo(estado, trampa, "evento_rearme", evento)
         resultado = [{"tipo": "DAÑO_TRAMPA", "actor": objetivo.id_actor, "daño": daño}]
         resultado.extend(self.combate.procesar_muerte(objetivo, estado))
         return resultado
@@ -437,12 +559,17 @@ class MotorJuego(MotorJuegoContrato):
             return self.activar_trampa(evento.datos.get("trampa"),
                                       evento.datos.get("objetivo"), evento.datos.get("daño"))
         if evento.tipo == "REARMAR_TRAMPA" and isinstance(evento.datos, Trampa):
-            if evento.datos.evento_rearme_id != evento.id_evento:
+            if evento.datos.evento_rearme is not evento:
                 return []
             atributo(self.estado, evento.datos, "armada", True)
             atributo(self.estado, evento.datos, "evento_rearme_id", None)
+            atributo(self.estado, evento.datos, "evento_rearme", None)
         elif evento.tipo == "CERRAR_PUERTA" and isinstance(evento.datos, Puerta):
+            if evento.datos.evento_cierre is not evento:
+                return []
             atributo(self.estado, evento.datos, "abierta", False)
+            atributo(self.estado, evento.datos, "evento_cierre_id", None)
+            atributo(self.estado, evento.datos, "evento_cierre", None)
         else:
             raise ValueError(f"Evento sin despachador válido: {evento.tipo}")
         return []

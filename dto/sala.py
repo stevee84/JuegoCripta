@@ -62,6 +62,10 @@ class Puerta:
     ):
 
         validar_id_sala(destino_sala_id)
+        if not isinstance(id_puerta, str) or not id_puerta:
+            raise TypeError("El ID de puerta debe ser una cadena no vacía.")
+        if not isinstance(direccion, str) or not direccion:
+            raise TypeError("La dirección debe ser una cadena no vacía.")
         self.id_puerta = id_puerta
         self.destino_sala_id = destino_sala_id
         self.destino_sala = None
@@ -72,6 +76,8 @@ class Puerta:
         self.llave_requerida = None
 
         self.cierre_automatico = None
+        self.evento_cierre_id = None
+        self.evento_cierre = None
 
 #----------------------------------------------------------------------------------
 
@@ -86,6 +92,10 @@ class Trampa:
         tipo: str
     ):
 
+        if not isinstance(id_trampa, str) or not id_trampa:
+            raise TypeError("El ID de trampa debe ser una cadena no vacía.")
+        if not isinstance(tipo, str) or not tipo:
+            raise TypeError("El tipo de trampa debe ser una cadena no vacía.")
         self.id_trampa = id_trampa
         self.tipo = tipo
         # Referencia a la ficha ya resuelta del catálogo.
@@ -96,3 +106,4 @@ class Trampa:
         self.tiempo_rearme = 300
         # Evita programar más de un rearme para la misma activación.
         self.evento_rearme_id = None
+        self.evento_rearme = None

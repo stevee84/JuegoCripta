@@ -19,6 +19,11 @@ class EstadoPartida:
         self.mapa = None
         # Identificador que utiliza la cabecera del guardado.
         self.cripta_id = cripta_id
+        self.version_cripta = ""
+        self.version_catalogo = ""
+        self.sala_salida_id = None
+        self.llave_salida_id = None
+        self.exigir_fichas_resueltas = False
 
 
         # Control del tiempo de simulación
@@ -49,6 +54,7 @@ class EstadoPartida:
         # Control del estado general de partida
         self.partida_activa = True
         self.victoria = False
+        self.fin_partida = None
 
 
         # Estadísticas
@@ -68,3 +74,15 @@ class EstadoPartida:
         # El formato actual solo permite inspección, no una reanudación fiel.
         self.reanudable = True
         self.limitaciones_carga = ()
+
+    def datos_resultado(self) -> dict:
+        """Datos estables que consume el registro de resultados del Integrante 3."""
+        return {
+            "jugador": None if self.jugador is None else self.jugador.id_actor,
+            "cripta": self.cripta_id,
+            "version": self.version_cripta,
+            "acciones": self.acciones_ejecutadas,
+            "enemigos_derrotados": self.enemigos_derrotados,
+            "tiempo_final": self.reloj,
+            "resultado": self.fin_partida,
+        }

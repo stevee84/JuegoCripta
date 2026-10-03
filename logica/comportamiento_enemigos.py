@@ -36,7 +36,7 @@ class ComportamientoEnemigos:
 
         comportamiento = enemigo.comportamiento.lower()
 
-        if comportamiento == "guardian":
+        if comportamiento in ("guardian", "guardián"):
             return {"tipo": "ESPERAR"}
 
         if comportamiento == "errante":
