@@ -14,7 +14,9 @@ def main() -> None:
         return
 
     # Seleccionar fuente de datos
-    if config.offline or (config.replay and not config.url_api):
+    if getattr(config, "demo", False):
+        fuente = None
+    elif config.offline or (config.replay and not config.url_api):
         from datos.fuente_offline import FuenteOffline
         fuente = FuenteOffline(ruta_directorio=config.ruta_datos_offline)
     else:
@@ -47,7 +49,17 @@ def main() -> None:
     historial = HistorialReversible()
     controlador = ControladorJuego(motor=motor, vista=vista, fuente=fuente, historial=historial)
     controlador.configurar_arranque(config.semilla if config.semilla is not None else 0, cache)
-    controlador.iniciar()
+    estado = None
+    if getattr(config, "demo", False):
+        from docs.partida_minima import crear_partida_minima
+        estado = crear_partida_minima(config.semilla if config.semilla is not None else 7)
+    try:
+        if estado is None:
+            controlador.iniciar()
+        else:
+            controlador.iniciar(estado)
+    except ValueError as error:
+        vista.mostrar_error(str(error))
 
 
 if __name__ == "__main__":

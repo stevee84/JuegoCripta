@@ -41,17 +41,18 @@ def test_atacar_resuelve_el_id_y_no_ejecuta_dos_veces(controlador):
     enemigo = estado.jugador.sala_actual.enemigos[0]
     resultado = controlador.procesar_comando("Atacar e1")
     assert resultado.exito
-    assert enemigo.vida == 6
-    assert resultado.costo == 1
-    assert estado.reloj == 0
-    assert controlador._historial.esta_vacio()
+    assert enemigo.vida == 2
+    assert resultado.costo == 100
+    assert estado.reloj == 100
+    assert estado.historial is controlador._historial
+    assert controlador._historial.get_cantidad() == 1
     assert controlador._bitacora.obtener_mensajes() == [resultado.mensaje]
 
 
 def test_mover_delega_en_el_motor_real(controlador):
     resultado = controlador.procesar_comando("mover N")
     assert resultado.exito
-    assert controlador._motor.estado.jugador.sala_actual.id_sala == "s2"
+    assert controlador._motor.estado.jugador.sala_actual.id_sala == 2
 
 
 @pytest.mark.parametrize("comando", [
@@ -68,7 +69,7 @@ def test_comandos_invalidos_o_bloqueados_no_mutan_estado(controlador, comando):
 
 
 @pytest.mark.parametrize("abierto", [True, False])
-def test_historial_vigente_no_se_mezcla_con_cambios_descriptivos(controlador, abierto):
+def test_historial_abierto_se_respeta_y_cerrado_se_comparte_con_motor(controlador, abierto):
     estado = controlador._motor.estado
     historial = controlador._historial
     historial.iniciar_intervalo()
@@ -78,9 +79,18 @@ def test_historial_vigente_no_se_mezcla_con_cambios_descriptivos(controlador, ab
         historial.cerrar_intervalo()
     antes = pickle.dumps((estado, historial))
     resultado = controlador.procesar_comando("atacar e1")
-    assert not resultado.exito
-    assert "historial" in resultado.mensaje
-    assert pickle.dumps((estado, historial)) == antes
+    assert estado.historial is historial
+    if abierto:
+        assert not resultado.exito
+        assert "pendiente" in resultado.mensaje
+        assert pickle.dumps((estado, historial)) == antes
+    else:
+        assert resultado.exito
+        assert historial.get_cantidad() == 2
+        assert historial.deshacer_ultimo(estado)
+        assert estado.jugador.vida == 29 and estado.reloj == 0
+        assert historial.deshacer_ultimo(estado)
+        assert estado.jugador.vida == 30
 
 
 def test_seleccion_de_cripta_bloqueada_no_reemplaza_estado(controlador):
@@ -102,7 +112,7 @@ def test_guardado_exporta_binario_real_sin_anunciar_restauracion_completa(contro
     datos = GuardadoBinario().cargar(str(tmp_path / "partida.dat"))
     assert isinstance(datos, dict)
     assert datos["cripta_id"] == "c1"
-    assert datos["jugador"]["sala_actual_id"] == "s1"
+    assert datos["jugador"]["sala_actual_id"] == 1
     assert pickle.dumps(controlador._motor.estado) == antes
 
 
@@ -153,8 +163,8 @@ def test_loop_con_vista_real_sale_sin_cambiar_el_estado_de_partida(controlador, 
     assert len(llamadas) == 3
     assert not controlador._en_ejecucion
     assert controlador._motor.estado.partida_activa
-    assert controlador._motor.estado.jugador.sala_actual.enemigos[0].vida == 6
-    assert "Modo parcial" in capsys.readouterr().out
+    assert controlador._motor.estado.jugador.sala_actual.enemigos[0].vida == 2
+    assert "Guardado parcial, no reanudable" in capsys.readouterr().out
 
 
 def test_fin_de_entrada_no_simula_derrota_ni_victoria(controlador, monkeypatch):
@@ -215,12 +225,14 @@ def test_guardar_no_puede_sobrescribir_el_log_activo(controlador, tmp_path):
     assert pickle.dumps(controlador._motor.estado) == estado
 
 
-def test_controlador_usa_identificadores_enteros_reales(controlador):
+def test_controlador_rechaza_id_de_actor_entero_incompatible_con_agenda(controlador):
     enemigo = controlador._motor.estado.jugador.sala_actual.enemigos[0]
     enemigo.id_actor = 17
+    antes = pickle.dumps(controlador._motor.estado)
     resultado = controlador.procesar_comando("atacar 17")
-    assert resultado.exito
-    assert enemigo.vida == 6
+    assert not resultado.exito
+    assert enemigo.vida == 12
+    assert pickle.dumps(controlador._motor.estado) == antes
 
 
 @pytest.mark.parametrize("comando", ["registro", "registro log1 log2"])

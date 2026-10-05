@@ -14,7 +14,7 @@ from logica.servicio_inventario import ServicioInventario
 
 def preparar(orden=(), capacidad=10):
     inventario = Inventario(capacidad)
-    sala = Sala("s1")
+    sala = Sala(1)
     servicio = ServicioInventario(inventario)
     # IDs opacos y la misma ficha: la reversibilidad no depende del ID.
     objetos = {nombre: ObjetoInstancia(nombre, "ficha") for nombre in orden}
@@ -302,7 +302,7 @@ def test_quitar_y_mover_actual_tienen_accesos_constantes_a_nodos():
     conteos = []
     original = NodoDoble.__getattribute__
     for cantidad in (3, 300):
-        inventario, _, _, _ = preparar(range(cantidad), capacidad=cantidad)
+        inventario, _, _, _ = preparar([str(i) for i in range(cantidad)], capacidad=cantidad)
         inventario.siguiente()
         nodo = inventario._cursor
         accesos = []

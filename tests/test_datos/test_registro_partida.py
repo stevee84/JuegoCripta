@@ -48,8 +48,8 @@ def test_crear_no_sobrescribe_una_partida_existente(tmp_path):
 @pytest.mark.parametrize("objetivo, identificador", [
     (ObjetoInstancia("o1", "ficha"), "o1"),
     (Enemigo("e1", "Guardián", 20, 3, 1, 100), "e1"),
-    (Sala("s1"), "s1"),
-    (Puerta("p1", "s2", "E"), "p1"),
+    (Sala(1), 1),
+    (Puerta("p1", 2, "E"), "p1"),
     (Trampa("t1", "veneno"), "t1"),
     ("id-directo", "id-directo"),
     (12, 12),

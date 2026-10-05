@@ -60,11 +60,12 @@ def test_replay_determinista_de_primitivas_con_fabrica_y_motor_reales(contexto, 
     assert pickle.dumps(servicio.obtener_estado()) == primero
     estado = servicio.obtener_estado()
     assert estado.semilla == 91
-    assert estado.azar.getstate() == random.Random(91).getstate()
-    assert estado.jugador.sala_actual.id_sala == "s2"
-    assert estado.mapa.obtener_sala("s1").enemigos[0].vida == 0
+    assert estado.azar.getstate() != random.Random(91).getstate()
+    assert estado.jugador.sala_actual.id_sala == 2
+    assert estado.mapa.obtener_sala(1).enemigos[0].vida == 0
     assert estado.enemigos_derrotados == 1
-    assert estado.reloj == 0  # No prueba una simulación temporal integrada.
+    assert estado.reloj == 300
+    assert estado.acciones_ejecutadas == estado.historial.get_cantidad() == 3
     assert len(llamadas) == 2
     assert ruta.read_bytes() == original
     assert puntajes.read_bytes() == b"resultados previos\n"
@@ -183,6 +184,7 @@ def test_accion_imposible_reporta_linea_y_no_muta_la_partida_inicial(contexto, a
     # la acción imposible no realizó cambios parciales.
     esperado.semilla = 91
     esperado.azar = random.Random(91)
+    esperado.inventario = Inventario(3)
     assert pickle.dumps(servicio.obtener_estado()) == pickle.dumps(esperado)
 
 
@@ -278,7 +280,7 @@ def test_consola_registra_y_replay_reproduce_el_mismo_log_real(contexto, monkeyp
         assert archivo.read() == original
 
 
-def test_replay_respeta_id_json_entero_sin_convertirlo_a_texto(contexto):
+def test_replay_rechaza_id_json_entero_sin_convertirlo_a_texto(contexto):
     servicio, ruta, registro, llamadas = contexto
 
     def fabrica(cripta, semilla, fuente, cache):
@@ -290,11 +292,11 @@ def test_replay_respeta_id_json_entero_sin_convertirlo_a_texto(contexto):
     registro.anexar_accion(str(ruta), Accion("ATACAR", 7))
     replay = EjecutorReplay()
     replay.conectar_servicio(servicio)
-    replay.reproducir(str(ruta))
-    enemigo = servicio.obtener_estado().jugador.sala_actual.enemigos[0]
-    assert enemigo.id_actor == 7
-    assert type(enemigo.id_actor) is int
-    assert enemigo.vida == 6
+    antes = pickle.dumps(servicio.obtener_estado())
+    with pytest.raises(ValueError, match="Línea 2: registro inválido"):
+        replay.reproducir(str(ruta))
+    assert llamadas == []
+    assert pickle.dumps(servicio.obtener_estado()) == antes
 
 
 def test_eventos_pendientes_no_se_ignoran_en_el_replay(contexto):
@@ -317,11 +319,14 @@ def test_eventos_pendientes_no_se_ignoran_en_el_replay(contexto):
     replay = EjecutorReplay()
     replay.conectar_servicio(servicio)
     contenido = ruta.read_bytes()
-    with pytest.raises(ValueError, match="Línea 2: acción imposible: Hay eventos pendientes"):
-        replay.reproducir(str(ruta))
+    replay.reproducir(str(ruta))
     estado = servicio.obtener_estado()
+    assert estado.reloj == 100
+    assert estado.jugador.sala_actual.enemigos[0].vida == 6
+    assert estado.agenda.buscar(eventos[0].id_evento) is None
+    assert estado.historial.get_cantidad() == 1
+    assert estado.historial.deshacer_ultimo(estado)
     assert estado.reloj == 0
     assert estado.jugador.sala_actual.enemigos[0].vida == 12
-    assert estado.agenda.extraer_siguiente() is eventos[0]
-    assert not estado.agenda.tiene_eventos()
+    assert estado.agenda.buscar(eventos[0].id_evento) is eventos[0]
     assert ruta.read_bytes() == contenido

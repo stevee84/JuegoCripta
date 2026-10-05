@@ -35,7 +35,7 @@ class Inventario:
     Así se pueden ordenar las referencias a los objetos sin
     modificar el orden real del inventario.
     """
-    
+
     def __init__(self, capacidad: int, lista_doble=None):
         if type(capacidad) is not int or capacidad < 0:
             raise ValueError("La capacidad debe ser un entero no negativo.")

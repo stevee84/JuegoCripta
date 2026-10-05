@@ -18,7 +18,7 @@ from logica.cache_catalogo import CacheCatalogo
 def contexto():
     estado = EstadoPartida(semilla=123)
     estado.jugador = Jugador("j", "Jugador", 20, 5, 3, 100)
-    estado.jugador.sala_actual = Sala("s")
+    estado.jugador.sala_actual = Sala(1)
     inventario = Inventario(10)
     historial = HistorialReversible()
     fichas = {
@@ -149,7 +149,7 @@ def test_pocion_cura_hasta_maximo_y_recupera_mismo_nodo(contexto):
 
 def test_llave_abre_puerta_no_se_consume_y_se_revierte(contexto):
     estado, inv, historial, servicio, _ = contexto
-    puerta = Puerta("p", "otra", "N")
+    puerta = Puerta("p", 2, "N")
     estado.jugador.sala_actual.puertas.append(puerta)
     llave = agregar(inv, "f6")
     nodo = inv._cursor
@@ -169,7 +169,7 @@ def test_dos_pergaminos_consumen_dos_instancias_y_deshacen_dos_acciones(contexto
     registrar(historial, servicio.usar(estado))
     for id_instancia in ("scroll1", "scroll2"):
         scroll = ObjetoInstancia(id_instancia, "f5")
-        scroll.ubicacion = "s"
+        scroll.ubicacion = 1
         estado.jugador.sala_actual.objetos.append(scroll)
         resultado = servicio.recoger(scroll, estado.jugador.sala_actual)
         assert resultado.exito and resultado.cambios == []
@@ -242,11 +242,11 @@ def test_referencias_protegidas_incluyen_objetos_del_historial(contexto):
 
 
 @pytest.mark.parametrize("ficha, dependencia", [
-    ({"clase": "pocion", "modificador_velocidad": 30, "duracion": 100}, "secuencia nueva"),
-    ({"clase": "antidoto"}, "eventos por efecto"),
-    ({"clase": "antorcha", "duracion": 100}, "apagado programado"),
+    ({"clase": "pocion", "modificador_velocidad": 30, "duracion": 100}, "gestor de efectos"),
+    ({"clase": "antidoto"}, "gestor de efectos"),
+    ({"clase": "antorcha", "duracion": 100}, "gestor de efectos"),
 ])
-def test_consumible_no_soportado_no_se_consume_ni_altera_agenda(contexto, ficha, dependencia):
+def test_consumible_temporal_sin_gestor_no_se_consume_ni_altera_agenda(contexto, ficha, dependencia):
     from dto.evento import Evento
     from logica.agenda_eventos import AgendaEventos
 
@@ -279,7 +279,7 @@ def test_recoger_inventario_lleno_no_prepara_marcas_de_suelo(contexto):
 def test_historial_rechaza_diccionarios_descriptivos_sin_guardarlos(contexto):
     estado, inv, historial, servicio, _ = contexto
     historial.iniciar_intervalo()
-    with pytest.raises(ValueError, match="descripción"):
+    with pytest.raises(TypeError, match="descripción"):
         historial.registrar({"tipo": "CAMBIO_SALA", "sala": "otra"})
     historial.descartar_intervalo()
     assert historial.esta_vacio() and not historial.hay_intervalo_abierto()

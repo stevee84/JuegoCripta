@@ -20,9 +20,9 @@ def preparar_estado(semilla=17):
     estado = EstadoPartida(semilla=semilla, cripta_id="c1")
     estado.jugador = Jugador("j1", "Jugador", 30, 7, 2, 100)
     estado.mapa = MapaCripta()
-    sala = Sala("s1")
-    destino = Sala("s2")
-    puerta = Puerta("p1", "s2", "N")
+    sala = Sala(1)
+    destino = Sala(2)
+    puerta = Puerta("p1", 2, "N")
     puerta.abierta = True
     sala.puertas.append(puerta)
     enemigo = Enemigo("e1", "Guardián", 12, 3, 1, 80)
@@ -41,7 +41,7 @@ def preparar_motor():
     return motor
 
 
-def test_delega_una_vez_y_conserva_resultado_real_sin_simular_tiempo(monkeypatch):
+def test_delega_una_vez_y_el_motor_administra_el_tiempo(monkeypatch):
     motor = preparar_motor()
     servicio = JuegoService(motor=motor)
     accion = servicio.resolver_accion("atacar", "e1")
@@ -53,20 +53,27 @@ def test_delega_una_vez_y_conserva_resultado_real_sin_simular_tiempo(monkeypatch
         llamadas.append((actual, resultado))
         return resultado
 
-    def no_avanzar():
-        raise AssertionError("La agenda actual no delimita intervalos")
+    avanzar_original = motor.avanzar_hasta_decision
+    avances = []
+
+    def avanzar():
+        avances.append(True)
+        return avanzar_original()
 
     monkeypatch.setattr(motor, "ejecutar_accion", ejecutar)
-    monkeypatch.setattr(motor, "avanzar_hasta_decision", no_avanzar)
+    monkeypatch.setattr(motor, "avanzar_hasta_decision", avanzar)
     resultado = servicio.ejecutar_accion(accion)
     assert len(llamadas) == 1
     assert llamadas[0][0] is accion
     assert resultado is llamadas[0][1]
     assert resultado.exito
-    assert resultado.costo == 1  # Costo real actual, no el costo 100 del PDF.
-    assert accion.objetivo.vida == 6
-    assert motor.estado.reloj == 0
-    assert motor.estado.acciones_ejecutadas == 0  # No se inventa un contador.
+    assert resultado.costo == 100
+    assert accion.objetivo.vida == 2  # Daño 10 con semilla 17.
+    assert avances == [True]
+    assert motor.estado.reloj == 100
+    assert motor.estado.acciones_ejecutadas == 1
+    assert motor.estado.historial.get_cantidad() == 1
+    assert not motor.estado.historial.hay_intervalo_abierto()
 
 
 def test_movimiento_usa_mapa_y_puerta_reales():
@@ -74,7 +81,7 @@ def test_movimiento_usa_mapa_y_puerta_reales():
     servicio = JuegoService(motor=motor)
     resultado = servicio.ejecutar_accion(servicio.resolver_accion("MOVER", direccion="N"))
     assert resultado.exito
-    assert motor.estado.jugador.sala_actual is motor.estado.mapa.obtener_sala("s2")
+    assert motor.estado.jugador.sala_actual is motor.estado.mapa.obtener_sala(2)
 
 
 @pytest.mark.parametrize("accion", [
@@ -97,7 +104,7 @@ def test_rechazos_no_modifican_estado_ni_azar(accion):
 
 def test_destino_inexistente_se_rechaza_antes_de_la_mutacion_del_motor():
     motor = preparar_motor()
-    motor.estado.jugador.sala_actual.puertas[0].destino_sala_id = "ausente"
+    motor.estado.jugador.sala_actual.puertas[0].destino_sala_id = 999
     antes = pickle.dumps(motor.estado)
     resultado = JuegoService(motor=motor).ejecutar_accion(Accion("MOVER", direccion="N"))
     assert not resultado.exito
@@ -217,7 +224,7 @@ def test_fabrica_invalida_no_publica_un_contexto_parcial(tmp_path, defecto):
         elif defecto == "cripta":
             estado.cripta_id = "otra"
         elif defecto == "ubicacion":
-            estado.jugador.sala_actual = Sala("ausente")
+            estado.jugador.sala_actual = Sala(999)
         else:
             version.write_text("v2", encoding="utf-8")
         return estado, Inventario(3)
@@ -231,14 +238,15 @@ def test_fabrica_invalida_no_publica_un_contexto_parcial(tmp_path, defecto):
     assert servicio._versiones is None
 
 
-def test_agenda_pendiente_bloquea_primitivas_sin_perder_ni_duplicar_eventos():
+def test_agenda_pendiente_se_procesa_y_se_restaura_al_deshacer():
     motor = preparar_motor()
     evento = Evento("ev1", 10, 0, "EFECTO", "j1")
     motor.estado.agenda.programar(evento)
-    antes = pickle.dumps(motor.estado)
+    pendientes = [(e, e.tiempo, e.secuencia) for e in motor.estado.agenda.recorrer()]
     resultado = JuegoService(motor=motor).ejecutar_accion(Accion("MOVER", direccion="N"))
-    assert not resultado.exito
-    assert "eventos pendientes" in resultado.mensaje
-    assert pickle.dumps(motor.estado) == antes
-    assert motor.estado.agenda.extraer_siguiente() is evento
-    assert not motor.estado.agenda.tiene_eventos()
+    assert resultado.exito
+    assert motor.estado.reloj == 100
+    assert motor.estado.agenda.buscar("ev1") is None
+    assert motor.estado.historial.deshacer_ultimo(motor.estado)
+    assert motor.estado.reloj == 0
+    assert [(e, e.tiempo, e.secuencia) for e in motor.estado.agenda.recorrer()] == pendientes

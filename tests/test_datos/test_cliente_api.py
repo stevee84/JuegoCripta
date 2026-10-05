@@ -41,11 +41,11 @@ class TestRespuesta200:
 
     @patch("datos.cliente_api.requests.request")
     def test_post_contenido(self, mock_req, cliente):
-        mock_req.return_value = _mock_response(200, {"s1": {}})
-        resultado = cliente.obtener_contenido("c1", ["s1"])
-        assert resultado == {"s1": {}}
+        mock_req.return_value = _mock_response(200, {1: {}})
+        resultado = cliente.obtener_contenido("c1", [1])
+        assert resultado == {1: {}}
         _, kwargs = mock_req.call_args
-        assert kwargs["json"] == {"sala_ids": ["s1"]}
+        assert kwargs["json"] == {"sala_ids": [1]}
 
 
 class TestError429:

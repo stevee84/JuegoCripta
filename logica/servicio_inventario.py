@@ -66,10 +66,12 @@ class ServicioInventario:
     Sin contexto conserva las llamadas de recoger/soltar ya utilizadas.
     El historial de turnos completos debe cerrarlo el motor/coordinador;
     este servicio entrega cambios, pero nunca avanza reloj ni agenda.
+    Los efectos temporales se delegan al gestor conectado por el motor.
     """
 
-    def __init__(self, inventario):
+    def __init__(self, inventario, gestor_efectos=None):
         self._inventario = inventario
+        self._efectos = gestor_efectos
         self._jugador = None
         self._catalogo = None
         self._historial = None
@@ -92,8 +94,10 @@ class ServicioInventario:
 
     def _ficha(self, objeto):
         if self._catalogo is None:
-            raise ValueError("No hay un catálogo conectado.")
-        if isinstance(self._catalogo, dict):
+            ficha = getattr(objeto, "ficha", None)
+            if not isinstance(ficha, dict) or ficha.get("id") != objeto.tipo_ficha_id:
+                raise ValueError("No hay un catálogo conectado ni una ficha resuelta.")
+        elif isinstance(self._catalogo, dict):
             ficha = self._catalogo.get(objeto.tipo_ficha_id)
         elif callable(self._catalogo):
             ficha = self._catalogo(objeto.tipo_ficha_id)
@@ -105,7 +109,7 @@ class ServicioInventario:
 
     def _es_reversible(self, objeto, solicitado):
         if self._catalogo is None:
-            return solicitado
+            return solicitado and not self.es_pergamino(objeto)
         return solicitado and self._adaptador.categoria(self._ficha(objeto)) != "pergamino_retroceso"
 
     def obtener_equipo(self):
@@ -129,6 +133,40 @@ class ServicioInventario:
         for ficha_id in ids:
             self._cache.fijar(ficha_id)
         self._fijadas = ids
+
+    @staticmethod
+    def es_pergamino(objeto):
+        ficha = getattr(objeto, "ficha", None)
+        return (isinstance(ficha, dict)
+                and ficha.get("id") == getattr(objeto, "tipo_ficha_id", None)
+                and ficha.get("clase") == "pergamino_retroceso")
+
+    def validar_pergamino(self):
+        objeto = None if self._inventario is None else self._inventario.obtener_actual()
+        if objeto is None:
+            return "No hay un pergamino seleccionado."
+        if objeto.ubicacion != "inventario" or not self.es_pergamino(objeto):
+            return "El objeto seleccionado no es un pergamino de retroceso."
+        return None
+
+    def consumir_pergamino(self):
+        error = self.validar_pergamino()
+        if error:
+            return ResultadoAccion(False, error)
+        if self._historial is not None:
+            self._historial.validar_deshacer(self._inventario, espacios=1)
+        objeto = self._inventario.obtener_actual()
+        retiro = self._inventario.retirar_actual_con_registro()
+        objeto.ubicacion = "consumido"
+        # El retiro se devuelve solo para recuperar ante un fallo inesperado;
+        # nunca se incorpora al historial reversible.
+        resultado = ResultadoAccion(
+            True, "Pergamino consumido.", costo=0,
+            notificaciones=[{"tipo": "PERGAMINO_CONSUMIDO",
+                             "objeto": objeto.id_instancia}])
+        resultado.retiro_irreversible = retiro
+        resultado.objeto_consumido = objeto
+        return resultado
 
     def recoger(self, objeto, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
@@ -257,7 +295,75 @@ class ServicioInventario:
             self._inventario.mover_actual_al_frente()
         return ResultadoAccion(True, "Objeto equipado.", cambios, COSTO_EQUIPAR)
 
+    def validar_uso(self, estado):
+        if estado is None or estado.jugador is None:
+            return "Se requiere un jugador."
+        if self._jugador is not None and estado.jugador is not self._jugador:
+            return "El estado pertenece a otro jugador."
+        if self._inventario is None:
+            return "Falta el inventario."
+        objeto = self._inventario.obtener_actual()
+        if objeto is None:
+            return "No hay un objeto seleccionado."
+        if objeto.ubicacion != "inventario":
+            return "El objeto seleccionado no está disponible en el inventario."
+        try:
+            ficha = self._ficha(objeto)
+            clase = self._adaptador.categoria(ficha)
+            if clase == "pocion" and "modificador_velocidad" not in ficha:
+                self._adaptador.numero(ficha, "curacion")
+                return None
+            if clase == "llave":
+                self._adaptador.obtener(ficha, "abre")
+                return None
+            if clase == "pergamino_retroceso":
+                if self._historial is None:
+                    return "No hay historial conectado."
+                self._historial.validar_deshacer(self._inventario, espacios=1)
+                return None
+        except (ValueError, TypeError) as error:
+            return str(error)
+        if self._efectos is None:
+            return "Falta el gestor de efectos."
+        if clase == "antidoto":
+            if not any(
+                    efecto.get("tipo") == "VENENO"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "El jugador no tiene veneno activo."
+            return None
+        if clase == "antorcha":
+            duracion = ficha.get("duracion")
+            if type(duracion) is not int or duracion <= 0:
+                return "La duración de la antorcha debe ser positiva."
+            if any(
+                    efecto.get("tipo") == "ANTORCHA"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "Ya hay una antorcha encendida."
+            return None
+        if clase == "pocion" and "modificador_velocidad" in ficha:
+            modificador = ficha.get("modificador_velocidad")
+            duracion = ficha.get("duracion")
+            if type(modificador) is not int or modificador == 0:
+                return "El modificador de velocidad debe ser un entero no nulo."
+            if type(duracion) is not int or duracion <= 0:
+                return "La duración del cambio de velocidad debe ser positiva."
+            if type(estado.jugador.velocidad) is not int \
+                    or estado.jugador.velocidad + modificador <= 0:
+                return "La velocidad resultante debe ser positiva."
+            if any(
+                    efecto.get("tipo") == "VELOCIDAD"
+                    and efecto.get("objetivo") is estado.jugador
+                    for efecto in estado.efectos_activos):
+                return "El jugador ya tiene un efecto de velocidad activo."
+            return None
+        return "El objeto seleccionado no tiene un uso implementado en esta parte."
+
     def usar(self, estado) -> ResultadoAccion:
+        error = self.validar_uso(estado)
+        if error:
+            return ResultadoAccion(False, error)
         objeto = self._inventario.obtener_actual()
         if objeto is None or estado is None or estado.jugador is None:
             return ResultadoAccion(False, "Se requieren objeto seleccionado y jugador.")
@@ -268,7 +374,7 @@ class ServicioInventario:
             clase = self._adaptador.categoria(ficha)
             if clase == "pocion":
                 if "modificador_velocidad" in ficha:
-                    return ResultadoAccion(False, "Velocidad bloqueada: faltan efecto temporal y reprogramación con secuencia nueva.")
+                    return self._usar_temporal(estado)
                 curacion = self._adaptador.numero(ficha, "curacion")
                 cambio_vida = CambioVida(estado.jugador)
                 retiro = self._inventario.retirar_actual_con_registro()
@@ -283,6 +389,10 @@ class ServicioInventario:
                 if len(puertas) != 1:
                     return ResultadoAccion(False, "La llave no identifica una única puerta de la sala.")
                 puerta = puertas[0]
+                if puerta.llave_requerida is not None and puerta.llave_requerida != objeto.tipo_ficha_id:
+                    return ResultadoAccion(False, "La llave no es compatible con esta puerta.")
+                if puerta.cierre_automatico is not None:
+                    return ResultadoAccion(False, "La puerta tiene cierre automático; utiliza ABRIR DIRECCION.")
                 if puerta.abierta:
                     return ResultadoAccion(False, "La puerta ya está abierta.")
                 cambio = CambioPuerta(puerta)
@@ -301,9 +411,9 @@ class ServicioInventario:
                 objeto.ubicacion = "consumido"
                 return ResultadoAccion(True, "Pergamino consumido; última acción deshecha.", [], 0)
             if clase == "antidoto":
-                return ResultadoAccion(False, "Antídoto bloqueado: falta consultar/cancelar eventos por efecto sin cancelar otros eventos del actor.")
+                return self._usar_temporal(estado)
             if clase == "antorcha":
-                return ResultadoAccion(False, "Antorcha bloqueada: GestorEfectos no implementa encendido ni apagado programado.")
+                return self._usar_temporal(estado)
             return ResultadoAccion(False, "El objeto no se puede usar.")
         except (ValueError, TypeError) as error:
             return ResultadoAccion(False, str(error))
@@ -357,3 +467,32 @@ class ServicioInventario:
             "historial": self._historial.exportar_representacion() if self._historial else None,
             "historial_restaurable": False,
         }
+
+    def _usar_temporal(self, estado):
+        objeto = self._inventario.obtener_actual()
+        ficha = self._ficha(objeto)
+        clase = self._adaptador.categoria(ficha)
+        notificaciones = []
+        if clase == "antidoto":
+            cancelados = self._efectos.cancelar_venenos(estado.jugador, estado)
+            notificaciones.append({
+                "tipo": "ANTIDOTO_USADO",
+                "efectos_cancelados": len(cancelados),
+            })
+        elif clase == "antorcha":
+            notificaciones.extend(self._efectos.aplicar_antorcha(
+                f"antorcha:{objeto.id_instancia}", estado.jugador,
+                ficha["duracion"], estado))
+        else:
+            velocidad_final = (
+                estado.jugador.velocidad + ficha["modificador_velocidad"])
+            notificaciones.extend(self._efectos.aplicar_velocidad(
+                f"velocidad:{objeto.id_instancia}", estado.jugador,
+                velocidad_final, ficha["duracion"], estado))
+
+        retiro = self._inventario.retirar_actual_con_registro()
+        cambio = CambioConsumirObjeto(retiro, objeto)
+        objeto.ubicacion = "consumido"
+        return ResultadoAccion(
+            True, "Objeto usado.", cambios=[cambio], costo=COSTO_USAR,
+            notificaciones=notificaciones)

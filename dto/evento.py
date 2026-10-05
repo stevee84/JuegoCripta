@@ -26,14 +26,14 @@ class Evento:
         datos=None
     ):
 
-        if tiempo < 0:
+        if type(tiempo) is not int or tiempo < 0:
             raise ValueError(
-                "El tiempo del evento no puede ser negativo"
+                "El tiempo del evento debe ser un entero no negativo"
             )
 
-        if secuencia < 0:
+        if type(secuencia) is not int or secuencia < 0:
             raise ValueError(
-                "La secuencia no puede ser negativa"
+                "La secuencia debe ser un entero no negativo"
             )
 
 
@@ -54,6 +54,8 @@ class Evento:
         # }
         #
         self.datos = datos
+        # Posición actual en el montículo; no forma parte de la prioridad.
+        self._indice_monticulo = None
 
 
 

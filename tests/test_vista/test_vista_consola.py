@@ -37,11 +37,11 @@ def test_muestra_atributos_reales_sin_mutar_estado(capsys):
     estado.enemigos_derrotados = 2
     estado.jugador = Jugador("j1", "José", 30, 6, 2, 100)
     estado.jugador.vida = 20
-    sala = Sala("s1")
+    sala = Sala(1)
     estado.jugador.sala_actual = sala
-    abierta = Puerta("p1", "s2", "N")
+    abierta = Puerta("p1", 2, "N")
     abierta.abierta = True
-    sala.puertas.extend([abierta, Puerta("p2", "s3", "E")])
+    sala.puertas.extend([abierta, Puerta("p2", 3, "E")])
     sala.enemigos.append(Enemigo("e1", "Guardián", 15, 3, 1, 80))
     sala.objetos.append(ObjetoInstancia("o1", "ficha1"))
     sala.trampas.append(Trampa("t1", "veneno"))
@@ -52,8 +52,8 @@ def test_muestra_atributos_reales_sin_mutar_estado(capsys):
     for esperado in (
         "Cripta: c1", "Tiempo virtual: 125", "Acciones ejecutadas: 3",
         "Enemigos derrotados: 2", "Vida: 20/30", "Ataque: 6", "defensa: 2",
-        "velocidad: 100", "Sala: s1", "p1: N -> s2 (abierta)",
-        "p2: E -> s3 (cerrada)", "Guardián (e1)", "o1 (ficha1)",
+        "velocidad: 100", "Sala: 1", "p1: N -> 2 (abierta)",
+        "p2: E -> 3 (cerrada)", "Guardián (e1)", "o1 (ficha1)",
         "t1 (veneno), armada",
     ):
         assert esperado in texto
@@ -64,7 +64,7 @@ def test_muestra_atributos_reales_sin_mutar_estado(capsys):
 def test_sala_vacia_y_estado_none(capsys):
     estado = EstadoPartida()
     estado.jugador = Jugador("j1", "Jugador", 10, 1, 1, 100)
-    estado.jugador.sala_actual = Sala("s1")
+    estado.jugador.sala_actual = Sala(1)
     VistaConsola().mostrar_estado(estado)
     texto = capsys.readouterr().out
     assert "Puertas: ninguna" in texto

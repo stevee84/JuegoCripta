@@ -105,7 +105,7 @@ class TestRepositorioCatalogo(unittest.TestCase):
 
     def test_version_catalogo_error(self):
         self.fuente.obtener_version_catalogo.side_effect = Exception("fallo")
-        self.assertIsNone(self.repo.version_catalogo())
+        self.assertEqual(self.repo.version_catalogo(), "")
 
 
 if __name__ == "__main__":

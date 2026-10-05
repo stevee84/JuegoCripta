@@ -20,10 +20,10 @@ class _FakeEstado:
 
 def _hacer_estado():
     j = Jugador("jugador1", "Heroe", 100, 15, 10, 5)
-    j.sala_actual = "sala_inicio"
+    j.sala_actual = 1
 
-    s1 = Sala("sala_inicio")
-    p = Puerta("puerta1", "sala_boss", "NORTE")
+    s1 = Sala(1)
+    p = Puerta("puerta1", 2, "NORTE")
     p.abierta = True
     s1.puertas.append(p)
     e = Enemigo("enemigo1", "Goblin", 30, 8, 3, 4, "patrulla")
@@ -34,9 +34,9 @@ def _hacer_estado():
     t.tiempo_rearme = 200
     s1.trampas.append(t)
 
-    s2 = Sala("sala_boss")
+    s2 = Sala(2)
 
-    salas = {"sala_inicio": s1, "sala_boss": s2}
+    salas = {1: s1, 2: s2}
     return _FakeEstado("cripta_abc", 42, 1500, j, salas)
 
 
@@ -61,12 +61,12 @@ class TestGuardadoBinario:
         assert jug["ataque"] == 15
         assert jug["defensa"] == 10
         assert jug["velocidad"] == 5
-        assert jug["sala_actual_id"] == "sala_inicio"
+        assert jug["sala_actual_id"] == 1
 
-        assert "sala_inicio" in resultado["salas"]
-        sala = resultado["salas"]["sala_inicio"]
+        assert 1 in resultado["salas"]
+        sala = resultado["salas"][1]
         assert len(sala["puertas"]) == 1
-        assert sala["puertas"][0]["destino_sala_id"] == "sala_boss"
+        assert sala["puertas"][0]["destino_sala_id"] == 2
         assert sala["puertas"][0]["abierta"] is True
         assert len(sala["enemigos"]) == 1
         assert sala["enemigos"][0]["nombre"] == "Goblin"
@@ -80,12 +80,12 @@ class TestGuardadoBinario:
         ruta = str(tmp_path / "save.bin")
         gb.guardar(ruta, _hacer_estado())
 
-        sala = gb.leer_sala(ruta, "sala_inicio")
+        sala = gb.leer_sala(ruta, 1)
         assert sala is not None
-        assert sala["id_sala"] == "sala_inicio"
+        assert sala["id_sala"] == 1
         assert len(sala["puertas"]) == 1
 
-        assert gb.leer_sala(ruta, "no_existe") is None
+        assert gb.leer_sala(ruta, 999) is None
 
     def test_corrupt_magic(self, tmp_path):
         gb = GuardadoBinario()
@@ -104,7 +104,7 @@ class TestGuardadoBinario:
         resultado = gb.cargar(ruta)
         assert resultado is not None
         assert len(resultado["salas"]) == 0
-        assert resultado["jugador"]["sala_actual_id"] == ""
+        assert resultado["jugador"]["sala_actual_id"] is None
 
     def test_multiple_rooms(self, tmp_path):
         gb = GuardadoBinario()
@@ -112,7 +112,7 @@ class TestGuardadoBinario:
         j.sala_actual = None
         salas = {}
         for i in range(5):
-            s = Sala(f"sala_{i}")
+            s = Sala(i)
             if i % 2 == 0:
                 s.trampas.append(Trampa(f"t_{i}", "fuego"))
             if i < 3:
@@ -125,11 +125,11 @@ class TestGuardadoBinario:
         gb.guardar(ruta, estado)
         resultado = gb.cargar(ruta)
         assert len(resultado["salas"]) == 5
-        assert len(resultado["salas"]["sala_0"]["trampas"]) == 1
-        assert len(resultado["salas"]["sala_1"]["trampas"]) == 0
-        assert len(resultado["salas"]["sala_2"]["enemigos"]) == 1
+        assert len(resultado["salas"][0]["trampas"]) == 1
+        assert len(resultado["salas"][1]["trampas"]) == 0
+        assert len(resultado["salas"][2]["enemigos"]) == 1
 
     def test_file_not_found(self):
         gb = GuardadoBinario()
         assert gb.cargar("no_existe.bin") is None
-        assert gb.leer_sala("no_existe.bin", "x") is None
+        assert gb.leer_sala("no_existe.bin", 1) is None

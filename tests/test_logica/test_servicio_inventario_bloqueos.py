@@ -34,7 +34,7 @@ def test_soltar_equipo_no_aplica_una_retirada_parcial():
     objeto = ObjetoInstancia("opaco", "ficha-opaca")
     objeto.ubicacion = "equipado"
     inventario.agregar(objeto)
-    sala = Sala("s1")
+    sala = Sala(1)
     antes = pickle.dumps((inventario, sala))
     resultado = ServicioInventario(inventario).soltar(sala)
     assert not resultado.exito

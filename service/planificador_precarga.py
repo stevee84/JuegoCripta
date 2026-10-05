@@ -1,3 +1,6 @@
+from dto.sala import validar_id_sala
+
+
 class PlanificadorPrecarga:
     """Integrante 2. Lotes de hasta 10 salas/IDs, estados pendiente/disponible/fallido."""
 
@@ -5,18 +8,16 @@ class PlanificadorPrecarga:
         self._repositorio = repositorio
         self._mapa = mapa
         self._presupuesto = presupuesto
-        # Arreglos de IDs con búsqueda lineal: evitan índices hash.
-        # Son suficientes para los lotes pequeños de precarga.
         self._cargadas = []
 
-    def _vecinos(self, sala_id: str) -> list:
+    def _vecinos(self, sala_id: int) -> list:
         """Obtiene IDs de salas adyacentes via puertas."""
         sala = self._mapa.obtener_sala(sala_id)
         if sala is None:
             return []
         return [p.destino_sala_id for p in sala.puertas]
 
-    def _bfs(self, sala_id: str, profundidad: int) -> list:
+    def _bfs(self, sala_id: int, profundidad: int) -> list:
         """BFS hasta cierta profundidad, retorna IDs encontrados."""
         visitados = [sala_id]
         frontera = [sala_id]
@@ -34,11 +35,12 @@ class PlanificadorPrecarga:
                 break
         return resultado
 
-    def planificar(self, sala_actual_id: str, total_salas: int) -> list:
+    def planificar(self, sala_actual_id: int, total_salas: int) -> list:
+        validar_id_sala(sala_actual_id)
         # Determinar profundidad base por tamano de cripta
         if total_salas <= 20:
             # Cargar todo: obtener todos los IDs del mapa
-            todos = [sala.id_sala for sala in self._mapa.obtener_salas()]
+            todos = [s.id_sala for s in self._mapa.obtener_salas()]
             ids = [sid for sid in todos if sid not in self._cargadas]
             return ids
         elif total_salas <= 50:
@@ -64,6 +66,8 @@ class PlanificadorPrecarga:
         return [sid for sid in ids if sid not in self._cargadas]
 
     def solicitar_lote(self, sala_ids: list) -> dict:
+        for sala_id in sala_ids:
+            validar_id_sala(sala_id)
         resultado = {}
         # Chunks de 10
         for i in range(0, len(sala_ids), 10):
@@ -75,7 +79,8 @@ class PlanificadorPrecarga:
                     self._cargadas.append(sala_id)
         return resultado
 
-    def asegurar_contenido(self, sala_id: str) -> dict:
+    def asegurar_contenido(self, sala_id: int) -> dict:
+        validar_id_sala(sala_id)
         if sala_id not in self._cargadas:
             ficha = self._repositorio.resolver(sala_id)
             if ficha is not None:

@@ -2,6 +2,7 @@ import json
 import os
 
 from contratos.fuente_datos import FuenteDatos
+from dto.sala import validar_id_sala
 
 
 class FuenteOffline(FuenteDatos):
@@ -41,7 +42,9 @@ class FuenteOffline(FuenteDatos):
             por_defecto={},
         )
 
-    def obtener_contenido(self, cripta_id: str, sala_ids: list[str]) -> dict:
+    def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
+        for sala_id in sala_ids:
+            validar_id_sala(sala_id)
         datos = self._leer_json(
             os.path.join(self._ruta, cripta_id, "contenido.json"),
             por_defecto={},
@@ -50,7 +53,15 @@ class FuenteOffline(FuenteDatos):
             return {}
         if not datos:
             return datos
-        return {k: v for k, v in datos.items() if k in sala_ids}
+        contenido = datos.get("contenido")
+        if not isinstance(contenido, list):
+            return {}
+        filtrado = []
+        for registro in contenido:
+            validar_id_sala(registro.get("sala"))
+            if registro["sala"] in sala_ids:
+                filtrado.append(registro)
+        return {"contenido": filtrado}
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
         resultado = {}

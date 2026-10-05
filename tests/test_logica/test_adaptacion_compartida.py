@@ -83,48 +83,48 @@ def test_cache_muchas_evicciones_conserva_indice_y_enlaces():
 
 def test_mapa_reemplaza_sala_y_no_expone_arreglo():
     mapa = MapaCripta()
-    original, reemplazo = Sala("s"), Sala("s")
+    original, reemplazo = Sala(1), Sala(1)
     mapa.agregar_sala(original)
     mapa.agregar_sala(reemplazo)
     salas = mapa.obtener_salas()
     assert salas == [reemplazo]
     salas.clear()
-    assert mapa.obtener_sala("s") is reemplazo
-    assert mapa.obtener_sala("ausente") is None
+    assert mapa.obtener_sala(1) is reemplazo
+    assert mapa.obtener_sala(999) is None
 
 
 def test_rastro_actualiza_sin_duplicar_y_respeta_vencimiento():
     rastro = RegistroRastro()
-    rastro.actualizar("s", 10)
-    rastro.actualizar("s", 20)
-    assert rastro.obtener_tiempo("s") == 20
+    rastro.actualizar(1, 10)
+    rastro.actualizar(1, 20)
+    assert rastro.obtener_tiempo(1) == 20
     assert len(rastro._presencias) == 1
-    assert rastro.consultar_fresco("s", 419)
-    assert not rastro.consultar_fresco("s", 420)
-    assert rastro.obtener_tiempo("otra") is None
+    assert rastro.consultar_fresco(1, 419)
+    assert not rastro.consultar_fresco(1, 420)
+    assert rastro.obtener_tiempo(2) is None
 
 
-def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v1(tmp_path):
+def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v2(tmp_path):
     estado = EstadoPartida(7, "cripta_prueba")
     estado.mapa = MapaCripta()
     estado.jugador = Jugador("j", "Jugador", 100, 10, 5, 2)
-    for id_sala in ["s2", "s1"]:
+    for id_sala in [2, 1]:
         estado.mapa.agregar_sala(Sala(id_sala))
-    estado.jugador.sala_actual = estado.mapa.obtener_sala("s1")
+    estado.jugador.sala_actual = estado.mapa.obtener_sala(1)
     estado.reloj = 123
     ruta = tmp_path / "guardado.bin"
     guardado = GuardadoBinario()
     guardado.guardar(str(ruta), estado)
     datos = ruta.read_bytes()
     cabecera = struct.unpack_from("<4sH32sqIIII", datos)
-    assert cabecera[:2] == (b"CRPT", 1)
+    assert cabecera[:2] == (b"CRPT", 2)
     assert cabecera[3:6] == (7, 123, 2)
     assert len(datos) == cabecera[6] + 2 * 36
     cargado = guardado.cargar(str(ruta))
     assert cargado["cripta_id"] == estado.cripta_id
-    assert cargado["jugador"]["sala_actual_id"] == "s1"
-    assert list(cargado["salas"]) == ["s2", "s1"]
-    assert guardado.leer_sala(str(ruta), "s2")["id_sala"] == "s2"
+    assert cargado["jugador"]["sala_actual_id"] == 1
+    assert list(cargado["salas"]) == [2, 1]
+    assert guardado.leer_sala(str(ruta), 2)["id_sala"] == 2
 
 
 def test_precarga_catalogo_offline_y_cache_con_clases_reales(tmp_path):
@@ -133,11 +133,11 @@ def test_precarga_catalogo_offline_y_cache_con_clases_reales(tmp_path):
     catalogo.mkdir(parents=True)
     (catalogo / "version.txt").write_text("1", encoding="utf-8")
     mapa = MapaCripta()
-    for id_sala in ["s1", "s2"]:
+    for id_sala in [1, 2]:
         mapa.agregar_sala(Sala(id_sala))
         # Son fichas JSON de entrada, no un índice de ejecución.
-        ficha = {"nombre": id_sala}
-        (catalogo / (id_sala + ".json")).write_text(
+        ficha = {"nombre": str(id_sala)}
+        (catalogo / (str(id_sala) + ".json")).write_text(
             json.dumps(ficha), encoding="utf-8")
     cache = CacheCatalogo(2)
     presupuesto = PresupuestoSolicitudes(10)
@@ -146,14 +146,14 @@ def test_precarga_catalogo_offline_y_cache_con_clases_reales(tmp_path):
         cache, almacen, FuenteOffline(str(origen)),
         DecodificadorDatos(), presupuesto)
     precarga = PlanificadorPrecarga(repositorio, mapa, presupuesto)
-    ids = precarga.planificar("s1", 2)
-    assert ids == ["s1", "s2"]
+    ids = precarga.planificar(1, 2)
+    assert ids == [1, 2]
     resultado = precarga.solicitar_lote(ids)
-    assert resultado["s1"]["nombre"] == "s1"
-    assert resultado["s2"]["nombre"] == "s2"
-    assert precarga.planificar("s1", 2) == []
+    assert resultado[1]["nombre"] == "1"
+    assert resultado[2]["nombre"] == "2"
+    assert precarga.planificar(1, 2) == []
     restantes = presupuesto.restantes()
-    assert precarga.asegurar_contenido("s1") is cache.obtener("s1")
+    assert precarga.asegurar_contenido(1) is cache.obtener(1)
     assert presupuesto.restantes() == restantes
-    assert almacen.leer("s2")["nombre"] == "s2"
+    assert almacen.leer(2)["nombre"] == "2"
     comprobar_enlaces(cache._lista)

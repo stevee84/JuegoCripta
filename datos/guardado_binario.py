@@ -1,11 +1,16 @@
 import struct
+import os
+import tempfile
+
+from dto.sala import validar_id_sala
 
 
 class GuardadoBinario:
     """Integrante 2. Formato propio con cabecera, version, indice de salas y registros."""
 
     MAGIC = b"CRPT"
-    VERSION = 1
+    # v2 cambia los IDs de sala de cadenas a enteros, conforme al API oficial.
+    VERSION = 2
     HEADER_FORMAT = "<4sH32sqIIII"
     HEADER_SIZE = struct.calcsize("<4sH32sqIIII")
     STR_SIZE = 32
@@ -15,27 +20,81 @@ class GuardadoBinario:
     def _empaquetar_cadena(self, s, size):
         data = s.encode("utf-8") if s else b""
         if len(data) > size:
-            data = data[:size]
+            raise ValueError(f"La cadena excede los {size} bytes del formato v2.")
         return data.ljust(size, b"\x00")
 
     def _desempaquetar_cadena(self, data):
         return data.decode("utf-8", errors="replace").rstrip("\x00")
 
+    def _empaquetar_id_sala(self, id_sala, permitir_ninguno=False):
+        if id_sala is None and permitir_ninguno:
+            return b"\x00" * 32
+        validar_id_sala(id_sala)
+        return struct.pack("<Bq", 1, id_sala) + b"\x00" * 23
+
+    def _desempaquetar_id_sala(self, data, permitir_ninguno=False):
+        if len(data) != 32:
+            raise ValueError("ID de sala truncado.")
+        marca = data[0]
+        if marca == 0 and permitir_ninguno and data[1:] == b"\x00" * 31:
+            return None
+        if marca != 1 or data[9:] != b"\x00" * 23:
+            raise ValueError("ID de sala inválido en el guardado.")
+        return struct.unpack_from("<q", data, 1)[0]
+
+    def _empaquetar_ubicacion(self, ubicacion):
+        if ubicacion is None:
+            return b"\x00" * 32
+        if type(ubicacion) is int:
+            return struct.pack("<Bq", 1, ubicacion) + b"\x00" * 23
+        if isinstance(ubicacion, str):
+            datos = ubicacion.encode("utf-8")
+            if len(datos) > 31:
+                raise ValueError("La ubicación excede los 31 bytes del formato v2.")
+            return b"\x02" + datos.ljust(31, b"\x00")
+        raise TypeError("La ubicación debe ser un ID de sala entero o una etiqueta.")
+
+    def _desempaquetar_ubicacion(self, data):
+        if len(data) != 32:
+            raise ValueError("Ubicación truncada.")
+        if data[0] == 0 and data[1:] == b"\x00" * 31:
+            return None
+        if data[0] == 1 and data[9:] == b"\x00" * 23:
+            return struct.unpack_from("<q", data, 1)[0]
+        if data[0] == 2:
+            return self._desempaquetar_cadena(data[1:])
+        raise ValueError("Ubicación inválida en el guardado.")
+
     # --- guardar ---
 
     def guardar(self, ruta: str, estado) -> None:
-        if getattr(estado, "mapa", None) is not None:
-            salas = estado.mapa.obtener_salas()
+        # Un fallo de escritura no debe destruir una instantánea anterior.
+        descriptor, temporal = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(ruta)))
+        os.close(descriptor)
+        try:
+            self._guardar(temporal, estado)
+            os.replace(temporal, ruta)
+        finally:
+            if os.path.exists(temporal):
+                os.unlink(temporal)
+
+    def _guardar(self, ruta: str, estado) -> None:
+        mapa = getattr(estado, 'mapa', None)
+        salas_attr = getattr(estado, 'salas', None)
+        if salas_attr and isinstance(salas_attr, dict):
+            salas = list(salas_attr.values())
+        elif mapa is not None and hasattr(mapa, 'obtener_salas'):
+            salas = mapa.obtener_salas()
         else:
-            # Compatibilidad con los datos de entrada antiguos de Steven.
-            salas = list(getattr(estado, "salas", {}).values())
+            salas = []
         jugador = estado.jugador
-        sala_actual_id = ""
+        sala_actual_id = None
         if jugador.sala_actual is not None:
             if hasattr(jugador.sala_actual, "id_sala"):
                 sala_actual_id = jugador.sala_actual.id_sala
             else:
-                sala_actual_id = str(jugador.sala_actual)
+                validar_id_sala(jugador.sala_actual)
+                sala_actual_id = jugador.sala_actual
 
         with open(ruta, "wb") as f:
             # header placeholder
@@ -59,11 +118,9 @@ class GuardadoBinario:
             f.write(struct.pack("<iiiii",
                 jugador.vida, jugador.vida_max, jugador.ataque,
                 jugador.defensa, jugador.velocidad))
-            f.write(self._empaquetar_cadena(sala_actual_id, 32))
+            f.write(self._empaquetar_id_sala(sala_actual_id, permitir_ninguno=True))
 
             # rooms
-            # Pares secuenciales, sin hash: el índice se escribe en O(n)
-            # y conserva exactamente el formato binario de la versión 1.
             offsets_salas = []
             for sala in salas:
                 offsets_salas.append((sala.id_sala, f.tell()))
@@ -72,7 +129,7 @@ class GuardadoBinario:
             # index
             offset_indice = f.tell()
             for id_sala, offset in offsets_salas:
-                f.write(self._empaquetar_cadena(id_sala, 32))
+                f.write(self._empaquetar_id_sala(id_sala))
                 f.write(struct.pack("<I", offset))
 
             # patch header
@@ -96,13 +153,13 @@ class GuardadoBinario:
         objetos = sala.objetos if sala.objetos else []
         trampas = sala.trampas if sala.trampas else []
 
-        f.write(self._empaquetar_cadena(sala.id_sala, 32))
+        f.write(self._empaquetar_id_sala(sala.id_sala))
         f.write(struct.pack("<HHHH",
             len(puertas), len(enemigos), len(objetos), len(trampas)))
 
         for p in puertas:
             f.write(self._empaquetar_cadena(p.id_puerta, 32))
-            f.write(self._empaquetar_cadena(p.destino_sala_id, 32))
+            f.write(self._empaquetar_id_sala(p.destino_sala_id))
             f.write(self._empaquetar_cadena(p.direccion, 32))
             f.write(struct.pack("<B", 1 if p.abierta else 0))
 
@@ -117,7 +174,7 @@ class GuardadoBinario:
         for o in objetos:
             f.write(self._empaquetar_cadena(o.id_instancia, 32))
             f.write(self._empaquetar_cadena(o.tipo_ficha_id, 32))
-            f.write(self._empaquetar_cadena(o.ubicacion or "", 32))
+            f.write(self._empaquetar_ubicacion(o.ubicacion))
 
         for t in trampas:
             f.write(self._empaquetar_cadena(t.id_trampa, 32))
@@ -139,7 +196,7 @@ class GuardadoBinario:
 
         header = struct.unpack_from(self.HEADER_FORMAT, data, 0)
         magic = header[0]
-        if magic != self.MAGIC:
+        if magic != self.MAGIC or header[1] != self.VERSION:
             return None
 
         version = header[1]
@@ -149,11 +206,15 @@ class GuardadoBinario:
         num_salas = header[5]
         offset_indice = header[6]
         offset_jugador = header[7]
+        if (offset_jugador != self.HEADER_SIZE or offset_indice < offset_jugador + 116
+                or offset_indice + num_salas * 36 != len(data)):
+            return None
 
         # player
+        registros = data[:offset_indice]
         try:
-            jugador = self._leer_jugador(data, offset_jugador)
-        except (struct.error, IndexError):
+            jugador = self._leer_jugador(registros, offset_jugador)
+        except (struct.error, IndexError, ValueError):
             return None
 
         # rooms
@@ -161,11 +222,15 @@ class GuardadoBinario:
         try:
             for i in range(num_salas):
                 idx_offset = offset_indice + i * 36
-                id_sala = self._desempaquetar_cadena(data[idx_offset:idx_offset + 32])
+                id_sala = self._desempaquetar_id_sala(data[idx_offset:idx_offset + 32])
                 room_offset = struct.unpack_from("<I", data, idx_offset + 32)[0]
-                sala, _ = self._leer_sala_datos(data, room_offset)
+                if room_offset < offset_jugador + 116 or room_offset >= offset_indice:
+                    return None
+                sala, _ = self._leer_sala_datos(registros, room_offset)
+                if sala["id_sala"] != id_sala or id_sala in salas:
+                    return None
                 salas[id_sala] = sala
-        except (struct.error, IndexError):
+        except (struct.error, IndexError, ValueError):
             return None
 
         return {
@@ -177,12 +242,15 @@ class GuardadoBinario:
         }
 
     def _leer_jugador(self, data, offset):
+        if offset < self.HEADER_SIZE or offset + 116 > len(data):
+            raise ValueError("Registro de jugador truncado.")
         o = offset
         id_actor = self._desempaquetar_cadena(data[o:o+32]); o += 32
         nombre = self._desempaquetar_cadena(data[o:o+32]); o += 32
         vida, vida_max, ataque, defensa, velocidad = struct.unpack_from("<iiiii", data, o)
         o += 20
-        sala_actual_id = self._desempaquetar_cadena(data[o:o+32])
+        sala_actual_id = self._desempaquetar_id_sala(
+            data[o:o+32], permitir_ninguno=True)
         return {
             "id_actor": id_actor,
             "nombre": nombre,
@@ -195,14 +263,18 @@ class GuardadoBinario:
         }
 
     def _leer_sala_datos(self, data, offset):
+        if offset < 0 or offset + 40 > len(data):
+            raise ValueError("Registro de sala truncado.")
         o = offset
-        id_sala = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        id_sala = self._desempaquetar_id_sala(data[o:o+32]); o += 32
         np, ne, no_, nt = struct.unpack_from("<HHHH", data, o); o += 8
+        if o + np * 97 + ne * 117 + no_ * 96 + nt * 69 > len(data):
+            raise ValueError("Contenido de sala truncado.")
 
         puertas = []
         for _ in range(np):
             id_p = self._desempaquetar_cadena(data[o:o+32]); o += 32
-            dest = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            dest = self._desempaquetar_id_sala(data[o:o+32]); o += 32
             dire = self._desempaquetar_cadena(data[o:o+32]); o += 32
             abierta = struct.unpack_from("<B", data, o)[0]; o += 1
             puertas.append({
@@ -228,10 +300,10 @@ class GuardadoBinario:
         for _ in range(no_):
             id_o = self._desempaquetar_cadena(data[o:o+32]); o += 32
             tipo = self._desempaquetar_cadena(data[o:o+32]); o += 32
-            ubic = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            ubic = self._desempaquetar_ubicacion(data[o:o+32]); o += 32
             objetos.append({
                 "id_instancia": id_o, "tipo_ficha_id": tipo,
-                "ubicacion": ubic if ubic else None,
+                "ubicacion": ubic,
             })
 
         trampas = []
@@ -256,32 +328,37 @@ class GuardadoBinario:
 
     # --- leer_sala ---
 
-    def leer_sala(self, ruta: str, id_sala: str):
+    def leer_sala(self, ruta: str, id_sala: int):
+        validar_id_sala(id_sala)
         try:
             with open(ruta, "rb") as f:
-                data = f.read()
-        except (FileNotFoundError, OSError):
-            return None
-
-        if len(data) < self.HEADER_SIZE:
-            return None
-
-        header = struct.unpack_from(self.HEADER_FORMAT, data, 0)
-        if header[0] != self.MAGIC:
-            return None
-
-        num_salas = header[5]
-        offset_indice = header[6]
-
-        for i in range(num_salas):
-            idx_offset = offset_indice + i * 36
-            rid = self._desempaquetar_cadena(data[idx_offset:idx_offset + 32])
-            if rid == id_sala:
-                room_offset = struct.unpack_from("<I", data, idx_offset + 32)[0]
-                try:
-                    sala, _ = self._leer_sala_datos(data, room_offset)
-                    return sala
-                except (struct.error, IndexError):
+                header = struct.unpack(self.HEADER_FORMAT, f.read(self.HEADER_SIZE))
+                if header[:2] != (self.MAGIC, self.VERSION):
                     return None
-
+                num_salas, offset_indice, offset_jugador = header[5:8]
+                f.seek(0, 2)
+                if (offset_jugador != self.HEADER_SIZE
+                        or offset_indice < offset_jugador + 116
+                        or offset_indice + num_salas * 36 != f.tell()):
+                    return None
+                # Acceso por índice: no lee los registros de las otras salas.
+                f.seek(offset_indice)
+                for _ in range(num_salas):
+                    entrada = f.read(36)
+                    rid = self._desempaquetar_id_sala(entrada[:32])
+                    offset = struct.unpack("<I", entrada[32:])[0]
+                    if rid != id_sala:
+                        continue
+                    if offset < offset_jugador + 116 or offset + 40 > offset_indice:
+                        return None
+                    f.seek(offset)
+                    inicio = f.read(40)
+                    np, ne, no_, nt = struct.unpack_from("<HHHH", inicio, 32)
+                    cantidad = np * 97 + ne * 117 + no_ * 96 + nt * 69
+                    if offset + 40 + cantidad > offset_indice:
+                        return None
+                    sala, _ = self._leer_sala_datos(inicio + f.read(cantidad), 0)
+                    return sala if sala["id_sala"] == id_sala else None
+        except (OSError, struct.error, IndexError, ValueError):
+            return None
         return None

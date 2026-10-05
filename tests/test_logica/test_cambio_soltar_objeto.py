@@ -15,7 +15,7 @@ class TestCambioSoltarObjeto(unittest.TestCase):
 
     def setUp(self):
         self.estado = EstadoPartida()
-        self.sala = Sala("sala1")
+        self.sala = Sala(1)
         self.inventario = Inventario(3)
 
         self.antorcha = ObjetoInstancia("o1", "itm_antorcha")
@@ -44,7 +44,7 @@ class TestCambioSoltarObjeto(unittest.TestCase):
     def test_deshacer_restaura_objeto_y_ubicacion(self):
         cambio = self._soltar_actual()
 
-        self.assertEqual(self.pocion.ubicacion, "sala1")
+        self.assertEqual(self.pocion.ubicacion, 1)
         self.assertEqual(self.sala.objetos, [self.pocion])
 
         cambio.deshacer(self.estado)
@@ -95,8 +95,8 @@ class TestCambioSoltarObjeto(unittest.TestCase):
         cambio.deshacer(self.estado)
 
         self.assertEqual(self.sala.objetos, [piedra, moneda])
-        self.assertEqual(piedra.ubicacion, "sala1")
-        self.assertEqual(moneda.ubicacion, "sala1")
+        self.assertEqual(piedra.ubicacion, 1)
+        self.assertEqual(moneda.ubicacion, 1)
 
     def test_distinguir_objetos_del_mismo_tipo(self):
         # Otra poción del mismo tipo debe permanecer en el suelo.
@@ -111,7 +111,7 @@ class TestCambioSoltarObjeto(unittest.TestCase):
         self.assertIs(
             self.inventario.obtener_actual(), self.pocion
         )
-        self.assertEqual(otra_pocion.ubicacion, "sala1")
+        self.assertEqual(otra_pocion.ubicacion, 1)
 
     def test_deshacer_dos_veces_no_repite_el_traslado(self):
         cambio = self._soltar_actual()
@@ -165,7 +165,7 @@ class TestCambioSoltarObjeto(unittest.TestCase):
             cambio.deshacer(self.estado)
 
         self.assertEqual(self.sala.objetos, [self.pocion])
-        self.assertEqual(self.pocion.ubicacion, "sala1")
+        self.assertEqual(self.pocion.ubicacion, 1)
         self.assertEqual(self.inventario.get_cantidad(), 3)
         self.assertIs(
             self.inventario.obtener_actual(), espada

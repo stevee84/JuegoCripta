@@ -1,5 +1,6 @@
 from contratos.cambio_reversible import CambioReversible
 from estructuras.lista_doble import ListaDobleImpl
+from dto.objeto_instancia import ObjetoInstancia
 
 
 def _preparar_orden_suelo(sala):
@@ -79,7 +80,10 @@ class TransaccionAccion:
                 "No se pueden registrar cambios después de revertir."
             )
         if not callable(getattr(cambio, "deshacer", None)):
-            raise ValueError("Se requiere un CambioReversible; una descripción no es un inverso.")
+            raise TypeError("El historial solo admite cambios reversibles; una descripción no es un inverso.")
+
+        if not isinstance(cambio, CambioReversible):
+            raise TypeError("El historial solo admite cambios reversibles.")
 
         # El cambio más reciente queda primero.
         self._cambios.insertar(cambio)
@@ -227,6 +231,72 @@ class CambioRecogerObjeto(CambioReversible):
         self._deshecho = True
 
 
+class CambioAtributo(CambioReversible):
+    """Un valor anterior, nunca una copia de la entidad."""
+
+    def __init__(self, objeto, nombre):
+        self.objeto = objeto
+        self.nombre = nombre
+        self.anterior = getattr(objeto, nombre)
+
+    def deshacer(self, estado):
+        setattr(self.objeto, self.nombre, self.anterior)
+
+    def objetos_referenciados(self):
+        return [o for o in (self.objeto, self.anterior) if isinstance(o, ObjetoInstancia)]
+
+
+class CambioDato(CambioReversible):
+    """Un campo de una ficha de efecto (no un índice)."""
+
+    def __init__(self, datos, clave):
+        self.datos, self.clave = datos, clave
+        self.existia = clave in datos
+        self.anterior = datos.get(clave)
+
+    def deshacer(self, estado):
+        if self.existia:
+            self.datos[self.clave] = self.anterior
+        else:
+            self.datos.pop(self.clave, None)
+
+
+class CambioLista(CambioReversible):
+    def __init__(self, lista, posicion, valor, insertado):
+        self.lista, self.posicion = lista, posicion
+        self.valor, self.insertado = valor, insertado
+
+    def deshacer(self, estado):
+        if self.insertado:
+            self.lista.pop(self.posicion)
+        else:
+            self.lista.insert(self.posicion, self.valor)
+
+    def objetos_referenciados(self):
+        return [self.valor] if isinstance(self.valor, ObjetoInstancia) else []
+
+
+class CambioAzar(CambioReversible):
+    def __init__(self, azar):
+        self.azar = azar
+        self.anterior = azar.getstate()
+
+    def deshacer(self, estado):
+        self.azar.setstate(self.anterior)
+
+
+class CambioAgenda(CambioReversible):
+    def __init__(self, agenda, evento, insertado):
+        self.agenda, self.evento = agenda, evento
+        self.insertado = insertado
+
+    def deshacer(self, estado):
+        if self.insertado:
+            self.agenda.cancelar(self.evento.id_evento)
+        else:
+            self.agenda.restaurar_evento(self.evento)
+
+
 class CambioSoltarObjeto(CambioReversible):
     """
     Conserva la información necesaria para deshacer la salida
@@ -319,6 +389,7 @@ class CambioEquipo(CambioReversible):
         self._bono = servicio._bonos[clase]
         self._atributo = "ataque" if clase == "arma" else "defensa"
         self._valor = getattr(servicio._jugador, self._atributo)
+        self._cursor_anterior = servicio._inventario._cursor
         self._ubicaciones = [
             (objeto, objeto.ubicacion) for objeto in (self._anterior, nuevo)
             if objeto is not None
@@ -337,6 +408,14 @@ class CambioEquipo(CambioReversible):
         servicio._bonos[self._clase] = self._bono
         for objeto, ubicacion in self._ubicaciones:
             objeto.ubicacion = ubicacion
+        # El consumo de un pergamino puede haber cambiado la selección,
+        # incluso cuando equipar no necesitó mover el nodo al frente.
+        nodo = servicio._inventario._lista.primero
+        while nodo is not None:
+            if nodo is self._cursor_anterior:
+                servicio._inventario._cursor = nodo
+                break
+            nodo = nodo.siguiente
         self._deshecho = True
 
 
@@ -345,7 +424,9 @@ class CambioConsumirObjeto(CambioReversible):
 
     delta_inverso = 1
 
-    def __init__(self, retiro):
+    def __init__(self, retiro, objeto=None):
+        if objeto is not None and objeto is not retiro.nodo.valor:
+            raise ValueError("El objeto no corresponde al retiro.")
         self._retiro = retiro
         self._inventario = retiro.inventario
         self._objeto = retiro.nodo.valor

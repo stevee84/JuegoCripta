@@ -13,61 +13,39 @@ class ComportamientoEnemigos:
 
     def decidir_accion(self, enemigo, estado):
         """
-        Determina la próxima acción del enemigo.
+        Si comparte sala con el jugador vivo, ataca.
 
-        Tipos de comportamiento:
-
-            guardian:
-                Ataca si comparte sala con el jugador.
-
-            errante:
-                Se mueve hacia una sala disponible.
-
-            rastreador:
-                Busca rastros recientes del jugador.
-
-        Retorna un diccionario con la acción seleccionada.
+        En caso contrario, decide según su comportamiento:
+        guardián, errante o rastreador.
         """
-        comportamiento = enemigo.comportamiento.lower()
+        jugador = estado.jugador
 
-        if comportamiento == "guardian":
-            return self._accion_guardian(enemigo,estado)
-
-        if comportamiento == "errante":
-            return self._accion_errante(enemigo,estado)
-
-        if comportamiento == "rastreador":
-            return self._accion_rastreador(enemigo,estado)
-        
-        return {
-            "tipo": "ESPERAR"
-        }
-
-
-
-    def _accion_guardian(self, enemigo, estado):
-        """
-        Comportamiento del guardián.
-
-        Si el jugador está en la misma sala,
-        intenta atacar.
-        """
+        if not enemigo.esta_vivo():
+            return {"tipo": "ESPERAR"}
 
         if (
-            enemigo.sala_actual is not None
-            and enemigo.sala_actual == estado.jugador.sala_actual
+            jugador is not None
+            and jugador.esta_vivo()
+            and enemigo.sala_actual is not None
+            and enemigo.sala_actual is jugador.sala_actual
         ):
-
             return {
                 "tipo": "ATACAR",
-                "objetivo": estado.jugador.id_actor
+                "objetivo": jugador.id_actor
             }
 
+        comportamiento = enemigo.comportamiento.lower()
 
-        return {
-            "tipo": "ESPERAR"
-        }
+        if comportamiento in ("guardian", "guardián"):
+            return {"tipo": "ESPERAR"}
 
+        if comportamiento == "errante":
+            return self._accion_errante(enemigo, estado)
+
+        if comportamiento == "rastreador":
+            return self._accion_rastreador(enemigo, estado)
+
+        return {"tipo": "ESPERAR"}
 
 
     def _accion_errante(self, enemigo, estado):
@@ -86,7 +64,7 @@ class ComportamientoEnemigos:
 
 
         vecinos = estado.mapa.vecinos_abiertos(
-            enemigo.sala_actual.id_sala
+            enemigo.sala_actual
         )
 
 
@@ -126,25 +104,28 @@ class ComportamientoEnemigos:
              "tipo": "ESPERAR"
             }
 
-        vecinos = estado.mapa.vecinos_abiertos(
-            enemigo.sala_actual.id_sala
-        )
-
-
         mejor_sala = None
         mejor_tiempo = -1
 
 
-        for sala in vecinos:
+        # El motor vincula destinos al iniciar: aquí solo se recorren conexiones locales.
+        for puerta in enemigo.sala_actual.puertas:
+            if not puerta.abierta or puerta.destino_sala is None:
+                continue
+            sala = puerta.destino_sala
 
             tiempo_rastro = rastro.obtener_tiempo(
-                sala.id_sala
+                sala
             )
 
 
             if tiempo_rastro is not None:
 
-                if (estado.reloj - tiempo_rastro < 400 and tiempo_rastro > mejor_tiempo):
+                # Los IDs de sala son enteros: el empate usa su orden numérico.
+                if (0 <= estado.reloj - tiempo_rastro < 400
+                        and (mejor_sala is None or tiempo_rastro > mejor_tiempo
+                             or (tiempo_rastro == mejor_tiempo
+                                 and sala.id_sala < mejor_sala.id_sala))):
 
                     mejor_tiempo = tiempo_rastro
                     mejor_sala = sala

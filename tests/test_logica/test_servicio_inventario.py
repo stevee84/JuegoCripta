@@ -14,7 +14,7 @@ class TestServicioInventario(unittest.TestCase):
 
     def setUp(self):
         # Cada prueba comienza con una sala y un inventario nuevos.
-        self.sala = Sala("sala1")
+        self.sala = Sala(1)
         self.inventario = Inventario(2)
         self.servicio = ServicioInventario(self.inventario)
 
@@ -53,10 +53,10 @@ class TestServicioInventario(unittest.TestCase):
         self.assertEqual(self.inventario.get_cantidad(), 2)
         self.assertIs(self.inventario.obtener_actual(), pocion)
         self.assertEqual(self.sala.objetos, [self.antorcha])
-        self.assertEqual(self.antorcha.ubicacion, "sala1")
+        self.assertEqual(self.antorcha.ubicacion, 1)
 
     def test_recoger_objeto_de_otra_sala(self):
-        otra_sala = Sala("sala2")
+        otra_sala = Sala(2)
 
         resultado = self.servicio.recoger(
             self.antorcha, otra_sala
@@ -67,7 +67,7 @@ class TestServicioInventario(unittest.TestCase):
         self.assertTrue(self.inventario.esta_vacio())
         self.assertEqual(self.sala.objetos, [self.antorcha])
         self.assertEqual(otra_sala.objetos, [])
-        self.assertEqual(self.antorcha.ubicacion, "sala1")
+        self.assertEqual(self.antorcha.ubicacion, 1)
 
     def test_recoger_sin_objeto(self):
         resultado = self.servicio.recoger(None, self.sala)
@@ -83,7 +83,7 @@ class TestServicioInventario(unittest.TestCase):
         self.assertFalse(resultado.exito)
         self.assertEqual(resultado.costo, 0)
         self.assertTrue(self.inventario.esta_vacio())
-        self.assertEqual(self.antorcha.ubicacion, "sala1")
+        self.assertEqual(self.antorcha.ubicacion, 1)
 
     def test_no_recoger_dos_veces_el_mismo_objeto(self):
         self.servicio.recoger(self.antorcha, self.sala)
@@ -112,7 +112,7 @@ class TestServicioInventario(unittest.TestCase):
         self.assertIs(
             self.inventario.obtener_actual(), otra_antorcha
         )
-        self.assertEqual(self.antorcha.ubicacion, "sala1")
+        self.assertEqual(self.antorcha.ubicacion, 1)
         self.assertEqual(otra_antorcha.ubicacion, "inventario")
 
     def test_soltar_objeto(self):
@@ -125,12 +125,12 @@ class TestServicioInventario(unittest.TestCase):
         self.assertTrue(self.inventario.esta_vacio())
         self.assertIsNone(self.inventario.obtener_actual())
         self.assertEqual(self.sala.objetos, [self.antorcha])
-        self.assertEqual(self.antorcha.ubicacion, "sala1")
+        self.assertEqual(self.antorcha.ubicacion, 1)
 
     def test_soltar_en_otra_sala(self):
         # El objeto debe quedar en la sala entregada al servicio.
         self.servicio.recoger(self.antorcha, self.sala)
-        destino = Sala("sala2")
+        destino = Sala(2)
 
         resultado = self.servicio.soltar(destino)
 
@@ -138,7 +138,7 @@ class TestServicioInventario(unittest.TestCase):
         self.assertEqual(resultado.costo, 25)
         self.assertEqual(self.sala.objetos, [])
         self.assertEqual(destino.objetos, [self.antorcha])
-        self.assertEqual(self.antorcha.ubicacion, "sala2")
+        self.assertEqual(self.antorcha.ubicacion, 2)
         self.assertTrue(self.inventario.esta_vacio())
 
     def test_soltar_con_inventario_vacio(self):
@@ -178,7 +178,7 @@ class TestServicioInventario(unittest.TestCase):
         )
         self.assertEqual(self.inventario.get_cantidad(), 1)
         self.assertEqual(self.sala.objetos, [llave])
-        self.assertEqual(llave.ubicacion, "sala1")
+        self.assertEqual(llave.ubicacion, 1)
 
     def test_soltar_equipo_pendiente(self):
         # Comprueba la restricción temporal de esta versión.

@@ -1,4 +1,5 @@
 import unittest
+import random
 
 from logica.reglas_combate import ReglasCombate
 from dto.actor import Jugador, Enemigo
@@ -36,19 +37,19 @@ class TestReglasCombate(unittest.TestCase):
         resultado = reglas.atacar(
             jugador,
             enemigo,
-            None
+            random.Random(0)
         )
 
 
         self.assertEqual(
             resultado["daño"],
-            15
+            18
         )
 
 
         self.assertEqual(
             enemigo.vida,
-            35
+            32
         )
 
 

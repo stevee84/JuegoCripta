@@ -12,13 +12,13 @@ class TestRegistroRastro(unittest.TestCase):
 
 
         rastro.actualizar(
-            "S1",
+            1,
             100
         )
 
 
         resultado = rastro.consultar_fresco(
-            "S1",
+            1,
             300
         )
 
@@ -33,13 +33,13 @@ class TestRegistroRastro(unittest.TestCase):
 
 
         rastro.actualizar(
-            "S1",
+            1,
             100
         )
 
 
         resultado = rastro.consultar_fresco(
-            "S1",
+            1,
             600
         )
 
@@ -54,7 +54,7 @@ class TestRegistroRastro(unittest.TestCase):
 
 
         resultado = rastro.consultar_fresco(
-            "S2",
+            2,
             100
         )
 

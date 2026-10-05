@@ -1,4 +1,12 @@
 #SOFIA
+
+
+def validar_id_sala(id_sala) -> None:
+    """Valida el tipo publicado por el contrato de datos de Cripta."""
+    if type(id_sala) is not int:
+        raise TypeError("El ID de sala debe ser un entero.")
+
+
 class Sala:
     """
     Representa una habitación dentro de la cripta.
@@ -10,14 +18,16 @@ class Sala:
     se manejará posteriormente en la capa logica.
     """
 
-    def __init__(self, id_sala: str):
+    def __init__(self, id_sala: int):
 
+        validar_id_sala(id_sala)
         self.id_sala = id_sala
 
         self.puertas = []
         self.trampas = []
         self.enemigos = []
         self.objetos = []
+        self.ultimo_rastro = None
 
 
     def obtener_salida(self, direccion: str):
@@ -47,12 +57,18 @@ class Puerta:
     def __init__(
         self,
         id_puerta: str,
-        destino_sala_id: str,
+        destino_sala_id: int,
         direccion: str
     ):
 
+        validar_id_sala(destino_sala_id)
+        if not isinstance(id_puerta, str) or not id_puerta:
+            raise TypeError("El ID de puerta debe ser una cadena no vacía.")
+        if not isinstance(direccion, str) or not direccion:
+            raise TypeError("La dirección debe ser una cadena no vacía.")
         self.id_puerta = id_puerta
         self.destino_sala_id = destino_sala_id
+        self.destino_sala = None
         self.direccion = direccion
 
         self.abierta = False
@@ -60,6 +76,8 @@ class Puerta:
         self.llave_requerida = None
 
         self.cierre_automatico = None
+        self.evento_cierre_id = None
+        self.evento_cierre = None
 
 #----------------------------------------------------------------------------------
 
@@ -74,9 +92,18 @@ class Trampa:
         tipo: str
     ):
 
+        if not isinstance(id_trampa, str) or not id_trampa:
+            raise TypeError("El ID de trampa debe ser una cadena no vacía.")
+        if not isinstance(tipo, str) or not tipo:
+            raise TypeError("El tipo de trampa debe ser una cadena no vacía.")
         self.id_trampa = id_trampa
         self.tipo = tipo
+        # Referencia a la ficha ya resuelta del catálogo.
+        self.ficha = None
 
         self.armada = True
 
         self.tiempo_rearme = 300
+        # Evita programar más de un rearme para la misma activación.
+        self.evento_rearme_id = None
+        self.evento_rearme = None

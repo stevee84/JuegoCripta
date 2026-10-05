@@ -151,8 +151,8 @@ def test_fallo_de_escritura_no_finge_rechazo_ni_reejecuta_el_ataque(
 
     monkeypatch.setattr(servicio._registro, "anexar_accion", fallar)
     resultado = servicio.ejecutar_accion(accion)
-    assert resultado.exito  # El motor ya actuó: no puede deshacerse hoy.
-    assert resultado.costo == 1
+    assert resultado.exito  # Un fallo del log no autoriza retroceso implícito.
+    assert resultado.costo == 100
     assert accion.objetivo.vida == 6
     assert "acción ejecutada" in resultado.mensaje
     assert "Log incompleto" in resultado.mensaje
@@ -180,28 +180,31 @@ def test_nueva_partida_no_anexa_al_log_anterior(partida):
     assert len(leer(segunda)) == 2
 
 
-def test_identificador_entero_conserva_su_tipo_en_el_log(partida):
+def test_identificador_entero_incompatible_no_se_ejecuta_ni_registra(partida):
     servicio, ruta = partida
     enemigo = servicio.obtener_estado().jugador.sala_actual.enemigos[0]
     enemigo.id_actor = 7
     servicio.iniciar_registro(ruta)
-    real = servicio.resolver_identificador_consola("7")
-    assert type(real) is int
-    assert servicio.ejecutar_accion(servicio.resolver_accion("ATACAR", real)).exito
-    assert leer(ruta)[1]["objetivo"] == 7
-    assert type(leer(ruta)[1]["objetivo"]) is int
+    antes = pickle.dumps(servicio.obtener_estado())
+    with pytest.raises(ValueError, match="único"):
+        servicio.resolver_identificador_consola("7")
+    with pytest.raises(ValueError, match="ID estable"):
+        servicio.resolver_accion("ATACAR", 7)
+    assert not servicio.ejecutar_accion(Accion("ATACAR", enemigo)).exito
+    assert len(leer(ruta)) == 1
+    assert pickle.dumps(servicio.obtener_estado()) == antes
 
 
 def test_identificadores_ambiguos_de_consola_no_se_eligen_arbitrariamente(partida):
     servicio, ruta = partida
     sala = servicio.obtener_estado().jugador.sala_actual
-    sala.enemigos[0].id_actor = 7
+    sala.enemigos[0].id_actor = "7"
     sala.enemigos.append(Enemigo("7", "Otro", 12, 3, 1, 80))
     antes = pickle.dumps(servicio.obtener_estado())
     with pytest.raises(ValueError, match="único"):
         servicio.resolver_identificador_consola("7")
-    assert servicio.resolver_accion("ATACAR", 7).objetivo is sala.enemigos[0]
-    assert servicio.resolver_accion("ATACAR", "7").objetivo is sala.enemigos[1]
+    with pytest.raises(ValueError, match="único"):
+        servicio.resolver_accion("ATACAR", "7")
     assert pickle.dumps(servicio.obtener_estado()) == antes
 
 
@@ -221,7 +224,7 @@ def test_id_booleano_no_se_confunde_con_un_id_entero(partida):
     servicio, ruta = partida
     servicio.obtener_estado().jugador.sala_actual.enemigos[0].id_actor = True
     antes = pickle.dumps(servicio.obtener_estado())
-    with pytest.raises(ValueError, match="único"):
+    with pytest.raises(ValueError, match="ID estable"):
         servicio.resolver_accion("ATACAR", 1)
     with pytest.raises(ValueError, match="único"):
         servicio.resolver_identificador_consola("True")

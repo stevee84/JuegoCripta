@@ -114,7 +114,7 @@ def test_bench_desde_main_no_inicializa_fuente_ni_vista(monkeypatch, capsys):
     assert json.loads(capsys.readouterr().out) == {"prueba_modo": True}
 
 
-def test_pergamino_por_controlador_delega_historial_sin_motor_ni_tiempo(tmp_path, monkeypatch):
+def test_pergamino_por_controlador_delega_una_vez_al_motor_sin_tiempo(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     historial = HistorialReversible()
     controlador = ControladorJuego(preparar_motor(), VistaConsola(), None, historial)
@@ -132,15 +132,25 @@ def test_pergamino_por_controlador_delega_historial_sin_motor_ni_tiempo(tmp_path
         historial.registrar(cambio)
     historial.cerrar_intervalo()
     scroll = ObjetoInstancia("scroll-opaco", "scroll")
+    scroll.ubicacion = "inventario"
     inv.agregar(scroll)
 
-    def no_motor(*args):
-        pytest.fail("El pergamino no debe avanzar ni ejecutar acción en el motor")
+    original = controlador._motor.ejecutar_accion
+    llamadas = []
 
-    monkeypatch.setattr(controlador._motor, "ejecutar_accion", no_motor)
-    monkeypatch.setattr(controlador._motor, "avanzar_hasta_decision", no_motor)
+    def ejecutar(accion):
+        llamadas.append(accion.tipo)
+        return original(accion)
+
+    def no_avanzar(*args):
+        pytest.fail("El retroceso no debe avanzar la agenda")
+
+    monkeypatch.setattr(controlador._motor, "ejecutar_accion", ejecutar)
+    monkeypatch.setattr(controlador._motor, "avanzar_hasta_decision", no_avanzar)
     resultado = controlador.procesar_comando("usar scroll-opaco")
     assert resultado.exito and resultado.costo == 0
+    assert llamadas == ["RETROCEDER"]
+    assert controlador._motor.estado.historial is historial
     assert historial.get_cantidad() == 0
     assert controlador._motor.estado.jugador.ataque == 7
     assert controlador._motor.estado.reloj == 0

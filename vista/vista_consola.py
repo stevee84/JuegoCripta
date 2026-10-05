@@ -1,5 +1,11 @@
+from logica.bitacora_pantalla import BitacoraPantalla
+
+
 class VistaConsola:
-    """Integrante 3. Presenta sin mutar directamente."""
+    """Presenta el estado sin modificar la simulación."""
+
+    def __init__(self):
+        self.bitacora = BitacoraPantalla()
 
     def mostrar_estado(self, estado) -> None:
         if estado is None:
@@ -30,6 +36,10 @@ class VistaConsola:
             f"velocidad: {jugador.velocidad}"
         )
         sala = jugador.sala_actual
+        print(f"Tiempo: {estado.reloj} | Vida: {jugador.vida}/{jugador.vida_max}"
+              f" | Sala: {sala.id_sala if sala is not None else 'sin ubicación'}")
+        if not estado.partida_activa:
+            print("Partida terminada.")
         if sala is None:
             print("Sala no disponible.")
             return
@@ -58,7 +68,10 @@ class VistaConsola:
         print("Trampas: " + (", ".join(trampas) or "ninguna"))
 
     def leer_comando(self) -> str:
-        return input("> ")
+        try:
+            return input("> ")
+        except EOFError:
+            return "SALIR"
 
     def mostrar_inventario(self, objetos, seleccionado=None):
         for objeto in objetos:
@@ -72,7 +85,8 @@ class VistaConsola:
             print(mensaje)
 
     def mostrar_error(self, mensaje: str) -> None:
-        print(f"Error: {mensaje}")
+        self.mostrar_mensaje(f"Error: {mensaje}")
 
     def mostrar_mensaje(self, mensaje: str) -> None:
+        self.bitacora.agregar(mensaje)
         print(mensaje)

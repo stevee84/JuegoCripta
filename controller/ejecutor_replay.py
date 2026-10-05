@@ -15,11 +15,11 @@ def _sin_claves_duplicadas(pares):
 
 
 class EjecutorReplay:
-    """Replay de primitivas disponibles, sin vista, entradas ni escrituras.
+    """Replay de acciones del motor, sin vista, entradas ni escrituras.
 
     Comparte JuegoService con la consola. La ejecución requiere una fábrica
     explícita de partida: no inventa datos iniciales ni convierte el replay
-    de primitivas en una simulación temporal completa.
+    en un arranque desde datos cuyo esquema no esté disponible.
     """
 
     def conectar_servicio(self, servicio):
@@ -110,12 +110,15 @@ class EjecutorReplay:
                             raise ValueError("Se esperaba un registro de acción.")
                         tipo = registro["tipo"].upper()
                         objetivo, direccion = registro["objetivo"], registro["direccion"]
-                        if tipo == "MOVER":
+                        if tipo in ("MOVER", "ABRIR"):
                             if objetivo is not None or not isinstance(direccion, str) or not direccion.strip():
-                                raise ValueError("MOVER requiere dirección y no recibe objetivo.")
-                        elif tipo in ("ATACAR", "USAR"):
-                            if type(objetivo) not in (str, int) or objetivo == "" or direccion is not None:
+                                raise ValueError(f"{tipo} requiere dirección y no recibe objetivo.")
+                        elif tipo in ("ATACAR", "RECOGER", "USAR", "RETROCEDER") or (tipo == "SOLTAR" and objetivo is not None):
+                            if type(objetivo) is not str or not objetivo or direccion is not None:
                                 raise ValueError(f"{tipo} requiere un ID y no recibe dirección.")
+                        elif tipo in ("SOLTAR", "ESPERAR", "EQUIPAR"):
+                            if objetivo is not None or direccion is not None:
+                                raise ValueError(f"{tipo} no recibe argumentos.")
                         else:
                             raise ValueError("Acción no disponible en el motor actual.")
                         acciones.append((numero, registro))

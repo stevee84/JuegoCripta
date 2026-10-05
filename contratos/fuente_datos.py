@@ -17,7 +17,7 @@ class FuenteDatos(ABC):
         ...
 
     @abstractmethod
-    def obtener_contenido(self, cripta_id: str, sala_ids: list[str]) -> dict:
+    def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
         ...
 
     @abstractmethod

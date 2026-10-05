@@ -40,10 +40,16 @@ def test_muerte_cancela_solo_eventos_del_actor():
     estado = EstadoPartida()
     estado.jugador = Jugador("j", "Jugador", 100, 20, 0, 1)
     enemigo = Enemigo("e", "Enemigo", 1, 1, 0, 1)
+    sala = Sala(1)
+    sala.enemigos.append(enemigo)
+    estado.mapa = MapaCripta()
+    estado.mapa.agregar_sala(sala)
+    estado.jugador.sala_actual = sala
     motor = MotorJuego()
     motor.iniciar(estado)
     estado.agenda.programar(Evento("e1", 1, 1, "TURNO", "e"))
-    estado.agenda.programar(Evento("e2", 2, 2, "TURNO", "j"))
+    # Ataque con velocidad 1: decisión en 10000. El ajeno debe quedar después.
+    estado.agenda.programar(Evento("e2", 20000, 2, "TURNO", "j"))
     estado.agenda.programar(Evento("e3", 3, 3, "TURNO", "e"))
     assert motor.ejecutar_accion(Accion("ATACAR", enemigo)).exito
     assert estado.agenda.extraer_siguiente().id_evento == "e2"
@@ -67,10 +73,10 @@ def test_guardado_acepta_estado_y_mapa_reales(tmp_path):
     estado = EstadoPartida(7)
     estado.jugador = Jugador("j", "Jugador", 100, 20, 0, 1)
     estado.mapa = MapaCripta()
-    sala = Sala("s1")
+    sala = Sala(1)
     estado.mapa.agregar_sala(sala)
     estado.jugador.sala_actual = sala
     ruta = str(tmp_path / "partida.bin")
     guardado = GuardadoBinario()
     guardado.guardar(ruta, estado)
-    assert guardado.leer_sala(ruta, "s1")["id_sala"] == "s1"
+    assert guardado.leer_sala(ruta, 1)["id_sala"] == 1

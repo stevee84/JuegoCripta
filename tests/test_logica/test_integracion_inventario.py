@@ -15,7 +15,7 @@ def preparar():
     for objeto in objetos:
         objeto.ubicacion = "inventario"
         inventario.agregar(objeto)
-    return inventario, Sala("sala1"), ServicioInventario(inventario)
+    return inventario, Sala(1), ServicioInventario(inventario)
 
 
 def registrar(historial, resultado):
@@ -90,7 +90,7 @@ def test_varios_retiros_en_intervalos_restauran_mismos_nodos():
 def test_recoger_en_inventario_vacio_y_revertir():
     inventario = Inventario(1)
     servicio = ServicioInventario(inventario)
-    sala = Sala("s1")
+    sala = Sala(1)
     objeto = ObjetoInstancia("1", "llave")
     objeto.ubicacion = sala.id_sala
     sala.objetos.append(objeto)
