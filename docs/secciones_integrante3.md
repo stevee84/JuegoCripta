@@ -1,5 +1,9 @@
 # Secciones técnicas del integrante 3
 
+Estado de integración revisado el 6 de octubre de 2026 sobre `638e57d`.
+Las cifras siguientes conservan las mediciones del 1 de octubre;
+esta actualización documental no introduce mediciones nuevas.
+
 Fecha de trabajo: 2026-10-01. Datos medidos, no estimaciones, en
 `mediciones_integrante3_inicial.json` (32/4) y `mediciones_integrante3.json`
 (16/1, ejecutor main final). Las comparaciones numéricas de las secciones
@@ -40,10 +44,18 @@ una supuesta victoria de Python puro, sino por requerir estructura propia,
 preservar el mismo nodo y garantizar retiro seleccionado O(1); list desplaza
 referencias O(n). Medición de un retiro, no construcción/búsqueda del cursor.
 
-**Límites:** clase/curación/campos vienen de adaptador local provisional.
-Curación inmediata satura vida_max y consume la instancia; llave no consume.
-Velocidad, antídoto y antorcha requieren las capacidades de simulación
-enumeradas en README; rechazan antes de consumir. No se crea otro gestor.
+**Integración:** JuegoService.conectar_inventario conecta el mismo
+ServicioInventario al motor mediante conectar_servicio_inventario.
+Equipo, catálogo, adaptador, historial y referencias de caché utilizan ese
+contexto compartido. La conexión se valida antes de publicar el contexto:
+no se permite durante una acción ni sustituir un servicio ya conectado.
+Equipar, soltar equipo y sus retrocesos están cubiertos por regresiones.
+
+**Límites:** clase/curación/campos vienen de un adaptador local provisional.
+Curación inmediata satura vida_max y consume la instancia; la llave no se
+consume. Velocidad, antídoto y antorcha utilizan el gestor de efectos del
+motor. Las puertas con cierre automático se abren mediante ABRIR, que
+programa su cierre. Falta confirmar fichas reales y conectar el inicializador.
 
 ## 4.6 Retroceso
 
@@ -53,8 +65,9 @@ de la lista doble; TransaccionAccion es pila de inversos.
 
 **Decisión/operaciones:** registrar O(1), descartar antigua O(1), revertir O(k)
 más búsqueda de posiciones/transferencias de cada inverso. Acciones rechazadas
-pueden descartar únicamente su intervalo vacío. El servicio devuelve cambios;
-NO cierra intervalos temporales artificiales ni captura combate/RNG ajenos.
+no quedan incorporadas como acciones cerradas. El servicio devuelve cambios;
+el motor registra los inversos de la acción y de los eventos posteriores,
+avanza hasta la siguiente decisión y cierra el intervalo compartido.
 
 El pergamino valida historial/capacidad, retira una instancia, delega la última
 transacción y permanece consumido. Costo cero, sin transacción nueva. Recoger
@@ -69,8 +82,12 @@ cerrados: 1.4243 ms. Copiar con deepcopy un estado sintético con 512 referencia
 para cada intervalo: 104.8251 ms. La alternativa también retiene solo cinco;
 el costo proviene de copiar, no de una pila ilimitada. No se usa en producción.
 
-**Límites:** los intervalos completos deben contener también eventos y cambios
-de simulación. Los diccionarios descriptivos actuales no cumplen ese contrato.
+**Integración:** los intervalos del motor utilizan CambioReversible e
+incluyen reloj, agenda, azar y mutaciones de simulación. Registrar un
+diccionario descriptivo como cambio se rechaza; no sustituye un inverso.
+
+**Límites:** el guardado actual no restaura el historial. La representación
+exportada debe acordarse con el responsable de persistencia.
 No se afirma atomicidad frente a historial corrupto o inversos ajenos que
 fallen a mitad de ejecución; capacidad/transferencias propias se prevalidan.
 Fijaciones de caché se agregan desde inventario/equipo/historial fuera del
@@ -114,6 +131,12 @@ implementación por exigencia de algoritmos propios, no por lentitud ficticia.
 Se midieron tamaños 8/16/32/64/128/512, ordenados/casi ordenados/invertidos/
 aleatorios y criterios costosos. Ver las 456 filas de cada corrida 16/1.
 
+**Integración:** RepositorioPuntajes.listar_ordenados utiliza el mismo
+OrdenadorAdaptativo. Permite ordenar ascendentemente por acciones_ejecutadas,
+enemigos_derrotados o reloj_final, conservando empates y sin escribir el
+archivo. listar mantiene el orden de anexado. Falta coordinar los consumidores
+de índices binarios y listas auxiliares del catálogo con su propietario.
+
 **Límites:** coste de resolver fichas no es red medida; fichas sintéticas ya
 disponibles. Umbrales no son universales; ruido, distribución y coste de
 criterio pueden cambiar la elección óptima. Se excluye presentación.
@@ -129,7 +152,8 @@ Se valida todo el formato antes de ejecutar: campos/tipos, líneas vacías,
 claves duplicadas, cabecera y acciones disponibles. Se verifica fuente o copia
 local compatible; no se sustituuyen versiones arbitrariamente. Con un log
 normal activo se crea un contexto distinto; sin vista/entrada, no se escriben
-logs/puntajes. IDs JSON enteros permanecen enteros, no se confunden con texto.
+logs/puntajes. Los IDs de actores y objetos son textuales; los IDs de salas
+son enteros, conforme a los DTO compartidos. No se convierten arbitrariamente.
 
 **Operaciones/costos:** lectura/validación O(a) registros y memoria O(a) para
 validar antes de ejecutar. Resolver ID cuesta O(entidades de sala/inventario).
@@ -141,10 +165,14 @@ arreglo JSON 0.4837 ms. Arreglo es más rápido; se descarta como log porque
 append requeriría modificar el cierre/reescribir, frente a una línea por
 acción. Estos tiempos miden parser, NO replay completo ni red/motor.
 
-**Límites:** falta inicialización desde esquema confirmado y el motor no
-entrega intervalos completos/inversos de todas las acciones. El historial de
-una partida normal todavía no puede reproducir todos los pergaminos después
-de combate/eventos. Se reportan acciones imposibles y eventos pendientes; no
-se silencian. No se declara replay completo ni determinismo de eventos aún
-no implementados. Escribir log y modificar estado no es una transacción de
-disco+motor: fallo posterior a acción se informa y bloquea siguientes acciones.
+**Integración:** consola y replay utilizan JuegoService y el motor integrado.
+Las pruebas con una fábrica explícita comprueban acciones, pergaminos,
+intervalos con eventos y conservación del estado aleatorio. La suite del
+árbol revisado pasó 662 pruebas; ese número no acredita datos reales de API.
+
+**Límites:** falta conectar el inicializador con el esquema confirmado para
+iniciar y reproducir una partida real desde main. Sin versiones compatibles
+se rechaza el replay; las acciones imposibles se informan. Escribir log y
+modificar estado no constituye una transacción de disco+motor: un fallo de
+registro posterior a la acción se informa y bloquea las siguientes acciones.
+Las mediciones anteriores corresponden al parser, no al replay completo.

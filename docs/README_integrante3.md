@@ -1,7 +1,7 @@
 # Aportación del integrante 3 — JuegoCripta
 
 Actualizado el 6 de octubre de 2026, sobre la rama `joshua`,
-commit `5e8977a`. Incluye el trabajo integrado de los tres integrantes.
+commit `638e57d`. Incluye el trabajo integrado de los tres integrantes.
 Este documento describe el estado comprobado; no declara terminado
 el proyecto completo.
 
@@ -14,6 +14,7 @@ python -m venv .venv
 ```
 
 Activar el entorno:
+
 - PowerShell: `.\.venv\Scripts\Activate.ps1`
 - Linux: `source .venv/bin/activate`
 
@@ -61,9 +62,10 @@ del integrante 3. Falta conectar las mediciones de los compañeros.
 El motor integrado administra reloj, eventos y cierre del historial.
 El controlador no vuelve a ejecutar las acciones ni suma tiempo aparte.
 
-El motor ya admite equipar. Falta conectar automáticamente el mismo
-ServicioInventario entre motor y JuegoService para compartir equipo,
-catálogo, adaptador y referencias de caché.
+JuegoService.conectar_inventario conecta automáticamente el mismo
+ServicioInventario al motor. Ambos comparten equipo, catálogo, adaptador,
+historial y referencias de caché. La conexión debe hacerse antes de usar,
+equipar o retroceder, y fuera de un intervalo abierto.
 
 ## Comandos
 
@@ -100,7 +102,10 @@ No se inventa una fórmula de puntuación.
 
 Se verificaron 40 pruebas de repositorio y controlador, además de
 una comprobación del método nuevo y conservación de la lista original.
-Esto no equivale a una validación completa de todo el proyecto.
+Después de conectar el servicio compartido pasaron las 662 pruebas
+existentes y nuevas de la suite, incluidas tres regresiones de conexión,
+equipo/retroceso y rechazos de conexión. Esto no verifica por sí solo
+el arranque con datos reales ni la reanudación de partidas guardadas.
 
 ## Datos y persistencia
 
@@ -126,10 +131,9 @@ Decisiones y complejidades: `docs/secciones_integrante3.md`.
 Consultas LLM: `docs/PROMPTS_LLM_integrante3.md`.
 
 Pendientes:
-- Compartir automáticamente ServicioInventario con el motor.
+
 - Conectar el inicializador y comprobar consola/replay con datos reales.
 - Acordar exportación/restauración del bloque propio con persistencia.
 - Coordinar ordenamientos requeridos por índices y catálogo.
 - Reunir los proveedores de mediciones en --bench.
-- Actualizar los límites antiguos de las secciones técnicas
-  y completar la bitácora de prompts realmente utilizados.
+- Completar la bitácora de prompts realmente utilizados.
