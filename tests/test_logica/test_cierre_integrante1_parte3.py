@@ -12,7 +12,7 @@ from dto.actor import Enemigo, Jugador
 from dto.estado_partida import EstadoPartida
 from dto.evento import Evento
 from dto.objeto_instancia import ObjetoInstancia
-from dto.sala import Puerta, Sala
+from dto.sala import Puerta, Sala, Trampa
 from logica.inventario import Inventario
 from logica.agenda_eventos import AgendaEventos
 from logica.mapa_cripta import MapaCripta
@@ -65,6 +65,7 @@ def test_abrir_sin_llave_o_con_llave_incorrecta_no_muta():
     sin_llave = motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE"))
     assert not sin_llave.exito
     assert estado.reloj == 0 and not puerta.abierta
+    assert not puerta.fue_abierta_con_llave_requerida
     assert estado.historial.get_cantidad() == cantidad
 
     incorrecta = objeto_inventario(estado, "k1", {
@@ -73,6 +74,7 @@ def test_abrir_sin_llave_o_con_llave_incorrecta_no_muta():
     resultado = motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE"))
     assert not resultado.exito
     assert estado.reloj == 0 and not puerta.abierta
+    assert not puerta.fue_abierta_con_llave_requerida
     assert estado.inventario.obtener_actual() is incorrecta
     assert estado.historial.get_cantidad() == cantidad
 
@@ -84,7 +86,8 @@ def test_llave_correcta_abre_no_se_consume_y_abrir_es_separado_de_mover():
     })
     abrir = motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE"))
     assert abrir.exito and abrir.costo == 50 and estado.reloj == 50
-    assert puerta.abierta and estado.jugador.sala_actual is origen
+    assert puerta.abierta and puerta.fue_abierta_con_llave_requerida
+    assert estado.jugador.sala_actual is origen
     assert estado.inventario.obtener_actual() is llave
     assert llave.ubicacion == "inventario" and estado.inventario.get_cantidad() == 1
 
@@ -97,6 +100,32 @@ def test_llave_correcta_abre_no_se_consume_y_abrir_es_separado_de_mover():
         "acciones": 2, "enemigos_derrotados": 0,
         "tiempo_final": 50, "resultado": "VICTORIA",
     }
+
+
+def test_abrir_soltar_llave_y_entrar_por_puerta_de_salida_declara_victoria():
+    motor, estado, origen, salida, puerta = partida_puerta()
+    llave = objeto_inventario(estado, "k-negra", {
+        "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
+    })
+
+    assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.fue_abierta_con_llave_requerida
+    assert motor.ejecutar_accion(Accion("SOLTAR")).exito
+    assert llave in origen.objetos and estado.inventario.esta_vacio()
+
+    resultado = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+    assert resultado.exito and estado.jugador.sala_actual is salida
+    assert estado.victoria and estado.fin_partida == "VICTORIA"
+
+
+def test_poseer_llave_sin_abrir_no_cumple_condicion_de_salida():
+    motor, estado, _, salida, puerta = partida_puerta()
+    objeto_inventario(estado, "k-negra", {
+        "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
+    })
+
+    assert not puerta.fue_abierta_con_llave_requerida
+    assert not motor._cumple_salida(puerta, salida)
 
 
 def test_entrar_otra_sala_o_sin_llave_de_salida_no_declara_victoria():
@@ -120,11 +149,14 @@ def test_cierre_automatico_ignora_evento_de_apertura_anterior():
         "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
     })
     assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.fue_abierta_con_llave_requerida
     evento_viejo = next(e for e in estado.agenda.recorrer()
                           if e.tipo == "CERRAR_PUERTA")
     assert estado.historial.deshacer_ultimo(estado)
     assert not puerta.abierta and puerta.evento_cierre_id is None
+    assert not puerta.fue_abierta_con_llave_requerida
     assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.fue_abierta_con_llave_requerida
     nuevo_id = puerta.evento_cierre_id
     assert nuevo_id is not None and puerta.evento_cierre is not evento_viejo
     assert motor._despachar(evento_viejo) == []
@@ -300,18 +332,77 @@ def test_retroceso_permitido_tras_derrota_no_recupera_pergamino():
 
 
 def test_retroceso_permitido_tras_victoria_restaurando_intervalo_final():
-    motor, estado, origen, _, puerta = partida_puerta()
+    motor, estado, origen, salida, puerta = partida_puerta()
     objeto_inventario(estado, "k", {
         "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
     })
     objeto = pergamino(estado, "r1")
+    trampa = Trampa("t-reversible", "trp_leve")
+    trampa.ficha = {
+        "id": "trp_leve", "clase": "trampa", "daño": 1, "rearme": 300,
+    }
+    salida.trampas.append(trampa)
     assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
-    assert motor.ejecutar_accion(Accion("MOVER", direccion="NORTE")).exito
+    reloj_anterior = estado.reloj
+    agenda_anterior = list(estado.agenda.recorrer())
+    primera_entrada = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+    assert primera_entrada.exito
     assert estado.victoria and not estado.partida_activa
+    assert estado.jugador.vida == 29 and not trampa.armada
+    assert estado.agenda.buscar(trampa.evento_rearme_id) is trampa.evento_rearme
     assert motor.ejecutar_accion(Accion("RETROCEDER")).exito
     assert estado.partida_activa and not estado.victoria and estado.fin_partida is None
     assert estado.jugador.sala_actual is origen and puerta.abierta
+    assert estado.reloj == reloj_anterior and estado.jugador.vida == 30
+    assert trampa.armada and trampa.evento_rearme_id is None
+    assert list(estado.agenda.recorrer()) == agenda_anterior
     assert objeto.ubicacion == "consumido"
+    segunda_entrada = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+    assert segunda_entrada.exito and estado.victoria
+    assert segunda_entrada.notificaciones == primera_entrada.notificaciones
+
+
+def test_trampa_letal_al_entrar_en_salida_impide_la_victoria():
+    motor, estado, _, salida, puerta = partida_puerta()
+    trampa = Trampa("letal", "trp_letal")
+    trampa.ficha = {
+        "id": "trp_letal", "clase": "trampa", "daño": 30, "rearme": 300,
+    }
+    salida.trampas.append(trampa)
+    objeto_inventario(estado, "k-negra", {
+        "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
+    })
+    assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.fue_abierta_con_llave_requerida
+
+    resultado = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+    assert resultado.exito and estado.jugador.vida == 0
+    assert estado.fin_partida == "DERROTA" and not estado.victoria
+
+
+def test_cierre_automatico_bloquea_paso_y_reapertura_vuelve_a_exigir_llave():
+    motor, estado, origen, _, puerta = partida_puerta(cierre=75)
+    llave = objeto_inventario(estado, "k-negra", {
+        "id": "itm_llave_negra", "clase": "llave", "abre": "puerta_salida",
+    })
+    assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.abierta and puerta.fue_abierta_con_llave_requerida
+    assert motor.ejecutar_accion(Accion("ESPERAR")).exito
+    assert not puerta.abierta and puerta.fue_abierta_con_llave_requerida
+
+    reloj = estado.reloj
+    bloqueado = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+    assert not bloqueado.exito and estado.reloj == reloj
+    assert estado.jugador.sala_actual is origen
+
+    assert motor.ejecutar_accion(Accion("SOLTAR")).exito
+    sin_llave = motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE"))
+    assert not sin_llave.exito and not puerta.abierta
+    assert puerta.fue_abierta_con_llave_requerida
+
+    assert motor.ejecutar_accion(Accion("RECOGER", llave)).exito
+    assert motor.ejecutar_accion(Accion("ABRIR", direccion="NORTE")).exito
+    assert puerta.abierta and puerta.fue_abierta_con_llave_requerida
 
 
 def test_traslados_de_pergaminos_no_reaparecen_al_retroceder():

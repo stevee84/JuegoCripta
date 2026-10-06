@@ -230,7 +230,7 @@ class MotorJuego(MotorJuegoContrato):
         if requerida is None:
             return puerta.llave_requerida is None or puerta.abierta
         return puerta.llave_requerida == requerida \
-            and self._buscar_llave(requerida) is not None
+            and puerta.fue_abierta_con_llave_requerida
 
     def _declarar_victoria(self):
         estado = self.estado
@@ -495,6 +495,9 @@ class MotorJuego(MotorJuegoContrato):
                     puerta.id_puerta, puerta)
                 atributo(estado, puerta, "evento_cierre_id", evento.id_evento)
                 atributo(estado, puerta, "evento_cierre", evento)
+            if puerta.llave_requerida is not None:
+                atributo(
+                    estado, puerta, "fue_abierta_con_llave_requerida", True)
             notificaciones.append({"tipo": "PUERTA_ABIERTA", "puerta": puerta.id_puerta})
         elif accion.tipo == "RECOGER":
             reversible = not ServicioInventario.es_pergamino(

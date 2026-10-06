@@ -73,6 +73,8 @@ class Puerta:
 
         self.abierta = False
 
+        self.fue_abierta_con_llave_requerida = False
+
         self.llave_requerida = None
 
         self.cierre_automatico = None
