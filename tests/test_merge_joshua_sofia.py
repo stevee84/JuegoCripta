@@ -208,19 +208,53 @@ def test_consumibles_comparten_intervalo_del_motor_y_restituyen_nodo(ficha):
     comprobar_enlaces(estado.inventario)
 
 
-def test_equipar_rechazado_por_motor_no_se_ejecuta_en_servicio(monkeypatch):
-    _, servicio, estado = iniciar()
-    arma = objeto("arma", {"id": "arma", "clase": "arma", "ataque_bonus": 4})
+def test_equipar_desde_servicio_aplica_costo_y_se_puede_deshacer():
+    motor, servicio, estado = iniciar()
+
+    arma = objeto(
+        "arma",
+        {"id": "arma", "clase": "arma", "ataque_bonus": 4},
+    )
     estado.inventario.agregar(arma)
-    servicio.conectar_inventario(estado.inventario, {"arma": arma.ficha})
-    def prohibido():
-        pytest.fail("El rechazo del motor no autoriza ejecutar equipo por fuera")
-    monkeypatch.setattr(servicio._operaciones_inventario, "equipar", prohibido)
-    antes = pickle.dumps(estado)
+    servicio.conectar_inventario(
+        estado.inventario,
+        {"arma": arma.ficha},
+    )
+
+    ataque_inicial = estado.jugador.ataque
+    tiempo_inicial = estado.reloj
+    acciones_iniciales = estado.acciones_ejecutadas
+    intervalos_iniciales = estado.historial.get_cantidad()
+
     resultado = servicio.ejecutar_accion(Accion("EQUIPAR"))
-    assert not resultado.exito and resultado.costo == 0
-    assert "aún no especificadas" in resultado.mensaje
-    assert pickle.dumps(estado) == antes
+
+    assert resultado.exito, resultado.mensaje
+    assert resultado.costo == 50
+    assert estado.jugador.ataque == ataque_inicial + 4
+    assert arma.ubicacion == "equipado"
+    assert estado.inventario.obtener_actual() is arma
+
+    # Esta partida usa velocidad 100: costo 50 equivale a 50 de tiempo.
+    assert estado.reloj == tiempo_inicial + 50
+    assert estado.acciones_ejecutadas == acciones_iniciales + 1
+    assert estado.historial.get_cantidad() == intervalos_iniciales + 1
+    assert estado.jugador_disponible
+    assert not estado.historial.hay_intervalo_abierto()
+
+    operaciones = motor._obtener_servicio_inventario()
+    assert operaciones.obtener_equipo()["arma"] is arma
+    comprobar_enlaces(estado.inventario)
+
+    # El intervalo debe devolver equipo, estadísticas y reloj.
+    assert estado.historial.deshacer_ultimo(estado)
+    assert estado.jugador.ataque == ataque_inicial
+    assert arma.ubicacion == "inventario"
+    assert estado.inventario.obtener_actual() is arma
+    assert operaciones.obtener_equipo()["arma"] is None
+    assert estado.reloj == tiempo_inicial
+    assert estado.acciones_ejecutadas == acciones_iniciales
+    assert estado.historial.get_cantidad() == intervalos_iniciales
+    comprobar_enlaces(estado.inventario)
 
 
 @pytest.mark.parametrize("tipo", ["USAR", "RETROCEDER"])
@@ -402,4 +436,56 @@ def test_abrir_con_llave_correcta_programa_cierre_y_no_consume_la_llave():
     assert estado.historial.get_cantidad() == 2
     assert estado.inventario.obtener_objetos() == [llave]
     assert estado.inventario._cursor is nodo and llave.ubicacion == "inventario"
+    comprobar_enlaces(estado.inventario)
+
+def test_motor_comparte_servicio_de_inventario_y_revierte_equipo():
+    motor, servicio, estado = iniciar()
+
+    arma = objeto(
+        "arma-compartida",
+        {"id": "espada", "clase": "arma", "ataque_bonus": 4},
+    )
+    estado.inventario.agregar(arma)
+    servicio.conectar_inventario(
+        estado.inventario,
+        {"espada": arma.ficha},
+    )
+
+    # Simula la conexión que incorporará tu compañero.
+    operaciones = servicio._operaciones_inventario
+    motor.conectar_servicio_inventario(operaciones)
+
+    assert motor._obtener_servicio_inventario() is operaciones
+
+    ataque_inicial = estado.jugador.ataque
+
+    resultado = servicio.ejecutar_accion(Accion("EQUIPAR"))
+    assert resultado.exito, resultado.mensaje
+    assert resultado.costo == 50
+    assert estado.reloj == 50
+    assert estado.jugador.ataque == ataque_inicial + 4
+    assert operaciones.obtener_equipo()["arma"] is arma
+
+    resultado = servicio.ejecutar_accion(Accion("SOLTAR"))
+    assert resultado.exito, resultado.mensaje
+    assert resultado.costo == 25
+    assert estado.reloj == 75
+    assert estado.jugador.ataque == ataque_inicial
+    assert operaciones.obtener_equipo()["arma"] is None
+    assert arma in estado.jugador.sala_actual.objetos
+
+    # Deshacer SOLTAR recupera el equipo compartido.
+    assert estado.historial.deshacer_ultimo(estado)
+    assert estado.reloj == 50
+    assert estado.jugador.ataque == ataque_inicial + 4
+    assert arma.ubicacion == "equipado"
+    assert operaciones.obtener_equipo()["arma"] is arma
+
+    # Deshacer EQUIPAR recupera las condiciones iniciales.
+    assert estado.historial.deshacer_ultimo(estado)
+    assert estado.reloj == 0
+    assert estado.jugador.ataque == ataque_inicial
+    assert arma.ubicacion == "inventario"
+    assert operaciones.obtener_equipo()["arma"] is None
+    assert estado.historial.esta_vacio()
     comprobar_enlaces(estado.inventario)

@@ -22,6 +22,74 @@ class MotorJuego(MotorJuegoContrato):
         self.combate = ReglasCombate()
         self.efectos = GestorEfectos(self.cambiar_velocidad)
         self.comportamientos = ComportamientoEnemigos()
+        self._servicio_inventario = None
+
+    def _resolver_ficha_inventario(self, ficha_id):
+        """Busca una ficha ya resuelta, sin consultar la red."""
+        estado = self.estado
+
+        for objeto in estado.inventario.obtener_objetos():
+            if self._es_ficha(objeto, ficha_id):
+                return objeto.ficha
+
+        if estado.mapa is not None:
+            for sala in estado.mapa.obtener_salas():
+                for objeto in sala.objetos:
+                    if self._es_ficha(objeto, ficha_id):
+                        return objeto.ficha
+
+                for enemigo in sala.enemigos:
+                    for objeto in enemigo.botin_preparado:
+                        if self._es_ficha(objeto, ficha_id):
+                            return objeto.ficha
+
+        raise ValueError(f"Ficha no disponible: {ficha_id}.")
+
+    def _obtener_servicio_inventario(self):
+        """Reutiliza el servicio de inventario de la partida actual."""
+        if self.estado is None:
+            raise ValueError("La partida no ha sido iniciada.")
+
+        if self.estado.inventario is None:
+            raise ValueError("Falta el inventario.")
+
+        if self._servicio_inventario is None:
+            servicio = ServicioInventario(
+                self.estado.inventario,
+                self.efectos,
+            )
+            servicio.conectar_contexto(
+                jugador=self.estado.jugador,
+                catalogo=self._resolver_ficha_inventario,
+                historial=self.estado.historial,
+            )
+            self._servicio_inventario = servicio
+
+        return self._servicio_inventario
+
+    def conectar_servicio_inventario(self, servicio):
+        """Conecta el servicio compartido antes de ejecutar acciones."""
+        if self.estado is None:
+            raise ValueError("La partida no ha sido iniciada.")
+
+        if not isinstance(servicio, ServicioInventario):
+            raise TypeError("Se requiere un ServicioInventario.")
+
+        if servicio is self._servicio_inventario:
+            return
+
+        if self.estado.historial.hay_intervalo_abierto():
+            raise ValueError(
+                "No se puede cambiar el servicio durante una acción."
+            )
+
+        if self._servicio_inventario is not None:
+            raise ValueError(
+                "El motor ya tiene un servicio de inventario. "
+                "La conexión debe realizarse antes de utilizarlo."
+            )
+
+        self._servicio_inventario = servicio
 
     def iniciar(self, estado) -> None:
         if not estado.reanudable:
@@ -94,6 +162,8 @@ class MotorJuego(MotorJuegoContrato):
                             not isinstance(objeto.ficha, dict)
                             or objeto.ficha.get("id") != objeto.tipo_ficha_id)):
                     raise ValueError("La ficha de un objeto no coincide con su tipo.")
+        if estado is not self.estado:
+            self._servicio_inventario = None                
         self.estado = estado
         if estado.historial is None:
             estado.historial = HistorialReversible()
@@ -277,7 +347,7 @@ class MotorJuego(MotorJuegoContrato):
                 return "El jugador todavía no puede decidir."
             if estado.inventario is None:
                 return "Falta el inventario."
-            return ServicioInventario(estado.inventario).validar_pergamino()
+            return self._obtener_servicio_inventario().validar_pergamino()
         if not estado.partida_activa:
             return "La partida ha terminado."
         jugador = estado.jugador
@@ -334,10 +404,15 @@ class MotorJuego(MotorJuegoContrato):
         elif accion.tipo == "USAR":
             if estado.inventario is None:
                 return "Falta el inventario."
-            return ServicioInventario(
-                estado.inventario, self.efectos).validar_uso(estado)
+            return self._obtener_servicio_inventario().validar_uso(estado)
         elif accion.tipo == "EQUIPAR":
-            return "Esta acción requiere fichas y reglas aún no especificadas."
+            if estado.inventario is None:
+                return "Falta el inventario."
+            objeto = estado.inventario.obtener_actual()
+            if objeto is None:
+                return "No hay un objeto seleccionado."
+            if objeto.ubicacion not in ("inventario", "equipado"):
+                return "El objeto seleccionado no está disponible."
         elif accion.tipo != "ESPERAR":
             return "Acción no reconocida."
         return None
@@ -349,7 +424,7 @@ class MotorJuego(MotorJuegoContrato):
         estado = self.estado
         historial = estado.historial
         if accion.tipo == "RETROCEDER":
-            servicio = ServicioInventario(estado.inventario)
+            servicio = self._obtener_servicio_inventario()
             consumo = servicio.consumir_pergamino()
             try:
                 if not historial.deshacer_ultimo(estado):
@@ -422,17 +497,32 @@ class MotorJuego(MotorJuegoContrato):
                 atributo(estado, puerta, "evento_cierre", evento)
             notificaciones.append({"tipo": "PUERTA_ABIERTA", "puerta": puerta.id_puerta})
         elif accion.tipo == "RECOGER":
-            reversible = not ServicioInventario.es_pergamino(accion.objetivo)
-            return ServicioInventario(estado.inventario).recoger(
-                accion.objetivo, sala, reversible=reversible)
-        elif accion.tipo == "SOLTAR":
             reversible = not ServicioInventario.es_pergamino(
-                estado.inventario.obtener_actual())
-            return ServicioInventario(estado.inventario).soltar(
-                sala, reversible=reversible)
+                accion.objetivo
+            )
+            return ServicioInventario(estado.inventario).recoger(
+                accion.objetivo,
+                sala,
+                reversible=reversible,
+            )
+
+        elif accion.tipo == "SOLTAR":
+            objeto = estado.inventario.obtener_actual()
+            reversible = not ServicioInventario.es_pergamino(objeto)
+
+            if objeto is not None and objeto.ubicacion == "equipado":
+                servicio = self._obtener_servicio_inventario()
+            else:
+                servicio = ServicioInventario(estado.inventario)
+
+            return servicio.soltar(
+                sala,
+                reversible=reversible,
+            )
         elif accion.tipo == "USAR":
-            return ServicioInventario(
-                estado.inventario, self.efectos).usar(estado)
+            return self._obtener_servicio_inventario().usar(estado)
+        elif accion.tipo == "EQUIPAR":
+            return self._obtener_servicio_inventario().equipar()
         return ResultadoAccion(True, f"{accion.tipo} ejecutado.", costo=costo_base(accion.tipo),
                                notificaciones=notificaciones)
 
