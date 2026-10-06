@@ -129,11 +129,19 @@ class JuegoService:
                     objetos.extend(enemigo.botin_preparado)
                 if any(o.id_instancia in ids for o in objetos):
                     raise ValueError("Los objetos deben tener IDs únicos en la partida.")
+        if estado.historial.hay_intervalo_abierto():
+            raise ValueError("No se conecta el inventario durante una acción.")
+        if getattr(self._motor, "_servicio_inventario", None) is not None:
+            raise ValueError(
+                "El motor ya tiene un servicio de inventario. "
+                "Conecta el inventario antes de usar, equipar o retroceder."
+            )
         operaciones = ServicioInventario(inventario, getattr(self._motor, "efectos", None))
         operaciones.conectar_contexto(
             estado.jugador, catalogo, estado.historial, adaptador, self._cache
         )
         operaciones._historial = self._vincular_historial(historial)
+        self._motor.conectar_servicio_inventario(operaciones)
         self._inventario = inventario
         estado.inventario = inventario
         self._operaciones_inventario = operaciones
