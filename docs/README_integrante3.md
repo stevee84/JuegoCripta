@@ -45,8 +45,13 @@ sin configurar.
 `--replay` no crea la vista interactiva, pero su ejecución completa
 desde el arranque también depende del inicializador.
 
-`--bench` no crea la vista y actualmente ejecuta las mediciones
-del integrante 3. Falta conectar las mediciones de los compañeros.
+`--bench` no crea la vista. Ejecuta las mediciones del integrante 3 y
+reutiliza la medición existente de agenda y el script de ciclos de simulación,
+sin modificar sus archivos. Los tiempos se reportan en ns por lote; cada
+medición conserva su reloj, repeticiones y calentamiento cuando difieren.
+El ciclo demo conserva las 200 muestras y los 10 calentamientos del script.
+Faltan proveedores de caché, recuperación de fichas y guardado/carga, que
+corresponden a sus responsables. El ejecutor acepta proveedores adicionales.
 
 ## Componentes implementados
 
@@ -135,5 +140,5 @@ Pendientes:
 - Conectar el inicializador y comprobar consola/replay con datos reales.
 - Acordar exportación/restauración del bloque propio con persistencia.
 - Coordinar ordenamientos requeridos por índices y catálogo.
-- Reunir los proveedores de mediciones en --bench.
+- Conectar proveedores restantes de caché, recuperación de fichas y guardado/carga cuando sus responsables los entreguen.
 - Completar la bitácora de prompts realmente utilizados.

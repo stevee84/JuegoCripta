@@ -180,8 +180,9 @@ def ejecutar(repeticiones=15, tamanos=(8, 16, 32, 64, 128, 512), proveedores=())
         filas.append(medir("replay_parse_array_alternativa", n, repeticiones,
                            lambda s=arreglo: lambda: json.loads(s)))
 
-    # Integración explícita: ningún subsistema ajeno ni resultados simulados.
-    for proveedor in proveedores:
+    # Reutilizar las mediciones existentes sin modificar sus archivos.
+    disponibles = (_medir_agenda_existente, _medir_ciclo_existente) + tuple(proveedores)
+    for proveedor in disponibles:
         filas.extend(proveedor(repeticiones=repeticiones, tamanos=tamanos))
     return {
         "entorno": {"python": sys.version, "plataforma": platform.platform(),
@@ -192,6 +193,58 @@ def ejecutar(repeticiones=15, tamanos=(8, 16, 32, 64, 128, 512), proveedores=())
                      "factor": ordenador.FACTOR_DESPLAZAMIENTOS},
         "mediciones": filas,
     }
+
+
+def _medir_agenda_existente(repeticiones, tamanos):
+    from benchmarks.benchmark_agenda_integrante1 import medir as medir_agenda
+
+    filas = []
+    for n in tamanos:
+        tiempos = []
+        for _ in range(repeticiones + 1):
+            procesados, segundos = medir_agenda(cantidad=n)
+            if procesados != n:
+                raise ValueError("La medición de agenda no procesó todos los eventos.")
+            tiempos.append(segundos * 1_000_000_000)
+        filas.append({
+            "medicion": "agenda_extraer_eventos", "n": n,
+            "repeticiones": repeticiones, "calentamiento": 1,
+            "unidad": "ns_por_lote", "reloj": "perf_counter",
+            "mediana": statistics.median(tiempos[1:]),
+            "minimo": min(tiempos[1:]),
+            "origen": "benchmarks/benchmark_agenda_integrante1.py",
+            "preparacion_incluida": False,
+        })
+    return filas
+
+
+def _medir_ciclo_existente(repeticiones, tamanos):
+    from contextlib import redirect_stdout
+    from io import StringIO
+    from pathlib import Path
+    from runpy import run_path
+
+    ruta = Path(__file__).resolve().parents[1] / "prueba_rendimiento_sofia.py"
+    salida = StringIO()
+    with redirect_stdout(salida):
+        resultado = run_path(str(ruta))
+    # El script define sus propias repeticiones y expresa muestras en ms.
+    tiempos = [valor * 1_000_000 for valor in resultado["mediciones"]]
+    if not tiempos:
+        raise ValueError("El script de simulación no entregó mediciones.")
+    return [{
+        "medicion": "ciclo_simulacion_demo", "n": 1,
+        "repeticiones": len(tiempos),
+        "calentamiento": resultado["repeticion"] + 1 - len(tiempos),
+        "unidad": "ns_por_lote", "reloj": "perf_counter",
+        "mediana": statistics.median(tiempos), "minimo": min(tiempos),
+        "maximo": max(tiempos),
+        "ciclos_de_20ms_o_mas": sum(t >= 20_000_000 for t in tiempos),
+        "semilla": resultado["estado"].semilla,
+        "origen": "prueba_rendimiento_sofia.py",
+        "preparacion_incluida": False,
+        "detalle_script": salida.getvalue().strip(),
+    }]
 
 
 if __name__ == "__main__":
