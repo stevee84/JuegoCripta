@@ -287,6 +287,15 @@ class JuegoService:
                         estado.historial.validar_deshacer(inventario, espacios=1)
             except (ValueError, TypeError) as error:
                 return ResultadoAccion(False, str(error))
+        elif accion.tipo == "EQUIPAR" and self._ruta_registro is not None:
+            # El cursor no se registra como acción: conservar su objeto por ID.
+            objetivo = inventario.obtener_actual() if inventario is not None else None
+            objetivo_id = getattr(objetivo, "id_instancia", None)
+            try:
+                if self.resolver_accion("USAR", objetivo_id).objetivo is not objetivo:
+                    raise ValueError("El objeto seleccionado no es la instancia vigente.")
+            except ValueError as error:
+                return ResultadoAccion(False, str(error))
 
         if tipo_motor != "RETROCEDER" and (not estado.partida_activa or not estado.jugador.esta_vivo()):
             return ResultadoAccion(False, "La partida no permite acciones.")

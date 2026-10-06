@@ -68,15 +68,39 @@ class EjecutorReplay:
             servicio._versiones_exigidas = versiones_anteriores
         for numero, registro in acciones:
             try:
-                accion = servicio.resolver_accion(
-                    registro["tipo"], registro["objetivo"], registro["direccion"]
-                )
-                resultado = servicio.ejecutar_accion(accion)
+                resultado = self._ejecutar_registro(servicio, registro)
                 if not resultado.exito:
                     raise ValueError(resultado.mensaje)
             except ValueError as error:
                 raise ValueError(f"Línea {numero}: acción imposible: {error}") from error
         self._servicio = servicio
+
+    def _ejecutar_registro(self, servicio, registro):
+        if registro["tipo"].upper() != "EQUIPAR" or registro["objetivo"] is None:
+            accion = servicio.resolver_accion(
+                registro["tipo"], registro["objetivo"], registro["direccion"]
+            )
+            return servicio.ejecutar_accion(accion)
+
+        # Reutiliza la resolución existente de IDs de inventario, sin usar el objeto.
+        objeto = servicio.resolver_accion("USAR", registro["objetivo"]).objetivo
+        inventario = servicio.obtener_estado().inventario
+        nodo = inventario._lista.primero
+        while nodo is not None and nodo.valor is not objeto:
+            nodo = nodo.siguiente
+        if nodo is None:
+            raise ValueError("El objeto del log no tiene un nodo vigente.")
+        cursor_anterior = inventario._cursor
+        inventario._cursor = nodo
+        try:
+            # El contrato del motor se conserva: EQUIPAR no recibe objetivo.
+            resultado = servicio.ejecutar_accion(servicio.resolver_accion("EQUIPAR"))
+        except Exception:
+            inventario._cursor = cursor_anterior
+            raise
+        if not resultado.exito:
+            inventario._cursor = cursor_anterior
+        return resultado
 
     def _leer_log(self, ruta):
         # Valida todo el formato antes de inicializar o ejecutar la partida.
@@ -113,7 +137,7 @@ class EjecutorReplay:
                         if tipo in ("MOVER", "ABRIR"):
                             if objetivo is not None or not isinstance(direccion, str) or not direccion.strip():
                                 raise ValueError(f"{tipo} requiere dirección y no recibe objetivo.")
-                        elif tipo in ("ATACAR", "RECOGER", "USAR", "RETROCEDER") or (tipo == "SOLTAR" and objetivo is not None):
+                        elif tipo in ("ATACAR", "RECOGER", "USAR", "RETROCEDER") or (tipo in ("SOLTAR", "EQUIPAR") and objetivo is not None):
                             if type(objetivo) is not str or not objetivo or direccion is not None:
                                 raise ValueError(f"{tipo} requiere un ID y no recibe dirección.")
                         elif tipo in ("SOLTAR", "ESPERAR", "EQUIPAR"):
