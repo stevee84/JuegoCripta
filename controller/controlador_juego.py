@@ -88,7 +88,9 @@ class ControladorJuego:
             operacion = partes[0].lower()
             consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
             acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "guardar", "cargar", "registro", "exportar_parcial")
-            if operacion in consultas and len(partes) != 1:
+            if operacion == "puntajes" and len(partes) not in (1, 2):
+                raise ValueError("puntajes acepta opcionalmente un criterio de orden.")
+            if operacion in consultas and operacion != "puntajes" and len(partes) != 1:
                 raise ValueError("La consulta no recibe argumentos.")
             if operacion in acciones and len(partes) != 2:
                 raise ValueError("El comando requiere exactamente un argumento.")
@@ -115,10 +117,17 @@ class ControladorJuego:
                 self._vista.mostrar_mensaje(json.dumps(datos, ensure_ascii=False))
                 resultado = ResultadoAccion(True, "Criptas disponibles consultadas.")
             elif operacion == "puntajes":
+                if len(partes) == 2:
+                    puntajes = self._puntajes.listar_ordenados(partes[1])
+                else:
+                    puntajes = self._puntajes.listar()
+
                 self._vista.mostrar_mensaje(
-                    json.dumps(self._puntajes.listar(), ensure_ascii=False)
+                    json.dumps(puntajes, ensure_ascii=False)
                 )
-                resultado = ResultadoAccion(True, "Resultados locales consultados.")
+                resultado = ResultadoAccion(
+                    True, "Resultados locales consultados."
+                )
             elif operacion == "bitacora":
                 for mensaje in self._bitacora.obtener_mensajes():
                     self._vista.mostrar_mensaje(mensaje)
@@ -126,6 +135,7 @@ class ControladorJuego:
             elif operacion == "ayuda":
                 self._vista.mostrar_mensaje(
                     "Consultas: estado, criptas, puntajes, bitacora, ayuda, salir. "
+                    "Puntajes: puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final], orden ascendente. "
                     "Acciones: mover/abrir DIRECCION, atacar/recoger ID, soltar, esperar. "
                     "Inventario: siguiente, anterior, inventario [peso|valor|nombre]. "
                     "registro RUTA inicia un log nuevo antes de la primera acción. "
