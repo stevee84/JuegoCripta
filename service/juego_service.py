@@ -1,4 +1,7 @@
 from pathlib import Path
+import os
+import tempfile
+import zlib
 
 from datos.registro_partida import RegistroPartida
 from dto.accion import Accion, ResultadoAccion
@@ -145,7 +148,151 @@ class JuegoService:
         self._inventario = inventario
         estado.inventario = inventario
         self._operaciones_inventario = operaciones
+        estado.servicio_inventario = operaciones
         operaciones.sincronizar_referencias()
+
+    def _fichas_del_estado(self, estado):
+        entidades = estado.inventario.obtener_objetos()
+        entidades.append(estado.jugador)
+        for sala in estado.mapa.obtener_salas():
+            entidades.extend(sala.objetos)
+            entidades.extend(sala.trampas)
+            entidades.extend(sala.enemigos)
+            for enemigo in sala.enemigos:
+                entidades.extend(enemigo.botin_preparado)
+        fichas = {}
+        operaciones = getattr(self._motor, "_servicio_inventario", None)
+        catalogo = getattr(operaciones, "_catalogo", None)
+        if isinstance(catalogo, dict):
+            for ficha_id, ficha in catalogo.items():
+                if isinstance(ficha, dict) and ficha.get("id") == ficha_id:
+                    fichas[ficha_id] = ficha
+        for entidad in entidades:
+            ficha = getattr(entidad, "ficha", None)
+            if ficha is None:
+                operaciones = getattr(self._motor, "_servicio_inventario", None)
+                tipo = getattr(entidad, "tipo_ficha_id", getattr(entidad, "tipo", None))
+                catalogo = getattr(operaciones, "_catalogo", None)
+                if tipo is not None and isinstance(catalogo, dict):
+                    ficha = catalogo.get(tipo)
+            if isinstance(ficha, dict) and isinstance(ficha.get("id"), str):
+                if ficha["id"] in fichas and fichas[ficha["id"]] != ficha:
+                    raise ValueError("Hay fichas contradictorias para un mismo ID.")
+                fichas[ficha["id"]] = ficha
+        return fichas
+
+    def guardar_partida(self, ruta, guardado=None):
+        """Valida el v5 antes de reemplazar el destino; no serializa el undo."""
+        from datos.guardado_binario import GuardadoBinario
+        from service.restaurador_partida import RestauradorPartida
+
+        estado = self.obtener_estado()
+        if estado is None or estado.jugador is None or estado.mapa is None or estado.inventario is None:
+            raise ValueError("Guardado completo bloqueado: no hay una partida e inventario inicializados.")
+        if estado.historial is None or estado.historial.hay_intervalo_abierto():
+            raise ValueError("No se guarda una acción en curso.")
+        if (estado.partida_activa and not estado.jugador_disponible) or estado.evento_decision_id is not None:
+            raise ValueError("Se guarda entre decisiones del jugador.")
+        if estado.azar.getstate()[2] is not None:
+            raise ValueError("El binario actual no conserva la caché gaussiana del azar.")
+        destino = Path(ruta)
+        if self.es_ruta_registro(destino):
+            raise ValueError("El guardado no puede sobrescribir el registro activo.")
+        binario = guardado if guardado is not None else GuardadoBinario()
+        operaciones = getattr(self._motor, "_servicio_inventario", None)
+        anterior = getattr(estado, "servicio_inventario", None)
+        tenia_servicio = hasattr(estado, "servicio_inventario")
+        estado.servicio_inventario = operaciones
+        temporal = None
+        try:
+            descriptor, nombre = tempfile.mkstemp(dir=destino.absolute().parent, prefix=".cripta-", suffix=".tmp")
+            os.close(descriptor)
+            temporal = Path(nombre)
+            binario.guardar(str(temporal), estado)
+            datos = binario.cargar(str(temporal))
+            try:
+                RestauradorPartida().restaurar_para_reanudar(datos, self._fichas_del_estado(estado))
+            except (ValueError, TypeError) as error:
+                raise ValueError(f"Guardado completo bloqueado: datos parciales o inválidos: {error}") from error
+            os.replace(temporal, destino)
+        finally:
+            if temporal is not None:
+                temporal.unlink(missing_ok=True)
+            if tenia_servicio:
+                estado.servicio_inventario = anterior
+            else:
+                del estado.servicio_inventario
+
+    def _catalogo_para_carga(self, datos):
+        from service.restaurador_partida import RestauradorPartida
+
+        ids = RestauradorPartida.ids_fichas(datos)
+        versiones = (datos["version_cripta"], datos["version_catalogo"])
+        if self._fuente is not None and ids:
+            if not all(isinstance(v, str) and v for v in versiones):
+                raise ValueError("Los datos parciales no identifican versiones compatibles de las fichas.")
+            if self.obtener_versiones(datos["cripta_id"]) != versiones:
+                raise ValueError("Las versiones de cripta o catálogo no coinciden con el guardado.")
+            catalogo = self._fuente.obtener_catalogo(ids)
+            if self.obtener_versiones(datos["cripta_id"]) != versiones:
+                raise ValueError("Las versiones cambiaron durante la carga.")
+            return catalogo
+        if not ids:
+            return {}
+        actual = self.obtener_estado()
+        if actual is not None and versiones == (actual.version_cripta, actual.version_catalogo):
+            return self._fichas_del_estado(actual)
+        raise ValueError("Falta un catálogo compatible para reconstruir las fichas.")
+
+    def cargar_partida(self, ruta, guardado=None):
+        """Reconstruye y valida fuera del estado vigente antes de publicarlo."""
+        from datos.guardado_binario import GuardadoBinario
+        from logica.motor_juego import MotorJuego
+        from service.restaurador_partida import RestauradorPartida
+
+        actual = self.obtener_estado()
+        if self.tiene_registro():
+            raise ValueError("No se carga otra partida mientras hay un registro activo.")
+        if actual is not None and actual.historial is not None and actual.historial.hay_intervalo_abierto():
+            raise ValueError("No se carga durante una acción.")
+        if not isinstance(self._motor, MotorJuego):
+            raise ValueError("Se requiere un MotorJuego real para reanudar.")
+        binario = guardado if guardado is not None else GuardadoBinario()
+        try:
+            datos = binario.cargar(ruta)
+        except (zlib.error, UnicodeError, ValueError) as error:
+            raise ValueError("No se pudo leer el archivo binario: contenido corrupto.") from error
+        if datos is None:
+            raise ValueError("No se pudo leer el archivo binario o su versión es incompatible.")
+        try:
+            catalogo = self._catalogo_para_carga(datos)
+            estado = RestauradorPartida().restaurar_para_reanudar(datos, catalogo)
+        except (ValueError, TypeError, KeyError, IndexError, AttributeError) as error:
+            raise ValueError(f"Carga bloqueada: datos parciales o inválidos: {error}") from error
+        anterior = getattr(self._motor, "_servicio_inventario", None)
+        # El restaurador ya vinculó agenda, rastro, actores y contexto.
+        # No se repite iniciar: activaría reglas iniciales y su validación
+        # rechaza las referencias de botín retenidas después de una muerte.
+        operaciones = estado.servicio_inventario
+        operaciones._efectos = self._motor.efectos
+        self._motor.estado = estado
+        self._motor._servicio_inventario = operaciones
+        self._inventario = estado.inventario
+        self._operaciones_inventario = operaciones
+        if anterior is not None and anterior._cache is self._cache and self._cache is not None:
+            for ficha_id in anterior._fijadas:
+                self._cache.liberar_referencia(ficha_id)
+        operaciones._cache = self._cache
+        operaciones.sincronizar_referencias()
+        self._versiones = (estado.version_cripta, estado.version_catalogo)
+        self._versiones_exigidas = None
+        self._semilla = estado.semilla
+        self._estado_inicial = None  # Una carga no es el inicio de un replay.
+        self._ruta_registro = self._marca_registro = self._error_registro = None
+        self._acciones_coordinadas = 0
+        # Cargar un final guardado no vuelve a anexar el mismo resultado.
+        self._resultado_registrado = estado if not estado.partida_activa else None
+        return estado
 
     def _vincular_historial(self, historial=None):
         if historial is not None and not isinstance(historial, HistorialReversible):

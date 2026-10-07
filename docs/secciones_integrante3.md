@@ -86,8 +86,10 @@ el costo proviene de copiar, no de una pila ilimitada. No se usa en producción.
 incluyen reloj, agenda, azar y mutaciones de simulación. Registrar un
 diccionario descriptivo como cambio se rechaza; no sustituye un inverso.
 
-**Límites:** el guardado actual no restaura el historial. La representación
-exportada debe acordarse con el responsable de persistencia.
+**Límites:** por acuerdo del equipo, cargar v5 crea un historial vacío;
+no restaura las cinco transacciones anteriores al guardado. Las acciones
+posteriores a la carga siguen siendo reversibles. Si se exige conservar el
+historial anterior, se añadirá su serialización en un bloque aparte.
 No se afirma atomicidad frente a historial corrupto o inversos ajenos que
 fallen a mitad de ejecución; capacidad/transferencias propias se prevalidan.
 Fijaciones de caché se agregan desde inventario/equipo/historial fuera del
