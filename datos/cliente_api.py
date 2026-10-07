@@ -4,7 +4,7 @@ import uuid
 import requests
 
 from contratos.fuente_datos import FuenteDatos
-from dto.sala import validar_id_sala
+
 
 
 class CriptaAPIError(Exception):
@@ -90,29 +90,28 @@ class ClienteAPI(FuenteDatos):
 
     def obtener_generales(self, cripta_id: str) -> dict:
         return self._solicitar(
-            "GET", f"{self._url_base}/criptas/{cripta_id}/generales"
+            "GET", f"{self._url_base}/criptas/{cripta_id}"
         )
 
     def obtener_pagina(self, cripta_id: str, pagina: int) -> dict:
         return self._solicitar(
             "GET",
-            f"{self._url_base}/criptas/{cripta_id}/paginas/{pagina}",
+            f"{self._url_base}/criptas/{cripta_id}/salas",
+            params={"pagina": pagina},
         )
 
-    def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
-        for sala_id in sala_ids:
-            validar_id_sala(sala_id)
+    def obtener_contenido(self, cripta_id: str, sala_ids: list) -> dict:
         return self._solicitar(
-            "POST",
+            "GET",
             f"{self._url_base}/criptas/{cripta_id}/contenido",
-            json_body={"sala_ids": sala_ids},
+            params={"salas": ",".join(str(s) for s in sala_ids)},
         )
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
         return self._solicitar(
-            "POST",
+            "GET",
             f"{self._url_base}/catalogo",
-            json_body={"ids": ids},
+            params={"ids": ",".join(ids)},
         )
 
     def obtener_version_cripta(self, cripta_id: str) -> str:

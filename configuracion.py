@@ -29,7 +29,7 @@ class Configuracion:
         self.replay: str | None = args.replay
         self.bench: bool = args.bench
         self.semilla: int | None = args.semilla
-        self.url_api: str = ""  # TODO: definir URL real
+        self.url_api: str = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
         self.ruta_datos_offline: str = "datos/"
         self.ruta_guardado: str = "partidas/"
         self.ruta_puntajes: str = "puntajes.dat"
