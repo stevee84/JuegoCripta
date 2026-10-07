@@ -117,7 +117,7 @@ def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v2(tmp_path):
     guardado.guardar(str(ruta), estado)
     datos = ruta.read_bytes()
     cabecera = struct.unpack_from("<4sH32sqIIII", datos)
-    assert cabecera[:2] == (b"CRPT", 4)
+    assert cabecera[:2] == (b"CRPT", 5)
     assert cabecera[3:6] == (7, 123, 2)
     assert len(datos) == cabecera[6] + 2 * 36
     cargado = guardado.cargar(str(ruta))

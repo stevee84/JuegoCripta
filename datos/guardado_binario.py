@@ -11,8 +11,8 @@ class GuardadoBinario:
     """Integrante 2. Formato propio con cabecera, version, indice de salas y registros."""
 
     MAGIC = b"CRPT"
-    # v4 agrega eventos, azar, equipo, rastro y campos de sesión.
-    VERSION = 4
+    # v5 completa puertas, enemigos, trampas, salida y versiones.
+    VERSION = 5
     HEADER_FORMAT = "<4sH32sqIIII"
     HEADER_SIZE = struct.calcsize("<4sH32sqIIII")
     STR_SIZE = 32
@@ -302,6 +302,18 @@ class GuardadoBinario:
         ev_dec_id = getattr(estado, 'evento_decision_id', None) or ""
         f.write(self._empaquetar_cadena(ev_dec_id, 32))
 
+        # --- v5: salida, versiones y jugador extra ---
+        sala_salida = getattr(estado, 'sala_salida_id', None)
+        f.write(self._empaquetar_id_sala(sala_salida, permitir_ninguno=True))
+        llave_salida = getattr(estado, 'llave_salida_id', None) or ""
+        f.write(self._empaquetar_cadena(llave_salida, 32))
+        f.write(self._empaquetar_cadena(getattr(estado, 'version_cripta', "") or "", 32))
+        f.write(self._empaquetar_cadena(getattr(estado, 'version_catalogo', "") or "", 32))
+        f.write(struct.pack("<B", 1 if getattr(estado, 'exigir_fichas_resueltas', False) else 0))
+        jugador = estado.jugador
+        f.write(struct.pack("<B", 1 if getattr(jugador, 'muerte_procesada', False) else 0))
+        f.write(self._empaquetar_cadena(getattr(jugador, 'tipo_ficha_id', None) or "", 32))
+
     def _leer_extras(self, data, offset):
         o = offset
         if o + 14 > len(data):
@@ -443,6 +455,24 @@ class GuardadoBinario:
         resultado["iniciada"] = bool(iniciada_b)
         resultado["evento_decision_id"] = ev_dec_id or None
 
+        # --- v5: salida, versiones y jugador extra ---
+        if o + 32 > len(data):
+            return resultado, o
+        sala_salida_id = self._desempaquetar_id_sala(data[o:o+32], permitir_ninguno=True); o += 32
+        llave_salida = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        version_cripta = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        version_catalogo = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        exigir_fichas = struct.unpack_from("<B", data, o)[0]; o += 1
+        muerte_proc_j = struct.unpack_from("<B", data, o)[0]; o += 1
+        tipo_ficha_j = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        resultado["sala_salida_id"] = sala_salida_id
+        resultado["llave_salida_id"] = llave_salida or None
+        resultado["version_cripta"] = version_cripta or ""
+        resultado["version_catalogo"] = version_catalogo or ""
+        resultado["exigir_fichas_resueltas"] = bool(exigir_fichas)
+        resultado["jugador_muerte_procesada"] = bool(muerte_proc_j)
+        resultado["jugador_tipo_ficha_id"] = tipo_ficha_j or None
+
         return resultado, o
 
     def _extras_por_defecto(self):
@@ -464,6 +494,13 @@ class GuardadoBinario:
             "jugador_disponible": True,
             "iniciada": False,
             "evento_decision_id": None,
+            "sala_salida_id": None,
+            "llave_salida_id": None,
+            "version_cripta": "",
+            "version_catalogo": "",
+            "exigir_fichas_resueltas": False,
+            "jugador_muerte_procesada": False,
+            "jugador_tipo_ficha_id": None,
         }
 
     def _escribir_sala(self, f, sala):
@@ -481,6 +518,11 @@ class GuardadoBinario:
             f.write(self._empaquetar_id_sala(p.destino_sala_id))
             f.write(self._empaquetar_cadena(p.direccion, 32))
             f.write(struct.pack("<B", 1 if p.abierta else 0))
+            f.write(self._empaquetar_cadena(getattr(p, 'llave_requerida', None) or "", 32))
+            f.write(struct.pack("<B", 1 if getattr(p, 'fue_abierta_con_llave_requerida', False) else 0))
+            cierre = getattr(p, 'cierre_automatico', None)
+            f.write(struct.pack("<i", -1 if cierre is None else cierre))
+            f.write(self._empaquetar_cadena(getattr(p, 'evento_cierre_id', None) or "", 32))
 
         for e in enemigos:
             f.write(self._empaquetar_cadena(e.id_actor, 32))
@@ -489,6 +531,14 @@ class GuardadoBinario:
                 e.vida, e.vida_max, e.ataque, e.defensa, e.velocidad))
             f.write(self._empaquetar_cadena(e.comportamiento, 32))
             f.write(struct.pack("<B", 1 if e.activo else 0))
+            f.write(struct.pack("<B", 1 if getattr(e, 'muerte_procesada', False) else 0))
+            f.write(self._empaquetar_cadena(getattr(e, 'tipo_ficha_id', None) or "", 32))
+            botin = getattr(e, 'botin_preparado', []) or []
+            f.write(struct.pack("<H", len(botin)))
+            for obj_b in botin:
+                f.write(self._empaquetar_cadena(obj_b.id_instancia, 32))
+                f.write(self._empaquetar_cadena(obj_b.tipo_ficha_id, 32))
+                f.write(self._empaquetar_ubicacion(obj_b.ubicacion))
 
         for o in objetos:
             f.write(self._empaquetar_cadena(o.id_instancia, 32))
@@ -500,6 +550,7 @@ class GuardadoBinario:
             f.write(self._empaquetar_cadena(t.tipo, 32))
             f.write(struct.pack("<B", 1 if t.armada else 0))
             f.write(struct.pack("<i", t.tiempo_rearme))
+            f.write(self._empaquetar_cadena(getattr(t, 'evento_rearme_id', None) or "", 32))
 
     # --- cargar ---
 
@@ -515,7 +566,7 @@ class GuardadoBinario:
 
         header = struct.unpack_from(self.HEADER_FORMAT, data, 0)
         magic = header[0]
-        if magic != self.MAGIC or header[1] not in (3, self.VERSION):
+        if magic != self.MAGIC or header[1] != self.VERSION:
             return None
 
         version = header[1]
@@ -594,8 +645,6 @@ class GuardadoBinario:
         o = offset
         id_sala = self._desempaquetar_id_sala(data[o:o+32]); o += 32
         np, ne, no_, nt = struct.unpack_from("<HHHH", data, o); o += 8
-        if o + np * 97 + ne * 117 + no_ * 96 + nt * 69 > len(data):
-            raise ValueError("Contenido de sala truncado.")
 
         puertas = []
         for _ in range(np):
@@ -603,9 +652,17 @@ class GuardadoBinario:
             dest = self._desempaquetar_id_sala(data[o:o+32]); o += 32
             dire = self._desempaquetar_cadena(data[o:o+32]); o += 32
             abierta = struct.unpack_from("<B", data, o)[0]; o += 1
+            llave_req = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            fue_abierta_llave = struct.unpack_from("<B", data, o)[0]; o += 1
+            cierre_auto_raw = struct.unpack_from("<i", data, o)[0]; o += 4
+            ev_cierre = self._desempaquetar_cadena(data[o:o+32]); o += 32
             puertas.append({
                 "id_puerta": id_p, "destino_sala_id": dest,
                 "direccion": dire, "abierta": bool(abierta),
+                "llave_requerida": llave_req or None,
+                "fue_abierta_con_llave_requerida": bool(fue_abierta_llave),
+                "cierre_automatico": None if cierre_auto_raw == -1 else cierre_auto_raw,
+                "evento_cierre_id": ev_cierre or None,
             })
 
         enemigos = []
@@ -615,11 +672,23 @@ class GuardadoBinario:
             v, vm, a, d, vel = struct.unpack_from("<iiiii", data, o); o += 20
             comp = self._desempaquetar_cadena(data[o:o+32]); o += 32
             activo = struct.unpack_from("<B", data, o)[0]; o += 1
+            muerte = struct.unpack_from("<B", data, o)[0]; o += 1
+            tipo_ficha = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            cant_botin = struct.unpack_from("<H", data, o)[0]; o += 2
+            botin = []
+            for _ in range(cant_botin):
+                b_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+                b_tipo = self._desempaquetar_cadena(data[o:o+32]); o += 32
+                b_ubic = self._desempaquetar_ubicacion(data[o:o+32]); o += 32
+                botin.append({"id_instancia": b_id, "tipo_ficha_id": b_tipo, "ubicacion": b_ubic})
             enemigos.append({
                 "id_actor": id_e, "nombre": nom,
                 "vida": v, "vida_max": vm, "ataque": a,
                 "defensa": d, "velocidad": vel,
                 "comportamiento": comp, "activo": bool(activo),
+                "muerte_procesada": bool(muerte),
+                "tipo_ficha_id": tipo_ficha or None,
+                "botin_preparado": botin,
             })
 
         objetos = []
@@ -638,9 +707,11 @@ class GuardadoBinario:
             tipo = self._desempaquetar_cadena(data[o:o+32]); o += 32
             armada = struct.unpack_from("<B", data, o)[0]; o += 1
             tiempo = struct.unpack_from("<i", data, o)[0]; o += 4
+            ev_rearme = self._desempaquetar_cadena(data[o:o+32]); o += 32
             trampas.append({
                 "id_trampa": id_t, "tipo": tipo,
                 "armada": bool(armada), "tiempo_rearme": tiempo,
+                "evento_rearme_id": ev_rearme or None,
             })
 
         sala = {
@@ -674,15 +745,11 @@ class GuardadoBinario:
                     offset = struct.unpack("<I", entrada[32:])[0]
                     if rid != id_sala:
                         continue
-                    if offset < self.HEADER_SIZE or offset + 40 > offset_indice:
+                    if offset < self.HEADER_SIZE or offset >= offset_indice:
                         return None
                     f.seek(offset)
-                    inicio = f.read(40)
-                    np, ne, no_, nt = struct.unpack_from("<HHHH", inicio, 32)
-                    cantidad = np * 97 + ne * 117 + no_ * 96 + nt * 69
-                    if offset + 40 + cantidad > offset_indice:
-                        return None
-                    sala, _ = self._leer_sala_datos(inicio + f.read(cantidad), 0)
+                    datos_sala = f.read(offset_indice - offset)
+                    sala, _ = self._leer_sala_datos(datos_sala, 0)
                     return sala if sala["id_sala"] == id_sala else None
         except (OSError, struct.error, IndexError, ValueError):
             return None
