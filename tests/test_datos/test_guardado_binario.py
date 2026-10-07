@@ -6,7 +6,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from datos.guardado_binario import GuardadoBinario
 from dto.actor import Jugador, Enemigo
+from dto.objeto_instancia import ObjetoInstancia
 from dto.sala import Sala, Puerta, Trampa
+from logica.inventario import Inventario
 
 
 class _FakeEstado:
@@ -16,6 +18,14 @@ class _FakeEstado:
         self.reloj = reloj
         self.jugador = jugador
         self.salas = salas
+        self.acciones_ejecutadas = 0
+        self.enemigos_derrotados = 0
+        self.secuencia = 0
+        self.partida_activa = True
+        self.victoria = False
+        self.inventario = None
+        self.efectos_activos = []
+        self.salas_visitadas = []
 
 
 def _hacer_estado():
@@ -133,3 +143,55 @@ class TestGuardadoBinario:
         gb = GuardadoBinario()
         assert gb.cargar("no_existe.bin") is None
         assert gb.leer_sala("no_existe.bin", 1) is None
+
+    def test_extras_v3_inventario_y_stats(self, tmp_path):
+        gb = GuardadoBinario()
+        estado = _hacer_estado()
+        estado.acciones_ejecutadas = 42
+        estado.enemigos_derrotados = 7
+        estado.secuencia = 15
+        estado.partida_activa = True
+        estado.victoria = False
+        estado.salas_visitadas = [1, 2]
+
+        inv = Inventario(10)
+        obj1 = ObjetoInstancia("obj_espada", "ficha_espada")
+        obj1.ubicacion = "inventario"
+        obj2 = ObjetoInstancia("obj_pocion", "ficha_pocion")
+        obj2.ubicacion = "inventario"
+        inv.agregar(obj1)
+        inv.agregar(obj2)
+        estado.inventario = inv
+
+        estado.efectos_activos = [
+            {"id": "veneno_1", "tipo": "VENENO", "objetivo": estado.jugador,
+             "valor": 5, "inicio": 10, "vencimiento": 20, "duracion": 10,
+             "velocidad_anterior": 0},
+        ]
+
+        ruta = str(tmp_path / "v3.bin")
+        gb.guardar(ruta, estado)
+        r = gb.cargar(ruta)
+
+        assert r["acciones_ejecutadas"] == 42
+        assert r["enemigos_derrotados"] == 7
+        assert r["secuencia"] == 15
+        assert r["partida_activa"] is True
+        assert r["victoria"] is False
+        assert r["salas_visitadas"] == [1, 2]
+
+        inv_data = r["inventario"]
+        assert inv_data["capacidad"] == 10
+        assert len(inv_data["objetos"]) == 2
+        assert inv_data["objetos"][0]["id_instancia"] == "obj_pocion"
+        assert inv_data["objetos"][1]["id_instancia"] == "obj_espada"
+        assert inv_data["cursor_index"] == 0
+
+        assert len(r["efectos_activos"]) == 1
+        ef = r["efectos_activos"][0]
+        assert ef["id"] == "veneno_1"
+        assert ef["tipo"] == "VENENO"
+        assert ef["objetivo_id"] == "jugador1"
+        assert ef["valor"] == 5
+        assert ef["inicio"] == 10
+        assert ef["vencimiento"] == 20

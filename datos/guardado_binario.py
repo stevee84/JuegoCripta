@@ -9,8 +9,8 @@ class GuardadoBinario:
     """Integrante 2. Formato propio con cabecera, version, indice de salas y registros."""
 
     MAGIC = b"CRPT"
-    # v2 cambia los IDs de sala de cadenas a enteros, conforme al API oficial.
-    VERSION = 2
+    # v3 agrega inventario, efectos, estadísticas y salas visitadas.
+    VERSION = 3
     HEADER_FORMAT = "<4sH32sqIIII"
     HEADER_SIZE = struct.calcsize("<4sH32sqIIII")
     STR_SIZE = 32
@@ -120,6 +120,9 @@ class GuardadoBinario:
                 jugador.defensa, jugador.velocidad))
             f.write(self._empaquetar_id_sala(sala_actual_id, permitir_ninguno=True))
 
+            # extras v3
+            self._escribir_extras(f, estado)
+
             # rooms
             offsets_salas = []
             for sala in salas:
@@ -146,6 +149,125 @@ class GuardadoBinario:
                 offset_jugador,
             )
             f.write(header)
+
+    def _escribir_extras(self, f, estado):
+        acciones = getattr(estado, 'acciones_ejecutadas', 0)
+        derrotados = getattr(estado, 'enemigos_derrotados', 0)
+        secuencia = getattr(estado, 'secuencia', 0)
+        activa = 1 if getattr(estado, 'partida_activa', True) else 0
+        victoria = 1 if getattr(estado, 'victoria', False) else 0
+        f.write(struct.pack("<IIIBB", acciones, derrotados, secuencia,
+                            activa, victoria))
+
+        inventario = getattr(estado, 'inventario', None)
+        if inventario is not None and hasattr(inventario, 'obtener_objetos'):
+            objetos_inv = inventario.obtener_objetos()
+            actual = inventario.obtener_actual()
+            cursor_idx = -1
+            for i, obj in enumerate(objetos_inv):
+                if actual is not None and obj is actual:
+                    cursor_idx = i
+                    break
+            capacidad = inventario.get_capacidad()
+        else:
+            objetos_inv = []
+            cursor_idx = -1
+            capacidad = 0
+        f.write(struct.pack("<HHh", capacidad, len(objetos_inv), cursor_idx))
+        for obj in objetos_inv:
+            f.write(self._empaquetar_cadena(obj.id_instancia, 32))
+            f.write(self._empaquetar_cadena(obj.tipo_ficha_id, 32))
+            f.write(self._empaquetar_ubicacion(obj.ubicacion))
+
+        efectos = getattr(estado, 'efectos_activos', [])
+        f.write(struct.pack("<H", len(efectos)))
+        for ef in efectos:
+            f.write(self._empaquetar_cadena(ef.get("id", ""), 32))
+            f.write(self._empaquetar_cadena(ef.get("tipo", ""), 32))
+            objetivo = ef.get("objetivo")
+            obj_id = getattr(objetivo, 'id_actor', "") if objetivo else ""
+            f.write(self._empaquetar_cadena(obj_id, 32))
+            f.write(struct.pack("<iiii",
+                                ef.get("valor", 0),
+                                ef.get("inicio", 0),
+                                ef.get("vencimiento", 0),
+                                ef.get("duracion", 0)))
+            f.write(struct.pack("<i", ef.get("velocidad_anterior", 0)))
+
+        visitadas = getattr(estado, 'salas_visitadas', [])
+        f.write(struct.pack("<H", len(visitadas)))
+        for sid in visitadas:
+            f.write(struct.pack("<q", sid if isinstance(sid, int) else 0))
+
+    def _leer_extras(self, data, offset):
+        o = offset
+        if o + 14 > len(data):
+            return self._extras_por_defecto(), offset
+        acciones, derrotados, secuencia, activa, victoria = struct.unpack_from(
+            "<IIIBB", data, o)
+        o += 14
+
+        capacidad, cant_inv, cursor_idx = struct.unpack_from("<HHh", data, o)
+        o += 6
+        objetos_inv = []
+        for _ in range(cant_inv):
+            id_inst = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            tipo_ficha = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            ubicacion = self._desempaquetar_ubicacion(data[o:o+32]); o += 32
+            objetos_inv.append({
+                "id_instancia": id_inst,
+                "tipo_ficha_id": tipo_ficha,
+                "ubicacion": ubicacion,
+            })
+
+        cant_ef = struct.unpack_from("<H", data, o)[0]; o += 2
+        efectos = []
+        for _ in range(cant_ef):
+            ef_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            ef_tipo = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            obj_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            valor, inicio, vencimiento, duracion = struct.unpack_from("<iiii", data, o)
+            o += 16
+            vel_ant = struct.unpack_from("<i", data, o)[0]; o += 4
+            efectos.append({
+                "id": ef_id, "tipo": ef_tipo, "objetivo_id": obj_id,
+                "valor": valor, "inicio": inicio,
+                "vencimiento": vencimiento, "duracion": duracion,
+                "velocidad_anterior": vel_ant,
+            })
+
+        cant_vis = struct.unpack_from("<H", data, o)[0]; o += 2
+        visitadas = []
+        for _ in range(cant_vis):
+            visitadas.append(struct.unpack_from("<q", data, o)[0])
+            o += 8
+
+        return {
+            "acciones_ejecutadas": acciones,
+            "enemigos_derrotados": derrotados,
+            "secuencia": secuencia,
+            "partida_activa": bool(activa),
+            "victoria": bool(victoria),
+            "inventario": {
+                "capacidad": capacidad,
+                "objetos": objetos_inv,
+                "cursor_index": cursor_idx,
+            },
+            "efectos_activos": efectos,
+            "salas_visitadas": visitadas,
+        }, o
+
+    def _extras_por_defecto(self):
+        return {
+            "acciones_ejecutadas": 0,
+            "enemigos_derrotados": 0,
+            "secuencia": 0,
+            "partida_activa": True,
+            "victoria": False,
+            "inventario": {"capacidad": 0, "objetos": [], "cursor_index": -1},
+            "efectos_activos": [],
+            "salas_visitadas": [],
+        }
 
     def _escribir_sala(self, f, sala):
         puertas = sala.puertas if sala.puertas else []
@@ -206,7 +328,7 @@ class GuardadoBinario:
         num_salas = header[5]
         offset_indice = header[6]
         offset_jugador = header[7]
-        if (offset_jugador != self.HEADER_SIZE or offset_indice < offset_jugador + 116
+        if (offset_jugador != self.HEADER_SIZE
                 or offset_indice + num_salas * 36 != len(data)):
             return None
 
@@ -217,6 +339,12 @@ class GuardadoBinario:
         except (struct.error, IndexError, ValueError):
             return None
 
+        # extras v3
+        try:
+            extras, _ = self._leer_extras(registros, offset_jugador + 116)
+        except (struct.error, IndexError, ValueError):
+            extras = self._extras_por_defecto()
+
         # rooms
         salas = {}
         try:
@@ -224,7 +352,7 @@ class GuardadoBinario:
                 idx_offset = offset_indice + i * 36
                 id_sala = self._desempaquetar_id_sala(data[idx_offset:idx_offset + 32])
                 room_offset = struct.unpack_from("<I", data, idx_offset + 32)[0]
-                if room_offset < offset_jugador + 116 or room_offset >= offset_indice:
+                if room_offset >= offset_indice:
                     return None
                 sala, _ = self._leer_sala_datos(registros, room_offset)
                 if sala["id_sala"] != id_sala or id_sala in salas:
@@ -239,6 +367,7 @@ class GuardadoBinario:
             "reloj": reloj,
             "jugador": jugador,
             "salas": salas,
+            **extras,
         }
 
     def _leer_jugador(self, data, offset):
@@ -338,7 +467,6 @@ class GuardadoBinario:
                 num_salas, offset_indice, offset_jugador = header[5:8]
                 f.seek(0, 2)
                 if (offset_jugador != self.HEADER_SIZE
-                        or offset_indice < offset_jugador + 116
                         or offset_indice + num_salas * 36 != f.tell()):
                     return None
                 # Acceso por índice: no lee los registros de las otras salas.
@@ -349,7 +477,7 @@ class GuardadoBinario:
                     offset = struct.unpack("<I", entrada[32:])[0]
                     if rid != id_sala:
                         continue
-                    if offset < offset_jugador + 116 or offset + 40 > offset_indice:
+                    if offset < self.HEADER_SIZE or offset + 40 > offset_indice:
                         return None
                     f.seek(offset)
                     inicio = f.read(40)
