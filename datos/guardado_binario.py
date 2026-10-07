@@ -1,6 +1,8 @@
+import json
 import struct
 import os
 import tempfile
+import zlib
 
 from dto.sala import validar_id_sala
 
@@ -9,13 +11,26 @@ class GuardadoBinario:
     """Integrante 2. Formato propio con cabecera, version, indice de salas y registros."""
 
     MAGIC = b"CRPT"
-    # v3 agrega inventario, efectos, estadísticas y salas visitadas.
-    VERSION = 3
+    # v4 agrega eventos, azar, equipo, rastro y campos de sesión.
+    VERSION = 4
     HEADER_FORMAT = "<4sH32sqIIII"
     HEADER_SIZE = struct.calcsize("<4sH32sqIIII")
     STR_SIZE = 32
 
     # --- helpers ---
+
+    def _json_default(self, obj):
+        if hasattr(obj, 'id_actor'):
+            return {"__ref__": "actor", "id": obj.id_actor}
+        if hasattr(obj, 'id_instancia'):
+            return {"__ref__": "objeto", "id": obj.id_instancia}
+        if hasattr(obj, 'id_sala'):
+            return {"__ref__": "sala", "id": obj.id_sala}
+        if hasattr(obj, 'id_puerta'):
+            return {"__ref__": "puerta", "id": obj.id_puerta}
+        if hasattr(obj, 'id_trampa'):
+            return {"__ref__": "trampa", "id": obj.id_trampa}
+        return str(obj)
 
     def _empaquetar_cadena(self, s, size):
         data = s.encode("utf-8") if s else b""
@@ -199,6 +214,79 @@ class GuardadoBinario:
         for sid in visitadas:
             f.write(struct.pack("<q", sid if isinstance(sid, int) else 0))
 
+        # --- v4: eventos pendientes ---
+        agenda = getattr(estado, 'agenda', None)
+        if agenda is not None and hasattr(agenda, 'recorrer'):
+            eventos = list(agenda.recorrer())
+        else:
+            eventos = []
+        f.write(struct.pack("<H", len(eventos)))
+        for ev in eventos:
+            f.write(self._empaquetar_cadena(ev.id_evento, 32))
+            f.write(struct.pack("<ii", ev.tiempo, ev.secuencia))
+            f.write(self._empaquetar_cadena(ev.tipo, 32))
+            f.write(self._empaquetar_cadena(ev.destinatario_id, 32))
+            datos_json = json.dumps(ev.datos, default=self._json_default) if ev.datos is not None else ""
+            f.write(self._empaquetar_cadena(datos_json, 256))
+
+        # --- v4: estado del azar ---
+        azar = getattr(estado, 'azar', None)
+        if azar is not None and hasattr(azar, 'getstate'):
+            azar_blob = zlib.compress(json.dumps(azar.getstate()[1]).encode())
+        else:
+            azar_blob = b""
+        f.write(struct.pack("<I", len(azar_blob)))
+        f.write(azar_blob)
+
+        # --- v4: equipo ---
+        servicio_inv = getattr(estado, 'servicio_inventario', None)
+        if servicio_inv is not None and hasattr(servicio_inv, 'obtener_equipo'):
+            equipo = servicio_inv.obtener_equipo()
+            bonos = servicio_inv._bonos
+            arma_id = getattr(equipo.get("arma"), "id_instancia", "") or ""
+            armadura_id = getattr(equipo.get("armadura"), "id_instancia", "") or ""
+            bono_arma = bonos.get("arma", 0)
+            bono_armadura = bonos.get("armadura", 0)
+        else:
+            arma_id = ""
+            armadura_id = ""
+            bono_arma = 0
+            bono_armadura = 0
+        f.write(self._empaquetar_cadena(arma_id, 32))
+        f.write(struct.pack("<i", bono_arma))
+        f.write(self._empaquetar_cadena(armadura_id, 32))
+        f.write(struct.pack("<i", bono_armadura))
+
+        # --- v4: registro rastro ---
+        rastro = getattr(estado, 'registro_rastro', None)
+        if rastro is not None and hasattr(rastro, '_presencias'):
+            presencias = rastro._presencias
+        else:
+            presencias = []
+        # También guardar rastros del mapa (sala.ultimo_rastro)
+        rastro_mapa = []
+        mapa = getattr(estado, 'mapa', None)
+        if mapa is not None and hasattr(mapa, 'obtener_salas'):
+            for sala in mapa.obtener_salas():
+                t = getattr(sala, 'ultimo_rastro', None)
+                if t is not None:
+                    rastro_mapa.append((sala.id_sala, t))
+        total_rastro = len(presencias) + len(rastro_mapa)
+        f.write(struct.pack("<H", total_rastro))
+        for id_sala, tiempo in presencias:
+            f.write(struct.pack("<qi", id_sala, tiempo))
+        for id_sala, tiempo in rastro_mapa:
+            f.write(struct.pack("<qi", id_sala, tiempo))
+
+        # --- v4: campos de sesión ---
+        fin = getattr(estado, 'fin_partida', None) or ""
+        f.write(self._empaquetar_cadena(fin, 32))
+        jugador_disp = 1 if getattr(estado, 'jugador_disponible', True) else 0
+        iniciada = 1 if getattr(estado, 'iniciada', False) else 0
+        f.write(struct.pack("<BB", jugador_disp, iniciada))
+        ev_dec_id = getattr(estado, 'evento_decision_id', None) or ""
+        f.write(self._empaquetar_cadena(ev_dec_id, 32))
+
     def _leer_extras(self, data, offset):
         o = offset
         if o + 14 > len(data):
@@ -242,7 +330,7 @@ class GuardadoBinario:
             visitadas.append(struct.unpack_from("<q", data, o)[0])
             o += 8
 
-        return {
+        resultado = {
             "acciones_ejecutadas": acciones,
             "enemigos_derrotados": derrotados,
             "secuencia": secuencia,
@@ -255,7 +343,76 @@ class GuardadoBinario:
             },
             "efectos_activos": efectos,
             "salas_visitadas": visitadas,
-        }, o
+        }
+
+        # --- v4: eventos pendientes ---
+        if o + 2 > len(data):
+            return resultado, o
+        cant_ev = struct.unpack_from("<H", data, o)[0]; o += 2
+        eventos = []
+        for _ in range(cant_ev):
+            ev_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            tiempo_ev, sec_ev = struct.unpack_from("<ii", data, o); o += 8
+            tipo_ev = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            dest_ev = self._desempaquetar_cadena(data[o:o+32]); o += 32
+            datos_str = self._desempaquetar_cadena(data[o:o+256]); o += 256
+            datos_ev = json.loads(datos_str) if datos_str else None
+            eventos.append({
+                "id_evento": ev_id, "tiempo": tiempo_ev,
+                "secuencia": sec_ev, "tipo": tipo_ev,
+                "destinatario_id": dest_ev, "datos": datos_ev,
+            })
+        resultado["eventos_pendientes"] = eventos
+
+        # --- v4: estado del azar ---
+        if o + 4 > len(data):
+            return resultado, o
+        azar_len = struct.unpack_from("<I", data, o)[0]; o += 4
+        if azar_len > 0 and o + azar_len <= len(data):
+            azar_json = zlib.decompress(data[o:o+azar_len]).decode()
+            resultado["azar_state"] = tuple(json.loads(azar_json))
+            o += azar_len
+        else:
+            resultado["azar_state"] = None
+            o += azar_len
+
+        # --- v4: equipo ---
+        if o + 72 > len(data):
+            return resultado, o
+        arma_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        bono_arma = struct.unpack_from("<i", data, o)[0]; o += 4
+        armadura_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        bono_armadura = struct.unpack_from("<i", data, o)[0]; o += 4
+        resultado["equipo"] = {
+            "arma": arma_id or None,
+            "bono_arma": bono_arma,
+            "armadura": armadura_id or None,
+            "bono_armadura": bono_armadura,
+        }
+
+        # --- v4: registro rastro ---
+        if o + 2 > len(data):
+            return resultado, o
+        cant_rastro = struct.unpack_from("<H", data, o)[0]; o += 2
+        rastro = []
+        for _ in range(cant_rastro):
+            r_sala = struct.unpack_from("<q", data, o)[0]; o += 8
+            r_tiempo = struct.unpack_from("<i", data, o)[0]; o += 4
+            rastro.append({"sala_id": r_sala, "tiempo": r_tiempo})
+        resultado["registro_rastro"] = rastro
+
+        # --- v4: campos de sesión ---
+        if o + 66 > len(data):
+            return resultado, o
+        fin_partida = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        jugador_disp, iniciada_b = struct.unpack_from("<BB", data, o); o += 2
+        ev_dec_id = self._desempaquetar_cadena(data[o:o+32]); o += 32
+        resultado["fin_partida"] = fin_partida or None
+        resultado["jugador_disponible"] = bool(jugador_disp)
+        resultado["iniciada"] = bool(iniciada_b)
+        resultado["evento_decision_id"] = ev_dec_id or None
+
+        return resultado, o
 
     def _extras_por_defecto(self):
         return {
@@ -267,6 +424,15 @@ class GuardadoBinario:
             "inventario": {"capacidad": 0, "objetos": [], "cursor_index": -1},
             "efectos_activos": [],
             "salas_visitadas": [],
+            "eventos_pendientes": [],
+            "azar_state": None,
+            "equipo": {"arma": None, "bono_arma": 0,
+                       "armadura": None, "bono_armadura": 0},
+            "registro_rastro": [],
+            "fin_partida": None,
+            "jugador_disponible": True,
+            "iniciada": False,
+            "evento_decision_id": None,
         }
 
     def _escribir_sala(self, f, sala):
@@ -318,7 +484,7 @@ class GuardadoBinario:
 
         header = struct.unpack_from(self.HEADER_FORMAT, data, 0)
         magic = header[0]
-        if magic != self.MAGIC or header[1] != self.VERSION:
+        if magic != self.MAGIC or header[1] not in (3, self.VERSION):
             return None
 
         version = header[1]

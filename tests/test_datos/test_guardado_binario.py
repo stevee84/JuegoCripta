@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import struct
 
@@ -6,9 +7,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from datos.guardado_binario import GuardadoBinario
 from dto.actor import Jugador, Enemigo
+from dto.evento import Evento
 from dto.objeto_instancia import ObjetoInstancia
 from dto.sala import Sala, Puerta, Trampa
+from logica.agenda_eventos import AgendaEventos
 from logica.inventario import Inventario
+from logica.mapa_cripta import MapaCripta
 
 
 class _FakeEstado:
@@ -195,3 +199,74 @@ class TestGuardadoBinario:
         assert ef["valor"] == 5
         assert ef["inicio"] == 10
         assert ef["vencimiento"] == 20
+
+    def test_extras_v4_eventos_azar_equipo_rastro(self, tmp_path):
+        gb = GuardadoBinario()
+        estado = _hacer_estado()
+
+        # Agenda con eventos pendientes
+        agenda = AgendaEventos()
+        ev1 = Evento("ev_ataque_1", 100, 0, "ATAQUE", "enemigo1",
+                      {"daño": 8})
+        ev2 = Evento("ev_veneno_1", 150, 1, "VENENO_TICK", "jugador1",
+                      {"id_efecto": "veneno_1", "daño": 3})
+        agenda.programar(ev1)
+        agenda.programar(ev2)
+        estado.agenda = agenda
+
+        # Azar con estado interno avanzado
+        estado.azar = random.Random(42)
+        for _ in range(10):
+            estado.azar.random()
+        azar_state_antes = estado.azar.getstate()
+
+        # Mapa para rastro
+        mapa = MapaCripta()
+        s1 = Sala(1)
+        s1.ultimo_rastro = 500
+        mapa.agregar_sala(s1)
+        mapa.agregar_sala(Sala(2))
+        estado.mapa = mapa
+
+        # Campos de sesión
+        estado.fin_partida = None
+        estado.jugador_disponible = True
+        estado.iniciada = True
+        estado.evento_decision_id = "ev_ataque_1"
+
+        ruta = str(tmp_path / "v4.bin")
+        gb.guardar(ruta, estado)
+        r = gb.cargar(ruta)
+
+        # Eventos
+        assert len(r["eventos_pendientes"]) == 2
+        ev_cargado = r["eventos_pendientes"][0]
+        assert ev_cargado["id_evento"] == "ev_ataque_1"
+        assert ev_cargado["tiempo"] == 100
+        assert ev_cargado["tipo"] == "ATAQUE"
+        assert ev_cargado["destinatario_id"] == "enemigo1"
+        assert ev_cargado["datos"]["daño"] == 8
+
+        # Azar: restaurar state y generar debe dar mismo resultado
+        assert r["azar_state"] is not None
+        rng_original = random.Random()
+        rng_original.setstate(azar_state_antes)
+        rng_cargado = random.Random()
+        rng_cargado.setstate((3, tuple(r["azar_state"]), None))
+        assert rng_original.random() == rng_cargado.random()
+        assert rng_original.random() == rng_cargado.random()
+
+        # Equipo (sin servicio_inventario en el fake, debe venir vacío)
+        assert r["equipo"]["arma"] is None
+        assert r["equipo"]["armadura"] is None
+
+        # Rastro
+        assert len(r["registro_rastro"]) == 1
+        assert r["registro_rastro"][0]["sala_id"] == 1
+        assert r["registro_rastro"][0]["tiempo"] == 500
+
+        # Campos de sesión
+        assert r["fin_partida"] is None
+        assert r["jugador_disponible"] is True
+        assert r["iniciada"] is True
+        assert r["evento_decision_id"] == "ev_ataque_1"
