@@ -85,17 +85,15 @@ def test_guardado_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(tmp
         MotorJuego().iniciar(reconstruido)
 
 
-def test_formato_actual_no_puede_preservar_azar_actual(tmp_path):
+def test_formato_v4_preserva_azar_actual(tmp_path):
     primero, segundo = crear_partida_minima(), crear_partida_minima()
     segundo.azar.randint(0, 4)
     a, b = tmp_path / "a.bin", tmp_path / "b.bin"
     guardado = GuardadoBinario()
     guardado.guardar(a, primero)
     guardado.guardar(b, segundo)
-    # Evidencia del bloqueo: estados distintos producen exactamente los mismos bytes.
     assert primero.azar.getstate() != segundo.azar.getstate()
-    assert a.read_bytes() == b.read_bytes()
-    assert not PartidaService().cargar(a).reanudable
+    assert a.read_bytes() != b.read_bytes()
 
 
 def test_carga_no_reanudable_no_reemplaza_partida_actual(tmp_path):
