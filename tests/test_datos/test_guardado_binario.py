@@ -270,3 +270,48 @@ class TestGuardadoBinario:
         assert r["jugador_disponible"] is True
         assert r["iniciada"] is True
         assert r["evento_decision_id"] == "ev_ataque_1"
+
+    def test_efecto_regeneracion_vencimiento_none(self, tmp_path):
+        gb = GuardadoBinario()
+        estado = _hacer_estado()
+        estado.efectos_activos = [
+            {"id": "regen:enemigo1", "tipo": "REGENERACION",
+             "objetivo": estado.jugador, "valor": 3,
+             "inicio": 50, "vencimiento": None, "duracion": 0,
+             "velocidad_anterior": 0, "velocidad_aplicada": 0,
+             "ultimo_pulso": None, "persistente": True,
+             "eventos": ["ev_regen_tick"]},
+        ]
+        ruta = str(tmp_path / "regen.bin")
+        gb.guardar(ruta, estado)
+        r = gb.cargar(ruta)
+
+        assert len(r["efectos_activos"]) == 1
+        ef = r["efectos_activos"][0]
+        assert ef["id"] == "regen:enemigo1"
+        assert ef["vencimiento"] is None
+        assert ef["ultimo_pulso"] is None
+        assert ef["persistente"] is True
+        assert ef["eventos_ids"] == ["ev_regen_tick"]
+
+    def test_efecto_velocidad_campos_completos(self, tmp_path):
+        gb = GuardadoBinario()
+        estado = _hacer_estado()
+        estado.efectos_activos = [
+            {"id": "vel_1", "tipo": "VELOCIDAD",
+             "objetivo": estado.jugador, "valor": 0,
+             "inicio": 100, "vencimiento": 200, "duracion": 100,
+             "velocidad_anterior": 5, "velocidad_aplicada": 10,
+             "ultimo_pulso": 150, "persistente": False,
+             "eventos": []},
+        ]
+        ruta = str(tmp_path / "vel.bin")
+        gb.guardar(ruta, estado)
+        r = gb.cargar(ruta)
+
+        ef = r["efectos_activos"][0]
+        assert ef["velocidad_anterior"] == 5
+        assert ef["velocidad_aplicada"] == 10
+        assert ef["ultimo_pulso"] == 150
+        assert ef["persistente"] is False
+        assert ef["eventos_ids"] == []

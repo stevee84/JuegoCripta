@@ -202,12 +202,23 @@ class GuardadoBinario:
             objetivo = ef.get("objetivo")
             obj_id = getattr(objetivo, 'id_actor', "") if objetivo else ""
             f.write(self._empaquetar_cadena(obj_id, 32))
+            venc = ef.get("vencimiento")
+            venc_val = -1 if venc is None else venc
             f.write(struct.pack("<iiii",
                                 ef.get("valor", 0),
                                 ef.get("inicio", 0),
-                                ef.get("vencimiento", 0),
+                                venc_val,
                                 ef.get("duracion", 0)))
             f.write(struct.pack("<i", ef.get("velocidad_anterior", 0)))
+            f.write(struct.pack("<i", ef.get("velocidad_aplicada", 0)))
+            ultimo_pulso = ef.get("ultimo_pulso")
+            f.write(struct.pack("<i", -1 if ultimo_pulso is None else ultimo_pulso))
+            f.write(struct.pack("<B", 1 if ef.get("persistente") else 0))
+            ev_ids = ef.get("eventos", [])
+            ev_id_strs = [getattr(e, 'id_evento', str(e)) if not isinstance(e, str) else e for e in ev_ids]
+            f.write(struct.pack("<H", len(ev_id_strs)))
+            for ev_id in ev_id_strs:
+                f.write(self._empaquetar_cadena(ev_id, 32))
 
         visitadas = getattr(estado, 'salas_visitadas', [])
         f.write(struct.pack("<H", len(visitadas)))
@@ -226,8 +237,12 @@ class GuardadoBinario:
             f.write(struct.pack("<ii", ev.tiempo, ev.secuencia))
             f.write(self._empaquetar_cadena(ev.tipo, 32))
             f.write(self._empaquetar_cadena(ev.destinatario_id, 32))
-            datos_json = json.dumps(ev.datos, default=self._json_default) if ev.datos is not None else ""
-            f.write(self._empaquetar_cadena(datos_json, 256))
+            if ev.datos is not None:
+                datos_bytes = json.dumps(ev.datos, default=self._json_default).encode("utf-8")
+            else:
+                datos_bytes = b""
+            f.write(struct.pack("<H", len(datos_bytes)))
+            f.write(datos_bytes)
 
         # --- v4: estado del azar ---
         azar = getattr(estado, 'azar', None)
@@ -317,11 +332,23 @@ class GuardadoBinario:
             valor, inicio, vencimiento, duracion = struct.unpack_from("<iiii", data, o)
             o += 16
             vel_ant = struct.unpack_from("<i", data, o)[0]; o += 4
+            vel_apl = struct.unpack_from("<i", data, o)[0]; o += 4
+            ultimo_pulso_raw = struct.unpack_from("<i", data, o)[0]; o += 4
+            persistente = bool(struct.unpack_from("<B", data, o)[0]); o += 1
+            cant_ev_ids = struct.unpack_from("<H", data, o)[0]; o += 2
+            ev_ids = []
+            for _ in range(cant_ev_ids):
+                ev_ids.append(self._desempaquetar_cadena(data[o:o+32])); o += 32
             efectos.append({
                 "id": ef_id, "tipo": ef_tipo, "objetivo_id": obj_id,
                 "valor": valor, "inicio": inicio,
-                "vencimiento": vencimiento, "duracion": duracion,
+                "vencimiento": None if vencimiento == -1 else vencimiento,
+                "duracion": duracion,
                 "velocidad_anterior": vel_ant,
+                "velocidad_aplicada": vel_apl,
+                "ultimo_pulso": None if ultimo_pulso_raw == -1 else ultimo_pulso_raw,
+                "persistente": persistente,
+                "eventos_ids": ev_ids,
             })
 
         cant_vis = struct.unpack_from("<H", data, o)[0]; o += 2
@@ -355,8 +382,12 @@ class GuardadoBinario:
             tiempo_ev, sec_ev = struct.unpack_from("<ii", data, o); o += 8
             tipo_ev = self._desempaquetar_cadena(data[o:o+32]); o += 32
             dest_ev = self._desempaquetar_cadena(data[o:o+32]); o += 32
-            datos_str = self._desempaquetar_cadena(data[o:o+256]); o += 256
-            datos_ev = json.loads(datos_str) if datos_str else None
+            datos_len = struct.unpack_from("<H", data, o)[0]; o += 2
+            if datos_len > 0:
+                datos_ev = json.loads(data[o:o+datos_len].decode("utf-8"))
+            else:
+                datos_ev = None
+            o += datos_len
             eventos.append({
                 "id_evento": ev_id, "tiempo": tiempo_ev,
                 "secuencia": sec_ev, "tipo": tipo_ev,
