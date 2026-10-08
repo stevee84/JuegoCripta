@@ -737,20 +737,29 @@ class GuardadoBinario:
                 if (offset_jugador != self.HEADER_SIZE
                         or offset_indice + num_salas * 36 != f.tell()):
                     return None
-                # Acceso por índice: no lee los registros de las otras salas.
                 f.seek(offset_indice)
-                for _ in range(num_salas):
-                    entrada = f.read(36)
-                    rid = self._desempaquetar_id_sala(entrada[:32])
-                    offset = struct.unpack("<I", entrada[32:])[0]
-                    if rid != id_sala:
-                        continue
-                    if offset < self.HEADER_SIZE or offset >= offset_indice:
-                        return None
-                    f.seek(offset)
-                    datos_sala = f.read(offset_indice - offset)
-                    sala, _ = self._leer_sala_datos(datos_sala, 0)
-                    return sala if sala["id_sala"] == id_sala else None
+                indice_raw = f.read(num_salas * 36)
+                offsets = []
+                target_offset = None
+                for i in range(num_salas):
+                    base = i * 36
+                    rid = self._desempaquetar_id_sala(indice_raw[base:base+32])
+                    off = struct.unpack("<I", indice_raw[base+32:base+36])[0]
+                    offsets.append(off)
+                    if rid == id_sala:
+                        target_offset = off
+                if target_offset is None:
+                    return None
+                if target_offset < self.HEADER_SIZE or target_offset >= offset_indice:
+                    return None
+                fin = offset_indice
+                for off in offsets:
+                    if off > target_offset and off < fin:
+                        fin = off
+                f.seek(target_offset)
+                datos_sala = f.read(fin - target_offset)
+                sala, _ = self._leer_sala_datos(datos_sala, 0)
+                return sala if sala["id_sala"] == id_sala else None
         except (OSError, struct.error, IndexError, ValueError):
             return None
         return None
