@@ -1,8 +1,8 @@
 # Secciones técnicas del integrante 3
 
-Estado de integración revisado el 6 de octubre de 2026 sobre `638e57d`.
-Las cifras siguientes conservan las mediciones del 1 de octubre;
-esta actualización documental no introduce mediciones nuevas.
+Bloque de arranque y replay revisado el 7 de octubre de 2026,
+preparado sobre `340ba86`. Las cifras de rendimiento conservan las
+mediciones del 1 de octubre; las nuevas comprobaciones son funcionales.
 
 Fecha de trabajo: 2026-10-01. Datos medidos, no estimaciones, en
 `mediciones_integrante3_inicial.json` (32/4) y `mediciones_integrante3.json`
@@ -55,7 +55,8 @@ Equipar, soltar equipo y sus retrocesos están cubiertos por regresiones.
 Curación inmediata satura vida_max y consume la instancia; la llave no se
 consume. Velocidad, antídoto y antorcha utilizan el gestor de efectos del
 motor. Las puertas con cierre automático se abren mediante ABRIR, que
-programa su cierre. Falta confirmar fichas reales y conectar el inicializador.
+programa su cierre. El inicializador conecta las fichas del paquete completo;
+la integración HTTP con presupuesto, persistencia y precarga sigue pendiente.
 
 ## 4.6 Retroceso
 
@@ -136,8 +137,9 @@ aleatorios y criterios costosos. Ver las 456 filas de cada corrida 16/1.
 **Integración:** RepositorioPuntajes.listar_ordenados utiliza el mismo
 OrdenadorAdaptativo. Permite ordenar ascendentemente por acciones_ejecutadas,
 enemigos_derrotados o reloj_final, conservando empates y sin escribir el
-archivo. listar mantiene el orden de anexado. Falta coordinar los consumidores
-de índices binarios y listas auxiliares del catálogo con su propietario.
+archivo. listar mantiene el orden de anexado. El catálogo de inicialización
+ordena sus listas auxiliares con el mismo servicio. La integración del índice
+binario debe coordinarse con su propietario sin modificar su archivo.
 
 **Límites:** coste de resolver fichas no es red medida; fichas sintéticas ya
 disponibles. Umbrales no son universales; ruido, distribución y coste de
@@ -168,12 +170,22 @@ append requeriría modificar el cierre/reescribir, frente a una línea por
 acción. Estos tiempos miden parser, NO replay completo ni red/motor.
 
 **Integración:** consola y replay utilizan JuegoService y el motor integrado.
-Las pruebas con una fábrica explícita comprueban acciones, pergaminos,
-intervalos con eventos y conservación del estado aleatorio. La suite del
-árbol revisado pasó 662 pruebas; ese número no acredita datos reales de API.
+InicializadorPartida implementa la fábrica real del esquema §3.3 y main
+la conecta en consola y replay. Reconstruye las salas de todas las páginas,
+contenido, fichas y botín; conserva IDs enteros de salas y textuales de instancias.
+Las estadísticas proceden de generales.jugador; la identidad de presentación
+es configurable. MotorJuego activa únicamente los enemigos que corresponden.
+Se conectan inventario, catálogo e historial antes de ejecutar acciones.
 
-**Límites:** falta conectar el inicializador con el esquema confirmado para
-iniciar y reproducir una partida real desde main. Sin versiones compatibles
+La suite de este bloque pasó 764 pruebas, con 26 nuevas. Se comprobó además
+un paquete extraído de la API real (seis salas, once fichas) a través de
+FuenteOffline: mismo estado/agenda/azar al reproducir el registro y misma
+reconstrucción al guardar/cargar. Las cifras anteriores se conservan como
+mediciones históricas; esta comprobación no mide rendimiento de red.
+
+**Límites:** ClienteAPI directo no inicia mientras no se conecte el gestor de
+presupuesto, persistencia y precarga del bloque de datos. Se exige un paquete
+completo a FuenteOffline o a una fuente coordinada compatible. Sin versiones compatibles
 se rechaza el replay; las acciones imposibles se informan. Escribir log y
 modificar estado no constituye una transacción de disco+motor: un fallo de
 registro posterior a la acción se informa y bloquea las siguientes acciones.

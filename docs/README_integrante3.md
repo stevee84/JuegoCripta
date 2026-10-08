@@ -1,7 +1,8 @@
 # Aportación del integrante 3 — JuegoCripta
 
-Bloque de guardar/cargar v5 preparado sobre la rama `joshua`,
-base `ee39856`. Incluye el trabajo integrado de los tres integrantes.
+Bloque de arranque y replay preparado sobre la rama `joshua`,
+base `340ba86`. Incluye la corrección de lectura de salas de Steven y
+el guardado/carga v5 previamente integrado.
 Este documento describe el estado comprobado; no declara terminado
 el proyecto completo.
 
@@ -37,12 +38,24 @@ python main.py --bench > mediciones.json
 `--demo` utiliza una partida sintética con las clases reales.
 No sustituye la integración con datos de la API.
 
-El arranque desde una fuente real u offline todavía necesita conectar
-un inicializador compatible. Faltan confirmar jugador inicial,
-sala inicial, paginación y fichas reales en el inicializador.
+`--offline` conecta InicializadorPartida. Selecciona `cripta ID` en consola;
+el paquete local debe incluir generales, todas las páginas del esqueleto,
+contenido de cada sala (incluidas las vacías), fichas y archivos de versiones.
+Se usan los campos de §3.3 del enunciado: sala_inicial, sala_salida,
+llave_salida, inventario_max y las estadísticas declaradas en jugador.
+Los números de salas, páginas y estadísticas no se fijan en el programa.
+La identidad de presentación predeterminada es `jugador` / `Jugador`;
+puede configurarse al construir InicializadorPartida. No sustituye datos de combate.
 
-`--replay` no crea la vista interactiva, pero su ejecución completa
-desde el arranque también depende del inicializador.
+`--replay` conecta la misma fábrica y ejecuta sin vista ni entrada. También
+EjecutorReplay.reproducir(ruta), sin servicio inyectado, utiliza el paquete
+local `datos/`. Requiere las versiones exactas del log y un paquete completo.
+
+El ClienteAPI directo sigue bloqueado para iniciar: falta que el bloque de
+datos conecte el presupuesto real de solicitudes, persistencia y precarga.
+No se descarga toda una cripta por HTTP sin ese control. La fábrica puede
+recibir otra fuente coordinada que respete FuenteDatos y entregue el paquete
+completo. No se cambiaron ClienteAPI, FuenteOffline, repositorios ni precarga.
 
 `--bench` no crea la vista. Ejecuta las mediciones del integrante 3 y
 reutiliza la medición existente de agenda y el script de ciclos de simulación,
@@ -61,6 +74,7 @@ corresponden a sus responsables. El ejecutor acepta proveedores adicionales.
 - Historial de cinco intervalos y cambios reversibles propios.
 - Equipo, consumibles, transferencias y pergaminos.
 - Controlador, consola, registro de acciones y ejecutor de replay.
+- Inicializador de paquetes completos y conexión de consola/replay desde main.
 - Registro local de resultados y consultas ordenadas de puntajes.
 - Reconstrucción v5 y comandos guardar/cargar con fichas compatibles.
 
@@ -131,16 +145,23 @@ Después de conectar el servicio compartido pasaron las 662 pruebas
 existentes y nuevas de la suite, incluidas tres regresiones de conexión,
 equipo/retroceso y rechazos de conexión. Esto no verifica por sí solo
 el arranque con datos reales ni la reanudación de partidas guardadas.
-En el bloque v5 pasan 738 pruebas: incluye 24 regresiones nuevas de guardar,
+En el bloque v5 pasaron 738 pruebas: incluye 24 regresiones nuevas de guardar,
 cargar, continuar, azar avanzado, equipo, eventos/efectos, botín compartido,
 retroceso nuevo, fuente offline, caché, archivos inválidos y registros activos.
 Una expectativa anterior de la ayuda se actualiza al mensaje v5.
+En este bloque pasan 764 pruebas, incluidas 26 nuevas de inicialización,
+consola/main, replay, lotes, versiones, paquetes incompletos, identidad de
+referencias y protección de la partida vigente. No se modificaron pruebas anteriores.
+Además se descargó un paquete de la API real para una comprobación aislada:
+cripta-01, seis salas y once fichas. Con FuenteOffline se verificaron arranque,
+registro/replay determinista y guardado/carga. La comprobación no acredita
+presupuesto HTTP, precarga, rendimiento en todas las criptas ni otras versiones.
 
 ## Datos y persistencia
 
 Las fichas sintéticas y AdaptadorFichas sirven para pruebas.
-Sus campos configurables no deben confundirse con el esquema
-confirmado de la API.
+El inicializador utiliza el esquema externo descrito en el enunciado.
+Las pruebas sintéticas no sustituyen la comprobación de paquetes/versiones reales.
 
 RegistroPartida utiliza JSON Lines y anexado de acciones exitosas.
 Las consultas y rechazos no se registran como acciones.
@@ -163,10 +184,41 @@ Mediciones propias: `docs/mediciones_integrante3*.json`.
 Decisiones y complejidades: `docs/secciones_integrante3.md`.
 Consultas LLM: `docs/PROMPTS_LLM_integrante3.md`.
 
-Pendientes:
+Estado del cierre:
 
-- Conectar el inicializador y comprobar consola/replay con datos reales.
-- Si se exige historial anterior a la carga, acordar y añadir su serialización aparte.
-- Coordinar ordenamientos requeridos por índices y catálogo.
-- Conectar proveedores restantes de caché, recuperación de fichas y guardado/carga cuando sus responsables los entreguen.
-- Completar la bitácora de prompts realmente utilizados.
+- El bloque funcional propio de inventario, retroceso, ordenamientos, consola,
+  puntajes, registro, replay y reconstrucción/guardado v5 está implementado y probado.
+- El arranque y replay funcionan con paquetes offline completos, incluyendo
+  una comprobación con datos extraídos de la API real.
+- La integración HTTP completa sigue pendiente del equipo: presupuesto,
+  persistencia y precarga pertenecen al integrante 2. Después de entregar esa
+  fuente coordinada se debe verificar el recorrido desde main con ella.
+- OrdenadorAdaptativo se utiliza en inventario, puntajes y en las listas
+  auxiliares del catálogo de inicialización. Su uso en el índice del binario
+  debe integrarlo su propietario; no se modifica ese archivo en este bloque.
+- El ejecutor común acepta proveedores adicionales de benchmarks. Los de
+  caché, recuperación de fichas y guardado/carga deben aportarlos sus responsables.
+- Si se exige historial anterior a la carga, acordar su serialización aparte.
+- La entrega conjunta y la defensa requieren revisar los documentos de los tres.
+
+## Aplicación y comprobación de este bloque
+
+Reemplazar main.py, service/juego_service.py y controller/ejecutor_replay.py.
+Agregar service/inicializador_partida.py y
+tests/test_service/test_inicializador_partida.py. Los documentos se actualizan
+por separado. Conservar todos los demás archivos.
+
+```bash
+python -m pytest -q
+git --no-pager diff --check
+git status
+git --no-pager diff --stat
+```
+
+Las versiones JSON de ClienteAPI se normalizan a texto dentro de JuegoService,
+sin cambiar el contrato de las fuentes. El catálogo del inicializador usa
+TablaHashImpl para referencias y OrdenadorAdaptativo para listas auxiliares.
+Cada fuente recibe lotes de hasta diez salas/fichas. El paquete se reconstruye
+antes de publicar el estado; si está incompleto se conserva la partida vigente.
+Una nueva partida conecta su servicio de inventario al motor antes de aceptar
+acciones, y libera las referencias de caché del inventario anterior.

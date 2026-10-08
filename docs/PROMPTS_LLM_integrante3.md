@@ -37,3 +37,19 @@ convención local en una afirmación sobre la API. Se enumeraron los ejemplos
 pendientes en README_integrante3.md. Pytest y mediciones ejecutadas verifican
 comportamiento/evidencia; no autorizan cambios en código de compañeros ni
 demuestran integración completa con datos reales.
+
+## Continuación solicitada el 7 de octubre de 2026
+
+Herramienta: ChatGPT Work. Solicitud literal del usuario:
+
+> ok, ya que lo de steven quedo, vamos a seguir con lo de nosotros,
+> quiero que mi parte quede terminada
+
+Alcance implementado: conectar una fábrica de partidas compatible con el
+esquema del enunciado y con las fuentes/DTO existentes; completar arranque
+por paquete offline y replay sin consola; añadir pruebas del recorrido completo.
+Se conservaron firmas y archivos de compañeros. Se revisaron diferencias con
+la base 340ba86 y pasaron 764 pruebas. Se comprobó también un paquete de la API
+real mediante FuenteOffline. El arranque HTTP con presupuesto, persistencia y
+precarga queda identificado como integración compartida del bloque de datos;
+no se declara implementado por esta consulta.

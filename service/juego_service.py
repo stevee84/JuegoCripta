@@ -96,6 +96,9 @@ class JuegoService:
         if estado.inventario is not None and estado.inventario is not inventario:
             raise ValueError("La fábrica entregó dos inventarios distintos.")
         estado.inventario = inventario
+        operaciones_anteriores = self._operaciones_inventario or getattr(
+            self._motor, "_servicio_inventario", None
+        )
         self._motor.iniciar(estado)
         self._inventario = inventario
         self._versiones = versiones
@@ -106,6 +109,12 @@ class JuegoService:
         self._error_registro = None
         self._operaciones_inventario = None
         self._resultado_registrado = None
+        catalogo = getattr(estado, "catalogo_inicial", None)
+        if catalogo is not None:
+            self.conectar_inventario(inventario, catalogo)
+        if operaciones_anteriores is not None and operaciones_anteriores._cache is not None:
+            for ficha_id in operaciones_anteriores._fijadas:
+                operaciones_anteriores._cache.liberar_referencia(ficha_id)
         return estado
 
     def conectar_inventario(self, inventario, catalogo, historial=None, adaptador=None):
@@ -579,6 +588,10 @@ class JuegoService:
             raise ValueError("No hay una fuente de datos conectada.")
         cripta = self._fuente.obtener_version_cripta(cripta_id)
         catalogo = self._fuente.obtener_version_catalogo()
+        if isinstance(cripta, dict):
+            cripta = cripta.get("version")
+        if isinstance(catalogo, dict):
+            catalogo = catalogo.get("version")
         if (
             not isinstance(cripta, str) or not cripta
             or not isinstance(catalogo, str) or not catalogo
