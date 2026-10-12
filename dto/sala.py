@@ -30,21 +30,17 @@ class Sala:
         self.ultimo_rastro = None
 
 
+    _DIR_ALIAS = {"N": "NORTE", "S": "SUR", "E": "ESTE", "O": "OESTE"}
+
     def obtener_salida(self, direccion: str):
         """
         Busca una puerta asociada a una dirección.
-
-        Ejemplo:
-            obtener_salida("NORTE")
-
-        retorna la puerta correspondiente si existe.
+        Acepta tanto "N" como "NORTE".
         """
-
+        normalizada = self._DIR_ALIAS.get(direccion, direccion)
         for puerta in self.puertas:
-
-            if puerta.direccion == direccion:
+            if puerta.direccion == normalizada or puerta.direccion == direccion:
                 return puerta
-
         return None
 
 #----------------------------------------------------------------------------------
