@@ -48,13 +48,15 @@ class DecodificadorDatos:
         sala = Sala(id_sala)
 
         puertas = datos.get("puertas", [])
+        _DIR_CORTA = {"N": "NORTE", "S": "SUR", "E": "ESTE", "O": "OESTE"}
         if "salidas" in datos:
             puertas = []
             for direccion, salida in datos["salidas"].items():
+                dir_larga = _DIR_CORTA.get(direccion, direccion)
                 puertas.append({
-                    "id_puerta": f"{id_sala}:{direccion}",
+                    "id_puerta": f"{id_sala}:{dir_larga}",
                     "destino_sala_id": salida["sala"],
-                    "direccion": direccion,
+                    "direccion": dir_larga,
                     "abierta": not salida.get("cerrada", False),
                     "llave_requerida": salida.get("llave"),
                     "cierre_automatico": salida.get("cierre_automatico"),

@@ -20,6 +20,7 @@ def crear_partida_minima(semilla=7):
     estado.jugador = Jugador("jugador", "Sofía", 12, 4, 0, 1)
     estado.jugador.sala_actual = entrada
     enemigo = Enemigo("guardian", "Guardián", 20, 6, 0, 1)
+    enemigo.tipo_ficha_id = "ent_guardian_demo"
     enemigo.activo = True
     cripta.enemigos.append(enemigo)
     objeto = ObjetoInstancia("moneda", "objeto_demostracion")
