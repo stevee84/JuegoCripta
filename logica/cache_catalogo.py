@@ -66,8 +66,7 @@ class CacheCatalogo:
             return
 
         if len(self._arreglo) >= self._capacidad:
-            if not self._evictar():
-                self._capacidad += 1
+            self._evictar()
 
         entrada = EntradaCatalogo(ficha_id, ficha)
         entrada.fijada = ficha_id in self._fijados
