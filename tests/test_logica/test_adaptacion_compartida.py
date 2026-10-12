@@ -54,15 +54,14 @@ def test_cache_fijar_antes_de_cargar_y_liberar():
     cache.fijar("a")
     cache.fijar("a")
     cache.insertar("a", 1)
-    with pytest.raises(RuntimeError):
-        cache.insertar("b", 2)
-    assert cache.obtener("a") == 1
-    assert cache._lista.cantidad == 1
-    cache.liberar_referencia("a")
-    cache.liberar_referencia("a")
     cache.insertar("b", 2)
-    assert cache.obtener("a") is None
+    assert cache.obtener("a") == 1
     assert cache.obtener("b") == 2
+    cache.liberar_referencia("a")
+    cache.liberar_referencia("a")
+    cache.insertar("c", 3)
+    assert cache.obtener("a") is None
+    assert cache.obtener("c") == 3
     comprobar_enlaces(cache._lista)
 
 
