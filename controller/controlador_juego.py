@@ -14,7 +14,7 @@ from service.partida_service import PartidaService
 
 
 class ControladorJuego:
-    """Consultas y comandos del motor; el binario sigue siendo parcial."""
+    """Consultas, acciones y guardado/carga v5 mediante JuegoService."""
 
     def __init__(self, motor, vista, fuente, historial=None):
         self._motor = motor
@@ -57,7 +57,7 @@ class ControladorJuego:
             self._servicio.iniciar_partida(estado.cripta_id, estado)
             self._historial = estado.historial
         self._vista.mostrar_mensaje(
-            "Motor con turnos e historial integrados. Guardado parcial, no reanudable. "
+            "Motor con turnos e historial integrados. Guardado v5; al cargar se inicia un historial vacío. "
             "Consultar comandos: ayuda."
         )
         if self._fuente is not None:
@@ -139,9 +139,10 @@ class ControladorJuego:
                     "Acciones: mover/abrir DIRECCION, atacar/recoger ID, soltar, esperar. "
                     "Inventario: siguiente, anterior, inventario [peso|valor|nombre]. "
                     "registro RUTA inicia un log nuevo antes de la primera acción. "
-                    "exportar_parcial RUTA exporta un binario no reanudable. "
+                    "exportar_parcial RUTA exporta sin validar la reanudación. "
+                    "guardar RUTA / cargar RUTA: partida v5 con fichas compatibles; historial previo vacío. "
                     "usar [ID]: consumible; retroceder [ID]: pergamino, sin tiempo. "
-                    "Pendientes: inicialización desde la fuente, guardar/cargar completos y equipar en el motor."
+                    "equipar: equipa el objeto seleccionado. Inicialización automática desde la fuente pendiente."
                 )
                 resultado = ResultadoAccion(True, "Ayuda mostrada.")
             elif operacion == "salir":
@@ -185,18 +186,16 @@ class ControladorJuego:
                     accion = self._servicio.resolver_accion(operacion.upper())
                 resultado = self._servicio.ejecutar_accion(accion)
             elif operacion == "guardar":
-                raise ValueError(
-                    "Guardado completo bloqueado: el binario omite inventario/equipo, "
-                    "historial, agenda, efectos y azar actual. Usa exportar_parcial solo para inspección."
-                )
+                self._servicio.guardar_partida(partes[1], self._guardado)
+                resultado = ResultadoAccion(True, "Partida guardada en v5; al cargar, el historial anterior estará vacío.")
             elif operacion == "exportar_parcial":
                 self.exportar_parcial(partes[1])
                 resultado = ResultadoAccion(
-                    True, "Binario parcial exportado; no permite reanudar la partida."
+                    True, "Binario parcial exportado; reanudación sin validar."
                 )
             elif operacion == "cargar":
                 self.cargar(partes[1])
-                resultado = ResultadoAccion(True, "Partida cargada.")
+                resultado = ResultadoAccion(True, "Partida cargada; historial anterior vacío, nuevas acciones reversibles.")
             else:
                 raise ValueError("Comando desconocido. Consulta ayuda.")
         except (ValueError, TypeError, OSError, NotImplementedError, struct.error) as error:
@@ -224,8 +223,8 @@ class ControladorJuego:
         self.exportar_parcial(ruta)
 
     def exportar_parcial(self, ruta):
-        # El formato actual omite inventario/equipo, agenda, efectos, historial
-        # y estado del azar. Solo exportar el formato real, sin ampliarlo.
+        # Entrada anterior para inspección, sin validar la reanudación.
+        # El comando guardar utiliza la ruta validada de JuegoService.
         estado = self._servicio.obtener_estado()
         if estado is None or estado.jugador is None or estado.mapa is None:
             raise ValueError("No hay una partida inicializada para exportar.")
@@ -244,12 +243,5 @@ class ControladorJuego:
             temporal.unlink(missing_ok=True)
 
     def cargar(self, ruta: str) -> None:
-        datos = self._guardado.cargar(ruta)
-        if datos is None:
-            raise ValueError("No se pudo leer el archivo binario.")
-        # La lectura real devuelve diccionarios; no sustituir el estado
-        # del motor por esos datos ni llamar iniciar (reiniciaría el reloj).
-        raise NotImplementedError(
-            "Carga bloqueada: GuardadoBinario devuelve datos parciales, "
-            "no un EstadoPartida completamente restaurado."
-        )
+        estado = self._servicio.cargar_partida(ruta, self._guardado)
+        self._historial = estado.historial

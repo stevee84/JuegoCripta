@@ -108,7 +108,7 @@ def test_guardado_exporta_binario_real_sin_anunciar_restauracion_completa(contro
     resultado = controlador.procesar_comando('exportar_parcial "partida.dat"')
     assert resultado.exito
     assert "Binario parcial" in resultado.mensaje
-    assert "no permite reanudar" in resultado.mensaje
+    assert "reanudación sin validar" in resultado.mensaje
     datos = GuardadoBinario().cargar(str(tmp_path / "partida.dat"))
     assert isinstance(datos, dict)
     assert datos["cripta_id"] == "c1"
@@ -164,7 +164,7 @@ def test_loop_con_vista_real_sale_sin_cambiar_el_estado_de_partida(controlador, 
     assert not controlador._en_ejecucion
     assert controlador._motor.estado.partida_activa
     assert controlador._motor.estado.jugador.sala_actual.enemigos[0].vida == 2
-    assert "Guardado parcial, no reanudable" in capsys.readouterr().out
+    assert "Guardado v5; al cargar se inicia un historial vacío" in capsys.readouterr().out
 
 
 def test_fin_de_entrada_no_simula_derrota_ni_victoria(controlador, monkeypatch):

@@ -28,13 +28,18 @@ def main() -> None:
     from logica.cache_catalogo import CacheCatalogo
     cache = CacheCatalogo(config.cache_size)
 
+    from service.inicializador_partida import InicializadorPartida
+    inicializador = InicializadorPartida()
+
     # Modo replay
     if config.replay:
         from controller.ejecutor_replay import EjecutorReplay
         from logica.motor_juego import MotorJuego
         from service.juego_service import JuegoService
         replay = EjecutorReplay()
-        replay.conectar_servicio(JuegoService(motor=MotorJuego(), fuente=fuente, cache=cache))
+        servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=cache)
+        servicio.conectar_inicializador(inicializador)
+        replay.conectar_servicio(servicio)
         replay.reproducir(config.replay)
         return
 
@@ -49,6 +54,10 @@ def main() -> None:
     historial = HistorialReversible()
     controlador = ControladorJuego(motor=motor, vista=vista, fuente=fuente, historial=historial)
     controlador.configurar_arranque(config.semilla if config.semilla is not None else 0, cache)
+    if not getattr(config, "demo", False):
+        controlador.conectar_inicializador(
+            inicializador, config.semilla if config.semilla is not None else 0
+        )
     estado = None
     if getattr(config, "demo", False):
         from docs.partida_minima import crear_partida_minima

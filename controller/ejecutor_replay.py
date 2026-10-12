@@ -31,7 +31,10 @@ class EjecutorReplay:
         cabecera, acciones = self._leer_log(ruta)
         servicio = getattr(self, "_servicio", None)
         if servicio is None:
+            from service.inicializador_partida import InicializadorPartida
+
             servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline("datos/"))
+            servicio.conectar_inicializador(InicializadorPartida())
         elif servicio.tiene_registro():
             # Nunca inicializar ni registrar replay sobre la partida normal
             # que tiene un log conectado, aunque sea el propio log leído.
