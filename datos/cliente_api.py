@@ -18,10 +18,11 @@ class ClienteAPI(FuenteDatos):
     _MAX_REINTENTOS = 3
     _MAX_ESPERA = 30
 
-    def __init__(self, url_base: str, timeout: int = 10):
+    def __init__(self, url_base: str, timeout: int = 10, presupuesto=None):
         self._url_base = url_base.rstrip("/")
         self._timeout = timeout
         self._client_id: str = str(uuid.uuid4())
+        self._presupuesto = presupuesto
 
     # ── Ayudante privado ──────────────────────────────────────────────
 
@@ -30,6 +31,8 @@ class ClienteAPI(FuenteDatos):
         headers = {"X-Cripta-Client-Id": self._client_id}
 
         for intento in range(self._MAX_REINTENTOS + 1):
+            if self._presupuesto is not None:
+                self._presupuesto.registrar_intento()
             try:
                 resp = requests.request(
                     metodo, url,
