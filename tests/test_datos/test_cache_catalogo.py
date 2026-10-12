@@ -77,14 +77,16 @@ class TestFijado:
         c.insertar("c", 3)  # ahora "a" puede ser desalojado
         assert c.obtener("a") is None
 
-    def test_todos_fijados_lanza_error(self):
+    def test_todos_fijados_expande_capacidad(self):
         c = crear_cache(capacidad=2)
         c.insertar("a", 1)
         c.insertar("b", 2)
         c.fijar("a")
         c.fijar("b")
-        with pytest.raises(RuntimeError):
-            c.insertar("c", 3)
+        c.insertar("c", 3)
+        assert c.obtener("a") == 1
+        assert c.obtener("b") == 2
+        assert c.obtener("c") == 3
 
 
 class TestBusquedaBinaria:

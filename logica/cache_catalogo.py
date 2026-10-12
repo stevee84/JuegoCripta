@@ -43,9 +43,9 @@ class CacheCatalogo:
                 if encontrado:
                     self._arreglo.pop(pos)
                 self._lista.quitar_nodo(nodo)
-                return
+                return True
             nodo = nodo.anterior
-        raise RuntimeError("Cache llena y todos los elementos están fijados")
+        return False
 
     def obtener(self, ficha_id: str):
         pos, encontrado = self._buscar_indice(ficha_id)
@@ -66,7 +66,8 @@ class CacheCatalogo:
             return
 
         if len(self._arreglo) >= self._capacidad:
-            self._evictar()
+            if not self._evictar():
+                self._capacidad += 1
 
         entrada = EntradaCatalogo(ficha_id, ficha)
         entrada.fijada = ficha_id in self._fijados

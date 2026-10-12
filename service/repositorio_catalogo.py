@@ -14,7 +14,6 @@ class RepositorioCatalogo:
         if self._version_catalogo is None:
             if self._presupuesto.agotado():
                 return None
-            self._presupuesto.registrar_intento()
             resp = self._fuente.obtener_version_catalogo()
             if isinstance(resp, dict):
                 self._version_catalogo = resp.get("version", "")
@@ -60,7 +59,6 @@ class RepositorioCatalogo:
         if self._presupuesto.agotado():
             return None
         try:
-            self._presupuesto.registrar_intento()
             respuesta = self._fuente.obtener_catalogo([ficha_id])
             ficha = self._buscar_ficha_en_respuesta(respuesta, ficha_id)
             if ficha is not None:
@@ -91,15 +89,21 @@ class RepositorioCatalogo:
         for fid in faltantes:
             datos = self._almacen.leer(fid)
             if datos is not None:
-                if version is None or self._almacen.validar_version(fid, version):
-                    self._cache.insertar(fid, datos)
-                    resultado[fid] = datos
-                    continue
+                if version is not None:
+                    if self._almacen.validar_version(fid, version):
+                        self._cache.insertar(fid, datos)
+                        resultado[fid] = datos
+                        continue
+                    else:
+                        aun_faltantes.append(fid)
+                        continue
+                self._cache.insertar(fid, datos)
+                resultado[fid] = datos
+                continue
             aun_faltantes.append(fid)
 
         if aun_faltantes and not self._presupuesto.agotado():
             try:
-                self._presupuesto.registrar_intento()
                 respuesta = self._fuente.obtener_catalogo(aun_faltantes)
                 ver = version or "desconocida"
                 for fid in aun_faltantes:
