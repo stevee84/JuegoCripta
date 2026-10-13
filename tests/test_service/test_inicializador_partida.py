@@ -133,7 +133,7 @@ def test_guardar_cargar_desde_arranque_y_continuar(paquete, tmp_path):
     assert estado.historial.get_cantidad() == 1
 
 
-@pytest.mark.parametrize("falta", ["c1/pagina_2.json", "c1/contenido.json", "catalogo/oro.json"])
+@pytest.mark.parametrize("falta", ["c1/pagina_2.json", "c1/contenido.json"])
 def test_paquete_incompleto_conserva_partida_actual(paquete, falta):
     contexto = servicio(paquete)
     estado = contexto.iniciar_partida("c1")
@@ -224,11 +224,19 @@ def test_main_offline_y_replay_sin_entrada_ni_vista(paquete, tmp_path):
     assert (tmp_path / "partida.log").read_bytes() == log
 
 
-def test_no_descarga_http_sin_gestor_de_datos():
+def test_error_http_controlado_no_publica_partida(monkeypatch):
+    import requests
     from datos.cliente_api import ClienteAPI
+    def fallar(*args, **kwargs):
+        raise requests.exceptions.ConnectionError("sin conexión")
+    monkeypatch.setattr(requests, "request", fallar)
     fuente = ClienteAPI("https://ejemplo.invalid")
-    with pytest.raises(ValueError, match="presupuesto"):
-        InicializadorPartida()("c1", 0, fuente, None)
+    contexto = JuegoService(MotorJuego(), fuente)
+    contexto.conectar_inicializador(InicializadorPartida())
+    with pytest.raises(ValueError, match="conexión|conexi"):
+        contexto.iniciar_partida("c1")
+    assert contexto.obtener_estado() is None
+    assert fuente._presupuesto._intentos == 4
 
 
 def test_lotes_de_salas_y_fichas_limitados_a_diez(paquete):
@@ -294,3 +302,11 @@ def test_fuente_coordinada_reutiliza_el_contrato_sin_exigir_subclases(paquete):
     contexto = JuegoService(MotorJuego(), FuenteCoordinada(FuenteOffline(str(paquete[0]))))
     contexto.conectar_inicializador(InicializadorPartida())
     assert contexto.iniciar_partida("c1").jugador.sala_actual.id_sala == 0
+
+
+def test_ficha_local_ausente_se_recupera_de_memoria_vigente(paquete):
+    contexto = servicio(paquete)
+    contexto._cache = CacheCatalogo(25)
+    contexto.iniciar_partida("c1")
+    (paquete[0] / "catalogo/oro.json").unlink()
+    assert contexto.iniciar_partida("c1").mapa.obtener_sala(0).enemigos[0].botin_preparado[0].ficha["id"] == "oro"

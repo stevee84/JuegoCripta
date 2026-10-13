@@ -2,11 +2,15 @@
 
 Utiliza el esquema de generales/páginas del enunciado y los conversores
 existentes. La descarga HTTP con presupuesto y precarga pertenece a datos;
-esta fábrica exige un paquete local completo para evitar consultas sin control.
+las fichas se resuelven mediante RepositorioCatalogo con versiones verificadas.
 """
 
 from datos.decodificador_datos import DecodificadorDatos
-from datos.cliente_api import ClienteAPI
+from datos.cliente_api import ClienteAPI, CriptaAPIError
+from datos.almacen_persistente import AlmacenPersistente
+from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+from logica.cache_catalogo import CacheCatalogo
+from service.repositorio_catalogo import RepositorioCatalogo
 from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
 from dto.sala import validar_id_sala
@@ -34,6 +38,39 @@ class CatalogoPartida:
         )
 
 
+class _FuenteCatalogo:
+    """Reutiliza la versión consultada; ClienteAPI cuenta cada HTTP real."""
+
+    def __init__(self, fuente, version):
+        self._fuente, self._version = fuente, version
+
+    def obtener_version_catalogo(self):
+        return self._version
+
+    def obtener_catalogo(self, ids):
+        return self._fuente.obtener_catalogo(ids)
+
+
+class _AlmacenVigente:
+    """No ofrece al repositorio fichas de una versión antigua."""
+
+    def __init__(self, almacen, version):
+        self._almacen, self._version = almacen, version
+
+    def leer(self, ficha_id):
+        if not self._almacen.validar_version(ficha_id, self._version):
+            return None
+        return self._almacen.leer(ficha_id)
+
+    def guardar(self, ficha_id, ficha, version):
+        if version != self._version:
+            raise ValueError("El catálogo cambió de versión durante el arranque.")
+        self._almacen.guardar(ficha_id, ficha, version)
+
+    def validar_version(self, ficha_id, version):
+        return version == self._version and self._almacen.validar_version(ficha_id, version)
+
+
 class InicializadorPartida:
     """Fábrica compatible con conectar_inicializador, sin simular acciones."""
 
@@ -43,6 +80,7 @@ class InicializadorPartida:
         if not isinstance(id_actor, str) or not id_actor:
             raise ValueError("El identificador del jugador debe ser texto no vacío.")
         self._nombre, self._id_actor = nombre, id_actor
+        self._preparados = None
 
     @staticmethod
     def _entero(valor, campo, minimo=0):
@@ -65,27 +103,47 @@ class InicializadorPartida:
         if ficha_id not in ids:
             ids.append(ficha_id)
 
+    def preparar(self, cripta_id, fuente):
+        """Consulta generales/versiones una vez y deja preparado el arranque."""
+        self._preparados = None
+        if isinstance(fuente, ClienteAPI) and fuente._presupuesto is None:
+            fuente._presupuesto = PresupuestoSolicitudes()
+        try:
+            generales = fuente.obtener_generales(cripta_id)
+            if not isinstance(generales, dict) or generales.get("id") != cripta_id:
+                raise ValueError("Faltan generales de la cripta solicitada.")
+            if isinstance(fuente, ClienteAPI):
+                limite = self._entero(generales.get("presupuesto_solicitudes"), "presupuesto_solicitudes", 1)
+                fuente._presupuesto.establecer_limite(limite)
+                if fuente._presupuesto._intentos > limite:
+                    raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
+            version = self._version(generales.get("version"))
+            version_catalogo = self._version(fuente.obtener_version_catalogo())
+        except CriptaAPIError as error:
+            raise ValueError(str(error)) from error
+        self._preparados = (cripta_id, fuente, generales, version, version_catalogo)
+        return version, version_catalogo
+
     def __call__(self, cripta_id, semilla, fuente, cache):
-        if isinstance(fuente, ClienteAPI):
-            raise ValueError(
-                "Arranque HTTP pendiente de conectar presupuesto, persistencia y "
-                "precarga del bloque de datos. Usa --offline con un paquete completo."
-            )
+        try:
+            return self._construir(cripta_id, semilla, fuente, cache)
+        except CriptaAPIError as error:
+            raise ValueError(str(error)) from error
+        finally:
+            self._preparados = None
+
+    def _construir(self, cripta_id, semilla, fuente, cache):
         if type(semilla) is not int:
             raise ValueError("La semilla debe ser un entero.")
-        generales = fuente.obtener_generales(cripta_id)
-        if not isinstance(generales, dict) or generales.get("id") != cripta_id:
-            raise ValueError("El paquete no contiene generales de la cripta solicitada.")
+        if self._preparados is None or self._preparados[:2] != (cripta_id, fuente):
+            self.preparar(cripta_id, fuente)
+        _, _, generales, version, version_catalogo = self._preparados
         paginas = self._entero(generales.get("paginas"), "paginas", 1)
         total = self._entero(generales.get("salas_total"), "salas_total", 1)
         capacidad = self._entero(generales.get("inventario_max"), "inventario_max")
         inicial, salida = generales.get("sala_inicial"), generales.get("sala_salida")
         validar_id_sala(inicial)
         validar_id_sala(salida)
-        version = self._version(fuente.obtener_version_cripta(cripta_id))
-        version_catalogo = self._version(fuente.obtener_version_catalogo())
-        if self._version(generales.get("version")) != version:
-            raise ValueError("Generales y la versión de cripta no coinciden.")
         datos_jugador = generales.get("jugador")
         if not isinstance(datos_jugador, dict):
             raise ValueError("Faltan las estadísticas iniciales del jugador.")
@@ -155,11 +213,23 @@ class InicializadorPartida:
         if len(vistas) != total:
             raise ValueError("El paquete debe incluir contenido de todas las salas, incluso vacías.")
 
+        if cache is None:
+            cache = CacheCatalogo()
+        if getattr(cache, "_version_catalogo_partida", None) != version_catalogo and cache._arreglo:
+            # Mantener intacta la memoria que pueda pertenecer a otra partida.
+            cache = CacheCatalogo(cache._capacidad)
+        cache._version_catalogo_partida = version_catalogo
+        presupuesto = (fuente._presupuesto if isinstance(fuente, ClienteAPI)
+                       else PresupuestoSolicitudes())
+        repositorio = RepositorioCatalogo(
+            cache, _AlmacenVigente(AlmacenPersistente("partidas/catalogo"), version_catalogo),
+            _FuenteCatalogo(fuente, version_catalogo), decodificador, presupuesto,
+        )
         catalogo = CatalogoPartida()
         pendientes = OrdenadorAdaptativo().ordenar(ids_fichas, lambda ficha_id: ficha_id)
         while pendientes:
             lote, pendientes = pendientes[:10], pendientes[10:]
-            respuesta = fuente.obtener_catalogo(lote)
+            respuesta = repositorio.resolver_lote(lote)
             for ficha_id in lote:
                 ficha = decodificador._buscar_ficha(respuesta, ficha_id)
                 if ficha.get("id") != ficha_id or not isinstance(ficha.get("clase"), str):
@@ -194,4 +264,5 @@ class InicializadorPartida:
         estado.jugador.sala_actual = mapa.obtener_sala(inicial)
         estado.mapa, estado.inventario = mapa, Inventario(capacidad)
         estado.catalogo_inicial = catalogo
+        estado.cache_inicial = cache
         return estado, estado.inventario

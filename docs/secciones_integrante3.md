@@ -1,7 +1,7 @@
 # Secciones técnicas del integrante 3
 
-Bloque de arranque y replay revisado el 7 de octubre de 2026,
-preparado sobre `340ba86`. Las cifras de rendimiento conservan las
+Conexión de catálogo revisada el 12 de octubre de 2026,
+preparada sobre `912d7c1`. Las cifras de rendimiento conservan las
 mediciones del 1 de octubre; las nuevas comprobaciones son funcionales.
 
 Fecha de trabajo: 2026-10-01. Datos medidos, no estimaciones, en
@@ -56,7 +56,8 @@ Curación inmediata satura vida_max y consume la instancia; la llave no se
 consume. Velocidad, antídoto y antorcha utilizan el gestor de efectos del
 motor. Las puertas con cierre automático se abren mediante ABRIR, que
 programa su cierre. El inicializador conecta las fichas del paquete completo;
-la integración HTTP con presupuesto, persistencia y precarga sigue pendiente.
+el arranque HTTP utiliza el contador y repositorio de Steven. La precarga
+general y descarga bajo demanda requieren coordinación adicional del equipo.
 
 ## 4.6 Retroceso
 
@@ -183,10 +184,27 @@ FuenteOffline: mismo estado/agenda/azar al reproducir el registro y misma
 reconstrucción al guardar/cargar. Las cifras anteriores se conservan como
 mediciones históricas; esta comprobación no mide rendimiento de red.
 
-**Límites:** ClienteAPI directo no inicia mientras no se conecte el gestor de
-presupuesto, persistencia y precarga del bloque de datos. Se exige un paquete
-completo a FuenteOffline o a una fuente coordinada compatible. Sin versiones compatibles
+**Conexión HTTP:** JuegoService conecta el contador desde su construcción.
+Generales proporciona la versión de cripta y se consulta la versión de catálogo;
+el replay conserva esa preparación hasta iniciar, sin repetir la descarga.
+RepositorioCatalogo resuelve lotes de diez mediante LRU, disco vigente y red.
+Un adaptador local filtra el disco de otra versión. Se conserva cache-size,
+y una caché de versión ajena no sustituye la de la partida actual hasta que
+el nuevo estado queda validado. Ambas versiones se comprueban al finalizar.
+Se comprobó arranque real de seis salas: nueve solicitudes sobre límite nueve.
+Registro de acciones y guardado v5 se verificaron sin solicitudes adicionales.
+No se tocaron clases del bloque de datos ni sus contratos.
+
+**Límites:** se reconstruye el paquete completo, conforme a la estrategia
+existente. Un inicio que no cabe en presupuesto y no dispone de fichas
+vigentes se rechaza sin publicar el estado. La precarga general/descarga
+bajo demanda no se implementan en este bloque. El contador no se reinicia
+ocultamente para aceptar otra partida o replay. Sin versiones compatibles
 se rechaza el replay; las acciones imposibles se informan. Escribir log y
 modificar estado no constituye una transacción de disco+motor: un fallo de
 registro posterior a la acción se informa y bloquea las siguientes acciones.
 Las mediciones anteriores corresponden al parser, no al replay completo.
+
+
+Verificación final del bloque: 789 pruebas aprobadas con `python -m pytest -q`,
+incluidas las pruebas de API real. Se conservan arriba las cifras históricas.

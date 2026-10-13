@@ -1,7 +1,7 @@
 # Aportación del integrante 3 — JuegoCripta
 
-Bloque de arranque y replay preparado sobre la rama `joshua`,
-base `340ba86`. Incluye la corrección de lectura de salas de Steven y
+Conexión de catálogo preparada sobre la rama `joshua`,
+base `912d7c1`. Incluye la corrección de lectura de salas de Steven y
 el guardado/carga v5 previamente integrado.
 Este documento describe el estado comprobado; no declara terminado
 el proyecto completo.
@@ -51,11 +51,28 @@ puede configurarse al construir InicializadorPartida. No sustituye datos de comb
 EjecutorReplay.reproducir(ruta), sin servicio inyectado, utiliza el paquete
 local `datos/`. Requiere las versiones exactas del log y un paquete completo.
 
-El ClienteAPI directo sigue bloqueado para iniciar: falta que el bloque de
-datos conecte el presupuesto real de solicitudes, persistencia y precarga.
-No se descarga toda una cripta por HTTP sin ese control. La fábrica puede
-recibir otra fuente coordinada que respete FuenteDatos y entregue el paquete
-completo. No se cambiaron ClienteAPI, FuenteOffline, repositorios ni precarga.
+El arranque con ClienteAPI está conectado. JuegoService instala el contador
+antes del listado de criptas, conservando cualquier contador ya proporcionado.
+InicializadorPartida establece el límite declarado en generales sin borrar
+intentos previos; ClienteAPI comprueba el límite y cuenta cada solicitud/reintento.
+Generales aporta la versión de la cripta. La versión de catálogo se consulta
+una vez durante la preparación y se reutiliza dentro de RepositorioCatalogo.
+Antes de publicar el estado se vuelven a comprobar ambas versiones.
+
+Las fichas se resuelven mediante RepositorioCatalogo.resolver_lote, en lotes
+máximos de diez, incluyendo las dependencias del botín. Se reutilizan LRU y
+fichas persistidas de la versión vigente. El almacén está en
+`partidas/catalogo/`, bajo una carpeta ya excluida de Git. Un adaptador local
+impide aceptar el respaldo antiguo de disco; la memoria conserva su versión.
+Si pertenece a otra versión, se utiliza una caché nueva al iniciar, conservando
+la memoria y las referencias de la partida anterior hasta publicar el estado.
+
+No se modifican repositorio, cliente HTTP, contador, caché, fuentes, DTO ni motor.
+No se amplía cache-size. Se conserva la estrategia existente de reconstruir
+el paquete completo: si no hay datos vigentes ni presupuesto suficiente,
+el inicio se rechaza y se conserva la partida actual. Criptas mayores pueden
+necesitar datos persistidos o un paquete offline completo; este bloque no
+sustituye la integración general de precarga y descarga bajo demanda.
 
 `--bench` no crea la vista. Ejecuta las mediciones del integrante 3 y
 reutiliza la medición existente de agenda y el script de ciclos de simulación,
@@ -188,11 +205,12 @@ Estado del cierre:
 
 - El bloque funcional propio de inventario, retroceso, ordenamientos, consola,
   puntajes, registro, replay y reconstrucción/guardado v5 está implementado y probado.
-- El arranque y replay funcionan con paquetes offline completos, incluyendo
-  una comprobación con datos extraídos de la API real.
-- La integración HTTP completa sigue pendiente del equipo: presupuesto,
-  persistencia y precarga pertenecen al integrante 2. Después de entregar esa
-  fuente coordinada se debe verificar el recorrido desde main con ella.
+- El arranque y replay funcionan con paquetes completos y con la fuente HTTP
+  conectada al repositorio. Se comprobó el arranque real de cripta-01: seis
+  salas, nueve solicitudes frente a un límite declarado de nueve.
+- La conexión de arranque HTTP utiliza repositorio, contador, caché y disco
+  del integrante 2. La descarga bajo demanda y precarga general siguen
+  siendo una coordinación del equipo; no se cambia el modelo de carga completa.
 - OrdenadorAdaptativo se utiliza en inventario, puntajes y en las listas
   auxiliares del catálogo de inicialización. Su uso en el índice del binario
   debe integrarlo su propietario; no se modifica ese archivo en este bloque.
@@ -203,10 +221,11 @@ Estado del cierre:
 
 ## Aplicación y comprobación de este bloque
 
-Reemplazar main.py, service/juego_service.py y controller/ejecutor_replay.py.
-Agregar service/inicializador_partida.py y
-tests/test_service/test_inicializador_partida.py. Los documentos se actualizan
-por separado. Conservar todos los demás archivos.
+Reemplazar service/inicializador_partida.py, service/juego_service.py,
+controller/ejecutor_replay.py y tests/test_service/test_inicializador_partida.py.
+Agregar tests/test_service/test_conexion_catalogo_inicializador.py.
+Los tres documentos del integrante 3 se actualizan por separado.
+Conservar todos los demás archivos, incluidos main.py y main_pygame.py.
 
 ```bash
 python -m pytest -q
@@ -222,3 +241,27 @@ Cada fuente recibe lotes de hasta diez salas/fichas. El paquete se reconstruye
 antes de publicar el estado; si está incompleto se conserva la partida vigente.
 Una nueva partida conecta su servicio de inventario al motor antes de aceptar
 acciones, y libera las referencias de caché del inventario anterior.
+
+## Verificación de la conexión de catálogo
+
+Las nuevas regresiones usan ClienteAPI, repositorio, almacén, LRU y motor
+reales con transporte simulado. Comprueban arranque frío, reutilización de
+disco/memoria, versiones, presupuesto insuficiente, reintentos, protección
+de la partida vigente y replay. Las pruebas existentes de bloqueo HTTP se
+adaptan a su conexión; faltar una ficha local puede resolverse desde memoria
+vigente, por lo que ese caso se comprueba como recuperación y no como error.
+
+Además se verificó la API real: cripta-01 inició con seis salas y nueve
+solicitudes sobre presupuesto nueve. Registrar el conjunto completo ya
+verificado y ejecutar esperar no hicieron consultas adicionales; guardar en
+v5 también funcionó. El registro conserva la versión del conjunto que fue
+cargado y verificado al inicio, aunque el servidor cambie posteriormente.
+Replay exige una fuente o copia local con esas versiones y conserva el log.
+
+Para reiniciar, cargar otros datos o reproducir sobre una fuente HTTP ya
+agotada puede necesitarse un paquete offline compatible. No se reinicia
+ocultamente el contador compartido ni se habilita una partida incompleta.
+
+
+Verificación final del bloque: 789 pruebas aprobadas con `python -m pytest -q`,
+incluidas las pruebas de API real. Se conservan arriba las cifras históricas.
