@@ -191,7 +191,7 @@ class DecodificadorDatos:
                 enemigo.ficha = e.get("ficha")
                 enemigo.vida_max = e.get("vida_max", enemigo.vida_max)
                 enemigo.activo = e.get("activo", False)
-                enemigo.muerte_procesada = not enemigo.esta_vivo()
+                enemigo.muerte_procesada = e.get("muerte_procesada", not enemigo.esta_vivo())
 
             for o in contenido.get("objetos", []):
                 obj = ObjetoInstancia(
