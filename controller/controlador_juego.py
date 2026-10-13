@@ -77,6 +77,7 @@ class ControladorJuego:
                 if actual is not None:
                     self._vista.mostrar_estado(actual)
                     if not actual.partida_activa:
+                        self._mostrar_metricas()
                         break
                 comando = self._vista.leer_comando()
                 self.procesar_comando(comando)
@@ -84,6 +85,22 @@ class ControladorJuego:
             self._vista.mostrar_mensaje("Consola cerrada sin modificar la partida.")
         finally:
             self._en_ejecucion = False
+
+    def _mostrar_metricas(self) -> None:
+        metricas = self._servicio.obtener_metricas()
+        if not metricas:
+            return
+        lineas = ["--- Métricas de partida ---"]
+        if "cache" in metricas:
+            c = metricas["cache"]
+            lineas.append(f"Caché: {c['aciertos']} aciertos, {c['fallos']} fallos, tasa {c['tasa_acierto']:.0%}, {c['tamano']}/{c['capacidad']} entradas, {c['fijados']} fijadas")
+        if "presupuesto" in metricas:
+            p = metricas["presupuesto"]
+            lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes usadas, {p['restantes']} restantes")
+        if "partida" in metricas:
+            pt = metricas["partida"]
+            lineas.append(f"Partida: {pt['acciones']} acciones, {pt['enemigos_derrotados']} enemigos derrotados, reloj {pt['reloj']}")
+        self._vista.mostrar_mensaje("\n".join(lineas))
 
     def _iniciar_pygame(self, estado) -> None:
         if estado is None and self._fuente is not None:

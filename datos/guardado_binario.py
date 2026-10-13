@@ -144,7 +144,8 @@ class GuardadoBinario:
                 offsets_salas.append((sala.id_sala, f.tell()))
                 self._escribir_sala(f, sala)
 
-            # index
+            # index (ordenado por id_sala para busqueda binaria)
+            offsets_salas.sort(key=lambda x: x[0] if isinstance(x[0], int) else str(x[0]))
             offset_indice = f.tell()
             for id_sala, offset in offsets_salas:
                 f.write(self._empaquetar_id_sala(id_sala))
@@ -739,21 +740,27 @@ class GuardadoBinario:
                     return None
                 f.seek(offset_indice)
                 indice_raw = f.read(num_salas * 36)
-                offsets = []
+                # Busqueda binaria en indice ordenado por id_sala
+                lo, hi = 0, num_salas - 1
                 target_offset = None
-                for i in range(num_salas):
-                    base = i * 36
+                while lo <= hi:
+                    mid = (lo + hi) // 2
+                    base = mid * 36
                     rid = self._desempaquetar_id_sala(indice_raw[base:base+32])
-                    off = struct.unpack("<I", indice_raw[base+32:base+36])[0]
-                    offsets.append(off)
                     if rid == id_sala:
-                        target_offset = off
+                        target_offset = struct.unpack("<I", indice_raw[base+32:base+36])[0]
+                        break
+                    elif (rid if isinstance(rid, int) else str(rid)) < (id_sala if isinstance(id_sala, int) else str(id_sala)):
+                        lo = mid + 1
+                    else:
+                        hi = mid - 1
                 if target_offset is None:
                     return None
                 if target_offset < self.HEADER_SIZE or target_offset >= offset_indice:
                     return None
                 fin = offset_indice
-                for off in offsets:
+                for i in range(num_salas):
+                    off = struct.unpack("<I", indice_raw[i * 36 + 32:i * 36 + 36])[0]
                     if off > target_offset and off < fin:
                         fin = off
                 f.seek(target_offset)
