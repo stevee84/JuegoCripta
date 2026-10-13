@@ -208,11 +208,11 @@ def test_main_normal_respeta_semilla_y_capacidad_cache(tmp_path, monkeypatch):
     import main
 
     config = SimpleNamespace(bench=False, offline=True, replay=None,
-                             ruta_datos_offline=str(tmp_path), cache_size=9, semilla=123)
+                             ruta_datos_offline=str(tmp_path), cache_size=9, semilla=123, vista="consola")
     monkeypatch.setattr(main, "Configuracion", lambda: config)
     recibidos = []
 
-    def comprobar_conexion(controlador):
+    def comprobar_conexion(controlador, estado=None):
         recibidos.append(controlador)
         assert controlador._servicio._semilla == 123
         assert controlador._servicio._cache._capacidad == 9

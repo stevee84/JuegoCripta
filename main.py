@@ -1,74 +1,80 @@
-"""Integrante 3. Arranque y conexión de dependencias."""
+"""Punto de entrada de CRIPTA."""
 
 from configuracion import Configuracion
+
+
+def _crear_fuente(config):
+    if getattr(config, "demo", False):
+        return None
+    if config.offline:
+        from datos.fuente_offline import FuenteOffline
+        return FuenteOffline(ruta_directorio=config.ruta_datos_offline)
+    from datos.cliente_api import ClienteAPI
+    return ClienteAPI(url_base=config.url_api)
+
+
+def _crear_vista(config):
+    vista_tipo = getattr(config, "vista", "pygame")
+    if vista_tipo == "consola":
+        from vista.vista_consola import VistaConsola
+        return VistaConsola()
+    from vista.vista_pygame import VistaPygame
+    vista = VistaPygame()
+    if getattr(config, "demo", False):
+        vista._modo = "demo"
+    elif config.offline:
+        vista._modo = "offline"
+    else:
+        vista._modo = "online"
+    return vista
 
 
 def main() -> None:
     config = Configuracion()
 
-    # Elegir modo antes de construir fuentes, motor, catálogo o vista.
     if config.bench:
         import json
         from benchmarks.integrante3 import ejecutar
         print(json.dumps(ejecutar(), ensure_ascii=False, indent=2))
         return
 
-    # Seleccionar fuente de datos
-    if getattr(config, "demo", False):
-        fuente = None
-    elif config.offline or (config.replay and not config.url_api):
-        from datos.fuente_offline import FuenteOffline
-        fuente = FuenteOffline(ruta_directorio=config.ruta_datos_offline)
-    else:
-        if not config.url_api:
-            raise ValueError("Falta la URL real de la API; usa --offline con un paquete compatible.")
-        from datos.cliente_api import ClienteAPI
-        fuente = ClienteAPI(url_base=config.url_api)
+    fuente = _crear_fuente(config)
 
-    from logica.cache_catalogo import CacheCatalogo
-    cache = CacheCatalogo(config.cache_size)
-
-    from service.inicializador_partida import InicializadorPartida
-    inicializador = InicializadorPartida()
-
-    # Modo replay
     if config.replay:
+        from logica.cache_catalogo import CacheCatalogo
         from controller.ejecutor_replay import EjecutorReplay
         from logica.motor_juego import MotorJuego
         from service.juego_service import JuegoService
+        from service.inicializador_partida import InicializadorPartida
         replay = EjecutorReplay()
-        servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=cache)
-        servicio.conectar_inicializador(inicializador)
+        servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=CacheCatalogo(config.cache_size))
+        servicio.conectar_inicializador(InicializadorPartida())
         replay.conectar_servicio(servicio)
         replay.reproducir(config.replay)
         return
 
-    # Modo normal
+    from logica.cache_catalogo import CacheCatalogo
     from logica.motor_juego import MotorJuego
     from logica.historial_reversible import HistorialReversible
-    from vista.vista_consola import VistaConsola
+    from service.inicializador_partida import InicializadorPartida
     from controller.controlador_juego import ControladorJuego
 
-    motor = MotorJuego()
-    vista = VistaConsola()
-    historial = HistorialReversible()
-    controlador = ControladorJuego(motor=motor, vista=vista, fuente=fuente, historial=historial)
-    controlador.configurar_arranque(config.semilla if config.semilla is not None else 0, cache)
-    if not getattr(config, "demo", False):
-        controlador.conectar_inicializador(
-            inicializador, config.semilla if config.semilla is not None else 0
-        )
+    vista = _crear_vista(config)
+    semilla = config.semilla if config.semilla is not None else 0
+    controlador = ControladorJuego(
+        motor=MotorJuego(), vista=vista, fuente=fuente,
+        historial=HistorialReversible(),
+    )
+    controlador.configurar_arranque(semilla, CacheCatalogo(config.cache_size))
+
     estado = None
     if getattr(config, "demo", False):
         from docs.partida_minima import crear_partida_minima
-        estado = crear_partida_minima(config.semilla if config.semilla is not None else 7)
-    try:
-        if estado is None:
-            controlador.iniciar()
-        else:
-            controlador.iniciar(estado)
-    except ValueError as error:
-        vista.mostrar_error(str(error))
+        estado = crear_partida_minima(semilla or 7)
+    elif fuente is not None:
+        controlador.conectar_inicializador(InicializadorPartida(), semilla)
+
+    controlador.iniciar(estado)
 
 
 if __name__ == "__main__":
