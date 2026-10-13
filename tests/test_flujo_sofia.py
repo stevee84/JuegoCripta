@@ -38,7 +38,7 @@ def test_controlador_servicios_vista_y_motor_hasta_terminacion(monkeypatch, caps
 
 def test_arranque_real_demo_por_subproceso():
     resultado = subprocess.run(
-        [sys.executable, "main.py", "--demo", "--semilla", "7"],
+        [sys.executable, "main.py", "--demo", "--semilla", "7", "--vista", "consola"],
         input="recoger moneda\nsoltar\nmover norte\nesperar\n",
         text=True, capture_output=True, timeout=10,
     )

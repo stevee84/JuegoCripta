@@ -90,6 +90,8 @@ class VistaPygame:
         self._scroll_bitacora = 0
         self._label_movimiento = None
         self._label_acciones = None
+        self._label_inventario = None
+        self._panel_content_y = 160
         self._corriendo = True
         self._modo = "demo"
 
@@ -130,9 +132,14 @@ class VistaPygame:
             for i, c in enumerate(visibles):
                 cid = c.get("id", c.get("cripta_id", f"cripta_{i}"))
                 nombre = c.get("nombre", cid)
-                salas = c.get("salas_total", c.get("salas", "?"))
-                dif = c.get("dificultad", "?")
-                texto = f"{nombre}  |  {salas} salas  |  Dificultad {dif}"
+                salas = c.get("salas_total", c.get("salas", ""))
+                dif = c.get("dificultad", "")
+                partes_info = [nombre]
+                if salas:
+                    partes_info.append(f"{salas} salas")
+                if dif:
+                    partes_info.append(f"Dificultad {dif}")
+                texto = "  |  ".join(partes_info)
                 tw = self._font_med.size(texto)[0] + 40
                 bw = max(400, tw)
                 rect = (self.ANCHO // 2 - bw // 2, y, bw, 50)
@@ -174,8 +181,15 @@ class VistaPygame:
 
     # --- Botones ---
 
+    BTN_W = 120
+    BTN_H = 28
+    BTN_GAP = 6
+
     def _construir_botones(self, estado):
         self._botones = []
+        self._label_movimiento = None
+        self._label_acciones = None
+        self._label_inventario = None
         if estado is None or estado.jugador is None:
             return
 
@@ -184,93 +198,98 @@ class VistaPygame:
             return
 
         px = self.PANEL_X + 15
-        by_bottom = self.ALTO - self.BITACORA_ALTO - 38
+        panel_w = self.PANEL_ANCHO - 30
+        zona_bottom = self.ALTO - self.BITACORA_ALTO - 10
+        y = self._panel_content_y
         activa = estado.partida_activa
 
         if activa:
-            # Contar filas de acciones para posicionar movimiento arriba
-            n_acciones = len([e for e in sala.enemigos if e.esta_vivo()]) + len(sala.objetos) + 3
-            filas_acciones = (min(n_acciones, 8) + 2) // 3
-            acciones_alto = filas_acciones * 36
-            mov_alto = 80
+            y = self._seccion_movimiento(sala, px, panel_w, y)
+            y += 10
+            y = self._seccion_acciones(sala, estado, px, panel_w, y)
+            y += 10
+            y = self._seccion_inventario(estado, px, panel_w, y)
+            y += 10
 
-            # Acciones justo arriba de la barra inferior
-            ay = by_bottom - acciones_alto - 10
-            self._seccion_acciones(sala, estado, px, ay)
+        barra_y = zona_bottom - self.BTN_H
+        bw = self.BTN_W
+        gap = self.BTN_GAP
+        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar partida.bin", NARANJA))
+        self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
 
-            # Movimiento justo arriba de acciones
-            my = ay - mov_alto - 10
-            self._seccion_movimiento(sala, px, my)
+    def _colocar_fila(self, items, px, panel_w, y):
+        x = px
+        for label, cmd, color in items:
+            w = max(self._font.size(label)[0] + 16, 80)
+            if x + w > px + panel_w:
+                x = px
+                y += self.BTN_H + self.BTN_GAP
+            self._botones.append(Boton((x, y, w, self.BTN_H), label, cmd, color))
+            x += w + self.BTN_GAP
+        return y + self.BTN_H + self.BTN_GAP
 
-        # --- Barra inferior: Inventario / Guardar / Salir ---
-        by = by_bottom
-        bw, bh = 120, 26
-        gap = 20
-        self._botones.append(Boton((px, by, bw, bh), "Inventario", "__inventario__", AZUL))
-        self._botones.append(Boton((px + bw + gap, by, bw, bh), "Guardar", "guardar partida.bin", NARANJA))
-        self._botones.append(Boton((px + (bw + gap) * 2, by, 80, bh), "Salir", "salir", ROJO))
-
-    def _seccion_movimiento(self, sala, px, base_y):
-        # Etiqueta
-        self._label_movimiento = ("Movimiento:", GRIS_CLARO, px, base_y)
-
-        puertas_disponibles = []
+    def _seccion_movimiento(self, sala, px, panel_w, y):
+        self._label_movimiento = ("Movimiento:", GRIS_CLARO, px, y)
+        y += 20
+        items = []
         for dir_name in ("NORTE", "SUR", "ESTE", "OESTE"):
             puerta = sala.obtener_salida(dir_name)
-            if puerta is not None:
-                puertas_disponibles.append((dir_name, puerta))
-
-        h_btn = 28
-        y = base_y + 20
-        x_cursor = px
-        fila = 0
-        panel_w = self.PANEL_ANCHO - 30
-        for dir_name, puerta in puertas_disponibles:
-            destino = puerta.destino_sala_id
+            if puerta is None:
+                continue
             if puerta.abierta:
-                label = f"{dir_name[0]} -> Sala {destino}"
-                cmd = f"mover {dir_name}"
-                color = VERDE_OSCURO
+                items.append((f"{dir_name[0]} -> Sala {puerta.destino_sala_id}", f"mover {dir_name}", VERDE_OSCURO))
             else:
-                llave = ""
-                if puerta.llave_requerida:
-                    llave = f" [{puerta.llave_requerida[:10]}]"
-                label = f"{dir_name[0]} Cerrada{llave}"
-                cmd = f"abrir {dir_name}"
-                color = ROJO_OSCURO
-            w_btn = self._font.size(label)[0] + 24
-            if x_cursor + w_btn > px + panel_w:
-                x_cursor = px
-                fila += 1
-            self._botones.append(Boton((x_cursor, y + fila * 34, w_btn, h_btn), label, cmd, color))
-            x_cursor += w_btn + 10
+                llave = f" [{puerta.llave_requerida[:8]}]" if puerta.llave_requerida else ""
+                items.append((f"{dir_name[0]} Cerrada{llave}", f"abrir {dir_name}", ROJO_OSCURO))
+        if not items:
+            return y
+        return self._colocar_fila(items, px, panel_w, y)
 
-    def _seccion_acciones(self, sala, estado, px, base_y):
-        acciones = []
-
+    def _seccion_acciones(self, sala, estado, px, panel_w, y):
+        self._label_acciones = ("Acciones:", GRIS_CLARO, px, y)
+        y += 20
+        items = []
         for enemigo in sala.enemigos:
             if enemigo.esta_vivo():
-                acciones.append((f"Atacar {enemigo.nombre[:12]}", f"atacar {enemigo.id_actor}", ROJO_OSCURO))
-
+                items.append((f"Atacar {enemigo.nombre[:10]}", f"atacar {enemigo.id_actor}", ROJO_OSCURO))
         for obj in sala.objetos:
-            acciones.append((f"Recoger {obj.id_instancia[:12]}", f"recoger {obj.id_instancia}", (50, 50, 20)))
+            items.append((f"Recoger {obj.id_instancia[:10]}", f"recoger {obj.id_instancia}", (50, 50, 20)))
+        items.append(("Esperar", "esperar", GRIS_OSCURO))
+        return self._colocar_fila(items, px, panel_w, y)
 
-        acciones.append(("Esperar", "esperar", GRIS_OSCURO))
-        acciones.append(("Equipar", "equipar", GRIS_OSCURO))
-        acciones.append(("Soltar", "soltar", GRIS_OSCURO))
+    def _seccion_inventario(self, estado, px, panel_w, y):
+        inv = getattr(estado, "inventario", None)
+        self._label_inventario = ("Inventario:", GRIS_CLARO, px, y)
+        y += 20
+        if inv is None or inv.esta_vacio():
+            return y
 
-        self._label_acciones = ("Acciones:", GRIS_CLARO, px, base_y)
-        ay = base_y + 20
-        x_cursor = px
-        fila = 0
-        panel_w = self.PANEL_ANCHO - 30
-        for label, cmd, color in acciones[:8]:
-            w = self._font.size(label)[0] + 24
-            if x_cursor + w > px + panel_w:
-                x_cursor = px
-                fila += 1
-            self._botones.append(Boton((x_cursor, ay + fila * 34, w, 28), label, cmd, color))
-            x_cursor += w + 10
+        actual = inv.obtener_actual()
+        nombre = actual.id_instancia[:16] if actual else "---"
+        ubicacion = getattr(actual, "ubicacion", "") if actual else ""
+        equip = " [E]" if ubicacion == "equipado" else ""
+
+        lbl_w = self._font.size(f" {nombre}{equip} ")[0] + 16
+        nav_w = 30
+        total_nav = nav_w * 2 + self.BTN_GAP + lbl_w + self.BTN_GAP
+        cx = px
+        self._botones.append(Boton((cx, y, nav_w, self.BTN_H), "<", "anterior", GRIS_OSCURO))
+        cx += nav_w + self.BTN_GAP
+        self._botones.append(Boton((cx, y, lbl_w, self.BTN_H), f"{nombre}{equip}", "__noop__", AZUL, enabled=False))
+        cx += lbl_w + self.BTN_GAP
+        self._botones.append(Boton((cx, y, nav_w, self.BTN_H), ">", "siguiente", GRIS_OSCURO))
+        y += self.BTN_H + self.BTN_GAP
+
+        items = []
+        if ubicacion == "equipado":
+            items.append(("Soltar", "soltar", GRIS_OSCURO))
+        else:
+            items.append(("Equipar", "equipar", GRIS_OSCURO))
+            items.append(("Soltar", "soltar", GRIS_OSCURO))
+        tipo = getattr(actual, "tipo_ficha_id", "") if actual else ""
+        if "pocion" in tipo.lower() or "pergamino" in tipo.lower() or "consumible" in tipo.lower():
+            items.append(("Usar", "usar", MAGENTA))
+        return self._colocar_fila(items, px, panel_w, y)
 
     # --- Mapa ---
 
@@ -310,26 +329,39 @@ class VistaPygame:
         if not posiciones:
             return
 
-        min_x = min(p[0] for p in posiciones.values())
-        max_x = max(p[0] for p in posiciones.values())
-        min_y = min(p[1] for p in posiciones.values())
-        max_y = max(p[1] for p in posiciones.values())
+        jx, jy = posiciones[sala_actual.id_sala]
+        cell_ideal = 100
+        gap = 8
+        espacio_w = self.MAPA_ANCHO - 40
+        espacio_h = self.ALTO - self.BITACORA_ALTO - 80
+        max_cols = max(1, espacio_w // (cell_ideal + gap))
+        max_rows = max(1, espacio_h // (cell_ideal + gap))
+        radio_x = max_cols // 2
+        radio_y = max_rows // 2
+
+        visibles = {sid: (gx, gy) for sid, (gx, gy) in posiciones.items()
+                    if abs(gx - jx) <= radio_x and abs(gy - jy) <= radio_y}
+        if not visibles:
+            visibles = {sala_actual.id_sala: (jx, jy)}
+
+        min_x = min(p[0] for p in visibles.values())
+        max_x = max(p[0] for p in visibles.values())
+        min_y = min(p[1] for p in visibles.values())
+        max_y = max(p[1] for p in visibles.values())
 
         rango_x = max_x - min_x + 1
         rango_y = max_y - min_y + 1
 
-        # Tamaño de celda adaptativo
-        max_cell_w = (self.MAPA_ANCHO - 40) // rango_x
-        max_cell_h = (self.ALTO - self.BITACORA_ALTO - 80) // rango_y
+        max_cell_w = espacio_w // rango_x
+        max_cell_h = espacio_h // rango_y
         cell = min(max_cell_w, max_cell_h, 140)
-        cell = max(cell, 60)
-        gap = 8
+        cell = max(cell, 50)
 
         ox = (self.MAPA_ANCHO - rango_x * (cell + gap)) // 2
-        oy = 45 + ((self.ALTO - self.BITACORA_ALTO - 50) - rango_y * (cell + gap)) // 2
+        oy = 45 + (espacio_h - rango_y * (cell + gap)) // 2
 
         # Primero dibujar conexiones
-        for sid, (gx, gy) in posiciones.items():
+        for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
@@ -338,9 +370,9 @@ class VistaPygame:
 
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
-                if did not in posiciones:
+                if did not in visibles:
                     continue
-                dgx, dgy = posiciones[did]
+                dgx, dgy = visibles[did]
                 dpx = ox + (dgx - min_x) * (cell + gap)
                 dpy = oy + (dgy - min_y) * (cell + gap)
 
@@ -357,7 +389,7 @@ class VistaPygame:
                     self._pantalla.blit(txt, txt.get_rect(center=(mx, my)))
 
         # Luego dibujar salas
-        for sid, (gx, gy) in posiciones.items():
+        for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
@@ -506,6 +538,8 @@ class VistaPygame:
                     self._pantalla.blit(self._font.render(txt, True, color_p), (px, y))
                     y += 18
 
+        self._panel_content_y = y + 10
+
         # Labels de secciones
         if estado.partida_activa:
             if self._label_movimiento is not None:
@@ -513,6 +547,9 @@ class VistaPygame:
                 self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
             if self._label_acciones is not None:
                 txt, color, lx, ly = self._label_acciones
+                self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
+            if self._label_inventario is not None:
+                txt, color, lx, ly = self._label_inventario
                 self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
 
         # Botones
@@ -593,18 +630,8 @@ class VistaPygame:
                 elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
                     for b in self._botones:
                         if b.contiene(evento.pos):
-                            if b.comando == "__inventario__":
-                                if estado is not None:
-                                    inv = getattr(estado, 'inventario', None)
-                                    if inv:
-                                        objetos = list(inv.obtener_objetos())
-                                        if objetos:
-                                            for o in objetos:
-                                                self.mostrar_mensaje(f"  [{o.id_instancia}] {o.tipo_ficha_id}")
-                                        else:
-                                            self.mostrar_mensaje("Inventario vacio.")
-                                    else:
-                                        self.mostrar_mensaje("Sin inventario.")
+                            if b.comando == "__noop__":
+                                pass
                             else:
                                 resultado = controlador.procesar_comando(b.comando)
                                 if resultado and resultado.mensaje:
@@ -614,11 +641,10 @@ class VistaPygame:
             if not self._corriendo:
                 break
 
-            self._construir_botones(estado)
-
             self._pantalla.fill(NEGRO)
             self._dibujar_mapa(estado)
             self._dibujar_panel(estado)
+            self._construir_botones(estado)
             self._dibujar_bitacora()
             self._dibujar_leyenda()
             pygame.display.flip()

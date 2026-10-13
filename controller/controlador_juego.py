@@ -56,6 +56,13 @@ class ControladorJuego:
                 raise ValueError("No se reemplaza un historial vigente.")
             self._servicio.iniciar_partida(estado.cripta_id, estado)
             self._historial = estado.historial
+
+        if hasattr(self._vista, "ejecutar"):
+            self._iniciar_pygame(estado)
+        else:
+            self._iniciar_consola(estado)
+
+    def _iniciar_consola(self, estado) -> None:
         self._vista.mostrar_mensaje(
             "Motor con turnos e historial integrados. Guardado v5; al cargar se inicia un historial vacío. "
             "Consultar comandos: ayuda."
@@ -77,6 +84,28 @@ class ControladorJuego:
             self._vista.mostrar_mensaje("Consola cerrada sin modificar la partida.")
         finally:
             self._en_ejecucion = False
+
+    def _iniciar_pygame(self, estado) -> None:
+        if estado is None and self._fuente is not None:
+            try:
+                resp = self._fuente.listar_criptas()
+                criptas = resp.get("criptas", resp) if isinstance(resp, dict) else resp
+                if not isinstance(criptas, list):
+                    criptas = [criptas] if criptas else []
+            except Exception as e:
+                criptas = []
+                self._vista.mostrar_mensaje(f"[!] Error listando criptas: {e}")
+            if criptas:
+                cripta_id = self._vista.mostrar_menu_criptas(criptas)
+                if cripta_id is None:
+                    return
+                resultado = self.procesar_comando(f"cripta {cripta_id}")
+                if resultado and resultado.mensaje:
+                    self._vista.mostrar_mensaje(resultado.mensaje)
+            else:
+                self._vista.mostrar_mensaje("No se encontraron criptas. Usa --demo para jugar sin API.")
+
+        self._vista.ejecutar(self, lambda: self._servicio.obtener_estado())
 
     def procesar_comando(self, comando: str):
         try:

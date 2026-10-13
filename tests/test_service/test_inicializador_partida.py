@@ -207,7 +207,7 @@ def test_consola_seleccion_victoria_y_puntaje(paquete, monkeypatch):
 def test_main_offline_y_replay_sin_entrada_ni_vista(paquete, tmp_path):
     raiz = Path(__file__).resolve().parents[2]
     inicio = subprocess.run(
-        [sys.executable, str(raiz / "main.py"), "--offline", "--semilla", "91"],
+        [sys.executable, str(raiz / "main.py"), "--offline", "--semilla", "91", "--vista", "consola"],
         input="cripta c1\nregistro partida.log\natacar enemigo-0\nesperar\nsalir\n",
         cwd=tmp_path, text=True, capture_output=True, timeout=15,
     )
