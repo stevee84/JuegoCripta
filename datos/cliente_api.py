@@ -46,8 +46,6 @@ class ClienteAPI(FuenteDatos):
                     timeout=self._timeout,
                 )
             except requests.exceptions.Timeout:
-                if self._presupuesto is not None:
-                    self._presupuesto.registrar_intento()
                 if intento < self._MAX_REINTENTOS:
                     continue
                 raise CriptaAPIError(
@@ -59,9 +57,6 @@ class ClienteAPI(FuenteDatos):
                 raise CriptaAPIError(
                     f"Error de conexión con {url}"
                 )
-
-            if self._presupuesto is not None:
-                self._presupuesto.registrar_intento()
 
             if resp.status_code == 200:
                 try:
