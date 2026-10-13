@@ -68,6 +68,7 @@ def test_guardado_reconstruye_referencias_y_reloj_sin_simular_datos_ausentes(tmp
     estado = crear_partida_minima()
     estado.reloj = 123
     muerto = Enemigo("muerto", "Muerto", 0, 1, 0, 1)
+    muerto.muerte_procesada = True
     estado.mapa.obtener_sala(1).enemigos.append(muerto)
     ruta = tmp_path / "v2.bin"
     servicio = PartidaService()

@@ -10,26 +10,35 @@ class PlanificadorPrecarga:
         self._presupuesto = presupuesto
         self._cargadas = []
 
-    def _vecinos(self, sala_id: int) -> list:
-        """Obtiene IDs de salas adyacentes via puertas."""
+    def _vecinos(self, sala_id: int, solo_abiertas: bool = False):
+        """Obtiene puertas adyacentes. Retorna lista de (destino_id, abierta)."""
         sala = self._mapa.obtener_sala(sala_id)
         if sala is None:
             return []
-        return [p.destino_sala_id for p in sala.puertas]
+        resultado = []
+        for p in sala.puertas:
+            abierta = getattr(p, "abierta", True)
+            if not solo_abiertas or abierta:
+                resultado.append((p.destino_sala_id, abierta))
+        return resultado
 
     def _bfs(self, sala_id: int, profundidad: int) -> list:
-        """BFS hasta cierta profundidad, retorna IDs encontrados."""
+        """BFS hasta cierta profundidad. Puertas cerradas limitan a profundidad 1."""
         visitados = [sala_id]
-        frontera = [sala_id]
+        frontera = [(sala_id, profundidad)]
         resultado = []
-        for _ in range(profundidad):
+        while frontera:
             siguiente = []
-            for sid in frontera:
-                for vecino in self._vecinos(sid):
-                    if vecino not in visitados:
-                        visitados.append(vecino)
-                        siguiente.append(vecino)
-                        resultado.append(vecino)
+            for sid, prof_restante in frontera:
+                if prof_restante <= 0:
+                    continue
+                for vecino_id, abierta in self._vecinos(sid):
+                    if vecino_id not in visitados:
+                        visitados.append(vecino_id)
+                        resultado.append(vecino_id)
+                        prof_vecino = prof_restante - 1 if abierta else 0
+                        if prof_vecino > 0:
+                            siguiente.append((vecino_id, prof_vecino))
             frontera = siguiente
             if not frontera:
                 break
@@ -51,12 +60,13 @@ class PlanificadorPrecarga:
         # Adaptar por presupuesto
         restantes = self._presupuesto.restantes()
         if restantes < 2:
-            # Solo la sala destino
             if sala_actual_id not in self._cargadas:
                 return [sala_actual_id]
             return []
         elif restantes <= 5:
             profundidad = min(profundidad, 1)
+        elif restantes > 5:
+            profundidad = max(profundidad, 2)
 
         ids = self._bfs(sala_actual_id, profundidad)
         # Incluir la sala actual

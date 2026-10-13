@@ -33,6 +33,7 @@ def preparar_estado():
     destino.enemigos.append(enemigo)
     muerto = Enemigo("derrotado", "Goblin", 0, 2, 1, 70)
     muerto.vida_max = 10
+    muerto.muerte_procesada = True
     muerto.sala_actual = origen
     origen.enemigos.append(muerto)
     suelo = ObjetoInstancia("objeto-suelo", "ficha-suelo")

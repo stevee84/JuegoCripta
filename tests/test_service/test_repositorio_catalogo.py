@@ -82,6 +82,7 @@ class TestRepositorioCatalogo(unittest.TestCase):
         def almacen_leer(fid):
             return {"nombre": "disco"} if fid == "b" else None
         self.almacen.leer.side_effect = almacen_leer
+        self.almacen.validar_version.return_value = True
 
         self.fuente.obtener_catalogo.return_value = {"c": {"nombre": "red"}}
         self.fuente.obtener_version_catalogo.return_value = "v1"

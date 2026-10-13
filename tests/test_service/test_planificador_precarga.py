@@ -5,15 +5,19 @@ from dto.sala import Sala, Puerta
 from logica.mapa_cripta import MapaCripta
 
 
-def _crear_mapa_lineal(n):
+def _crear_mapa_lineal(n, abiertas=True):
     """Crea un mapa lineal: 0 - 1 - 2 - ... - (n-1)."""
     mapa = MapaCripta()
     for i in range(n):
         sala = Sala(i)
         if i < n - 1:
-            sala.puertas.append(Puerta(f"p{i}_{i+1}", i + 1, "ESTE"))
+            p = Puerta(f"p{i}_{i+1}", i + 1, "ESTE")
+            p.abierta = abiertas
+            sala.puertas.append(p)
         if i > 0:
-            sala.puertas.append(Puerta(f"p{i}_{i-1}", i - 1, "OESTE"))
+            p = Puerta(f"p{i}_{i-1}", i - 1, "OESTE")
+            p.abierta = abiertas
+            sala.puertas.append(p)
         mapa.agregar_sala(sala)
     return mapa
 
@@ -47,10 +51,22 @@ class TestPlanificadorPrecarga(unittest.TestCase):
 
     # ---- planificar: cripta grande (>50) profundidad 1 ----
 
-    def test_planificar_cripta_grande(self):
+    def test_planificar_cripta_grande_presupuesto_alto(self):
         mapa = _crear_mapa_lineal(60)
         plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
         ids = plan.planificar(0, 60)
+        # Con restantes=10 (>5), profundidad sube a 2
+        self.assertIn(0, ids)
+        self.assertIn(1, ids)
+        self.assertIn(2, ids)
+        self.assertNotIn(3, ids)
+
+    def test_planificar_cripta_grande_presupuesto_moderado(self):
+        self.presupuesto.restantes.return_value = 4
+        mapa = _crear_mapa_lineal(60)
+        plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
+        ids = plan.planificar(0, 60)
+        # Con restantes=4 (<=5), profundidad se limita a 1
         self.assertIn(0, ids)
         self.assertIn(1, ids)
         self.assertNotIn(2, ids)
@@ -124,6 +140,22 @@ class TestPlanificadorPrecarga(unittest.TestCase):
         self.repo.resolver.return_value = {"nombre": "sala"}
         resultado = plan.asegurar_contenido(0)
         self.assertEqual(resultado, {"nombre": "sala"})
+
+    # ---- puertas cerradas limitan profundidad ----
+
+    def test_planificar_puerta_cerrada_limita_profundidad(self):
+        mapa = _crear_mapa_lineal(30)
+        # Cerrar puerta de sala 1 a sala 2
+        sala1 = mapa.obtener_sala(1)
+        for p in sala1.puertas:
+            if p.destino_sala_id == 2:
+                p.abierta = False
+        plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
+        ids = plan.planificar(0, 30)
+        self.assertIn(0, ids)
+        self.assertIn(1, ids)
+        self.assertIn(2, ids)
+        self.assertNotIn(3, ids)
 
 
 if __name__ == "__main__":
