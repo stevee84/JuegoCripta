@@ -82,6 +82,7 @@ class RepositorioCatalogo:
                 faltantes.append(fid)
 
         aun_faltantes = []
+        fallback_disco = {}
         try:
             version = self._obtener_version()
         except Exception:
@@ -95,6 +96,7 @@ class RepositorioCatalogo:
                         resultado[fid] = datos
                         continue
                     else:
+                        fallback_disco[fid] = datos
                         aun_faltantes.append(fid)
                         continue
                 self._cache.insertar(fid, datos)
@@ -112,8 +114,16 @@ class RepositorioCatalogo:
                         self._almacen.guardar(fid, ficha, ver)
                         self._cache.insertar(fid, ficha)
                         resultado[fid] = ficha
+                    elif fid in fallback_disco:
+                        self._cache.insertar(fid, fallback_disco[fid])
+                        resultado[fid] = fallback_disco[fid]
             except Exception:
                 pass
+
+        for fid, datos in fallback_disco.items():
+            if fid not in resultado:
+                self._cache.insertar(fid, datos)
+                resultado[fid] = datos
 
         return resultado
 

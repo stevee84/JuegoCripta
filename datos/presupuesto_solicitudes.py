@@ -3,13 +3,13 @@ class PresupuestoSolicitudes:
 
     def __init__(self, limite: int = 0):
         self._intentos = 0
-        self._limite = limite
+        self._limite = max(0, limite)
 
     def registrar_intento(self) -> None:
         self._intentos += 1
 
     def establecer_limite(self, limite: int) -> None:
-        self._limite = limite
+        self._limite = max(0, limite)
 
     def restantes(self) -> int:
         return max(0, self._limite - self._intentos)
