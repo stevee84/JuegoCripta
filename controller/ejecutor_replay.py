@@ -41,7 +41,7 @@ class EjecutorReplay:
             servicio = servicio.crear_servicio_replay()
         esperadas = (cabecera["version_cripta"], cabecera["version_catalogo"])
         try:
-            compatibles = servicio.obtener_versiones(cabecera["cripta_id"]) == esperadas
+            compatibles = servicio.preparar_inicio(cabecera["cripta_id"]) == esperadas
         except ValueError:
             compatibles = False
         if not compatibles:
@@ -49,7 +49,7 @@ class EjecutorReplay:
             fuente_local = FuenteOffline("datos/")
             candidato = servicio.crear_servicio_replay(fuente=fuente_local)
             try:
-                compatibles = candidato.obtener_versiones(cabecera["cripta_id"]) == esperadas
+                compatibles = candidato.preparar_inicio(cabecera["cripta_id"]) == esperadas
             except ValueError:
                 compatibles = False
             if not compatibles:

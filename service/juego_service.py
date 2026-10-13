@@ -4,6 +4,8 @@ import tempfile
 import zlib
 
 from datos.registro_partida import RegistroPartida
+from datos.cliente_api import ClienteAPI, CriptaAPIError
+from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
 from logica.inventario import Inventario
@@ -17,12 +19,15 @@ class JuegoService:
     def __init__(self, motor=None, fuente=None, cache=None):
         self._motor = motor
         self._fuente = fuente
+        if isinstance(fuente, ClienteAPI) and fuente._presupuesto is None:
+            fuente._presupuesto = PresupuestoSolicitudes()
         self._cache = cache
         self._inicializador = None
         self._semilla = 0
         self._inventario = getattr(getattr(motor, "estado", None), "inventario", None)
         self._versiones = None
         self._versiones_exigidas = None
+        self._preparacion_inicio = None
         self._registro = RegistroPartida()
         self._ruta_registro = None
         self._marca_registro = None
@@ -68,7 +73,17 @@ class JuegoService:
             )
         if self._motor is None:
             raise ValueError("No hay un motor conectado.")
-        versiones = self.obtener_versiones(cripta_id)
+        from service.inicializador_partida import InicializadorPartida
+        preparados, self._preparacion_inicio = self._preparacion_inicio, None
+        datos = getattr(self._inicializador, "_preparados", None)
+        if isinstance(self._inicializador, InicializadorPartida):
+            if (preparados is not None and preparados[:2] == (cripta_id, self._fuente)
+                    and datos is not None and datos[:2] == (cripta_id, self._fuente)):
+                versiones = preparados[2]
+            else:
+                versiones = self._inicializador.preparar(cripta_id, self._fuente)
+        else:
+            versiones = self.obtener_versiones(cripta_id)
         if self._versiones_exigidas is not None and versiones != self._versiones_exigidas:
             raise ValueError("Las versiones ya no coinciden con la cabecera del replay.")
         estado, inventario = self._inicializador(
@@ -100,6 +115,7 @@ class JuegoService:
             self._motor, "_servicio_inventario", None
         )
         self._motor.iniciar(estado)
+        self._cache = getattr(estado, "cache_inicial", self._cache)
         self._inventario = inventario
         self._versiones = versiones
         self._estado_inicial = estado
@@ -531,7 +547,14 @@ class JuegoService:
             raise ValueError("Esta partida ya tiene un registro conectado.")
         if self._acciones_coordinadas or estado.reloj != 0:
             raise ValueError("El registro debe iniciarse antes de la primera acción.")
-        if self.obtener_versiones(estado.cripta_id) != self._versiones:
+        from service.inicializador_partida import InicializadorPartida
+        if isinstance(self._inicializador, InicializadorPartida):
+            # El conjunto completo fue verificado al publicarlo. Registrar ese
+            # conjunto congelado no necesita consultar otra vez la red.
+            versiones = (estado.version_cripta, estado.version_catalogo)
+        else:
+            versiones = self.obtener_versiones(estado.cripta_id)
+        if versiones != self._versiones:
             raise ValueError("Las versiones cambiaron desde la inicialización.")
         if not isinstance(ruta, (str, Path)) or not str(ruta).strip():
             raise ValueError("Se requiere una ruta para el registro.")
@@ -583,11 +606,24 @@ class JuegoService:
             raise ValueError("No hay una fuente de datos conectada.")
         return self._fuente.listar_criptas()
 
+    def preparar_inicio(self, cripta_id):
+        """Verifica la cabecera del replay y reutiliza su preparación al iniciar."""
+        from service.inicializador_partida import InicializadorPartida
+        self._preparacion_inicio = None
+        if isinstance(self._inicializador, InicializadorPartida):
+            versiones = self._inicializador.preparar(cripta_id, self._fuente)
+            self._preparacion_inicio = (cripta_id, self._fuente, versiones)
+            return versiones
+        return self.obtener_versiones(cripta_id)
+
     def obtener_versiones(self, cripta_id):
         if self._fuente is None:
             raise ValueError("No hay una fuente de datos conectada.")
-        cripta = self._fuente.obtener_version_cripta(cripta_id)
-        catalogo = self._fuente.obtener_version_catalogo()
+        try:
+            cripta = self._fuente.obtener_version_cripta(cripta_id)
+            catalogo = self._fuente.obtener_version_catalogo()
+        except CriptaAPIError as error:
+            raise ValueError(str(error)) from error
         if isinstance(cripta, dict):
             cripta = cripta.get("version")
         if isinstance(catalogo, dict):

@@ -53,3 +53,20 @@ la base 340ba86 y pasaron 764 pruebas. Se comprobó también un paquete de la AP
 real mediante FuenteOffline. El arranque HTTP con presupuesto, persistencia y
 precarga queda identificado como integración compartida del bloque de datos;
 no se declara implementado por esta consulta.
+
+## Conexión al repositorio — 12 de octubre de 2026
+
+Herramienta: ChatGPT Work. Solicitud literal del usuario:
+
+> ok, hagamos esto
+
+La solicitud continúa la propuesta de conectar InicializadorPartida con
+RepositorioCatalogo y comprobar versiones y presupuesto conservando los
+archivos de Steven. Se implementa la resolución por lotes, reutilización de
+LRU/disco vigente, contador desde el comienzo de la sesión y preparación
+compartida de consola/replay. El conjunto completo se verifica antes de
+publicarlo; se filtran fichas antiguas y se conserva la partida ante errores.
+Se comprueba también el arranque de la API real: seis salas, nueve solicitudes
+sobre un límite de nueve, registro/acción y guardado v5 sin consultas adicionales.
+No se cambian firmas existentes ni los archivos de compañeros. La estrategia
+de cargar el paquete completo y los límites de precarga se documentan.
