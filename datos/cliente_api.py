@@ -29,10 +29,10 @@ class ClienteAPI(FuenteDatos):
     def _solicitar(self, metodo: str, url: str, *,
                    params=None, json_body=None):
         headers = {"X-Cripta-Client-Id": self._client_id}
-        if self._presupuesto is not None:
-            self._presupuesto.registrar_intento()
 
         for intento in range(self._MAX_REINTENTOS + 1):
+            if self._presupuesto is not None:
+                self._presupuesto.registrar_intento()
             try:
                 resp = requests.request(
                     metodo, url,
