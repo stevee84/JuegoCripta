@@ -83,6 +83,18 @@ class CacheCatalogo:
         if encontrado:
             self._arreglo[pos][1].valor.fijada = True
 
+    def metricas(self) -> dict:
+        total = self._aciertos + self._fallos
+        return {
+            "aciertos": self._aciertos,
+            "fallos": self._fallos,
+            "total": total,
+            "tasa_acierto": round(self._aciertos / total, 2) if total > 0 else 0.0,
+            "tamano": len(self._arreglo),
+            "capacidad": self._capacidad,
+            "fijados": len(self._fijados),
+        }
+
     def liberar_referencia(self, ficha_id: str) -> None:
         if ficha_id in self._fijados:
             self._fijados.remove(ficha_id)

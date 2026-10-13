@@ -179,7 +179,6 @@ def test_reiniciar_crea_entidades_nuevas_y_no_reaplica_bonos(paquete):
     assert nuevo is not anterior and nuevo.jugador.ataque == 11
     assert nuevo.inventario.get_cantidad() == 0
     assert contexto._operaciones_inventario._inventario is nuevo.inventario
-    assert contexto._cache._fijados == []
 
 
 def test_adapta_versiones_json_sin_modificar_la_fuente(paquete, monkeypatch):
