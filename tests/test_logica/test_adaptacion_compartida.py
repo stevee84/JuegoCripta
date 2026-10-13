@@ -56,12 +56,13 @@ def test_cache_fijar_antes_de_cargar_y_liberar():
     cache.insertar("a", 1)
     cache.insertar("b", 2)
     assert cache.obtener("a") == 1
-    assert cache.obtener("b") == 2
+    assert cache.obtener("b") is None
+    assert len(cache._arreglo) == 1
     cache.liberar_referencia("a")
     cache.liberar_referencia("a")
-    cache.insertar("c", 3)
+    cache.insertar("b", 2)
     assert cache.obtener("a") is None
-    assert cache.obtener("c") == 3
+    assert cache.obtener("b") == 2
     comprobar_enlaces(cache._lista)
 
 
