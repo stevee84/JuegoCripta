@@ -31,6 +31,12 @@ class ClienteAPI(FuenteDatos):
         headers = {"X-Cripta-Client-Id": self._client_id}
 
         for intento in range(self._MAX_REINTENTOS + 1):
+            if self._presupuesto is not None:
+                if self._presupuesto.agotado():
+                    raise CriptaAPIError(
+                        f"Presupuesto agotado antes de solicitar {url}"
+                    )
+                self._presupuesto.registrar_intento()
             try:
                 resp = requests.request(
                     metodo, url,
@@ -40,8 +46,6 @@ class ClienteAPI(FuenteDatos):
                     timeout=self._timeout,
                 )
             except requests.exceptions.Timeout:
-                if self._presupuesto is not None:
-                    self._presupuesto.registrar_intento()
                 if intento < self._MAX_REINTENTOS:
                     continue
                 raise CriptaAPIError(
@@ -53,9 +57,6 @@ class ClienteAPI(FuenteDatos):
                 raise CriptaAPIError(
                     f"Error de conexión con {url}"
                 )
-
-            if self._presupuesto is not None:
-                self._presupuesto.registrar_intento()
 
             if resp.status_code == 200:
                 try:
