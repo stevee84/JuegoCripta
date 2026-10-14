@@ -385,7 +385,7 @@ class VistaPygame:
         ox = self.MINIMAPA_X + margen + (area_w - rango_x * (cell + gap)) // 2
         oy = self.MINIMAPA_Y + margen + (area_h - rango_y * (cell + gap)) // 2
 
-        for sid, (gx, gy) in posiciones.items():
+        for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
@@ -394,7 +394,7 @@ class VistaPygame:
 
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
-                if did not in posiciones or did <= sid:
+                if did not in visibles or did <= sid:
                     continue
                 dgx, dgy = visibles[did]
                 dpx = ox + (dgx - min_x) * (cell + gap)
@@ -404,7 +404,7 @@ class VistaPygame:
                 color_l = (40, 80, 50) if puerta.abierta else (80, 35, 35)
                 pygame.draw.line(self._pantalla, color_l, start, end, 1)
 
-        for sid, (gx, gy) in posiciones.items():
+        for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
