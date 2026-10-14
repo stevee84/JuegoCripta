@@ -5,6 +5,7 @@ existentes. La descarga HTTP con presupuesto y precarga pertenece a datos;
 las fichas se resuelven mediante RepositorioCatalogo con versiones verificadas.
 """
 
+from configuracion import RUTA_CACHE_CATALOGO
 from datos.decodificador_datos import DecodificadorDatos
 from datos.cliente_api import ClienteAPI, CriptaAPIError
 from datos.almacen_persistente import AlmacenPersistente
@@ -76,7 +77,7 @@ def crear_repositorio(cache, fuente, version_catalogo):
     presupuesto = (fuente._presupuesto if isinstance(fuente, ClienteAPI)
                    else PresupuestoSolicitudes())
     return RepositorioCatalogo(
-        cache, _AlmacenVigente(AlmacenPersistente("partidas/catalogo"), version_catalogo),
+        cache, _AlmacenVigente(AlmacenPersistente(RUTA_CACHE_CATALOGO), version_catalogo),
         _FuenteCatalogo(fuente, version_catalogo), DecodificadorDatos(), presupuesto,
     )
 

@@ -388,3 +388,18 @@ def test_continuar_lee_fichas_del_disco_sin_pedirlas_a_la_red(en_tmp, monkeypatc
     segundo = _controlador()
     assert segundo.procesar_comando("cargar").exito
     assert pedidas == []
+
+
+def test_metricas_distinguen_disco_de_red(en_tmp):
+    primera = _controlador()
+    primera.procesar_comando("cripta cripta-02")
+    metricas = primera._servicio.obtener_metricas()["cache"]
+    total = metricas["fallos"]
+    assert total > 0 and metricas["desde_red"] == total and metricas["desde_disco"] == 0
+    assert (en_tmp / "cache" / "catalogo").is_dir() and not (en_tmp / "partidas" / "catalogo").exists()
+
+    segunda = _controlador()
+    segunda.procesar_comando("cripta cripta-02")
+    metricas = segunda._servicio.obtener_metricas()["cache"]
+    assert metricas["desde_disco"] == total and metricas["desde_red"] == 0
+    assert any("desde disco: " + str(total) in linea for linea in segunda.lineas_metricas())

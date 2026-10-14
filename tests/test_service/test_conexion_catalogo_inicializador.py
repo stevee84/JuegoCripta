@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 import pytest
 import requests
 
+from configuracion import RUTA_CACHE_CATALOGO
 from datos.almacen_persistente import AlmacenPersistente
 from datos.cliente_api import ClienteAPI
 from logica.cache_catalogo import CacheCatalogo
@@ -80,12 +81,12 @@ def test_arranque_frio_cuenta_desde_listado_y_cabe_en_presupuesto(online):
     assert juego._operaciones_inventario is juego._motor._servicio_inventario
     assert sum(ruta == "/criptas/c1" for ruta, _ in llamadas) == 1
     assert sum(ruta == "/catalogo/version" for ruta, _ in llamadas) == 2
-    assert AlmacenPersistente("partidas/catalogo").validar_version("oro", "cat1")
+    assert AlmacenPersistente(RUTA_CACHE_CATALOGO).validar_version("oro", "cat1")
 
 
 def test_fichas_de_disco_vigente_evitan_consultas_de_catalogo(online):
     juego, llamadas, _, _, datos, _ = online
-    almacen = AlmacenPersistente("partidas/catalogo")
+    almacen = AlmacenPersistente(RUTA_CACHE_CATALOGO)
     for ruta in (datos / "catalogo").glob("*.json"):
         ficha = json.loads(ruta.read_text())
         almacen.guardar(ficha["id"], ficha, "cat1")
@@ -123,7 +124,7 @@ def test_presupuesto_agotado_conserva_partida_vigente(online):
 
 def test_fallback_disco_antiguo_no_se_publica(online):
     juego, _, _, red, _, _ = online
-    AlmacenPersistente("partidas/catalogo").guardar("arma", {"id": "arma", "clase": "arma", "ataque_bonus": 999}, "cat-viejo")
+    AlmacenPersistente(RUTA_CACHE_CATALOGO).guardar("arma", {"id": "arma", "clase": "arma", "ataque_bonus": 999}, "cat-viejo")
     red["fallar_catalogo"] = True
     with pytest.raises(ValueError, match="Falta resolver"):
         juego.iniciar_partida("c1")

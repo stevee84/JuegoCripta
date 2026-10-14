@@ -6,6 +6,7 @@ URL_API = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
 RUTA_DATOS_OFFLINE = "datos_offline/"
 RUTA_GUARDADO = "partidas/"
 ARCHIVO_PARTIDA = "partida.bin"
+RUTA_CACHE_CATALOGO = "cache/catalogo/"
 
 
 def parsear_argumentos():

@@ -40,6 +40,8 @@ class CacheCatalogo:
         self._aciertos = 0
         self._fallos = 0
         self._inserciones = 0
+        self._desde_disco = 0
+        self._desde_red = 0
 
     def _buscar_indice(self, ficha_id: str):
         return _buscar(self._arreglo, ficha_id)
@@ -83,6 +85,15 @@ class CacheCatalogo:
         self._arreglo.insert(pos, (ficha_id, nodo))
         self._inserciones += 1
 
+    def registrar_origen(self, origen: str) -> None:
+        """Una ficha que no estaba en memoria llegó desde 'disco' o 'red'."""
+        if origen == "disco":
+            self._desde_disco += 1
+        elif origen == "red":
+            self._desde_red += 1
+        else:
+            raise ValueError(f"Origen desconocido: {origen}")
+
     def fijar(self, ficha_id: str, dueño: str = DUEÑO_GENERAL) -> None:
         pos, encontrado = _buscar(self._fijados, ficha_id)
         if not encontrado:
@@ -116,6 +127,8 @@ class CacheCatalogo:
             "total": total,
             "tasa_acierto": round(self._aciertos / total, 2) if total > 0 else 0.0,
             "precargadas": self._inserciones,
+            "desde_disco": self._desde_disco,
+            "desde_red": self._desde_red,
             "tamano": len(self._arreglo),
             "capacidad": self._capacidad,
             "fijados": len(self._fijados),

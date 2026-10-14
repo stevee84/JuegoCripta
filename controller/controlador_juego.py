@@ -138,9 +138,9 @@ class ControladorJuego:
         lineas = []
         if "cache" in metricas:
             c = metricas["cache"]
-            lineas.append(f"Caché: {c['precargadas']} fichas cargadas al inicio, "
-                          f"{c['tamano']}/{c['capacidad']} en memoria, {c['fijados']} fijadas")
-            lineas.append(f"Consultas durante la partida: {c['aciertos']} aciertos, {c['fallos']} fallos")
+            lineas.append(f"Caché en memoria: {c['aciertos']} aciertos, {c['fallos']} fallos; "
+                          f"{c['tamano']}/{c['capacidad']} fichas, {c['fijados']} fijadas por estar en uso")
+            lineas.append(f"Fallos resueltos desde disco: {c['desde_disco']}; desde la red: {c['desde_red']}")
         if "presupuesto" in metricas:
             p = metricas["presupuesto"]
             lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes usadas, {p['restantes']} restantes")
@@ -243,7 +243,7 @@ class ControladorJuego:
                     "Consultas: estado, criptas, puntajes, bitacora, ayuda, salir. "
                     "Puntajes: puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final], orden ascendente. "
                     "Acciones: mover/abrir DIRECCION, atacar/recoger ID, soltar, esperar. "
-                    "Inventario: siguiente, anterior, inventario [peso|valor|nombre]. "
+                    "Inventario: siguiente, anterior, seleccionar ID, inventario [peso|valor|nombre]. "
                     "registro RUTA inicia un log nuevo antes de la primera acción. "
                     "exportar_parcial RUTA exporta sin validar la reanudación. "
                     "guardar RUTA / cargar RUTA: partida v5 con fichas compatibles; historial previo vacío. "

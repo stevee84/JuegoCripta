@@ -8,4 +8,5 @@ build/
 .idea/
 .vscode/
 partidas/
+cache/
 puntajes.dat
