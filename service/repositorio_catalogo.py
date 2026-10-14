@@ -51,6 +51,7 @@ class RepositorioCatalogo:
             except Exception:
                 pass
             self._cache.insertar(ficha_id, datos_disco)
+            self._cache.registrar_origen("disco")
             return datos_disco
 
         return self._resolver_desde_red(ficha_id)
@@ -65,6 +66,7 @@ class RepositorioCatalogo:
                 version = self._obtener_version() or "desconocida"
                 self._almacen.guardar(ficha_id, ficha, version)
                 self._cache.insertar(ficha_id, ficha)
+                self._cache.registrar_origen("red")
                 return ficha
         except Exception:
             pass
@@ -93,6 +95,7 @@ class RepositorioCatalogo:
                 if version is not None:
                     if self._almacen.validar_version(fid, version):
                         self._cache.insertar(fid, datos)
+                        self._cache.registrar_origen("disco")
                         resultado[fid] = datos
                         continue
                     else:
@@ -100,6 +103,7 @@ class RepositorioCatalogo:
                         aun_faltantes.append(fid)
                         continue
                 self._cache.insertar(fid, datos)
+                self._cache.registrar_origen("disco")
                 resultado[fid] = datos
                 continue
             aun_faltantes.append(fid)
@@ -113,9 +117,11 @@ class RepositorioCatalogo:
                     if ficha is not None:
                         self._almacen.guardar(fid, ficha, ver)
                         self._cache.insertar(fid, ficha)
+                        self._cache.registrar_origen("red")
                         resultado[fid] = ficha
                     elif fid in fallback_disco:
                         self._cache.insertar(fid, fallback_disco[fid])
+                        self._cache.registrar_origen("disco")
                         resultado[fid] = fallback_disco[fid]
             except Exception:
                 pass
@@ -123,34 +129,10 @@ class RepositorioCatalogo:
         for fid, datos in fallback_disco.items():
             if fid not in resultado:
                 self._cache.insertar(fid, datos)
+                self._cache.registrar_origen("disco")
                 resultado[fid] = datos
 
         return resultado
-
-    def proteger_sala(self, sala) -> None:
-        for fid in self._fichas_de_sala(sala):
-            self._cache.fijar(fid)
-
-    def liberar_sala(self, sala) -> None:
-        for fid in self._fichas_de_sala(sala):
-            self._cache.liberar_referencia(fid)
-
-    @staticmethod
-    def _fichas_de_sala(sala):
-        ids = []
-        for e in getattr(sala, "enemigos", []):
-            fid = getattr(e, "tipo_ficha_id", None)
-            if fid:
-                ids.append(fid)
-        for o in getattr(sala, "objetos", []):
-            fid = getattr(o, "tipo_ficha_id", None)
-            if fid:
-                ids.append(fid)
-        for t in getattr(sala, "trampas", []):
-            fid = getattr(t, "tipo_ficha_id", None) or getattr(t, "tipo", None)
-            if fid:
-                ids.append(fid)
-        return ids
 
     def version_catalogo(self) -> str:
         try:

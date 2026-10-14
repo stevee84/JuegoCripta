@@ -62,7 +62,7 @@ Antes de publicar el estado se vuelven a comprobar ambas versiones.
 Las fichas se resuelven mediante RepositorioCatalogo.resolver_lote, en lotes
 máximos de diez, incluyendo las dependencias del botín. Se reutilizan LRU y
 fichas persistidas de la versión vigente. El almacén está en
-`partidas/catalogo/`, bajo una carpeta ya excluida de Git. Un adaptador local
+`cache/catalogo/`, bajo una carpeta ya excluida de Git. Un adaptador local
 impide aceptar el respaldo antiguo de disco; la memoria conserva su versión.
 Si pertenece a otra versión, se utiliza una caché nueva al iniciar, conservando
 la memoria y las referencias de la partida anterior hasta publicar el estado.
@@ -126,7 +126,7 @@ terminada (victoria o derrota) no se guarda.
 Continuar: en pygame, si existe `partidas/partida.bin` legible, el menú
 inicial ofrece "Continuar partida guardada"; en consola se indica escribir
 `cargar`. Al cargar se vuelve a aplicar el `presupuesto_solicitudes` de la
-cripta (§5.1) y las fichas se resuelven memoria → `partidas/catalogo/` →
+cripta (§5.1) y las fichas se resuelven memoria → `cache/catalogo/` →
 red, en lotes de 10 (§4.3). Si la versión de cripta o catálogo cambió, la
 carga se rechaza y se vuelve al menú.
 

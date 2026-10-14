@@ -388,3 +388,37 @@ def test_continuar_lee_fichas_del_disco_sin_pedirlas_a_la_red(en_tmp, monkeypatc
     segundo = _controlador()
     assert segundo.procesar_comando("cargar").exito
     assert pedidas == []
+
+
+def test_metricas_distinguen_disco_de_red(en_tmp):
+    primera = _controlador()
+    primera.procesar_comando("cripta cripta-02")
+    metricas = primera._servicio.obtener_metricas()["cache"]
+    total = metricas["fallos"]
+    assert total > 0 and metricas["desde_red"] == total and metricas["desde_disco"] == 0
+    assert (en_tmp / "cache" / "catalogo").is_dir() and not (en_tmp / "partidas" / "catalogo").exists()
+
+    segunda = _controlador()
+    segunda.procesar_comando("cripta cripta-02")
+    metricas = segunda._servicio.obtener_metricas()["cache"]
+    assert metricas["desde_disco"] == total and metricas["desde_red"] == 0
+    assert any("desde disco: " + str(total) in linea for linea in segunda.lineas_metricas())
+
+
+def test_volver_al_menu_permite_otra_partida_y_reinicia_presupuesto(en_tmp):
+    from datos.cliente_api import ClienteAPI
+    from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+    controlador = _controlador()
+    controlador.procesar_comando("cripta cripta-01")
+    _jugar(controlador, 3)
+    assert not controlador._historial.esta_vacio()
+    assert not controlador.procesar_comando("cripta cripta-02").exito
+
+    controlador._preparar_nueva_partida()
+    assert controlador.procesar_comando("cripta cripta-02").exito
+
+    cliente = ClienteAPI("https://ejemplo.invalid", presupuesto=PresupuestoSolicitudes(9))
+    cliente._presupuesto.registrar_intento()
+    controlador._fuente = cliente
+    controlador._preparar_nueva_partida()
+    assert cliente._presupuesto._intentos == 0

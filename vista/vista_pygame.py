@@ -1013,42 +1013,87 @@ class VistaPygame:
             pygame.display.flip()
             self._reloj.tick(self.FPS)
 
-    def _pantalla_metricas(self, controlador):
+    def _pantalla_final(self, controlador, titulo, color, mensaje, puede_volver):
+        """Pantalla de cierre sobre el último cuadro del juego; espera la decisión del jugador."""
+        fondo = self._pantalla.copy()
+        velo = pygame.Surface((self.ANCHO, self.ALTO), pygame.SRCALPHA)
+        velo.fill((0, 0, 0, 170))
+        fondo.blit(velo, (0, 0))
         lineas = controlador.lineas_metricas()
-        if not lineas:
-            return
 
-        esperando = True
-        inicio = pygame.time.get_ticks()
-        while esperando:
+        ancho, alto = 760, 230 + 26 * len(lineas)
+        x, y0 = (self.ANCHO - ancho) // 2, (self.ALTO - alto) // 2
+        btn_w, btn_h = 200, 40
+        botones = []
+        if puede_volver:
+            botones.append(Boton((self.ANCHO // 2 - btn_w - 10, y0 + alto - btn_h - 20, btn_w, btn_h),
+                                 "Volver al menú", "menu", VERDE_OSCURO))
+            botones.append(Boton((self.ANCHO // 2 + 10, y0 + alto - btn_h - 20, btn_w, btn_h),
+                                 "Salir del juego", "salir", ROJO_OSCURO))
+        else:
+            botones.append(Boton((self.ANCHO // 2 - btn_w // 2, y0 + alto - btn_h - 20, btn_w, btn_h),
+                                 "Salir del juego", "salir", ROJO_OSCURO))
+
+        while True:
             for evento in pygame.event.get():
-                if evento.type in (pygame.QUIT, pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
-                    esperando = False
-            if pygame.time.get_ticks() - inicio > 4000:
-                esperando = False
+                if evento.type == pygame.QUIT:
+                    return "salir"
+                if evento.type == pygame.MOUSEMOTION:
+                    for b in botones:
+                        b.hover = b.contiene(evento.pos)
+                if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                    for b in botones:
+                        if b.contiene(evento.pos):
+                            return b.comando
 
-            self._pantalla.fill(NEGRO)
-            titulo = self._font_titulo.render("Metricas de partida", True, CYAN)
-            self._pantalla.blit(titulo, titulo.get_rect(centerx=self.ANCHO // 2, y=self.ALTO // 2 - 100))
-
-            y = self.ALTO // 2 - 40
+            self._pantalla.blit(fondo, (0, 0))
+            pygame.draw.rect(self._pantalla, (25, 25, 35), (x, y0, ancho, alto), border_radius=10)
+            pygame.draw.rect(self._pantalla, color, (x, y0, ancho, alto), 2, border_radius=10)
+            texto = self._font_titulo.render(titulo, True, color)
+            self._pantalla.blit(texto, texto.get_rect(centerx=self.ANCHO // 2, y=y0 + 20))
+            texto = self._font_med.render(mensaje, True, BLANCO)
+            self._pantalla.blit(texto, texto.get_rect(centerx=self.ANCHO // 2, y=y0 + 65))
+            y = y0 + 110
             for linea in lineas:
-                txt = self._font_med.render(linea, True, GRIS_CLARO)
-                self._pantalla.blit(txt, txt.get_rect(centerx=self.ANCHO // 2, y=y))
-                y += 28
-
-            hint = self._font.render("Click o tecla para cerrar", True, GRIS)
-            self._pantalla.blit(hint, hint.get_rect(centerx=self.ANCHO // 2, y=y + 20))
-
+                texto = self._font.render(linea, True, GRIS_CLARO)
+                self._pantalla.blit(texto, texto.get_rect(centerx=self.ANCHO // 2, y=y))
+                y += 26
+            for b in botones:
+                b.dibujar(self._pantalla, self._font_med)
             pygame.display.flip()
             self._reloj.tick(self.FPS)
 
+    @staticmethod
+    def _resumen_final(estado):
+        sala = estado.jugador.sala_actual.id_sala
+        acciones = estado.acciones_ejecutadas
+        if estado.victoria:
+            return "VICTORIA", VERDE, f"Escapaste de la cripta en {acciones} acciones (reloj {estado.reloj})."
+        return "DERROTA", ROJO, f"Caíste en la sala {sala} tras {acciones} acciones (reloj {estado.reloj})."
+
+    def _dibujar_juego(self, estado):
+        self._pantalla.fill(NEGRO)
+        self._dibujar_minimapa(estado)
+        self._dibujar_sala_actual(estado)
+        self._dibujar_panel(estado)
+        self._construir_botones(estado)
+        self._dibujar_bitacora()
+
     # --- Loop principal ---
 
-    def ejecutar(self, controlador, estado_fn):
-        while self._corriendo:
-            estado = estado_fn()
+    def nueva_sesion(self):
+        """Limpia lo que la vista recuerda de la partida anterior antes de volver al menú."""
+        self._bitacora = []
+        self._salas_visitadas = set()
+        self._scroll_bitacora = 0
 
+    def cerrar(self):
+        pygame.quit()
+
+    def ejecutar(self, controlador, estado_fn, puede_volver=False):
+        """Corre la partida hasta que termina o el jugador sale. Retorna "menu" o "salir"."""
+        while True:
+            estado = estado_fn()
             salir_solicitado = False
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
@@ -1058,56 +1103,29 @@ class VistaPygame:
                     for b in self._botones:
                         b.hover = b.contiene(evento.pos)
                 elif evento.type == pygame.MOUSEWHEEL:
-                    bit_top = self.ALTO - self.BITACORA_ALTO
-                    mx, my = pygame.mouse.get_pos()
-                    if my >= bit_top:
-                        self._scroll_bitacora += evento.y * 2
-                        self._scroll_bitacora = max(0, self._scroll_bitacora)
+                    if pygame.mouse.get_pos()[1] >= self.ALTO - self.BITACORA_ALTO:
+                        self._scroll_bitacora = max(0, self._scroll_bitacora + evento.y * 2)
                 elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
                     for b in self._botones:
                         if b.contiene(evento.pos):
-                            if b.comando == "__noop__":
-                                pass
-                            elif b.comando == "salir":
+                            if b.comando == "salir":
                                 salir_solicitado = True
-                            else:
-                                resultado = controlador.procesar_comando(b.comando)
-                                if resultado and resultado.mensaje:
-                                    self.mostrar_mensaje(resultado.mensaje)
+                            elif b.comando != "__noop__":
+                                controlador.procesar_comando(b.comando)
                             break
 
             if salir_solicitado:
                 decision = self._dialogo_salir(controlador)
-                if decision == "guardar":
-                    if controlador.procesar_comando("guardar").exito:
-                        self._pantalla_metricas(controlador)
-                        self._corriendo = False
-                elif decision == "salir":
-                    self._pantalla_metricas(controlador)
-                    self._corriendo = False
+                if decision == "guardar" and controlador.procesar_comando("guardar").exito:
+                    return self._pantalla_final(controlador, "Partida guardada", CYAN,
+                                                "Puedes continuarla desde el menú.", puede_volver)
+                if decision == "salir":
+                    return self._pantalla_final(controlador, "Partida abandonada", NARANJA,
+                                                "No se guardó el progreso.", puede_volver)
 
-            if not self._corriendo:
-                break
-
+            self._dibujar_juego(estado)
             if estado is not None and not estado.partida_activa:
-                self._pantalla.fill(NEGRO)
-                self._dibujar_minimapa(estado)
-                self._dibujar_sala_actual(estado)
-                self._dibujar_panel(estado)
-                self._construir_botones(estado)
-                self._dibujar_bitacora()
-                pygame.display.flip()
-                self._pantalla_metricas(controlador)
-                self._corriendo = False
-                break
-
-            self._pantalla.fill(NEGRO)
-            self._dibujar_minimapa(estado)
-            self._dibujar_sala_actual(estado)
-            self._dibujar_panel(estado)
-            self._construir_botones(estado)
-            self._dibujar_bitacora()
+                titulo, color, mensaje = self._resumen_final(estado)
+                return self._pantalla_final(controlador, titulo, color, mensaje, puede_volver)
             pygame.display.flip()
             self._reloj.tick(self.FPS)
-
-        pygame.quit()
