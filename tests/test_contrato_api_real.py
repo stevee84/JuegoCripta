@@ -34,8 +34,10 @@ def _contenido_real(cripta_id):
     return registros
 
 
-def _fichas_sala(sala):
-    ids = {e.tipo_ficha_id for e in sala.enemigos}
+def _fichas_en_uso(estado):
+    """§4.4: enemigo vivo, objeto en el suelo de la sala actual, trampa de la sala actual."""
+    sala = estado.jugador.sala_actual
+    ids = {e.tipo_ficha_id for s in estado.mapa.obtener_salas() for e in s.enemigos if e.esta_vivo()}
     ids |= {o.tipo_ficha_id for o in sala.objetos}
     ids |= {t.tipo for t in sala.trampas}
     return ids
@@ -75,7 +77,7 @@ def _siguiente_accion(servicio, estado):
 
 def _verificar_fijadas(servicio, estado):
     cache = servicio._cache
-    assert cache.fichas_fijadas("sala") == sorted(_fichas_sala(estado.jugador.sala_actual))
+    assert cache.fichas_fijadas("en_uso") == sorted(_fichas_en_uso(estado))
     inventario = {o.tipo_ficha_id for o in estado.inventario.obtener_objetos()}
     assert inventario <= set(cache.fichas_fijadas())
 
@@ -217,6 +219,17 @@ def test_pocion_real_cura_lo_que_dice_su_ficha(en_tmp):
     assert estado.jugador.vida == 10 + cura
 
 
+def test_ficha_de_enemigo_muerto_deja_de_estar_en_uso(en_tmp):
+    servicio = _servicio()
+    estado = servicio.iniciar_partida("cripta-01")
+    guardian = next(e for s in estado.mapa.obtener_salas() for e in s.enemigos
+                    if e.tipo_ficha_id == "ent_guardian_oseo")
+    assert "ent_guardian_oseo" in servicio._cache.fichas_fijadas("en_uso")
+    guardian.vida = 0
+    servicio.ejecutar_accion(servicio.resolver_accion("ESPERAR"))
+    assert "ent_guardian_oseo" not in servicio._cache.fichas_fijadas("en_uso")
+
+
 def test_adaptador_de_fichas_usa_campos_que_existen_en_el_api():
     from logica.servicio_inventario import AdaptadorFichas
     claves = set()
@@ -232,7 +245,7 @@ def test_cache_no_usa_tablas_hash():
     for ficha_id in "abcd":
         cache.insertar(ficha_id, {"id": ficha_id})
     cache.fijar("a")
-    cache.fijar("a", "sala")
+    cache.fijar("a", "en_uso")
     for nombre, valor in vars(cache).items():
         assert not isinstance(valor, (dict, set, frozenset)), nombre
     for ficha_id, dueños in cache._fijados:
@@ -245,24 +258,24 @@ def test_cache_ficha_compartida_por_dos_duenos_no_se_desaloja():
     cache = CacheCatalogo(3)
     cache.insertar("pocion", {"id": "pocion"})
     cache.fijar("pocion")
-    cache.fijar("pocion", "sala")
-    cache.liberar_referencia("pocion", "sala")
+    cache.fijar("pocion", "en_uso")
+    cache.liberar_referencia("pocion", "en_uso")
     for ficha_id in "abc":
         cache.insertar(ficha_id, {"id": ficha_id})
     assert cache.obtener("pocion") is not None
     assert cache.fichas_fijadas() == ["pocion"]
-    assert cache.fichas_fijadas("sala") == []
+    assert cache.fichas_fijadas("en_uso") == []
 
 
 def test_cache_fijar_es_idempotente_por_dueno_y_liberar_dueno():
     cache = CacheCatalogo(2)
-    cache.fijar("a", "sala")
-    cache.fijar("a", "sala")
-    cache.fijar("b", "sala")
+    cache.fijar("a", "en_uso")
+    cache.fijar("a", "en_uso")
+    cache.fijar("b", "en_uso")
     cache.fijar("b")
-    cache.liberar_referencia("a", "sala")
+    cache.liberar_referencia("a", "en_uso")
     assert cache.fichas_fijadas() == ["b"]
-    cache.liberar_dueño("sala")
+    cache.liberar_dueño("en_uso")
     assert cache.fichas_fijadas() == ["b"]
     cache.liberar_referencia("b")
     assert cache.fichas_fijadas() == []
