@@ -71,6 +71,28 @@ class _AlmacenVigente:
         return version == self._version and self._almacen.validar_version(ficha_id, version)
 
 
+def crear_repositorio(cache, fuente, version_catalogo):
+    """Memoria → disco vigente → red, con el presupuesto de la fuente."""
+    presupuesto = (fuente._presupuesto if isinstance(fuente, ClienteAPI)
+                   else PresupuestoSolicitudes())
+    return RepositorioCatalogo(
+        cache, _AlmacenVigente(AlmacenPersistente("partidas/catalogo"), version_catalogo),
+        _FuenteCatalogo(fuente, version_catalogo), DecodificadorDatos(), presupuesto,
+    )
+
+
+def establecer_presupuesto(fuente, generales):
+    """Aplica el presupuesto_solicitudes de la cripta a un cliente HTTP (§5.1)."""
+    if not isinstance(fuente, ClienteAPI):
+        return
+    if fuente._presupuesto is None:
+        fuente._presupuesto = PresupuestoSolicitudes()
+    limite = InicializadorPartida._entero(generales.get("presupuesto_solicitudes"), "presupuesto_solicitudes", 1)
+    fuente._presupuesto.establecer_limite(limite)
+    if fuente._presupuesto._intentos > limite:
+        raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
+
+
 class InicializadorPartida:
     """Fábrica compatible con conectar_inicializador, sin simular acciones."""
 
@@ -112,11 +134,7 @@ class InicializadorPartida:
             generales = fuente.obtener_generales(cripta_id)
             if not isinstance(generales, dict) or generales.get("id") != cripta_id:
                 raise ValueError("Faltan generales de la cripta solicitada.")
-            if isinstance(fuente, ClienteAPI):
-                limite = self._entero(generales.get("presupuesto_solicitudes"), "presupuesto_solicitudes", 1)
-                fuente._presupuesto.establecer_limite(limite)
-                if fuente._presupuesto._intentos > limite:
-                    raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
+            establecer_presupuesto(fuente, generales)
             version = self._version(generales.get("version"))
             version_catalogo = self._version(fuente.obtener_version_catalogo())
         except CriptaAPIError as error:
@@ -219,12 +237,7 @@ class InicializadorPartida:
             # Mantener intacta la memoria que pueda pertenecer a otra partida.
             cache = CacheCatalogo(cache._capacidad)
         cache._version_catalogo_partida = version_catalogo
-        presupuesto = (fuente._presupuesto if isinstance(fuente, ClienteAPI)
-                       else PresupuestoSolicitudes())
-        repositorio = RepositorioCatalogo(
-            cache, _AlmacenVigente(AlmacenPersistente("partidas/catalogo"), version_catalogo),
-            _FuenteCatalogo(fuente, version_catalogo), decodificador, presupuesto,
-        )
+        repositorio = crear_repositorio(cache, fuente, version_catalogo)
         catalogo = CatalogoPartida()
         pendientes = OrdenadorAdaptativo().ordenar(ids_fichas, lambda ficha_id: ficha_id)
         while pendientes:

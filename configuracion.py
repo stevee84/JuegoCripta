@@ -4,6 +4,8 @@ import argparse
 
 URL_API = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
 RUTA_DATOS_OFFLINE = "datos_offline/"
+RUTA_GUARDADO = "partidas/"
+ARCHIVO_PARTIDA = "partida.bin"
 
 
 def parsear_argumentos():
@@ -36,5 +38,5 @@ class Configuracion:
         self.semilla: int | None = args.semilla
         self.url_api: str = URL_API
         self.ruta_datos_offline: str = RUTA_DATOS_OFFLINE
-        self.ruta_guardado: str = "partidas/"
+        self.ruta_guardado: str = RUTA_GUARDADO
         self.ruta_puntajes: str = "puntajes.dat"

@@ -65,7 +65,7 @@ def main() -> None:
         motor=MotorJuego(), vista=vista, fuente=fuente,
         historial=HistorialReversible(),
     )
-    controlador.configurar_arranque(semilla, CacheCatalogo(config.cache_size))
+    controlador.configurar_arranque(semilla, CacheCatalogo(config.cache_size), config.ruta_guardado)
 
     estado = None
     if getattr(config, "demo", False):

@@ -254,23 +254,27 @@ class JuegoService:
             else:
                 del estado.servicio_inventario
 
-    def _resolver_catalogo(self, ids):
-        """Caché primero; a la fuente solo los faltantes, en lotes del máximo del API."""
+    def _resolver_catalogo(self, ids, version_catalogo):
+        """§4.3: memoria → disco vigente → red, en lotes del máximo del API."""
+        from logica.cache_catalogo import CacheCatalogo
+        from service.inicializador_partida import crear_repositorio
+
+        if self._cache is None:
+            self._cache = CacheCatalogo()
+        repositorio = crear_repositorio(self._cache, self._fuente, version_catalogo)
         entidades = []
-        faltantes = []
-        for ficha_id in ids:
-            ficha = self._cache.obtener(ficha_id) if self._cache is not None else None
-            if ficha is None:
-                faltantes.append(ficha_id)
-            else:
-                entidades.append(ficha)
-        for inicio in range(0, len(faltantes), MAX_IDS_POR_SOLICITUD):
-            respuesta = self._fuente.obtener_catalogo(faltantes[inicio:inicio + MAX_IDS_POR_SOLICITUD])
-            for ficha in respuesta.get("entidades", []):
-                entidades.append(ficha)
-                if self._cache is not None:
-                    self._cache.insertar(ficha["id"], ficha)
+        for inicio in range(0, len(ids), MAX_IDS_POR_SOLICITUD):
+            entidades += repositorio.resolver_lote(ids[inicio:inicio + MAX_IDS_POR_SOLICITUD]).values()
         return {"entidades": entidades}
+
+    def _establecer_presupuesto(self, cripta_id):
+        from service.inicializador_partida import establecer_presupuesto
+
+        if isinstance(self._fuente, ClienteAPI):
+            try:
+                establecer_presupuesto(self._fuente, self._fuente.obtener_generales(cripta_id))
+            except CriptaAPIError as error:
+                raise ValueError(str(error)) from error
 
     def _catalogo_para_carga(self, datos):
         from service.restaurador_partida import RestauradorPartida
@@ -280,9 +284,10 @@ class JuegoService:
         if self._fuente is not None and ids:
             if not all(isinstance(v, str) and v for v in versiones):
                 raise ValueError("Los datos parciales no identifican versiones compatibles de las fichas.")
+            self._establecer_presupuesto(datos["cripta_id"])
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones de cripta o catálogo no coinciden con el guardado.")
-            catalogo = self._resolver_catalogo(ids)
+            catalogo = self._resolver_catalogo(ids, versiones[1])
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones cambiaron durante la carga.")
             return catalogo

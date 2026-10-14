@@ -3,8 +3,10 @@ import os
 import shlex
 import struct
 import tempfile
+import zlib
 from pathlib import Path
 
+from configuracion import ARCHIVO_PARTIDA, RUTA_GUARDADO
 from datos.cliente_api import CriptaAPIError
 from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
@@ -12,6 +14,9 @@ from dto.accion import ResultadoAccion
 from logica.bitacora_pantalla import BitacoraPantalla
 from service.juego_service import JuegoService
 from service.partida_service import PartidaService
+
+
+CONTINUAR = "__continuar__"
 
 
 class ControladorJuego:
@@ -31,6 +36,7 @@ class ControladorJuego:
         self._bitacora = BitacoraPantalla()
         self._puntajes = RepositorioPuntajes()
         self._guardado = GuardadoBinario()
+        self._ruta_partida = Path(RUTA_GUARDADO) / ARCHIVO_PARTIDA
         self._en_ejecucion = False
 
     def conectar_inicializador(self, inicializador, semilla=0):
@@ -43,9 +49,20 @@ class ControladorJuego:
         self._servicio.conectar_inventario(inventario, catalogo, self._historial, adaptador)
         self._historial = self._servicio.obtener_estado().historial
 
-    def configurar_arranque(self, semilla=0, cache=None):
+    def configurar_arranque(self, semilla=0, cache=None, ruta_guardado=None):
         self._servicio.configurar_semilla(semilla)
         self._servicio._cache = cache
+        if ruta_guardado is not None:
+            self._ruta_partida = Path(ruta_guardado) / ARCHIVO_PARTIDA
+
+    def hay_partida_guardada(self) -> bool:
+        """Solo lectura local: la validación de versiones contra la fuente ocurre al cargar."""
+        if not self._ruta_partida.is_file():
+            return False
+        try:
+            return self._guardado.cargar(str(self._ruta_partida)) is not None
+        except (zlib.error, UnicodeError, ValueError, OSError, struct.error):
+            return False
 
     def iniciar(self, estado=None) -> None:
         if estado is not None:
@@ -71,6 +88,8 @@ class ControladorJuego:
         if self._fuente is not None:
             self.procesar_comando("criptas")
         self._vista.mostrar_mensaje("Seleccionar: cripta ID. Consultar comandos: ayuda.")
+        if estado is None and self.hay_partida_guardada():
+            self._vista.mostrar_mensaje(f"Hay una partida guardada en {self._ruta_partida}: escribe cargar para continuar.")
         self._en_ejecucion = True
         try:
             while self._en_ejecucion:
@@ -86,6 +105,33 @@ class ControladorJuego:
             self._vista.mostrar_mensaje("Consola cerrada sin modificar la partida.")
         finally:
             self._en_ejecucion = False
+
+    def _resumen_partida(self) -> str:
+        estado = self._servicio.obtener_estado()
+        return f"{estado.cripta_id}, sala {estado.jugador.sala_actual.id_sala}, reloj {estado.reloj}"
+
+    def _guardar(self, ruta: Path) -> str:
+        estado = self._servicio.obtener_estado()
+        if estado is not None and not estado.partida_activa:
+            raise ValueError("La partida ya terminó; no hay nada que continuar.")
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        self._servicio.guardar_partida(str(ruta), self._guardado)
+        return f"Partida guardada en {ruta} ({self._resumen_partida()})."
+
+    def _seleccionar(self, id_instancia):
+        """Mueve el cursor del inventario hasta el objeto indicado, sin consumir tiempo."""
+        inventario = self._servicio._inventario
+        if inventario is None or inventario.esta_vacio():
+            raise ValueError("El inventario está vacío.")
+        objetos = inventario.obtener_objetos()
+        ids = [o.id_instancia for o in objetos]
+        if id_instancia not in ids:
+            raise ValueError(f"No tienes el objeto {id_instancia}.")
+        pasos = ids.index(id_instancia) - objetos.index(inventario.obtener_actual())
+        sentido = "siguiente" if pasos > 0 else "anterior"
+        for _ in range(abs(pasos)):
+            self._servicio.recorrer_inventario(sentido)
+        return inventario.obtener_actual()
 
     def lineas_metricas(self) -> list[str]:
         metricas = self._servicio.obtener_metricas()
@@ -118,13 +164,15 @@ class ControladorJuego:
             except Exception as e:
                 criptas = []
                 self._vista.mostrar_mensaje(f"[!] Error listando criptas: {e}")
-            if criptas:
-                cripta_id = self._vista.mostrar_menu_criptas(criptas)
-                if cripta_id is None:
-                    return
-                resultado = self.procesar_comando(f"cripta {cripta_id}")
-                if resultado and resultado.mensaje:
-                    self._vista.mostrar_mensaje(resultado.mensaje)
+            puede_continuar = self.hay_partida_guardada()
+            if criptas or puede_continuar:
+                while True:
+                    eleccion = self._vista.mostrar_menu_criptas(criptas, CONTINUAR if puede_continuar else None)
+                    if eleccion is None:
+                        return
+                    comando = "cargar" if eleccion == CONTINUAR else f"cripta {eleccion}"
+                    if self.procesar_comando(comando).exito:
+                        break
             else:
                 self._vista.mostrar_mensaje("No se encontraron criptas. Usa --demo para jugar sin API.")
 
@@ -139,7 +187,7 @@ class ControladorJuego:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
             consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
-            acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "guardar", "cargar", "registro", "exportar_parcial")
+            acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "registro", "exportar_parcial", "seleccionar")
             if operacion == "puntajes" and len(partes) not in (1, 2):
                 raise ValueError("puntajes acepta opcionalmente un criterio de orden.")
             if operacion in consultas and operacion != "puntajes" and len(partes) != 1:
@@ -150,6 +198,8 @@ class ControladorJuego:
                 raise ValueError("Este comando no recibe argumentos.")
             if operacion == "inventario" and len(partes) not in (1, 2):
                 raise ValueError("inventario acepta opcionalmente peso, valor o nombre.")
+            if operacion in ("guardar", "cargar") and len(partes) not in (1, 2):
+                raise ValueError(f"{operacion} acepta opcionalmente una ruta; sin ella usa {self._ruta_partida}.")
             if operacion in ("usar", "retroceder") and len(partes) not in (1, 2):
                 raise ValueError("usar/retroceder acepta opcionalmente el ID del pergamino.")
 
@@ -164,6 +214,10 @@ class ControladorJuego:
             elif operacion in ("siguiente", "anterior"):
                 objeto = self._servicio.recorrer_inventario(operacion)
                 resultado = ResultadoAccion(True, "Inventario vacío." if objeto is None else f"Seleccionado: {objeto.id_instancia}")
+            elif operacion == "seleccionar":
+                objeto = self._seleccionar(partes[1])
+                nombre = (objeto.ficha or {}).get("nombre", objeto.tipo_ficha_id)
+                resultado = ResultadoAccion(True, f"Seleccionado: {nombre}")
             elif operacion == "criptas":
                 datos = self._servicio.listar_criptas()
                 self._vista.mostrar_mensaje(json.dumps(datos, ensure_ascii=False))
@@ -238,16 +292,19 @@ class ControladorJuego:
                     accion = self._servicio.resolver_accion(operacion.upper())
                 resultado = self._servicio.ejecutar_accion(accion)
             elif operacion == "guardar":
-                self._servicio.guardar_partida(partes[1], self._guardado)
-                resultado = ResultadoAccion(True, "Partida guardada en v5; al cargar, el historial anterior estará vacío.")
+                resultado = ResultadoAccion(True, self._guardar(Path(partes[1]) if len(partes) == 2 else self._ruta_partida))
             elif operacion == "exportar_parcial":
                 self.exportar_parcial(partes[1])
                 resultado = ResultadoAccion(
                     True, "Binario parcial exportado; reanudación sin validar."
                 )
             elif operacion == "cargar":
-                self.cargar(partes[1])
-                resultado = ResultadoAccion(True, "Partida cargada; historial anterior vacío, nuevas acciones reversibles.")
+                ruta = Path(partes[1]) if len(partes) == 2 else self._ruta_partida
+                if not ruta.is_file():
+                    raise ValueError(f"No hay una partida guardada en {ruta}.")
+                self.cargar(str(ruta))
+                resultado = ResultadoAccion(True, f"Partida cargada: {self._resumen_partida()}. "
+                                                  "El retroceso empieza de cero desde aquí.")
             else:
                 raise ValueError("Comando desconocido. Consulta ayuda.")
         except (ValueError, TypeError, OSError, NotImplementedError, struct.error, CriptaAPIError) as error:

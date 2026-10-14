@@ -252,7 +252,8 @@ class FuenteCatalogo:
         return {"entidades": [self.fichas[i] for i in ids]}
 
 
-def test_carga_desde_fuente_en_lote_y_rechaza_version_distinta(tmp_path):
+def test_carga_desde_fuente_en_lote_y_rechaza_version_distinta(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # disco de fichas vacío: la carga debe ir a la fuente
     servicio, fichas = preparar()
     ruta = tmp_path / "partida.bin"
     servicio.guardar_partida(ruta)

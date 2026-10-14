@@ -207,3 +207,15 @@ def test_cliente_conserva_el_contador_ya_conectado():
     JuegoService(MotorJuego(), fuente)
     assert fuente._presupuesto is presupuesto
     assert presupuesto._intentos == 1
+
+
+def test_continuar_partida_respeta_el_presupuesto_de_la_cripta(online, tmp_path):
+    juego, _, _, _, datos, _ = online
+    juego.iniciar_partida("c1")
+    ruta = tmp_path / "partida.bin"
+    juego.guardar_partida(str(ruta))
+    otro = JuegoService(MotorJuego(), ClienteAPI("https://ejemplo.invalid"), CacheCatalogo(25))
+    otro.cargar_partida(str(ruta))
+    limite = json.loads((datos / "c1/generales.json").read_text())["presupuesto_solicitudes"]
+    assert otro._fuente._presupuesto._limite == limite
+    assert 0 < otro._fuente._presupuesto._intentos <= limite

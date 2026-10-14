@@ -32,8 +32,38 @@ GLYPH_TRAMPA = "."
 DIR_OFFSET = {"NORTE": (0, -1), "SUR": (0, 1), "ESTE": (1, 0), "OESTE": (-1, 0)}
 
 
+def _ficha(objeto):
+    return getattr(objeto, "ficha", None) or {}
+
+
+def nombre_objeto(objeto):
+    return _ficha(objeto).get("nombre", objeto.tipo_ficha_id)
+
+
+def efecto_objeto(objeto):
+    """Texto corto de lo que hace el objeto, según los campos de su ficha (§2.7)."""
+    ficha = _ficha(objeto)
+    clase = ficha.get("clase")
+    if clase == "arma":
+        return f"+{ficha.get('ataque_bonus', 0)} ATK"
+    if clase == "armadura":
+        return f"+{ficha.get('defensa_bonus', 0)} DEF"
+    if clase == "pocion":
+        return f"cura {ficha['cura']}" if "cura" in ficha else "velocidad temporal"
+    if clase == "antidoto":
+        return "quita el veneno"
+    if clase == "antorcha":
+        return f"luz por {ficha.get('duracion', '?')}"
+    if clase == "llave":
+        return "abre una puerta"
+    if clase == "pergamino_retroceso":
+        return "deshace tu última acción"
+    return clase or ""
+
+
 class Boton:
-    def __init__(self, rect, texto, comando, color=GRIS_OSCURO, color_texto=BLANCO, enabled=True):
+    def __init__(self, rect, texto, comando, color=GRIS_OSCURO, color_texto=BLANCO, enabled=True, izquierda=False):
+        self.izquierda = izquierda
         self.rect = pygame.Rect(rect)
         self.texto = texto
         self.comando = comando
@@ -60,7 +90,10 @@ class Boton:
         while font.size(label)[0] > self.rect.width - 8 and len(label) > 3:
             label = label[:-4] + ".."
         txt = font.render(label, True, self.color_texto)
-        surface.blit(txt, txt.get_rect(center=self.rect.center))
+        if self.izquierda:
+            surface.blit(txt, txt.get_rect(midleft=(self.rect.x + 8, self.rect.centery)))
+        else:
+            surface.blit(txt, txt.get_rect(center=self.rect.center))
 
     def contiene(self, pos):
         return self.enabled and self.rect.collidepoint(pos)
@@ -92,6 +125,7 @@ class VistaPygame:
         self._label_movimiento = None
         self._label_acciones = None
         self._label_inventario = None
+        self._lineas_inventario = []
         self._panel_content_y = 160
         self._corriendo = True
         self._modo = "demo"
@@ -250,6 +284,16 @@ class VistaPygame:
 
             botones_cripta = []
             y = 130
+            if self._bitacora and self._bitacora[-1].startswith("[!]"):
+                error = self._font.render(self._bitacora[-1][:120], True, ROJO)
+                self._pantalla.blit(error, error.get_rect(centerx=self.ANCHO // 2, y=y - 22))
+            if opcion_continuar is not None:
+                btn = Boton((self.ANCHO // 2 - 200, y, 400, 50), "Continuar partida guardada",
+                            opcion_continuar, color=VERDE_OSCURO, color_texto=BLANCO)
+                btn.hover = btn.rect.collidepoint(pygame.mouse.get_pos())
+                btn.dibujar(self._pantalla, self._font_med)
+                botones_cripta.append(btn)
+                y += 75
             visibles = criptas[scroll:scroll + 8]
             for i, c in enumerate(visibles):
                 cid = c.get("id", c.get("cripta_id", f"cripta_{i}"))
@@ -312,6 +356,7 @@ class VistaPygame:
         self._label_movimiento = None
         self._label_acciones = None
         self._label_inventario = None
+        self._lineas_inventario = []
         if estado is None or estado.jugador is None:
             return
 
@@ -336,7 +381,7 @@ class VistaPygame:
         barra_y = zona_bottom - self.BTN_H
         bw = self.BTN_W
         gap = self.BTN_GAP
-        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar partida.bin", NARANJA))
+        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar", NARANJA, enabled=activa))
         self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
 
     def _colocar_fila(self, items, px, panel_w, y):
@@ -375,43 +420,60 @@ class VistaPygame:
             if enemigo.esta_vivo():
                 items.append((f"Atacar {enemigo.nombre[:10]}", f"atacar {enemigo.id_actor}", ROJO_OSCURO))
         for obj in sala.objetos:
-            items.append((f"Recoger {obj.id_instancia[:10]}", f"recoger {obj.id_instancia}", (50, 50, 20)))
+            items.append((f"Recoger {nombre_objeto(obj)}", f"recoger {obj.id_instancia}", (50, 50, 20)))
         items.append(("Esperar", "esperar", GRIS_OSCURO))
         return self._colocar_fila(items, px, panel_w, y)
 
+    FILA_INV = 22
+
     def _seccion_inventario(self, estado, px, panel_w, y):
         inv = getattr(estado, "inventario", None)
-        self._label_inventario = ("Inventario:", GRIS_CLARO, px, y)
+        if inv is None:
+            return y
+        operaciones = getattr(estado, "servicio_inventario", None)
+        equipo = operaciones.obtener_equipo() if operaciones is not None else {}
+        self._lineas_inventario = []
+
+        for etiqueta, clase in (("Arma", "arma"), ("Armadura", "armadura")):
+            objeto = equipo.get(clase)
+            texto = f"{nombre_objeto(objeto)} ({efecto_objeto(objeto)})" if objeto else "—"
+            self._lineas_inventario.append((f"{etiqueta}: {texto}", VERDE if objeto else GRIS, px, y))
+            y += 18
+        y += 6
+        self._label_inventario = (f"Inventario {inv.get_cantidad()}/{inv.get_capacidad()}:", GRIS_CLARO, px, y)
         y += 20
-        if inv is None or inv.esta_vacio():
+        if inv.esta_vacio():
             return y
 
         actual = inv.obtener_actual()
-        nombre = actual.id_instancia[:16] if actual else "---"
-        ubicacion = getattr(actual, "ubicacion", "") if actual else ""
-        equip = " [E]" if ubicacion == "equipado" else ""
+        equipados = [o for o in equipo.values() if o is not None]
+        for objeto in inv.obtener_objetos():
+            marca = "[E] " if any(objeto is e for e in equipados) else ""
+            texto = f"{marca}{nombre_objeto(objeto)} — {efecto_objeto(objeto)}"
+            seleccionado = objeto is actual
+            self._botones.append(Boton(
+                (px, y, panel_w, self.FILA_INV - 2), texto, f"seleccionar {objeto.id_instancia}",
+                AZUL if seleccionado else (32, 32, 44), BLANCO if seleccionado else GRIS_CLARO,
+                izquierda=True))
+            y += self.FILA_INV
+        y += 4
+        return self._colocar_fila(self._acciones_objeto(actual, equipados), px, panel_w, y)
 
-        lbl_w = self._font.size(f" {nombre}{equip} ")[0] + 16
-        nav_w = 30
-        total_nav = nav_w * 2 + self.BTN_GAP + lbl_w + self.BTN_GAP
-        cx = px
-        self._botones.append(Boton((cx, y, nav_w, self.BTN_H), "<", "anterior", GRIS_OSCURO))
-        cx += nav_w + self.BTN_GAP
-        self._botones.append(Boton((cx, y, lbl_w, self.BTN_H), f"{nombre}{equip}", "__noop__", AZUL, enabled=False))
-        cx += lbl_w + self.BTN_GAP
-        self._botones.append(Boton((cx, y, nav_w, self.BTN_H), ">", "siguiente", GRIS_OSCURO))
-        y += self.BTN_H + self.BTN_GAP
-
+    @staticmethod
+    def _acciones_objeto(objeto, equipados):
+        if objeto is None:
+            return []
+        clase = _ficha(objeto).get("clase")
+        nombre = nombre_objeto(objeto)
         items = []
-        if ubicacion == "equipado":
-            items.append(("Soltar", "soltar", GRIS_OSCURO))
-        else:
-            items.append(("Equipar", "equipar", GRIS_OSCURO))
-            items.append(("Soltar", "soltar", GRIS_OSCURO))
-        tipo = getattr(actual, "tipo_ficha_id", "") if actual else ""
-        if "pocion" in tipo.lower() or "pergamino" in tipo.lower() or "consumible" in tipo.lower():
-            items.append(("Usar", "usar", MAGENTA))
-        return self._colocar_fila(items, px, panel_w, y)
+        if clase in ("arma", "armadura") and not any(objeto is e for e in equipados):
+            items.append((f"Equipar {nombre}", "equipar", VERDE_OSCURO))
+        if clase in ("pocion", "antidoto", "antorcha"):
+            items.append((f"Usar {nombre}", f"usar {objeto.id_instancia}", MAGENTA))
+        if clase == "pergamino_retroceso":
+            items.append(("Retroceder", f"retroceder {objeto.id_instancia}", MAGENTA))
+        items.append(("Soltar", "soltar", GRIS_OSCURO))
+        return items
 
     # --- Minimapa (esquina superior izquierda) ---
 
@@ -429,7 +491,7 @@ class VistaPygame:
     def _color_sala_minimapa(self, sid, sala, es_actual):
         if es_actual:
             return (30, 180, 60), VERDE
-        if sid not in self._salas_visitadas:
+        if sid not in self._salas_visitadas and sala.ultimo_rastro is None:
             return (18, 18, 28), (35, 35, 50)
         if self._sala_limpia(sala):
             return (30, 60, 45), (60, 160, 90)
@@ -834,50 +896,6 @@ class VistaPygame:
             self._pantalla.blit(txt, txt.get_rect(center=rect.center))
             y += 42
 
-        # --- Contenido de la sala ---
-        sala = j.sala_actual
-        if sala is not None:
-            y += 4
-            pygame.draw.line(self._pantalla, GRIS, (px, y), (px + 450, y), 1)
-            y += 8
-            self._pantalla.blit(self._font_grande.render(f"Sala {sala.id_sala}", True, CYAN), (px, y))
-            y += 28
-
-            for e in sala.enemigos:
-                if e.esta_vivo():
-                    # Mini barra de vida del enemigo
-                    self._pantalla.blit(self._font.render(f"E  {e.nombre}", True, ROJO), (px, y))
-                    epct = e.vida / e.vida_max if e.vida_max > 0 else 0
-                    ebar_x = px + 200
-                    ebar_w = 120
-                    pygame.draw.rect(self._pantalla, GRIS_OSCURO, (ebar_x, y + 2, ebar_w, 12), border_radius=2)
-                    pygame.draw.rect(self._pantalla, ROJO, (ebar_x, y + 2, int(ebar_w * epct), 12), border_radius=2)
-                    hp_txt = self._font_sala_nombre.render(f"{e.vida}/{e.vida_max}", True, BLANCO)
-                    self._pantalla.blit(hp_txt, hp_txt.get_rect(center=(ebar_x + ebar_w // 2, y + 8)))
-                else:
-                    self._pantalla.blit(self._font.render(f"%  {e.nombre} (muerto)", True, GRIS), (px, y))
-                y += 22
-
-            for o in sala.objetos:
-                self._pantalla.blit(self._font.render(f"!  {o.id_instancia} ({o.tipo_ficha_id[:15]})", True, AMARILLO), (px, y))
-                y += 20
-
-            for t in sala.trampas:
-                estado_t = "ARMADA" if t.armada else "desarmada"
-                c = MAGENTA if t.armada else GRIS
-                self._pantalla.blit(self._font.render(f"^  {t.tipo} ({estado_t})", True, c), (px, y))
-                y += 20
-
-            # Puertas listadas
-            if sala.puertas:
-                y += 5
-                for p in sala.puertas:
-                    estado_p = "abierta" if p.abierta else "cerrada"
-                    color_p = VERDE if p.abierta else ROJO
-                    txt = f"   {p.direccion} -> Sala {p.destino_sala_id} ({estado_p})"
-                    self._pantalla.blit(self._font.render(txt, True, color_p), (px, y))
-                    y += 18
-
         self._panel_content_y = y + 10
 
         # Labels de secciones
@@ -890,6 +908,8 @@ class VistaPygame:
                 self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
             if self._label_inventario is not None:
                 txt, color, lx, ly = self._label_inventario
+                self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
+            for txt, color, lx, ly in self._lineas_inventario:
                 self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
 
         # Botones
@@ -1059,9 +1079,9 @@ class VistaPygame:
             if salir_solicitado:
                 decision = self._dialogo_salir(controlador)
                 if decision == "guardar":
-                    controlador.procesar_comando("guardar partida.bin")
-                    self._pantalla_metricas(controlador)
-                    self._corriendo = False
+                    if controlador.procesar_comando("guardar").exito:
+                        self._pantalla_metricas(controlador)
+                        self._corriendo = False
                 elif decision == "salir":
                     self._pantalla_metricas(controlador)
                     self._corriendo = False
