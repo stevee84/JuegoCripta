@@ -117,7 +117,7 @@ def test_catalogo_invalido_no_reemplaza_historial_ni_inventario():
 
 def test_recoleccion_no_admite_id_duplicado_con_el_inventario():
     _, servicio, estado = iniciar()
-    ficha = {"id": "f", "clase": "pocion", "curacion": 1}
+    ficha = {"id": "f", "clase": "pocion", "cura": 1}
     estado.inventario.agregar(objeto("duplicado", ficha))
     en_suelo = objeto("duplicado", ficha, 1)
     estado.jugador.sala_actual.objetos.append(en_suelo)
@@ -167,7 +167,7 @@ def test_retroceso_de_equipo_restaura_cursor_aunque_sobre_otro_pergamino(mover):
 
 
 @pytest.mark.parametrize("ficha", [
-    {"id": "cura", "clase": "pocion", "curacion": 9},
+    {"id": "cura", "clase": "pocion", "cura": 9},
     {"id": "luz", "clase": "antorcha", "duracion": 200},
     {"id": "rapida", "clase": "pocion", "modificador_velocidad": 100, "duracion": 200},
     {"id": "antidoto", "clase": "antidoto"},
@@ -278,7 +278,7 @@ def test_pergamino_puede_revertir_el_intervalo_que_termino_la_partida(tipo):
 
 def test_cambio_consumir_admite_ambas_firmas_y_valida_instancia():
     inv = Inventario(2)
-    instancia = objeto("o", {"id": "f", "clase": "pocion", "curacion": 1})
+    instancia = objeto("o", {"id": "f", "clase": "pocion", "cura": 1})
     inv.agregar(instancia)
     retiro = inv.retirar_actual_con_registro()
     with pytest.raises(ValueError, match="no corresponde"):
@@ -289,7 +289,7 @@ def test_cambio_consumir_admite_ambas_firmas_y_valida_instancia():
 
 def test_cache_fija_consumible_referenciado_por_el_historial_y_lo_libera():
     _, servicio, estado = iniciar()
-    consumible = objeto("o", {"id": "f", "clase": "pocion", "curacion": 1})
+    consumible = objeto("o", {"id": "f", "clase": "pocion", "cura": 1})
     estado.inventario.agregar(consumible)
     cache = CacheCatalogo(1)
     cache.insertar("f", consumible.ficha)
@@ -314,9 +314,9 @@ def test_registro_y_replay_reproducen_acciones_y_seleccion_de_soltar(tmp_path):
         estado = estado_nuevo(semilla)
         inv = estado.inventario
         for id_instancia in ("a", "b"):
-            inv.agregar(objeto(id_instancia, {"id": "f", "clase": "pocion", "curacion": 1}))
+            inv.agregar(objeto(id_instancia, {"id": "f", "clase": "pocion", "cura": 1}))
         inv.agregar(objeto("scroll", {"id": "scroll", "clase": "pergamino_retroceso"}))
-        estado.jugador.sala_actual.objetos.append(objeto("suelo", {"id": "f", "clase": "pocion", "curacion": 1}, 1))
+        estado.jugador.sala_actual.objetos.append(objeto("suelo", {"id": "f", "clase": "pocion", "cura": 1}, 1))
         return estado, inv
 
     servicio.conectar_inicializador(fabrica)
@@ -352,7 +352,7 @@ def test_usar_llave_rechazada_no_muta_puerta_inventario_ni_simulacion(entrada, m
     puerta.llave_requerida = "otra_llave" if motivo == "llave_incorrecta" else "llave"
     puerta.cierre_automatico = 75 if motivo == "cierre_automatico" else None
     llave = objeto("llave-instancia", {"id": "llave", "clase": "llave", "abre": "p"})
-    estado.inventario.agregar(objeto("otro", {"id": "f", "clase": "pocion", "curacion": 1}))
+    estado.inventario.agregar(objeto("otro", {"id": "f", "clase": "pocion", "cura": 1}))
     estado.inventario.agregar(llave)
     motor, servicio, estado = iniciar(estado)
     motor.efectos.aplicar_antorcha("luz", estado.jugador, 500, estado)

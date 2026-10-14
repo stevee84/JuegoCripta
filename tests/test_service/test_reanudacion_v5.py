@@ -325,7 +325,7 @@ def test_carga_reconecta_las_fijaciones_de_cache(tmp_path):
     servicio.guardar_partida(ruta)
     estado = servicio.cargar_partida(ruta)
     assert estado.servicio_inventario._cache is cache
-    assert cache.fichas_fijadas("general") == {o.tipo_ficha_id for o in estado.inventario.obtener_objetos()}
+    assert cache.fichas_fijadas("general") == sorted({o.tipo_ficha_id for o in estado.inventario.obtener_objetos()})
 
 
 def test_guardar_no_sobrescribe_log_y_cargar_no_lo_desconecta(tmp_path):

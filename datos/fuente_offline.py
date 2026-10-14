@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from contratos.fuente_datos import FuenteDatos
-from datos.cliente_api import CriptaAPIError
+from datos.cliente_api import MAX_IDS_POR_SOLICITUD, CriptaAPIError
 from dto.sala import validar_id_sala
 
 
@@ -25,6 +25,12 @@ class FuenteOffline(FuenteDatos):
         except (json.JSONDecodeError, UnicodeDecodeError) as error:
             raise CriptaAPIError(f"JSON inválido en {ruta}: {error}") from None
 
+    @staticmethod
+    def _validar_lote(ids, operacion):
+        if len(ids) > MAX_IDS_POR_SOLICITUD:
+            raise CriptaAPIError(
+                f"{operacion} acepta como máximo {MAX_IDS_POR_SOLICITUD} ids, igual que el API; se pidieron {len(ids)}")
+
     def _leer_version(self, carpeta: Path) -> str:
         texto = carpeta / "version.txt"
         if texto.exists():
@@ -46,6 +52,7 @@ class FuenteOffline(FuenteDatos):
         return self._leer_json(self._ruta / cripta_id / f"pagina_{pagina}.json")
 
     def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
+        self._validar_lote(sala_ids, "obtener_contenido")
         for sala_id in sala_ids:
             validar_id_sala(sala_id)
         carpeta = self._ruta / cripta_id
@@ -63,6 +70,7 @@ class FuenteOffline(FuenteDatos):
         return {"contenido": [registros[s] for s in sala_ids]}
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
+        self._validar_lote(ids, "obtener_catalogo")
         entidades = []
         for ficha_id in ids:
             ruta = self._ruta / "catalogo" / f"{ficha_id}.json"

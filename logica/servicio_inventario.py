@@ -15,7 +15,7 @@ class AdaptadorFichas:
     """
 
     CAMPOS = {
-        "categoria": "clase", "curacion": "curacion", "nombre": "nombre",
+        "categoria": "clase", "curacion": "cura", "nombre": "nombre",
         "peso": "peso", "valor": "valor", "arma": "ataque_bonus",
         "armadura": "defensa_bonus", "abre": "abre",
     }
