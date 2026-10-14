@@ -94,6 +94,7 @@ class VistaPygame:
         self._panel_content_y = 160
         self._corriendo = True
         self._modo = "demo"
+        self._salas_visitadas = set()
 
     def mostrar_menu_criptas(self, criptas):
         """Muestra un menú para seleccionar cripta. Retorna el id seleccionado o None."""
@@ -291,41 +292,64 @@ class VistaPygame:
             items.append(("Usar", "usar", MAGENTA))
         return self._colocar_fila(items, px, panel_w, y)
 
-    # --- Mapa ---
+    # --- Minimapa (esquina superior izquierda) ---
 
-    def _dibujar_mapa(self, estado):
-        if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
-            return
-        if estado.mapa is None:
-            return
+    MINIMAPA_W = 220
+    MINIMAPA_H = 200
+    MINIMAPA_X = 10
+    MINIMAPA_Y = 10
 
-        # Título del mapa con indicador de modo
-        titulo = self._font_grande.render(f"Cripta: {estado.cripta_id}", True, CYAN)
-        self._pantalla.blit(titulo, (15, 10))
-        modo_color = VERDE if self._modo == "online" else AMARILLO if self._modo == "offline" else GRIS
-        modo_txt = self._font_sala_nombre.render(self._modo.upper(), True, modo_color)
-        self._pantalla.blit(modo_txt, (titulo.get_width() + 25, 16))
+    def _sala_limpia(self, sala):
+        enemigos_vivos = any(e.esta_vivo() for e in sala.enemigos)
+        tiene_objetos = len(sala.objetos) > 0
+        trampas_armadas = any(t.armada for t in sala.trampas)
+        return not enemigos_vivos and not tiene_objetos and not trampas_armadas
 
+    def _color_sala_minimapa(self, sid, sala, es_actual):
+        if es_actual:
+            return (30, 180, 60), VERDE
+        if sid not in self._salas_visitadas:
+            return (18, 18, 28), (35, 35, 50)
+        if self._sala_limpia(sala):
+            return (30, 60, 45), (60, 160, 90)
+        return (50, 45, 30), (120, 110, 60)
+
+    def _bfs_posiciones(self, estado):
         sala_actual = estado.jugador.sala_actual
-
-        # BFS para posicionar salas
         posiciones = {}
-        visitadas = set()
+        visitadas_bfs = set()
         cola = [(sala_actual, 0, 0)]
-        visitadas.add(sala_actual.id_sala)
-
+        visitadas_bfs.add(sala_actual.id_sala)
         while cola:
             sala, sx, sy = cola.pop(0)
             posiciones[sala.id_sala] = (sx, sy)
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
-                if did not in visitadas:
-                    visitadas.add(did)
+                if did not in visitadas_bfs:
+                    visitadas_bfs.add(did)
                     dx, dy = DIR_OFFSET.get(puerta.direccion, (0, 0))
                     dsala = estado.mapa.obtener_sala(did)
                     if dsala is not None:
                         cola.append((dsala, sx + dx, sy + dy))
+        return posiciones
 
+    def _dibujar_minimapa(self, estado):
+        if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
+            return
+        if estado.mapa is None:
+            return
+
+        sala_actual = estado.jugador.sala_actual
+        self._salas_visitadas.add(sala_actual.id_sala)
+
+        pygame.draw.rect(self._pantalla, (12, 12, 18),
+                         (self.MINIMAPA_X, self.MINIMAPA_Y, self.MINIMAPA_W, self.MINIMAPA_H),
+                         border_radius=6)
+        pygame.draw.rect(self._pantalla, GRIS,
+                         (self.MINIMAPA_X, self.MINIMAPA_Y, self.MINIMAPA_W, self.MINIMAPA_H),
+                         1, border_radius=6)
+
+        posiciones = self._bfs_posiciones(estado)
         if not posiciones:
             return
 
@@ -351,17 +375,17 @@ class VistaPygame:
 
         rango_x = max_x - min_x + 1
         rango_y = max_y - min_y + 1
+        gap = 3
+        margen = 12
+        area_w = self.MINIMAPA_W - margen * 2
+        area_h = self.MINIMAPA_H - margen * 2
+        cell = min(area_w // rango_x - gap, area_h // rango_y - gap, 28)
+        cell = max(cell, 10)
 
-        max_cell_w = espacio_w // rango_x
-        max_cell_h = espacio_h // rango_y
-        cell = min(max_cell_w, max_cell_h, 140)
-        cell = max(cell, 50)
+        ox = self.MINIMAPA_X + margen + (area_w - rango_x * (cell + gap)) // 2
+        oy = self.MINIMAPA_Y + margen + (area_h - rango_y * (cell + gap)) // 2
 
-        ox = (self.MAPA_ANCHO - rango_x * (cell + gap)) // 2
-        oy = 45 + (espacio_h - rango_y * (cell + gap)) // 2
-
-        # Primero dibujar conexiones
-        for sid, (gx, gy) in visibles.items():
+        for sid, (gx, gy) in posiciones.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
@@ -370,26 +394,17 @@ class VistaPygame:
 
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
-                if did not in visibles:
+                if did not in posiciones or did <= sid:
                     continue
                 dgx, dgy = visibles[did]
                 dpx = ox + (dgx - min_x) * (cell + gap)
                 dpy = oy + (dgy - min_y) * (cell + gap)
-
                 start = (px + cell // 2, py + cell // 2)
                 end = (dpx + cell // 2, dpy + cell // 2)
-                color_linea = VERDE if puerta.abierta else ROJO
-                pygame.draw.line(self._pantalla, color_linea, start, end, 3)
+                color_l = (40, 80, 50) if puerta.abierta else (80, 35, 35)
+                pygame.draw.line(self._pantalla, color_l, start, end, 1)
 
-                # Indicador de cerrada
-                if not puerta.abierta:
-                    mx, my = (start[0] + end[0]) // 2, (start[1] + end[1]) // 2
-                    pygame.draw.circle(self._pantalla, ROJO, (mx, my), 6)
-                    txt = self._font_sala_nombre.render("X", True, BLANCO)
-                    self._pantalla.blit(txt, txt.get_rect(center=(mx, my)))
-
-        # Luego dibujar salas
-        for sid, (gx, gy) in visibles.items():
+        for sid, (gx, gy) in posiciones.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
@@ -397,42 +412,114 @@ class VistaPygame:
             py = oy + (gy - min_y) * (cell + gap)
             es_actual = (sid == sala_actual.id_sala)
 
-            # Fondo
-            if es_actual:
-                pygame.draw.rect(self._pantalla, (25, 40, 30), (px, py, cell, cell), border_radius=6)
-                pygame.draw.rect(self._pantalla, VERDE, (px, py, cell, cell), 2, border_radius=6)
+            fondo, borde = self._color_sala_minimapa(sid, sala, es_actual)
+            pygame.draw.rect(self._pantalla, fondo, (px, py, cell, cell), border_radius=3)
+            pygame.draw.rect(self._pantalla, borde, (px, py, cell, cell), 1, border_radius=3)
+
+            if es_actual and cell >= 12:
+                txt = self._font_sala_nombre.render("@", True, VERDE)
+                self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
+            elif cell >= 14:
+                txt = self._font_sala_nombre.render(str(sid), True, borde)
+                self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
+
+    # --- Vista detallada de sala actual ---
+
+    SALA_X = 10
+    SALA_Y = 245
+    SALA_ANCHO = 620
+    SALA_ALTO_MAX = 395
+
+    def _dibujar_sala_actual(self, estado):
+        if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
+            return
+
+        sala = estado.jugador.sala_actual
+        sx, sy = self.SALA_X, self.SALA_Y
+        sw = self.SALA_ANCHO
+
+        titulo_y = self.MINIMAPA_Y + self.MINIMAPA_H + 5
+        titulo = self._font_grande.render(f"Cripta: {estado.cripta_id}", True, CYAN)
+        self._pantalla.blit(titulo, (sx + 5, titulo_y))
+        modo_color = VERDE if self._modo == "online" else AMARILLO if self._modo == "offline" else GRIS
+        modo_txt = self._font_sala_nombre.render(self._modo.upper(), True, modo_color)
+        self._pantalla.blit(modo_txt, (sx + 5 + titulo.get_width() + 10, titulo_y + 6))
+
+        pygame.draw.rect(self._pantalla, (20, 22, 30), (sx, sy, sw, self.SALA_ALTO_MAX), border_radius=8)
+        pygame.draw.rect(self._pantalla, CYAN, (sx, sy, sw, self.SALA_ALTO_MAX), 1, border_radius=8)
+
+        y = sy + 12
+        px = sx + 15
+
+        nombre_sala = self._font_titulo.render(f"Sala {sala.id_sala}", True, CYAN)
+        self._pantalla.blit(nombre_sala, (px, y))
+        y += 36
+
+        limpia = self._sala_limpia(sala)
+        if limpia:
+            estado_txt = self._font_med.render("Sala despejada", True, VERDE)
+        else:
+            pendientes = []
+            vivos = sum(1 for e in sala.enemigos if e.esta_vivo())
+            if vivos:
+                pendientes.append(f"{vivos} enemigo{'s' if vivos > 1 else ''}")
+            if sala.objetos:
+                pendientes.append(f"{len(sala.objetos)} objeto{'s' if len(sala.objetos) > 1 else ''}")
+            armadas = sum(1 for t in sala.trampas if t.armada)
+            if armadas:
+                pendientes.append(f"{armadas} trampa{'s' if armadas > 1 else ''}")
+            estado_txt = self._font_med.render("  ".join(pendientes), True, AMARILLO)
+        self._pantalla.blit(estado_txt, (px, y))
+        y += 26
+
+        pygame.draw.line(self._pantalla, GRIS, (px, y), (px + sw - 30, y), 1)
+        y += 8
+
+        tile_size = 48
+        margen_tile = 6
+        area_ancho = sw - 60
+        cols = max(1, area_ancho // (tile_size + margen_tile))
+
+        entidades = []
+        entidades.append((GLYPH_JUGADOR, estado.jugador.nombre, VERDE, f"HP {estado.jugador.vida}/{estado.jugador.vida_max}"))
+        for e in sala.enemigos:
+            if e.esta_vivo():
+                entidades.append((GLYPH_ENEMIGO, e.nombre, ROJO, f"HP {e.vida}/{e.vida_max}"))
             else:
-                pygame.draw.rect(self._pantalla, (28, 28, 38), (px, py, cell, cell), border_radius=6)
-                pygame.draw.rect(self._pantalla, GRIS, (px, py, cell, cell), 1, border_radius=6)
+                entidades.append((GLYPH_ENEMIGO_MUERTO, e.nombre, GRIS, "muerto"))
+        for o in sala.objetos:
+            entidades.append((GLYPH_OBJETO, o.id_instancia[:12], AMARILLO, o.tipo_ficha_id[:15]))
+        for t in sala.trampas:
+            estado_t = "ARMADA" if t.armada else "ok"
+            c = MAGENTA if t.armada else GRIS
+            entidades.append((GLYPH_TRAMPA_ARMADA if t.armada else GLYPH_TRAMPA, t.tipo[:12], c, estado_t))
 
-            # Número de sala grande
-            num = self._font_grande.render(str(sid), True, CYAN if es_actual else GRIS_CLARO)
-            self._pantalla.blit(num, (px + 5, py + 3))
+        for i, (glyph, nombre, color, detalle) in enumerate(entidades):
+            col = i % cols
+            fila = i // cols
+            tx = px + col * (tile_size + margen_tile + 70)
+            ty = y + fila * (tile_size + margen_tile + 8)
+            if ty + tile_size > sy + self.SALA_ALTO_MAX - 40:
+                break
 
-            # Contenido: glyphs en columna a la derecha del número
-            glyphs = []
-            if es_actual:
-                glyphs.append((GLYPH_JUGADOR, VERDE))
-            for e in sala.enemigos:
-                glyphs.append((GLYPH_ENEMIGO if e.esta_vivo() else GLYPH_ENEMIGO_MUERTO,
-                               ROJO if e.esta_vivo() else GRIS))
-            for _ in sala.objetos:
-                glyphs.append((GLYPH_OBJETO, AMARILLO))
-            for t in sala.trampas:
-                glyphs.append((GLYPH_TRAMPA_ARMADA if t.armada else GLYPH_TRAMPA,
-                               MAGENTA if t.armada else GRIS))
+            pygame.draw.rect(self._pantalla, (28, 28, 40), (tx, ty, tile_size, tile_size), border_radius=5)
+            pygame.draw.rect(self._pantalla, color, (tx, ty, tile_size, tile_size), 1, border_radius=5)
+            g = self._font_tile.render(glyph, True, color)
+            self._pantalla.blit(g, g.get_rect(center=(tx + tile_size // 2, ty + tile_size // 2)))
 
-            # Renderizar glyphs en grid dentro de la celda
-            cols = max(1, (cell - 10) // 22)
-            for i, (glyph, color) in enumerate(glyphs[:12]):
-                col = i % cols
-                fila = i // cols
-                gx2 = px + 8 + col * 22
-                gy2 = py + 28 + fila * 22
-                if gy2 + 18 > py + cell:
-                    break
-                txt = self._font_med.render(glyph, True, color)
-                self._pantalla.blit(txt, (gx2, gy2))
+            n_txt = self._font_sala_nombre.render(nombre, True, BLANCO)
+            self._pantalla.blit(n_txt, (tx + tile_size + 5, ty + 5))
+            d_txt = self._font_sala_nombre.render(detalle, True, GRIS_CLARO)
+            self._pantalla.blit(d_txt, (tx + tile_size + 5, ty + 20))
+
+        y_puertas = sy + self.SALA_ALTO_MAX - 35
+        door_x = px
+        for p in sala.puertas:
+            estado_p = "abierta" if p.abierta else "cerrada"
+            color_p = VERDE if p.abierta else ROJO
+            txt = self._font.render(f"{p.direccion} -> {p.destino_sala_id} ({estado_p})", True, color_p)
+            self._pantalla.blit(txt, (door_x, y_puertas))
+            door_x += txt.get_width() + 20
 
     # --- Panel derecho ---
 
@@ -608,15 +695,103 @@ class VistaPygame:
             self._pantalla.blit(txt, (x, y))
             x += txt.get_width() + 15
 
+    # --- Diálogo de salida ---
+
+    def _dialogo_salir(self, controlador):
+        overlay = pygame.Surface((self.ANCHO, self.ALTO), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+
+        dlg_w, dlg_h = 420, 220
+        dlg_x = (self.ANCHO - dlg_w) // 2
+        dlg_y = (self.ALTO - dlg_h) // 2
+
+        btn_w, btn_h = 180, 36
+        gap = 12
+        bx = dlg_x + (dlg_w - btn_w) // 2
+
+        botones = [
+            Boton((bx, dlg_y + 70, btn_w, btn_h), "Guardar y salir", "guardar", VERDE_OSCURO),
+            Boton((bx, dlg_y + 70 + btn_h + gap, btn_w, btn_h), "Salir sin guardar", "salir", ROJO_OSCURO),
+            Boton((bx, dlg_y + 70 + (btn_h + gap) * 2, btn_w, btn_h), "Cancelar", "cancelar", GRIS_OSCURO),
+        ]
+
+        while True:
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    return "salir"
+                elif evento.type == pygame.MOUSEMOTION:
+                    for b in botones:
+                        b.hover = b.contiene(evento.pos)
+                elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
+                    for b in botones:
+                        if b.contiene(evento.pos):
+                            return b.comando
+
+            self._pantalla.blit(overlay, (0, 0))
+            pygame.draw.rect(self._pantalla, (25, 25, 35), (dlg_x, dlg_y, dlg_w, dlg_h), border_radius=10)
+            pygame.draw.rect(self._pantalla, CYAN, (dlg_x, dlg_y, dlg_w, dlg_h), 2, border_radius=10)
+
+            titulo = self._font_grande.render("Salir de la partida?", True, BLANCO)
+            self._pantalla.blit(titulo, titulo.get_rect(centerx=self.ANCHO // 2, y=dlg_y + 20))
+
+            for b in botones:
+                b.dibujar(self._pantalla, self._font_med)
+
+            pygame.display.flip()
+            self._reloj.tick(self.FPS)
+
+    def _pantalla_metricas(self, controlador):
+        metricas = controlador._servicio.obtener_metricas()
+        if not metricas:
+            return
+
+        lineas = []
+        if "cache" in metricas:
+            c = metricas["cache"]
+            lineas.append(f"Cache: {c['aciertos']} aciertos, {c['fallos']} fallos, tasa {c['tasa_acierto']:.0%}")
+            lineas.append(f"  {c['tamano']}/{c['capacidad']} entradas, {c['fijados']} fijadas")
+        if "presupuesto" in metricas:
+            p = metricas["presupuesto"]
+            lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes, {p['restantes']} restantes")
+        if "partida" in metricas:
+            pt = metricas["partida"]
+            lineas.append(f"Acciones: {pt['acciones']}   Enemigos: {pt['enemigos_derrotados']}   Reloj: {pt['reloj']}")
+
+        esperando = True
+        inicio = pygame.time.get_ticks()
+        while esperando:
+            for evento in pygame.event.get():
+                if evento.type in (pygame.QUIT, pygame.MOUSEBUTTONDOWN, pygame.KEYDOWN):
+                    esperando = False
+            if pygame.time.get_ticks() - inicio > 4000:
+                esperando = False
+
+            self._pantalla.fill(NEGRO)
+            titulo = self._font_titulo.render("Metricas de partida", True, CYAN)
+            self._pantalla.blit(titulo, titulo.get_rect(centerx=self.ANCHO // 2, y=self.ALTO // 2 - 100))
+
+            y = self.ALTO // 2 - 40
+            for linea in lineas:
+                txt = self._font_med.render(linea, True, GRIS_CLARO)
+                self._pantalla.blit(txt, txt.get_rect(centerx=self.ANCHO // 2, y=y))
+                y += 28
+
+            hint = self._font.render("Click o tecla para cerrar", True, GRIS)
+            self._pantalla.blit(hint, hint.get_rect(centerx=self.ANCHO // 2, y=y + 20))
+
+            pygame.display.flip()
+            self._reloj.tick(self.FPS)
+
     # --- Loop principal ---
 
     def ejecutar(self, controlador, estado_fn):
         while self._corriendo:
             estado = estado_fn()
 
+            salir_solicitado = False
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
-                    self._corriendo = False
+                    salir_solicitado = True
                     break
                 elif evento.type == pygame.MOUSEMOTION:
                     for b in self._botones:
@@ -632,21 +807,45 @@ class VistaPygame:
                         if b.contiene(evento.pos):
                             if b.comando == "__noop__":
                                 pass
+                            elif b.comando == "salir":
+                                salir_solicitado = True
                             else:
                                 resultado = controlador.procesar_comando(b.comando)
                                 if resultado and resultado.mensaje:
                                     self.mostrar_mensaje(resultado.mensaje)
                             break
 
+            if salir_solicitado:
+                decision = self._dialogo_salir(controlador)
+                if decision == "guardar":
+                    controlador.procesar_comando("guardar partida.bin")
+                    self._pantalla_metricas(controlador)
+                    self._corriendo = False
+                elif decision == "salir":
+                    self._pantalla_metricas(controlador)
+                    self._corriendo = False
+
             if not self._corriendo:
                 break
 
+            if estado is not None and not estado.partida_activa:
+                self._pantalla.fill(NEGRO)
+                self._dibujar_minimapa(estado)
+                self._dibujar_sala_actual(estado)
+                self._dibujar_panel(estado)
+                self._construir_botones(estado)
+                self._dibujar_bitacora()
+                pygame.display.flip()
+                self._pantalla_metricas(controlador)
+                self._corriendo = False
+                break
+
             self._pantalla.fill(NEGRO)
-            self._dibujar_mapa(estado)
+            self._dibujar_minimapa(estado)
+            self._dibujar_sala_actual(estado)
             self._dibujar_panel(estado)
             self._construir_botones(estado)
             self._dibujar_bitacora()
-            self._dibujar_leyenda()
             pygame.display.flip()
             self._reloj.tick(self.FPS)
 
