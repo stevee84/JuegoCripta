@@ -1,7 +1,7 @@
 from estructuras.lista_doble import ListaDobleImpl
 
 DUEÑO_GENERAL = "general"
-DUEÑO_SALA = "sala"
+DUEÑO_EN_USO = "en_uso"
 
 
 class EntradaCatalogo:

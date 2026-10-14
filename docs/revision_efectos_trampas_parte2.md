@@ -2,7 +2,7 @@
 
 ## Alcance y fuente
 
-La referencia funcional es `docs/enunciado.pdf`:
+La referencia funcional es `docs/enunciado.md`:
 
 - §2.3, página 5: intervalo por velocidad y reprogramación proporcional con
   secuencia nueva.
