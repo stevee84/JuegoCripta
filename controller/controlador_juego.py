@@ -87,6 +87,21 @@ class ControladorJuego:
         finally:
             self._en_ejecucion = False
 
+    def _seleccionar(self, id_instancia):
+        """Mueve el cursor del inventario hasta el objeto indicado, sin consumir tiempo."""
+        inventario = self._servicio._inventario
+        if inventario is None or inventario.esta_vacio():
+            raise ValueError("El inventario está vacío.")
+        objetos = inventario.obtener_objetos()
+        ids = [o.id_instancia for o in objetos]
+        if id_instancia not in ids:
+            raise ValueError(f"No tienes el objeto {id_instancia}.")
+        pasos = ids.index(id_instancia) - objetos.index(inventario.obtener_actual())
+        sentido = "siguiente" if pasos > 0 else "anterior"
+        for _ in range(abs(pasos)):
+            self._servicio.recorrer_inventario(sentido)
+        return inventario.obtener_actual()
+
     def lineas_metricas(self) -> list[str]:
         metricas = self._servicio.obtener_metricas()
         lineas = []
@@ -139,7 +154,7 @@ class ControladorJuego:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
             consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
-            acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "guardar", "cargar", "registro", "exportar_parcial")
+            acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "guardar", "cargar", "registro", "exportar_parcial", "seleccionar")
             if operacion == "puntajes" and len(partes) not in (1, 2):
                 raise ValueError("puntajes acepta opcionalmente un criterio de orden.")
             if operacion in consultas and operacion != "puntajes" and len(partes) != 1:
@@ -164,6 +179,10 @@ class ControladorJuego:
             elif operacion in ("siguiente", "anterior"):
                 objeto = self._servicio.recorrer_inventario(operacion)
                 resultado = ResultadoAccion(True, "Inventario vacío." if objeto is None else f"Seleccionado: {objeto.id_instancia}")
+            elif operacion == "seleccionar":
+                objeto = self._seleccionar(partes[1])
+                nombre = (objeto.ficha or {}).get("nombre", objeto.tipo_ficha_id)
+                resultado = ResultadoAccion(True, f"Seleccionado: {nombre}")
             elif operacion == "criptas":
                 datos = self._servicio.listar_criptas()
                 self._vista.mostrar_mensaje(json.dumps(datos, ensure_ascii=False))

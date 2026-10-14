@@ -279,3 +279,22 @@ def test_cache_fijar_es_idempotente_por_dueno_y_liberar_dueno():
     assert cache.fichas_fijadas() == ["b"]
     cache.liberar_referencia("b")
     assert cache.fichas_fijadas() == []
+
+
+def test_seleccionar_objeto_del_inventario_sin_consumir_tiempo(en_tmp):
+    from controller.controlador_juego import ControladorJuego
+    from logica.historial_reversible import HistorialReversible
+    from vista.vista_consola import VistaConsola
+    controlador = ControladorJuego(MotorJuego(), VistaConsola(), FuenteOffline(str(API_REAL)), HistorialReversible())
+    controlador.configurar_arranque(3, CacheCatalogo(25))
+    controlador.conectar_inicializador(InicializadorPartida(), 3)
+    for comando in ("cripta cripta-02", "recoger objeto:1:0", "mover norte", "recoger objeto:2:0", "recoger objeto:2:1"):
+        assert controlador.procesar_comando(comando).exito, comando
+    estado = controlador._servicio.obtener_estado()
+    reloj = estado.reloj
+    for objetivo in ("objeto:1:0", "objeto:2:1", "objeto:2:0"):
+        resultado = controlador.procesar_comando(f"seleccionar {objetivo}")
+        assert resultado.exito and estado.inventario.obtener_actual().id_instancia == objetivo
+    assert "Daga oxidada" in resultado.mensaje
+    assert estado.reloj == reloj
+    assert not controlador.procesar_comando("seleccionar objeto:9:9").exito
