@@ -768,9 +768,7 @@ class VistaPygame:
             entidades.append((
                 GLYPH_OBJETO,
                 nombre_objeto(objeto)[:16],
-                nombre_objeto(objeto)[:16],
                 AMARILLO,
-                efecto_objeto(objeto)[:18],
                 efecto_objeto(objeto)[:18],
                 self._sprite_para_objeto(objeto),
             ))
