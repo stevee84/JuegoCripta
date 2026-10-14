@@ -249,8 +249,7 @@ class VistaPygame:
         return fondo
 
     def mostrar_menu_criptas(self, criptas, opcion_continuar=None):
-        """Retorna el id de la cripta elegida, ``opcion_continuar`` si se elige
-        continuar la partida guardada, o None si se cierra la ventana."""
+        """Muestra un menú para seleccionar cripta. Retorna el id seleccionado o None."""
         seleccion = None
         scroll = 0
         botones_cripta = []
@@ -769,7 +768,9 @@ class VistaPygame:
             entidades.append((
                 GLYPH_OBJETO,
                 nombre_objeto(objeto)[:16],
+                nombre_objeto(objeto)[:16],
                 AMARILLO,
+                efecto_objeto(objeto)[:18],
                 efecto_objeto(objeto)[:18],
                 self._sprite_para_objeto(objeto),
             ))
