@@ -3,6 +3,7 @@
 Mapa a la izquierda, panel de info a la derecha, bitácora abajo.
 """
 import pygame
+from pathlib import Path
 
 # Colores
 NEGRO = (18, 18, 24)
@@ -95,6 +96,123 @@ class VistaPygame:
         self._corriendo = True
         self._modo = "demo"
         self._salas_visitadas = set()
+        self._sprite_jugador = self._cargar_sprite("jugador.png")
+        self._sprite_rata = self._cargar_sprite("rata_gigante.png")
+        self._sprite_arma = self._cargar_sprite("arma.png", "objetos")
+        self._sprite_armadura = self._cargar_sprite("armadura.png", "objetos")
+        self._sprite_pocion_vida = self._cargar_sprite("pocion_vida.png", "objetos")
+        self._sprite_pocion_velocidad = self._cargar_sprite("pocion_velocidad.png", "objetos")
+        self._sprite_antidoto = self._cargar_sprite("antidoto.png", "objetos")
+        self._sprite_llave = self._cargar_sprite("llave.png", "objetos")
+        self._sprite_antorcha = self._cargar_sprite("antorcha.png", "objetos")
+        self._sprite_pergamino = self._cargar_sprite("pergamino_retroceso.png", "objetos")
+        self._sprite_llave_negra = self._cargar_sprite("llave_negra.png", "objetos")
+        self._sprite_trampa_dardos = self._cargar_sprite("trampa_dardos.png", "objetos")
+        self._sprite_rata_muerta = self._cargar_sprite("rata_muerta.png", "personajes")
+        self._sprite_guardian_oseo = self._cargar_sprite("guardian_oseo.png", "personajes")   
+        self._fondo_menu = self._cargar_fondo_menu()
+        self._fondo_sala = self._cargar_fondo_sala()
+
+    def _cargar_sprite(self, nombre_archivo, carpeta="personajes"):
+        """Carga una imagen conservando su proporción."""
+        ruta = (
+            Path(__file__).resolve().parent.parent
+            / "assets"
+            / carpeta
+            / nombre_archivo
+        )
+
+        try:
+            imagen = pygame.image.load(str(ruta)).convert_alpha()
+        except (OSError, pygame.error) as error:
+            self.mostrar_error(
+                f"No se pudo cargar {nombre_archivo}: {error}"
+            )
+            return None
+
+        ancho, alto = imagen.get_size()
+        escala = min(72 / ancho, 72 / alto)
+        tamaño = (
+            max(1, round(ancho * escala)),
+            max(1, round(alto * escala)),
+        )
+        return pygame.transform.scale(imagen, tamaño)
+
+    def _cargar_fondo_menu(self):
+        ruta = (
+            Path(__file__).resolve().parent.parent
+            / "assets"
+            / "fondos"
+            / "menu_inicio.png"
+        )
+
+        try:
+            imagen = pygame.image.load(str(ruta)).convert()
+        except (OSError, pygame.error) as error:
+            self.mostrar_error(f"No se pudo cargar el fondo: {error}")
+            return None
+
+        ancho, alto = imagen.get_size()
+
+        # Cubrir la ventana conservando la proporción.
+        escala = max(self.ANCHO / ancho, self.ALTO / alto)
+        tamaño = (
+            max(self.ANCHO, round(ancho * escala)),
+            max(self.ALTO, round(alto * escala)),
+        )
+        imagen = pygame.transform.scale(imagen, tamaño)
+
+        # Recortar el sobrante desde el centro.
+        recorte = pygame.Rect(
+            (imagen.get_width() - self.ANCHO) // 2,
+            (imagen.get_height() - self.ALTO) // 2,
+            self.ANCHO,
+            self.ALTO,
+        )
+        return imagen.subsurface(recorte).copy()
+
+    def _cargar_fondo_sala(self):
+        ruta = (
+            Path(__file__).resolve().parent.parent
+            / "assets"
+            / "fondos"
+            / "sala.png"
+        )
+
+        try:
+            imagen = pygame.image.load(str(ruta)).convert()
+        except (OSError, pygame.error) as error:
+            self.mostrar_error(f"No se pudo cargar el fondo de sala: {error}")
+            return None
+
+        ancho, alto = imagen.get_size()
+        escala = max(
+            self.SALA_ANCHO / ancho,
+            self.SALA_ALTO_MAX / alto,
+        )
+
+        imagen = pygame.transform.scale(
+            imagen,
+            (
+                max(self.SALA_ANCHO, round(ancho * escala)),
+                max(self.SALA_ALTO_MAX, round(alto * escala)),
+            ),
+        )
+
+        recorte = pygame.Rect(
+            (imagen.get_width() - self.SALA_ANCHO) // 2,
+            (imagen.get_height() - self.SALA_ALTO_MAX) // 2,
+            self.SALA_ANCHO,
+            self.SALA_ALTO_MAX,
+        )
+        fondo = imagen.subsurface(recorte).copy()
+
+        # Oscurecer ligeramente para mantener legibles los textos.
+        sombra = pygame.Surface(fondo.get_size(), pygame.SRCALPHA)
+        sombra.fill((0, 0, 0, 90))
+        fondo.blit(sombra, (0, 0))
+
+        return fondo
 
     def mostrar_menu_criptas(self, criptas):
         """Muestra un menú para seleccionar cripta. Retorna el id seleccionado o None."""
@@ -119,7 +237,10 @@ class VistaPygame:
                             seleccion = b.comando
                             break
 
-            self._pantalla.fill(NEGRO)
+            if self._fondo_menu is not None:
+                self._pantalla.blit(self._fondo_menu, (0, 0))
+            else:
+                self._pantalla.fill(NEGRO)
 
             titulo = self._font_titulo.render("CRIPTA - Seleccionar Mazmorra", True, CYAN)
             self._pantalla.blit(titulo, titulo.get_rect(centerx=self.ANCHO // 2, y=40))
@@ -332,7 +453,51 @@ class VistaPygame:
                     if dsala is not None:
                         cola.append((dsala, sx + dx, sy + dy))
         return posiciones
+    @staticmethod
+    def _normalizar_nombre(texto):
+        texto = str(texto or "").casefold()
+        for original, reemplazo in (
+            ("á", "a"),
+            ("é", "e"),
+            ("í", "i"),
+            ("ó", "o"),
+            ("ú", "u"),
+        ):
+            texto = texto.replace(original, reemplazo)
+        return texto.replace("_", " ").replace("-", " ")
+    
+    def _sprite_para_objeto(self, objeto):
+        """Selecciona la imagen según la ficha del objeto."""
+        ficha = getattr(objeto, "ficha", None)
+        if not isinstance(ficha, dict):
+            return None
 
+        clase = str(ficha.get("clase", "")).strip().lower()
+
+        if clase == "arma":
+            return self._sprite_arma
+        if clase == "armadura":
+            return self._sprite_armadura
+        if clase == "pocion":
+            if "modificador_velocidad" in ficha:
+                return self._sprite_pocion_velocidad
+            return self._sprite_pocion_vida
+        if clase == "antidoto":
+            return self._sprite_antidoto
+        if clase == "llave":
+            identificacion = self._normalizar_nombre(
+                f"{objeto.tipo_ficha_id} {ficha.get('nombre', '')}"
+            )
+            if "negra" in identificacion:
+                return self._sprite_llave_negra
+            return self._sprite_llave
+        if clase == "antorcha":
+            return self._sprite_antorcha
+        if clase == "pergamino_retroceso":
+            return self._sprite_pergamino
+
+        return None
+    
     def _dibujar_minimapa(self, estado):
         if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
             return
@@ -445,8 +610,12 @@ class VistaPygame:
         modo_txt = self._font_sala_nombre.render(self._modo.upper(), True, modo_color)
         self._pantalla.blit(modo_txt, (sx + 5 + titulo.get_width() + 10, titulo_y + 6))
 
-        pygame.draw.rect(self._pantalla, (20, 22, 30), (sx, sy, sw, self.SALA_ALTO_MAX), border_radius=8)
-        pygame.draw.rect(self._pantalla, CYAN, (sx, sy, sw, self.SALA_ALTO_MAX), 1, border_radius=8)
+        if self._fondo_sala is not None:
+            self._pantalla.blit(self._fondo_sala, (sx, sy))
+        else:
+            pygame.draw.rect(self._pantalla,(20, 22, 30),(sx, sy, sw, self.SALA_ALTO_MAX),border_radius=8,)
+
+        pygame.draw.rect(self._pantalla,CYAN,(sx, sy, sw, self.SALA_ALTO_MAX),1,border_radius=8,)
 
         y = sy + 12
         px = sx + 15
@@ -475,37 +644,121 @@ class VistaPygame:
         pygame.draw.line(self._pantalla, GRIS, (px, y), (px + sw - 30, y), 1)
         y += 8
 
-        tile_size = 48
+        tile_size = 80
         margen_tile = 6
         area_ancho = sw - 60
-        cols = max(1, area_ancho // (tile_size + margen_tile))
+        ancho_celda = tile_size + margen_tile + 110
+        cols = max(1, area_ancho // ancho_celda)
 
-        entidades = []
-        entidades.append((GLYPH_JUGADOR, estado.jugador.nombre, VERDE, f"HP {estado.jugador.vida}/{estado.jugador.vida_max}"))
-        for e in sala.enemigos:
-            if e.esta_vivo():
-                entidades.append((GLYPH_ENEMIGO, e.nombre, ROJO, f"HP {e.vida}/{e.vida_max}"))
+        entidades = [
+            (
+                GLYPH_JUGADOR,
+                estado.jugador.nombre,
+                VERDE,
+                f"HP {estado.jugador.vida}/{estado.jugador.vida_max}",
+                self._sprite_jugador,
+            )
+        ]
+
+        for enemigo in sala.enemigos:
+            ficha = getattr(enemigo, "ficha", None)
+            nombre_ficha = (
+                ficha.get("nombre", "")
+                if isinstance(ficha, dict)
+                else ""
+            )
+            identificacion = self._normalizar_nombre(
+                f"{enemigo.nombre} "
+                f"{getattr(enemigo, 'tipo_ficha_id', '')} "
+                f"{nombre_ficha}"
+            )
+
+            es_rata = "rata gigante" in identificacion
+            es_guardian = (
+                "guardian" in identificacion
+                and "oseo" in identificacion
+            )
+
+            if enemigo.esta_vivo():
+                sprite = None
+                if es_rata:
+                    sprite = self._sprite_rata
+                elif es_guardian:
+                    sprite = self._sprite_guardian_oseo
+
+                entidades.append((
+                    GLYPH_ENEMIGO,
+                    enemigo.nombre,
+                    ROJO,
+                    f"HP {enemigo.vida}/{enemigo.vida_max}",
+                    sprite,
+                ))
             else:
-                entidades.append((GLYPH_ENEMIGO_MUERTO, e.nombre, GRIS, "muerto"))
-        for o in sala.objetos:
-            entidades.append((GLYPH_OBJETO, o.id_instancia[:12], AMARILLO, o.tipo_ficha_id[:15]))
-        for t in sala.trampas:
-            estado_t = "ARMADA" if t.armada else "ok"
-            c = MAGENTA if t.armada else GRIS
-            entidades.append((GLYPH_TRAMPA_ARMADA if t.armada else GLYPH_TRAMPA, t.tipo[:12], c, estado_t))
+                entidades.append((
+                    GLYPH_ENEMIGO_MUERTO,
+                    enemigo.nombre,
+                    GRIS,
+                    "muerto",
+                    self._sprite_rata_muerta if es_rata else None,
+                ))
 
-        for i, (glyph, nombre, color, detalle) in enumerate(entidades):
+        for objeto in sala.objetos:
+            entidades.append((
+                GLYPH_OBJETO,
+                objeto.id_instancia[:12],
+                AMARILLO,
+                objeto.tipo_ficha_id[:15],
+                self._sprite_para_objeto(objeto),
+            ))
+
+        for trampa in sala.trampas:
+            ficha = getattr(trampa, "ficha", None)
+            nombre_ficha = (
+                ficha.get("nombre", "")
+                if isinstance(ficha, dict)
+                else ""
+            )
+            identificacion = self._normalizar_nombre(
+                f"{trampa.tipo} {nombre_ficha}"
+            )
+            sprite = (
+                self._sprite_trampa_dardos
+                if "dardo" in identificacion
+                else None
+            )
+
+            entidades.append((
+                GLYPH_TRAMPA_ARMADA if trampa.armada else GLYPH_TRAMPA,
+                trampa.tipo[:12],
+                MAGENTA if trampa.armada else GRIS,
+                "ARMADA" if trampa.armada else "desarmada",
+                sprite,
+            ))
+
+        for i, (glyph, nombre, color, detalle, sprite) in enumerate(entidades):
             col = i % cols
             fila = i // cols
-            tx = px + col * (tile_size + margen_tile + 70)
+            tx = px + col * ancho_celda
             ty = y + fila * (tile_size + margen_tile + 8)
             if ty + tile_size > sy + self.SALA_ALTO_MAX - 40:
                 break
 
             pygame.draw.rect(self._pantalla, (28, 28, 40), (tx, ty, tile_size, tile_size), border_radius=5)
             pygame.draw.rect(self._pantalla, color, (tx, ty, tile_size, tile_size), 1, border_radius=5)
-            g = self._font_tile.render(glyph, True, color)
-            self._pantalla.blit(g, g.get_rect(center=(tx + tile_size // 2, ty + tile_size // 2)))
+
+            centro = (
+                tx + tile_size // 2,
+                ty + tile_size // 2,
+            )
+
+            if sprite is not None:
+                self._pantalla.blit(
+                    sprite,
+                    sprite.get_rect(center=centro),
+                )
+            else:
+                g = self._font_tile.render(glyph, True, color)
+                self._pantalla.blit(g, g.get_rect(center=centro))
 
             n_txt = self._font_sala_nombre.render(nombre, True, BLANCO)
             self._pantalla.blit(n_txt, (tx + tile_size + 5, ty + 5))
