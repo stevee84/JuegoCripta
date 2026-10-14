@@ -127,6 +127,31 @@ class RepositorioCatalogo:
 
         return resultado
 
+    def proteger_sala(self, sala) -> None:
+        for fid in self._fichas_de_sala(sala):
+            self._cache.fijar(fid)
+
+    def liberar_sala(self, sala) -> None:
+        for fid in self._fichas_de_sala(sala):
+            self._cache.liberar_referencia(fid)
+
+    @staticmethod
+    def _fichas_de_sala(sala):
+        ids = []
+        for e in getattr(sala, "enemigos", []):
+            fid = getattr(e, "tipo_ficha_id", None)
+            if fid:
+                ids.append(fid)
+        for o in getattr(sala, "objetos", []):
+            fid = getattr(o, "tipo_ficha_id", None)
+            if fid:
+                ids.append(fid)
+        for t in getattr(sala, "trampas", []):
+            fid = getattr(t, "tipo_ficha_id", None) or getattr(t, "tipo", None)
+            if fid:
+                ids.append(fid)
+        return ids
+
     def version_catalogo(self) -> str:
         try:
             return self._obtener_version() or ""

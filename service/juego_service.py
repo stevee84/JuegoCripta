@@ -4,11 +4,11 @@ import tempfile
 import zlib
 
 from datos.registro_partida import RegistroPartida
-from datos.cliente_api import ClienteAPI, CriptaAPIError
+from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
-from logica.cache_catalogo import DUEÑO_SALA
+from logica.cache_catalogo import DUEÑO_EN_USO
 from logica.inventario import Inventario
 from logica.historial_reversible import HistorialReversible
 from logica.servicio_inventario import ServicioInventario
@@ -54,7 +54,7 @@ class JuegoService:
             self._versiones = None
             self._acciones_coordinadas = 0
             self._resultado_registrado = None
-            self._sincronizar_sala()
+            self._sincronizar_fichas_en_uso()
             return estado
         if self._fuente is None:
             raise ValueError("No hay una fuente de datos conectada.")
@@ -136,7 +136,7 @@ class JuegoService:
         catalogo = getattr(estado, "catalogo_inicial", None)
         if catalogo is not None:
             self.conectar_inventario(inventario, catalogo)
-        self._sincronizar_sala()
+        self._sincronizar_fichas_en_uso()
         return estado
 
     def conectar_inventario(self, inventario, catalogo, historial=None, adaptador=None):
@@ -254,6 +254,24 @@ class JuegoService:
             else:
                 del estado.servicio_inventario
 
+    def _resolver_catalogo(self, ids):
+        """Caché primero; a la fuente solo los faltantes, en lotes del máximo del API."""
+        entidades = []
+        faltantes = []
+        for ficha_id in ids:
+            ficha = self._cache.obtener(ficha_id) if self._cache is not None else None
+            if ficha is None:
+                faltantes.append(ficha_id)
+            else:
+                entidades.append(ficha)
+        for inicio in range(0, len(faltantes), MAX_IDS_POR_SOLICITUD):
+            respuesta = self._fuente.obtener_catalogo(faltantes[inicio:inicio + MAX_IDS_POR_SOLICITUD])
+            for ficha in respuesta.get("entidades", []):
+                entidades.append(ficha)
+                if self._cache is not None:
+                    self._cache.insertar(ficha["id"], ficha)
+        return {"entidades": entidades}
+
     def _catalogo_para_carga(self, datos):
         from service.restaurador_partida import RestauradorPartida
 
@@ -264,7 +282,7 @@ class JuegoService:
                 raise ValueError("Los datos parciales no identifican versiones compatibles de las fichas.")
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones de cripta o catálogo no coinciden con el guardado.")
-            catalogo = self._fuente.obtener_catalogo(ids)
+            catalogo = self._resolver_catalogo(ids)
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones cambiaron durante la carga.")
             return catalogo
@@ -315,7 +333,7 @@ class JuegoService:
                 self._cache.liberar_referencia(ficha_id)
         operaciones._cache = self._cache
         operaciones.sincronizar_referencias()
-        self._sincronizar_sala()
+        self._sincronizar_fichas_en_uso()
         self._versiones = (estado.version_cripta, estado.version_catalogo)
         self._versiones_exigidas = None
         self._semilla = estado.semilla
@@ -533,7 +551,7 @@ class JuegoService:
             inventario._cursor = cursor
             nodo.valor.ficha = ficha_anterior
         if resultado.exito:
-            self._sincronizar_sala()
+            self._sincronizar_fichas_en_uso()
         if resultado.exito and self._operaciones_inventario is not None:
             try:
                 self._operaciones_inventario.sincronizar_referencias()
@@ -541,21 +559,28 @@ class JuegoService:
                 resultado.mensaje += f"; no se actualizaron referencias de caché: {error}"
         return self._cerrar_accion(accion_log, resultado)
 
-    def _sincronizar_sala(self):
-        """§4.4: solo las fichas de la sala actual quedan fijadas como dueño "sala"."""
+    @staticmethod
+    def fichas_en_uso(estado):
+        """§4.4 sin el inventario (lo fija ServicioInventario): enemigos vivos
+        de la cripta, objetos del suelo y trampas de la sala actual."""
+        sala = estado.jugador.sala_actual if estado.jugador is not None else None
+        fichas = []
+        for otra in estado.mapa.obtener_salas() if estado.mapa is not None else []:
+            fichas += [e.tipo_ficha_id for e in otra.enemigos if e.esta_vivo()]
+        if sala is not None:
+            fichas += [o.tipo_ficha_id for o in sala.objetos]
+            fichas += [t.tipo for t in sala.trampas]
+        return [f for f in fichas if f]
+
+    def _sincronizar_fichas_en_uso(self):
         if self._cache is None:
             return
-        self._cache.liberar_dueño(DUEÑO_SALA)
+        self._cache.liberar_dueño(DUEÑO_EN_USO)
         estado = self.obtener_estado()
-        sala = estado.jugador.sala_actual if estado is not None and estado.jugador is not None else None
-        if sala is None:
+        if estado is None:
             return
-        fichas = [e.tipo_ficha_id for e in sala.enemigos]
-        fichas += [o.tipo_ficha_id for o in sala.objetos]
-        fichas += [t.tipo for t in sala.trampas]
-        for ficha_id in fichas:
-            if ficha_id:
-                self._cache.fijar(ficha_id, DUEÑO_SALA)
+        for ficha_id in self.fichas_en_uso(estado):
+            self._cache.fijar(ficha_id, DUEÑO_EN_USO)
 
     def _cerrar_accion(self, accion_log, resultado):
         if resultado.exito:

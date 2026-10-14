@@ -67,7 +67,7 @@ Las tres prioridades de ataque compartiendo sala se prueban separadamente en
 
 ## Identificadores
 
-El contrato oficial de `docs/enunciado.pdf`, páginas 11 y 12, publica los IDs de
+El contrato oficial de `docs/enunciado.md`, páginas 11 y 12, publica los IDs de
 sala como enteros (`sala_inicial: 1`, salas `1`, `2`, `19` y referencias
 `"sala": 2`). Los IDs de instancia de enemigos, objetos y trampas permanecen
 como cadenas (`"e-201"`, `"itm_daga_oxidada"`, `"t-17"`).
@@ -123,7 +123,7 @@ Intérprete: `/tmp/opencode/juegocripta-venv/bin/python`.
 
 ## Pendientes y alcance
 
-El enunciado completo ya está disponible en `docs/enunciado.pdf`; se contrastaron
+El enunciado completo ya está disponible en `docs/enunciado.md`; se contrastaron
 la fórmula de §2.3 y el esquema de IDs de las páginas 11 y 12.
 RETROCEDER mediante pergamino sigue sin implementarse; la reversión se verifica
 por el historial existente. No se han cambiado sus reglas, ni ampliado veneno,

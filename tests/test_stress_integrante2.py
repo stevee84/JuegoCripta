@@ -7,6 +7,7 @@ from logica.cache_catalogo import CacheCatalogo
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from datos.decodificador_datos import DecodificadorDatos
 from datos.almacen_persistente import AlmacenPersistente
+from datos.cliente_api import CriptaAPIError
 from datos.fuente_offline import FuenteOffline
 from datos.guardado_binario import GuardadoBinario
 from estructuras.lista_doble import ListaDobleImpl as ListaDobleSimple
@@ -145,8 +146,12 @@ class TestFuenteOfflineStress:
                 json.dumps({"nombre": f"item_{i}"}), encoding="utf-8"
             )
         fuente = FuenteOffline(str(tmp_path))
-        resultado = fuente.obtener_catalogo(ids)
-        assert len(resultado["entidades"]) == 100
+        entidades = []
+        for i in range(0, 100, 10):
+            entidades += fuente.obtener_catalogo(ids[i:i + 10])["entidades"]
+        assert len(entidades) == 100
+        with pytest.raises(CriptaAPIError, match="máximo 10"):
+            fuente.obtener_catalogo(ids[:11])
 
 
 class TestGuardadoBinarioStress:
