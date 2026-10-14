@@ -298,3 +298,93 @@ def test_seleccionar_objeto_del_inventario_sin_consumir_tiempo(en_tmp):
     assert "Daga oxidada" in resultado.mensaje
     assert estado.reloj == reloj
     assert not controlador.procesar_comando("seleccionar objeto:9:9").exito
+
+
+# ── Guardar y continuar (§10.2, §4.10) ────────────────────────────────
+
+def _controlador(raiz=API_REAL):
+    from controller.controlador_juego import ControladorJuego
+    from logica.historial_reversible import HistorialReversible
+    from vista.vista_consola import VistaConsola
+    controlador = ControladorJuego(MotorJuego(), VistaConsola(), FuenteOffline(str(raiz)), HistorialReversible())
+    controlador.configurar_arranque(11, CacheCatalogo(25), "partidas")
+    controlador.conectar_inicializador(InicializadorPartida(), 11)
+    return controlador
+
+
+def _jugar(controlador, pasos):
+    servicio = controlador._servicio
+    estado = servicio.obtener_estado()
+    for _ in range(pasos):
+        if not estado.partida_activa:
+            break
+        servicio.ejecutar_accion(_siguiente_accion(servicio, estado))
+
+
+def _foto(estado):
+    return (estado.jugador.sala_actual.id_sala, estado.jugador.vida, estado.reloj,
+            [o.id_instancia for o in estado.inventario.obtener_objetos()])
+
+
+def test_guardar_y_continuar_en_otro_proceso(en_tmp):
+    primero = _controlador()
+    assert primero.procesar_comando("cripta cripta-03").exito
+    _jugar(primero, 15)
+    estado = primero._servicio.obtener_estado()
+    assert estado.partida_activa
+    resultado = primero.procesar_comando("guardar")
+    assert resultado.exito and "sala" in resultado.mensaje
+    assert (en_tmp / "partidas" / "partida.bin").is_file()
+
+    segundo = _controlador()
+    assert segundo.hay_partida_guardada()
+    resultado = segundo.procesar_comando("cargar")
+    assert resultado.exito, resultado.mensaje
+    continuado = segundo._servicio.obtener_estado()
+    assert _foto(continuado) == _foto(estado)
+    reloj = continuado.reloj
+    _jugar(segundo, 30)
+    assert continuado.reloj > reloj
+
+
+def test_no_se_guarda_una_partida_terminada(en_tmp):
+    controlador = _controlador()
+    controlador.procesar_comando("cripta cripta-01")
+    controlador._servicio.obtener_estado().partida_activa = False
+    resultado = controlador.procesar_comando("guardar")
+    assert not resultado.exito and "terminó" in resultado.mensaje
+    assert not controlador.hay_partida_guardada()
+
+
+def test_archivo_corrupto_no_se_ofrece_para_continuar(en_tmp):
+    (en_tmp / "partidas").mkdir()
+    (en_tmp / "partidas" / "partida.bin").write_bytes(b"CRPT basura")
+    controlador = _controlador()
+    assert not controlador.hay_partida_guardada()
+    assert not controlador.procesar_comando("cargar").exito
+
+
+def test_continuar_con_version_distinta_se_rechaza(en_tmp):
+    controlador = _controlador()
+    controlador.procesar_comando("cripta cripta-01")
+    assert controlador.procesar_comando("guardar").exito
+    paquete = en_tmp / "paquete"
+    shutil.copytree(API_REAL, paquete)
+    (paquete / "cripta-01" / "version.json").write_text('{"id": "cripta-01", "version": "otra"}', encoding="utf-8")
+    otro = _controlador(paquete)
+    resultado = otro.procesar_comando("cargar")
+    assert not resultado.exito and "versi" in resultado.mensaje.lower()
+    assert otro._servicio.obtener_estado() is None
+
+
+def test_continuar_lee_fichas_del_disco_sin_pedirlas_a_la_red(en_tmp, monkeypatch):
+    primero = _controlador()
+    primero.procesar_comando("cripta cripta-02")
+    assert primero.procesar_comando("guardar").exito
+    pedidas = []
+    original = FuenteOffline.obtener_catalogo
+    monkeypatch.setattr(FuenteOffline, "obtener_catalogo",
+                        lambda self, ids: pedidas.append(list(ids)) or original(self, ids))
+    segundo = _controlador()
+    assert segundo.procesar_comando("cargar").exito
+    assert pedidas == []

@@ -208,7 +208,8 @@ def test_main_normal_respeta_semilla_y_capacidad_cache(tmp_path, monkeypatch):
     import main
 
     config = SimpleNamespace(bench=False, offline=True, replay=None,
-                             ruta_datos_offline=str(tmp_path), cache_size=9, semilla=123, vista="consola")
+                             ruta_datos_offline=str(tmp_path), cache_size=9, semilla=123, vista="consola",
+                             ruta_guardado=str(tmp_path / "partidas"))
     monkeypatch.setattr(main, "Configuracion", lambda: config)
     recibidos = []
 

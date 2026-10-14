@@ -130,8 +130,9 @@ class VistaPygame:
         self._modo = "demo"
         self._salas_visitadas = set()
 
-    def mostrar_menu_criptas(self, criptas):
-        """Muestra un menú para seleccionar cripta. Retorna el id seleccionado o None."""
+    def mostrar_menu_criptas(self, criptas, opcion_continuar=None):
+        """Retorna el id de la cripta elegida, ``opcion_continuar`` si se elige
+        continuar la partida guardada, o None si se cierra la ventana."""
         seleccion = None
         scroll = 0
         botones_cripta = []
@@ -163,6 +164,16 @@ class VistaPygame:
 
             botones_cripta = []
             y = 130
+            if self._bitacora and self._bitacora[-1].startswith("[!]"):
+                error = self._font.render(self._bitacora[-1][:120], True, ROJO)
+                self._pantalla.blit(error, error.get_rect(centerx=self.ANCHO // 2, y=y - 22))
+            if opcion_continuar is not None:
+                btn = Boton((self.ANCHO // 2 - 200, y, 400, 50), "Continuar partida guardada",
+                            opcion_continuar, color=VERDE_OSCURO, color_texto=BLANCO)
+                btn.hover = btn.rect.collidepoint(pygame.mouse.get_pos())
+                btn.dibujar(self._pantalla, self._font_med)
+                botones_cripta.append(btn)
+                y += 75
             visibles = criptas[scroll:scroll + 8]
             for i, c in enumerate(visibles):
                 cid = c.get("id", c.get("cripta_id", f"cripta_{i}"))
@@ -250,7 +261,7 @@ class VistaPygame:
         barra_y = zona_bottom - self.BTN_H
         bw = self.BTN_W
         gap = self.BTN_GAP
-        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar partida.bin", NARANJA))
+        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar", NARANJA, enabled=activa))
         self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
 
     def _colocar_fila(self, items, px, panel_w, y):
@@ -360,7 +371,7 @@ class VistaPygame:
     def _color_sala_minimapa(self, sid, sala, es_actual):
         if es_actual:
             return (30, 180, 60), VERDE
-        if sid not in self._salas_visitadas:
+        if sid not in self._salas_visitadas and sala.ultimo_rastro is None:
             return (18, 18, 28), (35, 35, 50)
         if self._sala_limpia(sala):
             return (30, 60, 45), (60, 160, 90)
@@ -816,9 +827,9 @@ class VistaPygame:
             if salir_solicitado:
                 decision = self._dialogo_salir(controlador)
                 if decision == "guardar":
-                    controlador.procesar_comando("guardar partida.bin")
-                    self._pantalla_metricas(controlador)
-                    self._corriendo = False
+                    if controlador.procesar_comando("guardar").exito:
+                        self._pantalla_metricas(controlador)
+                        self._corriendo = False
                 elif decision == "salir":
                     self._pantalla_metricas(controlador)
                     self._corriendo = False

@@ -113,12 +113,22 @@ equipar o retroceder, y fuera de un intervalo abierto.
 - Objetos: `usar [ID]`, `retroceder [ID]`.
 - Registro: `registro RUTA`, antes de la primera acción.
 - Exportación parcial: `exportar_parcial RUTA`.
-- Guardado/carga: `guardar RUTA`, `cargar RUTA` (comillas si hay espacios).
+- Guardado/carga: `guardar [RUTA]`, `cargar [RUTA]`. Sin ruta se usa
+  `partidas/partida.bin` (`Configuracion.ruta_guardado`).
+- Inventario: `seleccionar ID` mueve el cursor sin consumir tiempo.
 - Sesión: `salir`.
 
 `guardar` utiliza el binario v5 de Steven y valida su reconstrucción antes
 de reemplazar el archivo. Se guarda entre decisiones, fuera de una acción
-en curso; el archivo anterior se conserva ante errores.
+en curso; el archivo anterior se conserva ante errores. Una partida ya
+terminada (victoria o derrota) no se guarda.
+
+Continuar: en pygame, si existe `partidas/partida.bin` legible, el menú
+inicial ofrece "Continuar partida guardada"; en consola se indica escribir
+`cargar`. Al cargar se vuelve a aplicar el `presupuesto_solicitudes` de la
+cripta (§5.1) y las fichas se resuelven memoria → `partidas/catalogo/` →
+red, en lotes de 10 (§4.3). Si la versión de cripta o catálogo cambió, la
+carga se rechaza y se vuelve al menú.
 
 `cargar` restaura entidades y referencias, agenda, estado del azar,
 equipo/bonos, efectos, botín, rastro, puertas, salida y sesión. El equipo

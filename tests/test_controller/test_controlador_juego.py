@@ -146,7 +146,7 @@ def test_carga_invalida_no_modifica_estado(controlador):
     antes = pickle.dumps(controlador._motor.estado)
     resultado = controlador.procesar_comando("cargar ausente.dat")
     assert not resultado.exito
-    assert "No se pudo leer" in resultado.mensaje
+    assert "No hay una partida guardada en ausente.dat" in resultado.mensaje
     assert pickle.dumps(controlador._motor.estado) == antes
 
 
