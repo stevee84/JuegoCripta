@@ -1,5 +1,6 @@
 import json
 
+from configuracion import RUTA_DATOS_OFFLINE
 from datos.fuente_offline import FuenteOffline
 from logica.motor_juego import MotorJuego
 from service.juego_service import JuegoService
@@ -33,7 +34,7 @@ class EjecutorReplay:
         if servicio is None:
             from service.inicializador_partida import InicializadorPartida
 
-            servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline("datos/"))
+            servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline(RUTA_DATOS_OFFLINE))
             servicio.conectar_inicializador(InicializadorPartida())
         elif servicio.tiene_registro():
             # Nunca inicializar ni registrar replay sobre la partida normal
@@ -46,7 +47,7 @@ class EjecutorReplay:
             compatibles = False
         if not compatibles:
             # Solo la copia local existente; no adivinar URLs ni versiones.
-            fuente_local = FuenteOffline("datos/")
+            fuente_local = FuenteOffline(RUTA_DATOS_OFFLINE)
             candidato = servicio.crear_servicio_replay(fuente=fuente_local)
             try:
                 compatibles = candidato.preparar_inicio(cabecera["cripta_id"]) == esperadas

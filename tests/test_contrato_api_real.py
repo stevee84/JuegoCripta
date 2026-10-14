@@ -1,0 +1,217 @@
+"""Contrato contra respuestas reales del API (tests/fixtures/api_real).
+
+Las fixtures se regeneran con: python -m tests.fixtures.capturar_api
+Si el API cambia de forma, estos tests fallan antes de que falle el juego.
+"""
+import json
+import shutil
+from pathlib import Path
+
+import pytest
+
+from datos.cliente_api import CriptaAPIError
+from datos.fuente_offline import FuenteOffline
+from datos.guardado_binario import GuardadoBinario
+from logica.cache_catalogo import CacheCatalogo
+from logica.motor_juego import MotorJuego
+from service.inicializador_partida import InicializadorPartida
+from service.juego_service import JuegoService
+
+API_REAL = Path(__file__).parent / "fixtures" / "api_real"
+CRIPTAS = [c["id"] for c in json.loads((API_REAL / "criptas.json").read_text(encoding="utf-8"))["criptas"]]
+PASOS = 120
+
+
+def _leer(ruta):
+    return json.loads(ruta.read_text(encoding="utf-8"))
+
+
+def _contenido_real(cripta_id):
+    registros = {}
+    for archivo in (API_REAL / cripta_id).glob("contenido_*.json"):
+        for registro in _leer(archivo)["contenido"]:
+            registros[registro["sala"]] = registro
+    return registros
+
+
+def _fichas_sala(sala):
+    ids = {e.tipo_ficha_id for e in sala.enemigos}
+    ids |= {o.tipo_ficha_id for o in sala.objetos}
+    ids |= {t.tipo for t in sala.trampas}
+    return ids
+
+
+@pytest.fixture
+def en_tmp(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    return tmp_path
+
+
+def _servicio(cache=None):
+    servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline(str(API_REAL)),
+                            cache=cache or CacheCatalogo(25))
+    servicio.conectar_inicializador(InicializadorPartida())
+    return servicio
+
+
+def _siguiente_accion(servicio, estado):
+    sala = estado.jugador.sala_actual
+    vivos = [e for e in sala.enemigos if e.esta_vivo()]
+    if vivos:
+        return servicio.resolver_accion("ATACAR", objetivo=vivos[0].id_actor)
+    if sala.objetos and estado.inventario.get_cantidad() < 5:
+        return servicio.resolver_accion("RECOGER", objetivo=sala.objetos[0].id_instancia)
+    puerta = sala.puertas[estado.azar.randrange(len(sala.puertas))]
+    return servicio.resolver_accion("MOVER" if puerta.abierta else "ABRIR", direccion=puerta.direccion)
+
+
+def _verificar_fijadas(servicio, estado):
+    cache = servicio._cache
+    assert cache.fichas_fijadas("sala") == _fichas_sala(estado.jugador.sala_actual)
+    inventario = {o.tipo_ficha_id for o in estado.inventario.obtener_objetos()}
+    assert inventario <= cache.fichas_fijadas()
+
+
+# ── Forma de las respuestas ───────────────────────────────────────────
+
+@pytest.mark.parametrize("cripta_id", CRIPTAS)
+def test_forma_de_generales_salas_y_contenido(cripta_id):
+    generales = _leer(API_REAL / cripta_id / "generales.json")
+    for clave in ("id", "version", "salas_total", "paginas", "sala_inicial", "sala_salida",
+                  "presupuesto_solicitudes", "inventario_max", "jugador"):
+        assert clave in generales, clave
+    salas = [s for p in (API_REAL / cripta_id).glob("pagina_*.json") for s in _leer(p)["salas"]]
+    assert len(salas) == generales["salas_total"]
+    for sala in salas:
+        assert type(sala["id"]) is int and isinstance(sala["salidas"], dict)
+        for direccion, salida in sala["salidas"].items():
+            assert direccion in ("N", "S", "E", "O") and type(salida["sala"]) is int
+            assert set(salida) <= {"sala", "cerrada", "llave", "cierre_automatico"}
+    contenido = _contenido_real(cripta_id)
+    assert set(contenido) == {s["id"] for s in salas}
+    for registro in contenido.values():
+        assert set(registro) == {"sala", "enemigos", "objetos", "trampas"}
+        for enemigo in registro["enemigos"]:
+            assert {"instancia", "tipo"} <= set(enemigo) <= {"instancia", "tipo", "vida"}
+        assert all(isinstance(o, (str, dict)) for o in registro["objetos"])
+        for trampa in registro["trampas"]:
+            assert {"instancia", "tipo"} <= set(trampa)
+
+
+def test_forma_del_catalogo():
+    for archivo in (API_REAL / "catalogo").glob("*.json"):
+        if archivo.name == "version.json":
+            continue
+        ficha = _leer(archivo)
+        assert {"id", "nombre", "clase"} <= set(ficha), archivo.name
+        if ficha["clase"] == "enemigo":
+            assert {"vida_max", "ataque", "defensa", "velocidad", "comportamiento"} <= set(ficha)
+        for suelta in ficha.get("suelta", []):
+            assert (API_REAL / "catalogo" / f"{suelta}.json").exists()
+
+
+# ── Fuente offline sobre el formato real ──────────────────────────────
+
+@pytest.mark.parametrize("cripta_id", CRIPTAS)
+def test_fuente_offline_lee_formato_real(cripta_id):
+    fuente = FuenteOffline(str(API_REAL))
+    esperado = _contenido_real(cripta_id)
+    ids = sorted(esperado)[:10]
+    obtenido = fuente.obtener_contenido(cripta_id, ids)["contenido"]
+    assert sorted(r["sala"] for r in obtenido) == ids
+    assert fuente.obtener_version_cripta(cripta_id) == _leer(API_REAL / cripta_id / "version.json")["version"]
+    assert fuente.obtener_version_catalogo() == _leer(API_REAL / "catalogo" / "version.json")["version"]
+    catalogo = fuente.obtener_catalogo(["itm_antorcha", "ent_rata_gigante"])
+    assert sorted(f["id"] for f in catalogo["entidades"]) == ["ent_rata_gigante", "itm_antorcha"]
+
+
+def test_fuente_offline_acepta_contenido_json_unico(tmp_path):
+    destino = tmp_path / "paquete"
+    shutil.copytree(API_REAL, destino)
+    registros = list(_contenido_real("cripta-01").values())
+    for archivo in (destino / "cripta-01").glob("contenido_*.json"):
+        archivo.unlink()
+    (destino / "cripta-01" / "contenido.json").write_text(json.dumps({"contenido": registros}), encoding="utf-8")
+    (destino / "cripta-01" / "version.json").unlink()
+    (destino / "cripta-01" / "version.txt").write_text("v-txt", encoding="utf-8")
+    fuente = FuenteOffline(str(destino))
+    assert len(fuente.obtener_contenido("cripta-01", [1, 2, 3])["contenido"]) == 3
+    assert fuente.obtener_version_cripta("cripta-01") == "v-txt"
+
+
+@pytest.mark.parametrize("archivo", ["generales.json", "pagina_1.json", "contenido_1_2_3_4_5_6.json", "version.json"])
+def test_fuente_offline_falla_claro_si_falta_un_archivo(tmp_path, archivo):
+    destino = tmp_path / "paquete"
+    shutil.copytree(API_REAL, destino)
+    (destino / "cripta-01" / archivo).unlink()
+    fuente = FuenteOffline(str(destino))
+    llamadas = {
+        "generales.json": lambda: fuente.obtener_generales("cripta-01"),
+        "pagina_1.json": lambda: fuente.obtener_pagina("cripta-01", 1),
+        "contenido_1_2_3_4_5_6.json": lambda: fuente.obtener_contenido("cripta-01", [1]),
+        "version.json": lambda: fuente.obtener_version_cripta("cripta-01"),
+    }
+    with pytest.raises(CriptaAPIError, match="cripta-01"):
+        llamadas[archivo]()
+
+
+# ── Extremo a extremo ─────────────────────────────────────────────────
+
+@pytest.mark.parametrize("cripta_id", CRIPTAS)
+def test_partida_completa_con_datos_reales(cripta_id, en_tmp):
+    servicio = _servicio()
+    estado = servicio.iniciar_partida(cripta_id)
+    esperado = _contenido_real(cripta_id)
+    for sala_id, registro in esperado.items():
+        sala = estado.mapa.obtener_sala(sala_id)
+        assert len(sala.enemigos) == len(registro["enemigos"])
+        assert len(sala.objetos) == len(registro["objetos"])
+        assert len(sala.trampas) == len(registro["trampas"])
+    _verificar_fijadas(servicio, estado)
+
+    for _ in range(PASOS):
+        if not estado.partida_activa:
+            break
+        servicio.ejecutar_accion(_siguiente_accion(servicio, estado))
+        _verificar_fijadas(servicio, estado)
+
+    ruta = en_tmp / "partida.bin"
+    servicio.guardar_partida(str(ruta), GuardadoBinario())
+    assert GuardadoBinario().leer_sala(str(ruta), estado.jugador.sala_actual.id_sala) is not None
+
+    otro = _servicio()
+    cargado = otro.cargar_partida(str(ruta))
+    assert cargado.jugador.sala_actual.id_sala == estado.jugador.sala_actual.id_sala
+    assert cargado.jugador.vida == estado.jugador.vida
+    assert ([o.id_instancia for o in cargado.inventario.obtener_objetos()]
+            == [o.id_instancia for o in estado.inventario.obtener_objetos()])
+    _verificar_fijadas(otro, cargado)
+
+
+# ── Caché: fijación por dueño ─────────────────────────────────────────
+
+def test_cache_ficha_compartida_por_dos_duenos_no_se_desaloja():
+    cache = CacheCatalogo(3)
+    cache.insertar("pocion", {"id": "pocion"})
+    cache.fijar("pocion")
+    cache.fijar("pocion", "sala")
+    cache.liberar_referencia("pocion", "sala")
+    for ficha_id in "abc":
+        cache.insertar(ficha_id, {"id": ficha_id})
+    assert cache.obtener("pocion") is not None
+    assert cache.fichas_fijadas() == {"pocion"}
+    assert cache.fichas_fijadas("sala") == set()
+
+
+def test_cache_fijar_es_idempotente_por_dueno_y_liberar_dueno():
+    cache = CacheCatalogo(2)
+    cache.fijar("a", "sala")
+    cache.fijar("a", "sala")
+    cache.fijar("b", "sala")
+    cache.fijar("b")
+    cache.liberar_referencia("a", "sala")
+    assert cache.fichas_fijadas() == {"b"}
+    cache.liberar_dueño("sala")
+    assert cache.fichas_fijadas() == {"b"}
+    cache.liberar_referencia("b")
+    assert cache.fichas_fijadas() == set()

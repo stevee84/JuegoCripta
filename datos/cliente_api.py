@@ -32,13 +32,10 @@ class ClienteAPI(FuenteDatos):
 
         for intento in range(self._MAX_REINTENTOS + 1):
             if self._presupuesto is not None:
-<<<<<<< HEAD
                 if self._presupuesto.agotado():
                     raise CriptaAPIError(
                         f"Presupuesto agotado antes de solicitar {url}"
                     )
-=======
->>>>>>> b0e052b (ClienteAPI: contar cada reintento HTTP como solicitud individual)
                 self._presupuesto.registrar_intento()
             try:
                 resp = requests.request(

@@ -22,7 +22,7 @@ def test_argumentos_predeterminados_y_rutas_se_conservan(monkeypatch):
     assert config.demo is False
     assert config.semilla is None
     assert "cripta-api" in config.url_api
-    assert config.ruta_datos_offline == "datos/"
+    assert config.ruta_datos_offline == "datos_offline/"
     assert config.ruta_guardado == "partidas/"
     assert config.ruta_puntajes == "puntajes.dat"
 

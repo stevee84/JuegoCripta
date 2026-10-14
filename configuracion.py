@@ -2,6 +2,9 @@
 
 import argparse
 
+URL_API = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
+RUTA_DATOS_OFFLINE = "datos_offline/"
+
 
 def parsear_argumentos():
     parser = argparse.ArgumentParser(description="CRIPTA")
@@ -31,7 +34,7 @@ class Configuracion:
         self.bench: bool = args.bench
         self.vista: str = getattr(args, "vista", "pygame")
         self.semilla: int | None = args.semilla
-        self.url_api: str = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
-        self.ruta_datos_offline: str = "datos/"
+        self.url_api: str = URL_API
+        self.ruta_datos_offline: str = RUTA_DATOS_OFFLINE
         self.ruta_guardado: str = "partidas/"
         self.ruta_puntajes: str = "puntajes.dat"

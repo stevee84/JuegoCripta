@@ -21,7 +21,7 @@ from tests.test_service.test_reanudacion_v5 import firma
 @pytest.fixture
 def paquete(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    datos = tmp_path / "datos"
+    datos = tmp_path / "datos_offline"
     (datos / "c1").mkdir(parents=True)
     (datos / "catalogo").mkdir()
     generales = {

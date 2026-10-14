@@ -8,6 +8,7 @@ from datos.cliente_api import ClienteAPI, CriptaAPIError
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
+from logica.cache_catalogo import DUEÑO_SALA
 from logica.inventario import Inventario
 from logica.historial_reversible import HistorialReversible
 from logica.servicio_inventario import ServicioInventario
@@ -53,6 +54,7 @@ class JuegoService:
             self._versiones = None
             self._acciones_coordinadas = 0
             self._resultado_registrado = None
+            self._sincronizar_sala()
             return estado
         if self._fuente is None:
             raise ValueError("No hay una fuente de datos conectada.")
@@ -60,7 +62,10 @@ class JuegoService:
         # contrato confirmado para páginas, jugador inicial o sala inicial.
         # No elegir una sala arbitraria ni inventar estadísticas por defecto.
         if self._inicializador is None:
-            generales = self._fuente.obtener_generales(cripta_id)
+            try:
+                generales = self._fuente.obtener_generales(cripta_id)
+            except CriptaAPIError as error:
+                raise ValueError(f"Inicialización bloqueada: {error}") from error
             if not isinstance(generales, dict) or "inventario_max" not in generales:
                 raise ValueError("Inicialización bloqueada: generales no contiene inventario_max.")
             capacidad = generales["inventario_max"]
@@ -125,17 +130,13 @@ class JuegoService:
         self._error_registro = None
         self._operaciones_inventario = None
         self._resultado_registrado = None
-        if self._cache is not None:
-            for fid in list(self._cache._fijados):
-                self._cache.liberar_referencia(fid)
-            if estado.jugador.sala_actual is not None:
-                self._proteger_sala(estado.jugador.sala_actual)
-        catalogo = getattr(estado, "catalogo_inicial", None)
-        if catalogo is not None:
-            self.conectar_inventario(inventario, catalogo)
         if operaciones_anteriores is not None and operaciones_anteriores._cache is not None:
             for ficha_id in operaciones_anteriores._fijadas:
                 operaciones_anteriores._cache.liberar_referencia(ficha_id)
+        catalogo = getattr(estado, "catalogo_inicial", None)
+        if catalogo is not None:
+            self.conectar_inventario(inventario, catalogo)
+        self._sincronizar_sala()
         return estado
 
     def conectar_inventario(self, inventario, catalogo, historial=None, adaptador=None):
@@ -314,6 +315,7 @@ class JuegoService:
                 self._cache.liberar_referencia(ficha_id)
         operaciones._cache = self._cache
         operaciones.sincronizar_referencias()
+        self._sincronizar_sala()
         self._versiones = (estado.version_cripta, estado.version_catalogo)
         self._versiones_exigidas = None
         self._semilla = estado.semilla
@@ -530,11 +532,8 @@ class JuegoService:
         if nodo is not None and not resultado.exito:
             inventario._cursor = cursor
             nodo.valor.ficha = ficha_anterior
-        if resultado.exito and accion.tipo == "MOVER" and self._cache is not None:
-            nueva_sala = estado.jugador.sala_actual
-            if sala is not nueva_sala:
-                self._liberar_sala(sala)
-                self._proteger_sala(nueva_sala)
+        if resultado.exito:
+            self._sincronizar_sala()
         if resultado.exito and self._operaciones_inventario is not None:
             try:
                 self._operaciones_inventario.sincronizar_referencias()
@@ -542,30 +541,21 @@ class JuegoService:
                 resultado.mensaje += f"; no se actualizaron referencias de caché: {error}"
         return self._cerrar_accion(accion_log, resultado)
 
-    @staticmethod
-    def _fichas_de_sala(sala):
-        ids = []
-        for e in getattr(sala, "enemigos", []):
-            fid = getattr(e, "tipo_ficha_id", None)
-            if fid:
-                ids.append(fid)
-        for o in getattr(sala, "objetos", []):
-            fid = getattr(o, "tipo_ficha_id", None)
-            if fid:
-                ids.append(fid)
-        for t in getattr(sala, "trampas", []):
-            fid = getattr(t, "tipo_ficha_id", None) or getattr(t, "tipo", None)
-            if fid:
-                ids.append(fid)
-        return ids
-
-    def _proteger_sala(self, sala):
-        for fid in self._fichas_de_sala(sala):
-            self._cache.fijar(fid)
-
-    def _liberar_sala(self, sala):
-        for fid in self._fichas_de_sala(sala):
-            self._cache.liberar_referencia(fid)
+    def _sincronizar_sala(self):
+        """§4.4: solo las fichas de la sala actual quedan fijadas como dueño "sala"."""
+        if self._cache is None:
+            return
+        self._cache.liberar_dueño(DUEÑO_SALA)
+        estado = self.obtener_estado()
+        sala = estado.jugador.sala_actual if estado is not None and estado.jugador is not None else None
+        if sala is None:
+            return
+        fichas = [e.tipo_ficha_id for e in sala.enemigos]
+        fichas += [o.tipo_ficha_id for o in sala.objetos]
+        fichas += [t.tipo for t in sala.trampas]
+        for ficha_id in fichas:
+            if ficha_id:
+                self._cache.fijar(ficha_id, DUEÑO_SALA)
 
     def _cerrar_accion(self, accion_log, resultado):
         if resultado.exito:

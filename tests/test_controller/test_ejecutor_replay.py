@@ -18,7 +18,7 @@ from vista.vista_consola import VistaConsola
 @pytest.fixture
 def contexto(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    datos = tmp_path / "datos"
+    datos = tmp_path / "datos_offline"
     (datos / "c1").mkdir(parents=True)
     (datos / "catalogo").mkdir()
     (datos / "c1/version.txt").write_text("v1", encoding="utf-8")
@@ -210,7 +210,7 @@ def test_version_cambiada_antes_de_inicializar_no_publica_otra_partida(contexto,
         versiones = original(cripta_id)
         consultas.append(versiones)
         if len(consultas) == 1:
-            with open("datos/c1/version.txt", "w", encoding="utf-8") as archivo:
+            with open("datos_offline/c1/version.txt", "w", encoding="utf-8") as archivo:
                 archivo.write("v2")
         return versiones
 

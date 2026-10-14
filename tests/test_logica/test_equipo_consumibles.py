@@ -234,11 +234,11 @@ def test_referencias_protegidas_incluyen_objetos_del_historial(contexto):
     objeto = agregar(inv, "f1")
     registrar(historial, servicio.soltar(estado.jugador.sala_actual))
     servicio.sincronizar_referencias()
-    assert "f1" in cache._fijados
+    assert "f1" in cache.fichas_fijadas()
     assert historial.deshacer_ultimo(estado)
     assert servicio.soltar(estado.jugador.sala_actual).exito
     servicio.sincronizar_referencias()
-    assert "f1" not in cache._fijados
+    assert "f1" not in cache.fichas_fijadas()
 
 
 @pytest.mark.parametrize("ficha, dependencia", [

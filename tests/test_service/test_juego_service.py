@@ -157,7 +157,7 @@ def test_fuente_offline_y_versiones_reales(tmp_path):
     servicio = JuegoService(fuente=FuenteOffline(str(tmp_path)))
     assert servicio.listar_criptas() == [{"id": "c1"}]
     assert servicio.obtener_versiones("c1") == ("v1", "cat1")
-    with pytest.raises(ValueError, match="versiones"):
+    with pytest.raises(ValueError, match="inexistente"):
         servicio.obtener_versiones("inexistente")
 
 
@@ -166,7 +166,7 @@ def test_inicializacion_sin_esquema_falla_sin_reemplazar_la_partida(tmp_path):
     servicio = JuegoService(motor=motor, fuente=FuenteOffline(str(tmp_path)))
     estado = motor.estado
     antes = pickle.dumps(estado)
-    with pytest.raises(ValueError, match="inventario_max"):
+    with pytest.raises(ValueError, match="generales"):
         servicio.iniciar_partida("c1")
     assert motor.estado is estado
     assert pickle.dumps(estado) == antes

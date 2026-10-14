@@ -5,6 +5,7 @@ import struct
 import tempfile
 from pathlib import Path
 
+from datos.cliente_api import CriptaAPIError
 from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
 from dto.accion import ResultadoAccion
@@ -86,21 +87,26 @@ class ControladorJuego:
         finally:
             self._en_ejecucion = False
 
-    def _mostrar_metricas(self) -> None:
+    def lineas_metricas(self) -> list[str]:
         metricas = self._servicio.obtener_metricas()
-        if not metricas:
-            return
-        lineas = ["--- Métricas de partida ---"]
+        lineas = []
         if "cache" in metricas:
             c = metricas["cache"]
-            lineas.append(f"Caché: {c['aciertos']} aciertos, {c['fallos']} fallos, tasa {c['tasa_acierto']:.0%}, {c['tamano']}/{c['capacidad']} entradas, {c['fijados']} fijadas")
+            lineas.append(f"Caché: {c['precargadas']} fichas cargadas al inicio, "
+                          f"{c['tamano']}/{c['capacidad']} en memoria, {c['fijados']} fijadas")
+            lineas.append(f"Consultas durante la partida: {c['aciertos']} aciertos, {c['fallos']} fallos")
         if "presupuesto" in metricas:
             p = metricas["presupuesto"]
             lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes usadas, {p['restantes']} restantes")
         if "partida" in metricas:
             pt = metricas["partida"]
             lineas.append(f"Partida: {pt['acciones']} acciones, {pt['enemigos_derrotados']} enemigos derrotados, reloj {pt['reloj']}")
-        self._vista.mostrar_mensaje("\n".join(lineas))
+        return lineas
+
+    def _mostrar_metricas(self) -> None:
+        lineas = self.lineas_metricas()
+        if lineas:
+            self._vista.mostrar_mensaje("\n".join(["--- Métricas de partida ---", *lineas]))
 
     def _iniciar_pygame(self, estado) -> None:
         if estado is None and self._fuente is not None:
@@ -244,7 +250,7 @@ class ControladorJuego:
                 resultado = ResultadoAccion(True, "Partida cargada; historial anterior vacío, nuevas acciones reversibles.")
             else:
                 raise ValueError("Comando desconocido. Consulta ayuda.")
-        except (ValueError, TypeError, OSError, NotImplementedError, struct.error) as error:
+        except (ValueError, TypeError, OSError, NotImplementedError, struct.error, CriptaAPIError) as error:
             resultado = ResultadoAccion(False, str(error))
 
         try:

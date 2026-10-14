@@ -353,10 +353,25 @@ class VistaPygame:
         if not posiciones:
             return
 
-        min_x = min(p[0] for p in posiciones.values())
-        max_x = max(p[0] for p in posiciones.values())
-        min_y = min(p[1] for p in posiciones.values())
-        max_y = max(p[1] for p in posiciones.values())
+        jx, jy = posiciones[sala_actual.id_sala]
+        cell_ideal = 100
+        gap = 8
+        espacio_w = self.MAPA_ANCHO - 40
+        espacio_h = self.ALTO - self.BITACORA_ALTO - 80
+        max_cols = max(1, espacio_w // (cell_ideal + gap))
+        max_rows = max(1, espacio_h // (cell_ideal + gap))
+        radio_x = max_cols // 2
+        radio_y = max_rows // 2
+
+        visibles = {sid: (gx, gy) for sid, (gx, gy) in posiciones.items()
+                    if abs(gx - jx) <= radio_x and abs(gy - jy) <= radio_y}
+        if not visibles:
+            visibles = {sala_actual.id_sala: (jx, jy)}
+
+        min_x = min(p[0] for p in visibles.values())
+        max_x = max(p[0] for p in visibles.values())
+        min_y = min(p[1] for p in visibles.values())
+        max_y = max(p[1] for p in visibles.values())
 
         rango_x = max_x - min_x + 1
         rango_y = max_y - min_y + 1
@@ -381,7 +396,7 @@ class VistaPygame:
                 did = puerta.destino_sala_id
                 if did not in visibles or did <= sid:
                     continue
-                dgx, dgy = posiciones[did]
+                dgx, dgy = visibles[did]
                 dpx = ox + (dgx - min_x) * (cell + gap)
                 dpy = oy + (dgy - min_y) * (cell + gap)
                 start = (px + cell // 2, py + cell // 2)
@@ -726,21 +741,9 @@ class VistaPygame:
             self._reloj.tick(self.FPS)
 
     def _pantalla_metricas(self, controlador):
-        metricas = controlador._servicio.obtener_metricas()
-        if not metricas:
+        lineas = controlador.lineas_metricas()
+        if not lineas:
             return
-
-        lineas = []
-        if "cache" in metricas:
-            c = metricas["cache"]
-            lineas.append(f"Cache: {c['aciertos']} aciertos, {c['fallos']} fallos, tasa {c['tasa_acierto']:.0%}")
-            lineas.append(f"  {c['tamano']}/{c['capacidad']} entradas, {c['fijados']} fijadas")
-        if "presupuesto" in metricas:
-            p = metricas["presupuesto"]
-            lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes, {p['restantes']} restantes")
-        if "partida" in metricas:
-            pt = metricas["partida"]
-            lineas.append(f"Acciones: {pt['acciones']}   Enemigos: {pt['enemigos_derrotados']}   Reloj: {pt['reloj']}")
 
         esperando = True
         inicio = pygame.time.get_ticks()
