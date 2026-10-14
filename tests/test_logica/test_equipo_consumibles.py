@@ -25,7 +25,7 @@ def contexto():
         "f1": {"clase": "arma", "ataque_bonus": 4, "peso": 2, "valor": 8, "nombre": "Zeta"},
         "f2": {"clase": "arma", "ataque_bonus": 7, "peso": 2, "valor": 1, "nombre": "Alfa"},
         "f3": {"clase": "armadura", "defensa_bonus": 6, "peso": 1, "valor": 8, "nombre": "Beta"},
-        "f4": {"clase": "pocion", "curacion": 9},
+        "f4": {"clase": "pocion", "cura": 9},
         "f5": {"clase": "pergamino_retroceso"},
         "f6": {"clase": "llave", "abre": "p"},
     }
@@ -112,7 +112,7 @@ def test_arma_armadura_independientes_y_soltar_equipo_reversible(contexto):
 @pytest.mark.parametrize("ficha", [{"clase": "arma"}, {"clase": "arma", "ataque_bonus": -1},
                                    {"clase": "arma", "ataque_bonus": True},
                                    {"clase": "arma", "ataque_bonus": float("nan")},
-                                   {"clase": "pocion", "curacion": 9}])
+                                   {"clase": "pocion", "cura": 9}])
 def test_equipo_invalido_no_mutacion_parcial(contexto, ficha):
     estado, inv, _, servicio, fichas = contexto
     fichas["mala"] = ficha

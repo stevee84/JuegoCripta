@@ -4,7 +4,7 @@ import tempfile
 import zlib
 
 from datos.registro_partida import RegistroPartida
-from datos.cliente_api import ClienteAPI, CriptaAPIError
+from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
@@ -254,6 +254,24 @@ class JuegoService:
             else:
                 del estado.servicio_inventario
 
+    def _resolver_catalogo(self, ids):
+        """Caché primero; a la fuente solo los faltantes, en lotes del máximo del API."""
+        entidades = []
+        faltantes = []
+        for ficha_id in ids:
+            ficha = self._cache.obtener(ficha_id) if self._cache is not None else None
+            if ficha is None:
+                faltantes.append(ficha_id)
+            else:
+                entidades.append(ficha)
+        for inicio in range(0, len(faltantes), MAX_IDS_POR_SOLICITUD):
+            respuesta = self._fuente.obtener_catalogo(faltantes[inicio:inicio + MAX_IDS_POR_SOLICITUD])
+            for ficha in respuesta.get("entidades", []):
+                entidades.append(ficha)
+                if self._cache is not None:
+                    self._cache.insertar(ficha["id"], ficha)
+        return {"entidades": entidades}
+
     def _catalogo_para_carga(self, datos):
         from service.restaurador_partida import RestauradorPartida
 
@@ -264,7 +282,7 @@ class JuegoService:
                 raise ValueError("Los datos parciales no identifican versiones compatibles de las fichas.")
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones de cripta o catálogo no coinciden con el guardado.")
-            catalogo = self._fuente.obtener_catalogo(ids)
+            catalogo = self._resolver_catalogo(ids)
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones cambiaron durante la carga.")
             return catalogo

@@ -5,6 +5,7 @@ import requests
 
 from contratos.fuente_datos import FuenteDatos
 
+MAX_IDS_POR_SOLICITUD = 10
 
 
 class CriptaAPIError(Exception):

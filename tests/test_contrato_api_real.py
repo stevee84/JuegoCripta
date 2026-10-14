@@ -54,8 +54,16 @@ def _servicio(cache=None):
     return servicio
 
 
+def _es_pocion(objeto):
+    return objeto.tipo_ficha_id.startswith("itm_pocion")
+
+
 def _siguiente_accion(servicio, estado):
     sala = estado.jugador.sala_actual
+    jugador = estado.jugador
+    pociones = [o for o in estado.inventario.obtener_objetos() if _es_pocion(o)]
+    if pociones and jugador.vida <= jugador.vida_max // 2:
+        return servicio.resolver_accion("USAR", objetivo=pociones[0].id_instancia)
     vivos = [e for e in sala.enemigos if e.esta_vivo()]
     if vivos:
         return servicio.resolver_accion("ATACAR", objetivo=vivos[0].id_actor)
@@ -67,9 +75,9 @@ def _siguiente_accion(servicio, estado):
 
 def _verificar_fijadas(servicio, estado):
     cache = servicio._cache
-    assert cache.fichas_fijadas("sala") == _fichas_sala(estado.jugador.sala_actual)
+    assert cache.fichas_fijadas("sala") == sorted(_fichas_sala(estado.jugador.sala_actual))
     inventario = {o.tipo_ficha_id for o in estado.inventario.obtener_objetos()}
-    assert inventario <= cache.fichas_fijadas()
+    assert inventario <= set(cache.fichas_fijadas())
 
 
 # ── Forma de las respuestas ───────────────────────────────────────────
@@ -172,7 +180,10 @@ def test_partida_completa_con_datos_reales(cripta_id, en_tmp):
     for _ in range(PASOS):
         if not estado.partida_activa:
             break
-        servicio.ejecutar_accion(_siguiente_accion(servicio, estado))
+        accion = _siguiente_accion(servicio, estado)
+        resultado = servicio.ejecutar_accion(accion)
+        if accion.tipo == "USAR":
+            assert resultado.exito, resultado.mensaje
         _verificar_fijadas(servicio, estado)
 
     ruta = en_tmp / "partida.bin"
@@ -188,6 +199,46 @@ def test_partida_completa_con_datos_reales(cripta_id, en_tmp):
     _verificar_fijadas(otro, cargado)
 
 
+def test_pocion_real_cura_lo_que_dice_su_ficha(en_tmp):
+    servicio = _servicio()
+    estado = servicio.iniciar_partida("cripta-02")
+    origen = next(s for s in estado.mapa.obtener_salas() if any(_es_pocion(o) for o in s.objetos))
+    pocion = next(o for o in origen.objetos if _es_pocion(o))
+    origen.objetos.remove(pocion)
+    sala_actual = estado.jugador.sala_actual
+    assert not sala_actual.enemigos and not sala_actual.trampas
+    pocion.ubicacion = sala_actual.id_sala
+    sala_actual.objetos.append(pocion)
+    estado.jugador.vida = 10
+    assert servicio.ejecutar_accion(servicio.resolver_accion("RECOGER", objetivo=pocion.id_instancia)).exito
+    resultado = servicio.ejecutar_accion(servicio.resolver_accion("USAR", objetivo=pocion.id_instancia))
+    assert resultado.exito, resultado.mensaje
+    cura = _leer(API_REAL / "catalogo" / f"{pocion.tipo_ficha_id}.json")["cura"]
+    assert estado.jugador.vida == 10 + cura
+
+
+def test_adaptador_de_fichas_usa_campos_que_existen_en_el_api():
+    from logica.servicio_inventario import AdaptadorFichas
+    claves = set()
+    for archivo in (API_REAL / "catalogo").glob("*.json"):
+        if archivo.name != "version.json":
+            claves |= set(_leer(archivo))
+    faltantes = {local: real for local, real in AdaptadorFichas.CAMPOS.items() if real not in claves}
+    assert not faltantes, f"El adaptador busca campos que el API no manda: {faltantes}"
+
+
+def test_cache_no_usa_tablas_hash():
+    cache = CacheCatalogo(3)
+    for ficha_id in "abcd":
+        cache.insertar(ficha_id, {"id": ficha_id})
+    cache.fijar("a")
+    cache.fijar("a", "sala")
+    for nombre, valor in vars(cache).items():
+        assert not isinstance(valor, (dict, set, frozenset)), nombre
+    for ficha_id, dueños in cache._fijados:
+        assert isinstance(dueños, list)
+
+
 # ── Caché: fijación por dueño ─────────────────────────────────────────
 
 def test_cache_ficha_compartida_por_dos_duenos_no_se_desaloja():
@@ -199,8 +250,8 @@ def test_cache_ficha_compartida_por_dos_duenos_no_se_desaloja():
     for ficha_id in "abc":
         cache.insertar(ficha_id, {"id": ficha_id})
     assert cache.obtener("pocion") is not None
-    assert cache.fichas_fijadas() == {"pocion"}
-    assert cache.fichas_fijadas("sala") == set()
+    assert cache.fichas_fijadas() == ["pocion"]
+    assert cache.fichas_fijadas("sala") == []
 
 
 def test_cache_fijar_es_idempotente_por_dueno_y_liberar_dueno():
@@ -210,8 +261,8 @@ def test_cache_fijar_es_idempotente_por_dueno_y_liberar_dueno():
     cache.fijar("b", "sala")
     cache.fijar("b")
     cache.liberar_referencia("a", "sala")
-    assert cache.fichas_fijadas() == {"b"}
+    assert cache.fichas_fijadas() == ["b"]
     cache.liberar_dueño("sala")
-    assert cache.fichas_fijadas() == {"b"}
+    assert cache.fichas_fijadas() == ["b"]
     cache.liberar_referencia("b")
-    assert cache.fichas_fijadas() == set()
+    assert cache.fichas_fijadas() == []
