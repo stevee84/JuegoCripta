@@ -13,7 +13,7 @@ from tests.test_merge_joshua_sofia import estado_nuevo, objeto
 
 @pytest.fixture
 def partida(tmp_path):
-    datos = tmp_path / "datos"
+    datos = tmp_path / "datos_offline"
     (datos / "integracion").mkdir(parents=True)
     (datos / "catalogo").mkdir()
     (datos / "integracion/version.txt").write_text("v1", encoding="utf-8")

@@ -56,8 +56,7 @@ def online(paquete, monkeypatch):
             assert estado_red["catalogo_repositorio"], "La fábrica consultó catálogo fuera del repositorio"
             if estado_red["fallar_catalogo"]:
                 raise requests.exceptions.ConnectionError("catálogo inaccesible")
-            fichas = local.obtener_catalogo(params["ids"].split(","))
-            respuesta = {"entidades": list(fichas.values())}
+            respuesta = local.obtener_catalogo(params["ids"].split(","))
         else: raise AssertionError(ruta)
         class Respuesta:
             status_code = 200

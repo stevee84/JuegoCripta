@@ -1,86 +1,80 @@
 import json
-import os
+from pathlib import Path
 
 from contratos.fuente_datos import FuenteDatos
+from datos.cliente_api import CriptaAPIError
 from dto.sala import validar_id_sala
 
 
 class FuenteOffline(FuenteDatos):
-    """Integrante 2. Mismo contrato con respuestas leídas del paquete local."""
+    """Integrante 2. Mismo contrato que ClienteAPI, leyendo un paquete local.
+
+    Acepta el formato que deja el API (``contenido_<ids>.json``,
+    ``version.json``) y el formato compacto (``contenido.json``,
+    ``version.txt``). Un archivo requerido ausente es un error, nunca ``{}``.
+    """
 
     def __init__(self, ruta_directorio: str):
-        self._ruta = ruta_directorio
+        self._ruta = Path(ruta_directorio)
 
-    def _leer_json(self, ruta: str, por_defecto=None):
+    def _leer_json(self, ruta: Path):
         try:
-            with open(ruta, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return por_defecto
-
-    def _leer_texto(self, ruta: str) -> str | None:
-        try:
-            with open(ruta, "r", encoding="utf-8") as f:
-                return f.read().strip()
+            return json.loads(ruta.read_text(encoding="utf-8"))
         except FileNotFoundError:
-            return None
+            raise CriptaAPIError(f"Falta el archivo offline {ruta}") from None
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise CriptaAPIError(f"JSON inválido en {ruta}: {error}") from None
 
-    def listar_criptas(self) -> list:
-        return self._leer_json(
-            os.path.join(self._ruta, "criptas.json"), por_defecto=[]
-        )
+    def _leer_version(self, carpeta: Path) -> str:
+        texto = carpeta / "version.txt"
+        if texto.exists():
+            return texto.read_text(encoding="utf-8").strip()
+        datos = self._leer_json(carpeta / "version.json")
+        version = datos.get("version") if isinstance(datos, dict) else None
+        if not isinstance(version, str) or not version:
+            raise CriptaAPIError(f"Versión inválida en {carpeta / 'version.json'}")
+        return version
+
+    def listar_criptas(self):
+        ruta = self._ruta / "criptas.json"
+        return self._leer_json(ruta) if ruta.exists() else {"criptas": []}
 
     def obtener_generales(self, cripta_id: str) -> dict:
-        return self._leer_json(
-            os.path.join(self._ruta, cripta_id, "generales.json"),
-            por_defecto={},
-        )
+        return self._leer_json(self._ruta / cripta_id / "generales.json")
 
     def obtener_pagina(self, cripta_id: str, pagina: int) -> dict:
-        return self._leer_json(
-            os.path.join(self._ruta, cripta_id, f"pagina_{pagina}.json"),
-            por_defecto={},
-        )
+        return self._leer_json(self._ruta / cripta_id / f"pagina_{pagina}.json")
 
     def obtener_contenido(self, cripta_id: str, sala_ids: list[int]) -> dict:
         for sala_id in sala_ids:
             validar_id_sala(sala_id)
-        datos = self._leer_json(
-            os.path.join(self._ruta, cripta_id, "contenido.json"),
-            por_defecto={},
-        )
-        if not sala_ids:
-            return {}
-        if not datos:
-            return datos
-        contenido = datos.get("contenido")
-        if not isinstance(contenido, list):
-            return {}
-        filtrado = []
-        for registro in contenido:
-            validar_id_sala(registro.get("sala"))
-            if registro["sala"] in sala_ids:
-                filtrado.append(registro)
-        return {"contenido": filtrado}
+        carpeta = self._ruta / cripta_id
+        archivos = [carpeta / "contenido.json"]
+        if not archivos[0].exists():
+            archivos = sorted(carpeta.glob("contenido_*.json"))
+        registros = {}
+        for archivo in archivos:
+            for registro in self._leer_json(archivo).get("contenido", []):
+                validar_id_sala(registro.get("sala"))
+                registros[registro["sala"]] = registro
+        faltantes = [s for s in sala_ids if s not in registros]
+        if faltantes:
+            raise CriptaAPIError(f"Falta contenido offline de {cripta_id} para las salas {faltantes}")
+        return {"contenido": [registros[s] for s in sala_ids]}
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
-        resultado = {}
-        for fid in ids:
-            ficha = self._leer_json(
-                os.path.join(self._ruta, "catalogo", f"{fid}.json")
-            )
-            if ficha is not None:
-                resultado[fid] = ficha
-        return resultado
+        entidades = []
+        for ficha_id in ids:
+            ruta = self._ruta / "catalogo" / f"{ficha_id}.json"
+            if ruta.exists():
+                ficha = self._leer_json(ruta)
+                if ficha.setdefault("id", ficha_id) != ficha_id:
+                    raise CriptaAPIError(f"{ruta} declara el id {ficha['id']!r}")
+                entidades.append(ficha)
+        return {"entidades": entidades}
 
     def obtener_version_cripta(self, cripta_id: str) -> str:
-        v = self._leer_texto(
-            os.path.join(self._ruta, cripta_id, "version.txt")
-        )
-        return v if v is not None else ""
+        return self._leer_version(self._ruta / cripta_id)
 
     def obtener_version_catalogo(self) -> str:
-        v = self._leer_texto(
-            os.path.join(self._ruta, "catalogo", "version.txt")
-        )
-        return v if v is not None else ""
+        return self._leer_version(self._ruta / "catalogo")

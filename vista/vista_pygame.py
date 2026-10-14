@@ -741,21 +741,9 @@ class VistaPygame:
             self._reloj.tick(self.FPS)
 
     def _pantalla_metricas(self, controlador):
-        metricas = controlador._servicio.obtener_metricas()
-        if not metricas:
+        lineas = controlador.lineas_metricas()
+        if not lineas:
             return
-
-        lineas = []
-        if "cache" in metricas:
-            c = metricas["cache"]
-            lineas.append(f"Cache: {c['aciertos']} aciertos, {c['fallos']} fallos, tasa {c['tasa_acierto']:.0%}")
-            lineas.append(f"  {c['tamano']}/{c['capacidad']} entradas, {c['fijados']} fijadas")
-        if "presupuesto" in metricas:
-            p = metricas["presupuesto"]
-            lineas.append(f"Presupuesto: {p['intentos']}/{p['limite']} solicitudes, {p['restantes']} restantes")
-        if "partida" in metricas:
-            pt = metricas["partida"]
-            lineas.append(f"Acciones: {pt['acciones']}   Enemigos: {pt['enemigos_derrotados']}   Reloj: {pt['reloj']}")
 
         esperando = True
         inicio = pygame.time.get_ticks()

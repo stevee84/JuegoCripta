@@ -146,7 +146,7 @@ class TestFuenteOfflineStress:
             )
         fuente = FuenteOffline(str(tmp_path))
         resultado = fuente.obtener_catalogo(ids)
-        assert len(resultado) == 100
+        assert len(resultado["entidades"]) == 100
 
 
 class TestGuardadoBinarioStress:

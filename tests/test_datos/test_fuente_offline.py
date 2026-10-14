@@ -3,6 +3,7 @@ import os
 
 import pytest
 
+from datos.cliente_api import CriptaAPIError
 from datos.fuente_offline import FuenteOffline
 
 
@@ -27,7 +28,7 @@ def fuente(tmp_path):
     # catalogo
     cat = tmp_path / "catalogo"
     cat.mkdir()
-    (cat / "f1.json").write_text(json.dumps({"nombre": "Ficha1"}), encoding="utf-8")
+    (cat / "f1.json").write_text(json.dumps({"id": "f1", "nombre": "Ficha1"}), encoding="utf-8")
     (cat / "version.txt").write_text("v10\n", encoding="utf-8")
 
     return FuenteOffline(str(tmp_path))
@@ -42,7 +43,8 @@ def test_obtener_generales(fuente):
 
 
 def test_obtener_generales_no_existe(fuente):
-    assert fuente.obtener_generales("inexistente") == {}
+    with pytest.raises(CriptaAPIError, match="generales"):
+        fuente.obtener_generales("inexistente")
 
 
 def test_obtener_pagina(fuente):
@@ -50,7 +52,8 @@ def test_obtener_pagina(fuente):
 
 
 def test_obtener_pagina_no_existe(fuente):
-    assert fuente.obtener_pagina("c1", 99) == {}
+    with pytest.raises(CriptaAPIError, match="pagina_99"):
+        fuente.obtener_pagina("c1", 99)
 
 
 def test_obtener_contenido_filtrado(fuente):
@@ -59,14 +62,17 @@ def test_obtener_contenido_filtrado(fuente):
 
 
 def test_obtener_contenido_sin_filtro(fuente):
-    r = fuente.obtener_contenido("c1", [])
-    assert r == {}
+    assert fuente.obtener_contenido("c1", []) == {"contenido": []}
+
+
+def test_obtener_contenido_sala_faltante(fuente):
+    with pytest.raises(CriptaAPIError, match=r"\[9\]"):
+        fuente.obtener_contenido("c1", [1, 9])
 
 
 def test_obtener_catalogo(fuente):
     r = fuente.obtener_catalogo(["f1", "f_no"])
-    assert "f1" in r
-    assert "f_no" not in r
+    assert r == {"entidades": [{"id": "f1", "nombre": "Ficha1"}]}
 
 
 def test_obtener_version_cripta(fuente):
@@ -78,4 +84,11 @@ def test_obtener_version_catalogo(fuente):
 
 
 def test_version_cripta_no_existe(fuente):
-    assert fuente.obtener_version_cripta("nope") == ""
+    with pytest.raises(CriptaAPIError, match="nope"):
+        fuente.obtener_version_cripta("nope")
+
+
+def test_json_corrupto(fuente, tmp_path):
+    (tmp_path / "c1" / "generales.json").write_text("{roto", encoding="utf-8")
+    with pytest.raises(CriptaAPIError, match="JSON inválido"):
+        fuente.obtener_generales("c1")

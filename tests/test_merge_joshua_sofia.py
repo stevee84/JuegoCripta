@@ -296,10 +296,10 @@ def test_cache_fija_consumible_referenciado_por_el_historial_y_lo_libera():
     servicio._cache = cache
     servicio.conectar_inventario(estado.inventario, {"f": consumible.ficha})
     assert servicio.ejecutar_accion(Accion("USAR", consumible)).exito
-    assert "f" in cache._fijados
+    assert "f" in cache.fichas_fijadas()
     for _ in range(5):
         assert servicio.ejecutar_accion(Accion("ESPERAR")).exito
-    assert "f" not in cache._fijados
+    assert "f" not in cache.fichas_fijadas()
 
 
 def test_registro_y_replay_reproducen_acciones_y_seleccion_de_soltar(tmp_path):

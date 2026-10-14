@@ -45,7 +45,7 @@ def test_cache_actualiza_sin_reemplazar_nodo_y_mantiene_fijacion():
     cache.insertar("c", 4)
     assert cache.obtener("b") is None
     assert cache.obtener("a") == 3
-    assert nodo.valor.fijada
+    assert "a" in cache.fichas_fijadas()
     comprobar_enlaces(lista)
 
 
