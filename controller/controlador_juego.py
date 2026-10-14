@@ -7,7 +7,8 @@ import zlib
 from pathlib import Path
 
 from configuracion import ARCHIVO_PARTIDA, RUTA_GUARDADO
-from datos.cliente_api import CriptaAPIError
+from datos.cliente_api import ClienteAPI, CriptaAPIError
+from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
 from dto.accion import ResultadoAccion
@@ -155,28 +156,45 @@ class ControladorJuego:
             self._vista.mostrar_mensaje("\n".join(["--- Métricas de partida ---", *lineas]))
 
     def _iniciar_pygame(self, estado) -> None:
-        if estado is None and self._fuente is not None:
-            try:
-                resp = self._fuente.listar_criptas()
-                criptas = resp.get("criptas", resp) if isinstance(resp, dict) else resp
-                if not isinstance(criptas, list):
-                    criptas = [criptas] if criptas else []
-            except Exception as e:
-                criptas = []
-                self._vista.mostrar_mensaje(f"[!] Error listando criptas: {e}")
-            puede_continuar = self.hay_partida_guardada()
-            if criptas or puede_continuar:
-                while True:
-                    eleccion = self._vista.mostrar_menu_criptas(criptas, CONTINUAR if puede_continuar else None)
-                    if eleccion is None:
-                        return
-                    comando = "cargar" if eleccion == CONTINUAR else f"cripta {eleccion}"
-                    if self.procesar_comando(comando).exito:
-                        break
-            else:
-                self._vista.mostrar_mensaje("No se encontraron criptas. Usa --demo para jugar sin API.")
+        puede_volver = estado is None and self._fuente is not None
+        while True:
+            if estado is None and self._fuente is not None and not self._elegir_partida():
+                break
+            decision = self._vista.ejecutar(self, self._servicio.obtener_estado, puede_volver)
+            if decision != "menu":
+                break
+            self._preparar_nueva_partida()
+            self._vista.nueva_sesion()
+        self._vista.cerrar()
 
-        self._vista.ejecutar(self, lambda: self._servicio.obtener_estado())
+    def _elegir_partida(self) -> bool:
+        """Menú de criptas (y continuar); False si el jugador cierra la ventana."""
+        try:
+            resp = self._fuente.listar_criptas()
+            criptas = resp.get("criptas", resp) if isinstance(resp, dict) else resp
+            if not isinstance(criptas, list):
+                criptas = [criptas] if criptas else []
+        except Exception as e:
+            criptas = []
+            self._vista.mostrar_mensaje(f"[!] Error listando criptas: {e}")
+        while True:
+            continuar = CONTINUAR if self.hay_partida_guardada() else None
+            if not criptas and continuar is None:
+                self._vista.mostrar_mensaje("No se encontraron criptas. Usa --demo para jugar sin API.")
+                return True
+            eleccion = self._vista.mostrar_menu_criptas(criptas, continuar)
+            if eleccion is None:
+                return False
+            comando = "cargar" if eleccion == CONTINUAR else f"cripta {eleccion}"
+            if self.procesar_comando(comando).exito:
+                return True
+
+    def _preparar_nueva_partida(self) -> None:
+        """El jugador eligió volver al menú: la partida anterior se descarta y
+        el presupuesto vuelve a contar desde cero (§5.1, por partida)."""
+        self._historial = None
+        if isinstance(self._fuente, ClienteAPI):
+            self._fuente._presupuesto = PresupuestoSolicitudes()
 
     def procesar_comando(self, comando: str):
         try:
