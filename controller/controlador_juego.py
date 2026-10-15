@@ -131,12 +131,15 @@ class ControladorJuego:
             actual = self._servicio.obtener_estado()
             if actual is not None:
                 self._vista.mostrar_estado(actual)
+            final_mostrado = None
             while self._en_ejecucion:
                 actual = self._servicio.obtener_estado()
-                if actual is not None:
-                    if not actual.partida_activa:
-                        self._mostrar_metricas()
-                        break
+                if actual is not None and not actual.partida_activa and actual is not final_mostrado:
+                    self._mostrar_metricas()
+                    self._vista.mostrar_mensaje(
+                        "Puedes consultar estado, puntajes o bitacora; iniciar cripta ID, cargar o salir."
+                    )
+                    final_mostrado = actual
                 comando = self._vista.leer_comando()
                 self.procesar_comando(comando)
         except (EOFError, KeyboardInterrupt):
@@ -321,11 +324,13 @@ class ControladorJuego:
                 self._en_ejecucion = False
                 resultado = ResultadoAccion(True, "Consola cerrada.")
             elif operacion == "cripta":
-                if self._historial is not None and (
+                if (anterior is None or anterior.partida_activa) and self._historial is not None and (
                     not self._historial.esta_vacio()
                     or self._historial.hay_intervalo_abierto()
                 ):
                     raise NotImplementedError("No se reemplaza una partida con historial vigente.")
+                if anterior is not None and not anterior.partida_activa:
+                    self._preparar_nueva_partida()
                 self._servicio.iniciar_partida(partes[1])
                 self._historial = self._servicio.obtener_estado().historial
                 resultado = ResultadoAccion(True, "Partida iniciada.")
@@ -341,6 +346,8 @@ class ControladorJuego:
                     inv = self._servicio._inventario
                     objeto = inv.obtener_actual() if inv is not None else None
                     if objeto is None:
+                        if operacion == "retroceder":
+                            raise ValueError("No tienes pergaminos de retroceso.")
                         raise ValueError("No hay un objeto seleccionado.")
                     objetivo = objeto.id_instancia
                 accion = self._servicio.resolver_accion(operacion.upper(), objetivo=objetivo)

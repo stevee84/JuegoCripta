@@ -408,16 +408,22 @@ def test_metricas_distinguen_disco_de_red(en_tmp):
 def test_volver_al_menu_permite_otra_partida_y_reinicia_presupuesto(en_tmp):
     from datos.cliente_api import ClienteAPI
     from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-03")
     _jugar(controlador, 3)
+
+    assert controlador._servicio.obtener_estado().partida_activa
     assert not controlador._historial.esta_vacio()
     assert not controlador.procesar_comando("cripta cripta-02").exito
 
     controlador._preparar_nueva_partida()
     assert controlador.procesar_comando("cripta cripta-02").exito
 
-    cliente = ClienteAPI("https://ejemplo.invalid", presupuesto=PresupuestoSolicitudes(9))
+    cliente = ClienteAPI(
+        "https://ejemplo.invalid",
+        presupuesto=PresupuestoSolicitudes(9),
+    )
     cliente._presupuesto.registrar_intento()
     controlador._fuente = cliente
     controlador._preparar_nueva_partida()
