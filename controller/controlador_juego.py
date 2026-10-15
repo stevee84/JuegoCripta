@@ -1,4 +1,3 @@
-import json
 import os
 import shlex
 import struct
@@ -15,6 +14,7 @@ from dto.accion import ResultadoAccion
 from logica.bitacora_pantalla import BitacoraPantalla
 from service.juego_service import JuegoService
 from service.partida_service import PartidaService
+from vista import presentacion_juego as presentacion
 
 
 CONTINUAR = "__continuar__"
@@ -34,11 +34,46 @@ class ControladorJuego:
         if self._servicio.obtener_estado() is not None:
             self._historial = self._servicio._vincular_historial(historial)
             self._servicio._inventario = self._servicio.obtener_estado().inventario
-        self._bitacora = BitacoraPantalla()
+        self._bitacora = getattr(vista, "bitacora", None)
+        if not isinstance(self._bitacora, BitacoraPantalla):
+            self._bitacora = BitacoraPantalla()
+        if vista is not None:
+            vista._contexto_presentacion = self._servicio
         self._puntajes = RepositorioPuntajes()
         self._guardado = GuardadoBinario()
         self._ruta_partida = Path(RUTA_GUARDADO) / ARCHIVO_PARTIDA
         self._en_ejecucion = False
+
+    def _vincular_bitacora(self):
+        bitacora = getattr(self._vista, "bitacora", None)
+        if isinstance(bitacora, BitacoraPantalla):
+            self._bitacora = bitacora
+
+    def _publicar(self, mensaje, error=False):
+        self._vincular_bitacora()
+        if self._vista is not None:
+            mostrar = self._vista.mostrar_error if error else self._vista.mostrar_mensaje
+            mostrar(mensaje)
+        if getattr(self._vista, "bitacora", None) is not self._bitacora:
+            self._bitacora.agregar(mensaje)
+
+    def _resolver_objetivo(self, texto, enemigos=False, en_suelo=False):
+        estado = self._servicio.obtener_estado()
+        sala = estado.jugador.sala_actual if estado is not None and estado.jugador is not None else None
+        if enemigos or en_suelo:
+            if sala is None:
+                raise ValueError("No hay una sala actual.")
+            entidades = sala.enemigos if enemigos else sala.objetos
+        else:
+            entidades = self._servicio.consultar_inventario()
+        if enemigos:
+            nombre = lambda e: presentacion.nombre_actor(e, estado, self._servicio)
+            etiqueta = lambda e: presentacion.etiqueta_enemigo(e, entidades, estado, self._servicio)
+        else:
+            nombre = lambda o: presentacion.nombre_objeto(o, estado, self._servicio)
+            etiqueta = None
+        return presentacion.resolver_seleccion(
+            texto, entidades, "id_actor" if enemigos else "id_instancia", nombre, etiqueta)
 
     def conectar_inicializador(self, inicializador, semilla=0):
         if not callable(inicializador):
@@ -93,10 +128,12 @@ class ControladorJuego:
             self._vista.mostrar_mensaje(f"Hay una partida guardada en {self._ruta_partida}: escribe cargar para continuar.")
         self._en_ejecucion = True
         try:
+            actual = self._servicio.obtener_estado()
+            if actual is not None:
+                self._vista.mostrar_estado(actual)
             while self._en_ejecucion:
                 actual = self._servicio.obtener_estado()
                 if actual is not None:
-                    self._vista.mostrar_estado(actual)
                     if not actual.partida_activa:
                         self._mostrar_metricas()
                         break
@@ -165,6 +202,7 @@ class ControladorJuego:
                 break
             self._preparar_nueva_partida()
             self._vista.nueva_sesion()
+            self._vincular_bitacora()
         self._vista.cerrar()
 
     def _elegir_partida(self) -> bool:
@@ -197,6 +235,11 @@ class ControladorJuego:
             self._fuente._presupuesto = PresupuestoSolicitudes()
 
     def procesar_comando(self, comando: str):
+        self._vincular_bitacora()
+        anterior = self._servicio.obtener_estado()
+        sala_anterior = (anterior.jugador.sala_actual
+                         if anterior is not None and anterior.jugador is not None else None)
+        operacion = None
         try:
             if not isinstance(comando, str):
                 raise ValueError("El comando debe ser texto.")
@@ -205,25 +248,24 @@ class ControladorJuego:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
             consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
-            acciones = ("mover", "atacar", "abrir", "recoger", "cripta", "registro", "exportar_parcial", "seleccionar")
+            acciones = ("mover", "abrir", "cripta", "registro", "exportar_parcial")
             if operacion == "puntajes" and len(partes) not in (1, 2):
                 raise ValueError("puntajes acepta opcionalmente un criterio de orden.")
             if operacion in consultas and operacion != "puntajes" and len(partes) != 1:
                 raise ValueError("La consulta no recibe argumentos.")
             if operacion in acciones and len(partes) != 2:
                 raise ValueError("El comando requiere exactamente un argumento.")
+            if operacion in ("atacar", "recoger", "seleccionar") and len(partes) < 2:
+                raise ValueError("El comando requiere un número, nombre o ID.")
             if operacion in ("equipar", "soltar", "esperar") and len(partes) != 1:
                 raise ValueError("Este comando no recibe argumentos.")
             if operacion == "inventario" and len(partes) not in (1, 2):
                 raise ValueError("inventario acepta opcionalmente peso, valor o nombre.")
             if operacion in ("guardar", "cargar") and len(partes) not in (1, 2):
                 raise ValueError(f"{operacion} acepta opcionalmente una ruta; sin ella usa {self._ruta_partida}.")
-            if operacion in ("usar", "retroceder") and len(partes) not in (1, 2):
-                raise ValueError("usar/retroceder acepta opcionalmente el ID del pergamino.")
-
             if operacion == "estado":
-                self._vista.mostrar_estado(self._servicio.obtener_estado())
-                self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
+                if self._vista is not None:
+                    self._vista.mostrar_estado(self._servicio.obtener_estado())
                 resultado = ResultadoAccion(True, "Estado mostrado.")
             elif operacion == "inventario":
                 objetos = self._servicio.consultar_inventario(partes[1] if len(partes) == 2 else None)
@@ -233,12 +275,17 @@ class ControladorJuego:
                 objeto = self._servicio.recorrer_inventario(operacion)
                 resultado = ResultadoAccion(True, "Inventario vacío." if objeto is None else f"Seleccionado: {objeto.id_instancia}")
             elif operacion == "seleccionar":
-                objeto = self._seleccionar(partes[1])
-                nombre = (objeto.ficha or {}).get("nombre", objeto.tipo_ficha_id)
+                objeto = self._seleccionar(self._resolver_objetivo(" ".join(partes[1:])))
+                nombre = presentacion.nombre_objeto(objeto, self._servicio.obtener_estado(), self._servicio)
                 resultado = ResultadoAccion(True, f"Seleccionado: {nombre}")
             elif operacion == "criptas":
                 datos = self._servicio.listar_criptas()
-                self._vista.mostrar_mensaje(json.dumps(datos, ensure_ascii=False))
+                if self._vista is not None:
+                    mostrar = getattr(self._vista, "mostrar_criptas", None)
+                    if mostrar is not None:
+                        mostrar(datos)
+                    else:
+                        self._vista.mostrar_mensaje("\n".join(presentacion.lineas_criptas(datos)))
                 resultado = ResultadoAccion(True, "Criptas disponibles consultadas.")
             elif operacion == "puntajes":
                 if len(partes) == 2:
@@ -246,27 +293,28 @@ class ControladorJuego:
                 else:
                     puntajes = self._puntajes.listar()
 
-                self._vista.mostrar_mensaje(
-                    json.dumps(puntajes, ensure_ascii=False)
-                )
+                self._vista.mostrar_mensaje("\n".join(
+                    f"{i}. {p.get('nombre', 'Jugador')} — {p.get('cripta_id', '?')}: "
+                    f"{p.get('acciones_ejecutadas', '?')} acciones, "
+                    f"{p.get('enemigos_derrotados', '?')} enemigos, reloj {p.get('reloj_final', '?')}"
+                    for i, p in enumerate(puntajes, 1)) or "No hay puntajes guardados.")
                 resultado = ResultadoAccion(
                     True, "Resultados locales consultados."
                 )
             elif operacion == "bitacora":
-                for mensaje in self._bitacora.obtener_mensajes():
-                    self._vista.mostrar_mensaje(mensaje)
+                if self._vista is not None:
+                    self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
                 resultado = ResultadoAccion(True, "Bitácora mostrada.")
             elif operacion == "ayuda":
                 self._vista.mostrar_mensaje(
-                    "Consultas: estado, criptas, puntajes, bitacora, ayuda, salir. "
-                    "Puntajes: puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final], orden ascendente. "
-                    "Acciones: mover/abrir DIRECCION, atacar/recoger ID, soltar, esperar. "
-                    "Inventario: siguiente, anterior, seleccionar ID, inventario [peso|valor|nombre]. "
-                    "registro RUTA inicia un log nuevo antes de la primera acción. "
-                    "exportar_parcial RUTA exporta sin validar la reanudación. "
-                    "guardar RUTA / cargar RUTA: partida v5 con fichas compatibles; historial previo vacío. "
-                    "usar [ID]: consumible; retroceder [ID]: pergamino, sin tiempo. "
-                    "equipar: equipa el objeto seleccionado. Inicialización automática desde la fuente pendiente."
+                    "Jugar: estado; abrir/mover DIRECCION; atacar/recoger NÚMERO|NOMBRE|ID; esperar. "
+                    "Los nombres deben ser inequívocos (con o sin comillas).\n"
+                    "Inventario: siguiente, anterior, seleccionar ID (o nombre), inventario [peso|valor|nombre]. "
+                    "usar [ID|NOMBRE] usa el seleccionado sin argumentos; equipar; soltar; retroceder [ID] sin tiempo.\n"
+                    "Partidas: criptas; cripta ID; guardar [RUTA]; cargar [RUTA]; salir. "
+                    "Guardado v5: cargar inicia un historial vacío.\n"
+                    "Técnicos: bitacora; puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final] ascendente; "
+                    "registro RUTA antes de la primera acción; exportar_parcial RUTA sin validar reanudación."
                 )
                 resultado = ResultadoAccion(True, "Ayuda mostrada.")
             elif operacion == "salir":
@@ -287,8 +335,8 @@ class ControladorJuego:
                     True, "Registro de acciones del motor iniciado."
                 )
             elif operacion in ("usar", "retroceder"):
-                if len(partes) == 2:
-                    objetivo = self._servicio.resolver_objeto_consola(partes[1])
+                if len(partes) >= 2:
+                    objetivo = self._resolver_objetivo(" ".join(partes[1:]))
                 else:
                     inv = self._servicio._inventario
                     objeto = inv.obtener_actual() if inv is not None else None
@@ -301,10 +349,10 @@ class ControladorJuego:
                 if operacion in ("mover", "abrir"):
                     accion = self._servicio.resolver_accion(operacion.upper(), direccion=partes[1])
                 elif operacion == "atacar":
-                    objetivo = self._servicio.resolver_identificador_consola(partes[1])
+                    objetivo = self._resolver_objetivo(" ".join(partes[1:]), enemigos=True)
                     accion = self._servicio.resolver_accion("ATACAR", objetivo=objetivo)
                 elif operacion == "recoger":
-                    objetivo = self._servicio.resolver_objeto_consola(partes[1], en_suelo=True)
+                    objetivo = self._resolver_objetivo(" ".join(partes[1:]), en_suelo=True)
                     accion = self._servicio.resolver_accion("RECOGER", objetivo=objetivo)
                 else:
                     accion = self._servicio.resolver_accion(operacion.upper())
@@ -334,15 +382,16 @@ class ControladorJuego:
             if self._vista is not None:
                 self._vista.mostrar_error(f"No se pudo registrar el resultado: {error}")
 
-        self._bitacora.agregar(resultado.mensaje)
-        if self._vista is None:
-            return resultado
-        if resultado.exito:
-            self._vista.mostrar_mensaje(resultado.mensaje)
-            for noticia in resultado.notificaciones:
-                self._vista.mostrar_mensaje(str(noticia))
-        else:
-            self._vista.mostrar_error(resultado.mensaje)
+        actual = self._servicio.obtener_estado()
+        if operacion not in ("estado", "bitacora") or not resultado.exito:
+            for mensaje in presentacion.mensajes_resultado(resultado, actual, operacion, self._servicio):
+                self._publicar(mensaje, error=not resultado.exito)
+        if self._vista is not None and hasattr(self._vista, "mostrar_resumen") and actual is not None:
+            sala_actual = actual.jugador.sala_actual if actual.jugador is not None else None
+            if resultado.exito and (operacion in ("cripta", "cargar") or sala_actual is not sala_anterior):
+                self._vista.mostrar_estado(actual)
+            elif operacion in ("mover", "abrir", "atacar", "recoger", "soltar", "esperar", "equipar", "usar", "retroceder"):
+                self._vista.mostrar_resumen(actual)
         return resultado
 
     def guardar(self, ruta: str) -> None:

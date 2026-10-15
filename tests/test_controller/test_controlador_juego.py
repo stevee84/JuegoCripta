@@ -46,7 +46,9 @@ def test_atacar_resuelve_el_id_y_no_ejecuta_dos_veces(controlador):
     assert estado.reloj == 100
     assert estado.historial is controlador._historial
     assert controlador._historial.get_cantidad() == 1
-    assert controlador._bitacora.obtener_mensajes() == [resultado.mensaje]
+    assert resultado.mensaje == "ATACAR ejecutado."
+    assert controlador._bitacora is controlador._vista.bitacora
+    assert controlador._bitacora.obtener_mensajes() == ["Atacas a Guardián #1: 10 de daño."]
 
 
 def test_mover_delega_en_el_motor_real(controlador):

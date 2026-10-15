@@ -4,6 +4,10 @@ Mapa a la izquierda, panel de info a la derecha, bitácora abajo.
 """
 import pygame
 from pathlib import Path
+import shlex
+
+from logica.bitacora_pantalla import BitacoraPantalla
+from vista import presentacion_juego as presentacion
 
 # Colores
 NEGRO = (18, 18, 24)
@@ -37,7 +41,7 @@ def _ficha(objeto):
 
 
 def nombre_objeto(objeto):
-    return _ficha(objeto).get("nombre", objeto.tipo_ficha_id)
+    return presentacion.nombre_objeto(objeto)
 
 
 def efecto_objeto(objeto):
@@ -119,7 +123,13 @@ class VistaPygame:
         self._font_titulo = pygame.font.SysFont("Consolas", 28, bold=True)
         self._font_tile = pygame.font.SysFont("Consolas", 32, bold=True)
         self._font_sala_nombre = pygame.font.SysFont("Consolas", 13)
-        self._bitacora = []
+        self.bitacora = BitacoraPantalla()
+        self._bitacora = self.bitacora
+        self._pagina_acciones = 0
+        self._sala_botones = None
+        self._pagina_sala = 0
+        self._sala_entidades = None
+        self._botones_sala = []
         self._botones = []
         self._scroll_bitacora = 0
         self._label_movimiento = None
@@ -284,8 +294,9 @@ class VistaPygame:
 
             botones_cripta = []
             y = 130
-            if self._bitacora and self._bitacora[-1].startswith("[!]"):
-                error = self._font.render(self._bitacora[-1][:120], True, ROJO)
+            mensajes = self.bitacora.obtener_mensajes()
+            if mensajes and mensajes[-1].startswith("[!]"):
+                error = self._font.render(mensajes[-1][:120], True, ROJO)
                 self._pantalla.blit(error, error.get_rect(centerx=self.ANCHO // 2, y=y - 22))
             if opcion_continuar is not None:
                 btn = Boton((self.ANCHO // 2 - 200, y, 400, 50), "Continuar partida guardada",
@@ -325,9 +336,7 @@ class VistaPygame:
         return seleccion
 
     def mostrar_mensaje(self, mensaje):
-        self._bitacora.append(str(mensaje))
-        if len(self._bitacora) > 200:
-            self._bitacora = self._bitacora[-100:]
+        self.bitacora.agregar(str(mensaje))
 
     def mostrar_error(self, mensaje):
         self.mostrar_mensaje(f"[!] {mensaje}")
@@ -339,8 +348,8 @@ class VistaPygame:
         pass
 
     def mostrar_bitacora(self, mensajes):
-        for m in mensajes:
-            self.mostrar_mensaje(m)
+        # La consulta no reinserta lo que ya almacena la bitácora compartida.
+        self._scroll_bitacora = 0
 
     def leer_comando(self):
         return "SALIR"
@@ -363,6 +372,10 @@ class VistaPygame:
         sala = estado.jugador.sala_actual
         if sala is None:
             return
+        self._estado_presentado = estado
+        if sala is not self._sala_botones:
+            self._pagina_acciones = 0
+            self._sala_botones = sala
 
         px = self.PANEL_X + 15
         panel_w = self.PANEL_ANCHO - 30
@@ -383,11 +396,12 @@ class VistaPygame:
         gap = self.BTN_GAP
         self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar", NARANJA, enabled=activa))
         self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
+        self._botones.extend(self._botones_sala)
 
     def _colocar_fila(self, items, px, panel_w, y):
         x = px
         for label, cmd, color in items:
-            w = max(self._font.size(label)[0] + 16, 80)
+            w = min(panel_w, max(self._font.size(label)[0] + 16, 80))
             if x + w > px + panel_w:
                 x = px
                 y += self.BTN_H + self.BTN_GAP
@@ -395,34 +409,61 @@ class VistaPygame:
             x += w + self.BTN_GAP
         return y + self.BTN_H + self.BTN_GAP
 
+    def _colocar_cuadricula(self, items, px, panel_w, y):
+        ancho = (panel_w - self.BTN_GAP) // 2
+        for i, (texto, comando, color) in enumerate(items):
+            rect = (px + (i % 2) * (ancho + self.BTN_GAP),
+                    y + (i // 2) * (self.BTN_H + self.BTN_GAP), ancho, self.BTN_H)
+            self._botones.append(Boton(rect, texto, comando, color, izquierda=True))
+        return y + ((len(items) + 1) // 2) * (self.BTN_H + self.BTN_GAP)
+
+    def _dibujar_texto_ajustado(self, texto, fuente, color, posicion, ancho):
+        imagen = fuente.render(texto, True, color)
+        if imagen.get_width() > ancho:
+            imagen = pygame.transform.smoothscale(imagen, (ancho, imagen.get_height()))
+        self._pantalla.blit(imagen, posicion)
+
     def _seccion_movimiento(self, sala, px, panel_w, y):
         self._label_movimiento = ("Movimiento:", GRIS_CLARO, px, y)
         y += 20
         items = []
-        for dir_name in ("NORTE", "SUR", "ESTE", "OESTE"):
-            puerta = sala.obtener_salida(dir_name)
-            if puerta is None:
-                continue
+        estado = self._estado_presentado
+        contexto = getattr(self, "_contexto_presentacion", None)
+        for puerta in sala.puertas:
+            dir_name = puerta.direccion
+            destino = presentacion.descripcion_sala(puerta.destino_sala_id, estado)
             if puerta.abierta:
-                items.append((f"{dir_name[0]} -> Sala {puerta.destino_sala_id}", f"mover {dir_name}", VERDE_OSCURO))
+                items.append((f"{dir_name[0]} -> {destino}", f"mover {dir_name}", VERDE_OSCURO))
             else:
-                llave = f" [{puerta.llave_requerida[:8]}]" if puerta.llave_requerida else ""
+                ficha = presentacion.ficha_disponible(puerta.llave_requerida, estado, contexto)
+                llave = f": {ficha.get('nombre') or presentacion.nombre_ficha(puerta.llave_requerida)}" if puerta.llave_requerida else ""
                 items.append((f"{dir_name[0]} Cerrada{llave}", f"abrir {dir_name}", ROJO_OSCURO))
         if not items:
             return y
-        return self._colocar_fila(items, px, panel_w, y)
+        return self._colocar_cuadricula(items, px, panel_w, y)
 
     def _seccion_acciones(self, sala, estado, px, panel_w, y):
         self._label_acciones = ("Acciones:", GRIS_CLARO, px, y)
         y += 20
         items = []
-        for enemigo in sala.enemigos:
+        contexto = getattr(self, "_contexto_presentacion", None)
+        for numero, enemigo in enumerate(sala.enemigos, 1):
             if enemigo.esta_vivo():
-                items.append((f"Atacar {enemigo.nombre[:10]}", f"atacar {enemigo.id_actor}", ROJO_OSCURO))
-        for obj in sala.objetos:
-            items.append((f"Recoger {nombre_objeto(obj)}", f"recoger {obj.id_instancia}", (50, 50, 20)))
-        items.append(("Esperar", "esperar", GRIS_OSCURO))
-        return self._colocar_fila(items, px, panel_w, y)
+                nombre = presentacion.nombre_actor(enemigo, estado, contexto)
+                items.append((f"#{numero} Atacar {nombre}", f"atacar {shlex.quote(enemigo.id_actor)}", ROJO_OSCURO))
+        for numero, obj in enumerate(sala.objetos, 1):
+            nombre = presentacion.nombre_objeto(obj, estado, contexto)
+            items.append((f"{numero}. Recoger {nombre}", f"recoger {shlex.quote(obj.id_instancia)}", (50, 50, 20)))
+        paginas = max(1, (len(items) + 3) // 4)
+        self._pagina_acciones = max(0, min(self._pagina_acciones, paginas - 1))
+        inicio = self._pagina_acciones * 4
+        y = self._colocar_cuadricula(items[inicio:inicio + 4], px, panel_w, y)
+        controles = [("Esperar", "esperar", GRIS_OSCURO)]
+        if paginas > 1:
+            controles = [("< Acciones", "__acciones_anterior__", GRIS_OSCURO),
+                         (f"Acciones {self._pagina_acciones + 1}/{paginas} >", "__acciones_siguiente__", GRIS_OSCURO),
+                         *controles]
+        return self._colocar_fila(controles, px, panel_w, y)
 
     FILA_INV = 22
 
@@ -430,13 +471,13 @@ class VistaPygame:
         inv = getattr(estado, "inventario", None)
         if inv is None:
             return y
-        operaciones = getattr(estado, "servicio_inventario", None)
-        equipo = operaciones.obtener_equipo() if operaciones is not None else {}
+        contexto = getattr(self, "_contexto_presentacion", None)
+        equipo = presentacion.equipo_disponible(estado, contexto)
         self._lineas_inventario = []
 
         for etiqueta, clase in (("Arma", "arma"), ("Armadura", "armadura")):
             objeto = equipo.get(clase)
-            texto = f"{nombre_objeto(objeto)} ({efecto_objeto(objeto)})" if objeto else "—"
+            texto = f"{presentacion.nombre_objeto(objeto, estado, contexto)} ({efecto_objeto(objeto)})" if objeto else "—"
             self._lineas_inventario.append((f"{etiqueta}: {texto}", VERDE if objeto else GRIS, px, y))
             y += 18
         y += 6
@@ -447,17 +488,27 @@ class VistaPygame:
 
         actual = inv.obtener_actual()
         equipados = [o for o in equipo.values() if o is not None]
-        for objeto in inv.obtener_objetos():
+        objetos = inv.obtener_objetos()
+        # Reserva anterior/siguiente, acciones del objeto y Guardar/Salir.
+        limite = self.ALTO - self.BITACORA_ALTO - 10 - self.BTN_H - 8
+        filas = max(1, min(5, (limite - y - 2 * (self.BTN_H + self.BTN_GAP) - 4) // self.FILA_INV))
+        indice = next(i for i, obj in enumerate(objetos) if obj is actual)
+        inicio = (indice // filas) * filas
+        self._label_inventario = (f"Inventario {inv.get_cantidad()}/{inv.get_capacidad()} "
+                                  f"({inicio + 1}-{min(inicio + filas, len(objetos))}):", GRIS_CLARO, px, y - 20)
+        for numero, objeto in enumerate(objetos[inicio:inicio + filas], inicio + 1):
             marca = "[E] " if any(objeto is e for e in equipados) else ""
-            texto = f"{marca}{nombre_objeto(objeto)} — {efecto_objeto(objeto)}"
+            texto = f"{numero}. {marca}{presentacion.nombre_objeto(objeto, estado, contexto)} — {efecto_objeto(objeto)}"
             seleccionado = objeto is actual
             self._botones.append(Boton(
-                (px, y, panel_w, self.FILA_INV - 2), texto, f"seleccionar {objeto.id_instancia}",
+                (px, y, panel_w, self.FILA_INV - 2), texto, f"seleccionar {shlex.quote(objeto.id_instancia)}",
                 AZUL if seleccionado else (32, 32, 44), BLANCO if seleccionado else GRIS_CLARO,
                 izquierda=True))
             y += self.FILA_INV
         y += 4
-        return self._colocar_fila(self._acciones_objeto(actual, equipados), px, panel_w, y)
+        y = self._colocar_fila([("< Anterior", "anterior", GRIS_OSCURO),
+                               ("Siguiente >", "siguiente", GRIS_OSCURO)], px, panel_w, y)
+        return self._colocar_cuadricula(self._acciones_objeto(actual, equipados), px, panel_w, y)
 
     @staticmethod
     def _acciones_objeto(objeto, equipados):
@@ -469,9 +520,9 @@ class VistaPygame:
         if clase in ("arma", "armadura") and not any(objeto is e for e in equipados):
             items.append((f"Equipar {nombre}", "equipar", VERDE_OSCURO))
         if clase in ("pocion", "antidoto", "antorcha"):
-            items.append((f"Usar {nombre}", f"usar {objeto.id_instancia}", MAGENTA))
+            items.append((f"Usar {nombre}", f"usar {shlex.quote(objeto.id_instancia)}", MAGENTA))
         if clase == "pergamino_retroceso":
-            items.append(("Retroceder", f"retroceder {objeto.id_instancia}", MAGENTA))
+            items.append(("Retroceder", f"retroceder {shlex.quote(objeto.id_instancia)}", MAGENTA))
         items.append(("Soltar", "soltar", GRIS_OSCURO))
         return items
 
@@ -647,7 +698,7 @@ class VistaPygame:
                 txt = self._font_sala_nombre.render("@", True, VERDE)
                 self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
             elif cell >= 14:
-                txt = self._font_sala_nombre.render(str(sid), True, borde)
+                txt = self._font_sala_nombre.render("S" if sid == estado.sala_salida_id else str(sid), True, borde)
                 self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
 
     # --- Vista detallada de sala actual ---
@@ -658,10 +709,14 @@ class VistaPygame:
     SALA_ALTO_MAX = 395
 
     def _dibujar_sala_actual(self, estado):
+        self._botones_sala = []
         if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
             return
 
         sala = estado.jugador.sala_actual
+        if sala is not self._sala_entidades:
+            self._pagina_sala = 0
+            self._sala_entidades = sala
         sx, sy = self.SALA_X, self.SALA_Y
         sw = self.SALA_ANCHO
 
@@ -682,7 +737,7 @@ class VistaPygame:
         y = sy + 12
         px = sx + 15
 
-        nombre_sala = self._font_titulo.render(f"Sala {sala.id_sala}", True, CYAN)
+        nombre_sala = self._font_titulo.render(presentacion.descripcion_sala(sala.id_sala, estado), True, CYAN)
         self._pantalla.blit(nombre_sala, (px, y))
         y += 36
 
@@ -722,7 +777,7 @@ class VistaPygame:
             )
         ]
 
-        for enemigo in sala.enemigos:
+        for numero, enemigo in enumerate(sala.enemigos, 1):
             ficha = getattr(enemigo, "ficha", None)
             nombre_ficha = (
                 ficha.get("nombre", "")
@@ -750,7 +805,7 @@ class VistaPygame:
 
                 entidades.append((
                     GLYPH_ENEMIGO,
-                    enemigo.nombre,
+                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
                     ROJO,
                     f"HP {enemigo.vida}/{enemigo.vida_max}",
                     sprite,
@@ -758,16 +813,16 @@ class VistaPygame:
             else:
                 entidades.append((
                     GLYPH_ENEMIGO_MUERTO,
-                    enemigo.nombre,
+                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
                     GRIS,
                     "muerto",
                     self._sprite_rata_muerta if es_rata else None,
                 ))
 
-        for objeto in sala.objetos:
+        for numero, objeto in enumerate(sala.objetos, 1):
             entidades.append((
                 GLYPH_OBJETO,
-                nombre_objeto(objeto)[:16],
+                f"{numero}. {presentacion.nombre_objeto(objeto, estado)}",
                 AMARILLO,
                 efecto_objeto(objeto)[:18],
                 self._sprite_para_objeto(objeto),
@@ -791,18 +846,30 @@ class VistaPygame:
 
             entidades.append((
                 GLYPH_TRAMPA_ARMADA if trampa.armada else GLYPH_TRAMPA,
-                trampa.tipo[:12],
+                presentacion.nombre_trampa(trampa, estado),
                 MAGENTA if trampa.armada else GRIS,
                 "ARMADA" if trampa.armada else "desarmada",
                 sprite,
             ))
 
-        for i, (glyph, nombre, color, detalle, sprite) in enumerate(entidades):
+        filas = max(1, (sy + self.SALA_ALTO_MAX - 110 - y) // (tile_size + margen_tile + 8))
+        por_pagina = cols * filas
+        paginas = max(1, (len(entidades) + por_pagina - 1) // por_pagina)
+        self._pagina_sala = max(0, min(self._pagina_sala, paginas - 1))
+        inicio = self._pagina_sala * por_pagina
+        if paginas > 1:
+            self._botones_sala = [
+                Boton((px, sy + self.SALA_ALTO_MAX - 102, 110, self.BTN_H),
+                      "< Sala", "__sala_anterior__"),
+                Boton((px + 120, sy + self.SALA_ALTO_MAX - 102, 170, self.BTN_H),
+                      f"Sala {self._pagina_sala + 1}/{paginas} >", "__sala_siguiente__"),
+            ]
+        for i, (glyph, nombre, color, detalle, sprite) in enumerate(entidades[inicio:inicio + por_pagina]):
             col = i % cols
             fila = i // cols
             tx = px + col * ancho_celda
             ty = y + fila * (tile_size + margen_tile + 8)
-            if ty + tile_size > sy + self.SALA_ALTO_MAX - 40:
+            if ty + tile_size > sy + self.SALA_ALTO_MAX - 80:
                 break
 
             pygame.draw.rect(self._pantalla, (28, 28, 40), (tx, ty, tile_size, tile_size), border_radius=5)
@@ -822,19 +889,19 @@ class VistaPygame:
                 g = self._font_tile.render(glyph, True, color)
                 self._pantalla.blit(g, g.get_rect(center=centro))
 
-            n_txt = self._font_sala_nombre.render(nombre, True, BLANCO)
-            self._pantalla.blit(n_txt, (tx + tile_size + 5, ty + 5))
-            d_txt = self._font_sala_nombre.render(detalle, True, GRIS_CLARO)
-            self._pantalla.blit(d_txt, (tx + tile_size + 5, ty + 20))
+            self._dibujar_texto_ajustado(nombre, self._font_sala_nombre, BLANCO,
+                                         (tx + tile_size + 5, ty + 5), ancho_celda - tile_size - 10)
+            self._dibujar_texto_ajustado(detalle, self._font_sala_nombre, GRIS_CLARO,
+                                         (tx + tile_size + 5, ty + 24), ancho_celda - tile_size - 10)
 
-        y_puertas = sy + self.SALA_ALTO_MAX - 35
-        door_x = px
-        for p in sala.puertas:
-            estado_p = "abierta" if p.abierta else "cerrada"
-            color_p = VERDE if p.abierta else ROJO
-            txt = self._font.render(f"{p.direccion} -> {p.destino_sala_id} ({estado_p})", True, color_p)
-            self._pantalla.blit(txt, (door_x, y_puertas))
-            door_x += txt.get_width() + 20
+        y_puertas = sy + self.SALA_ALTO_MAX - 70
+        contexto = getattr(self, "_contexto_presentacion", None)
+        for i, puerta in enumerate(sala.puertas):
+            texto = presentacion.descripcion_puerta(puerta, estado, contexto)
+            ancho = (sw - 30) // 2
+            posicion = (px + (i % 2) * ancho, y_puertas + (i // 2) * 30)
+            self._dibujar_texto_ajustado(texto, self._font_sala_nombre,
+                                         VERDE if puerta.abierta else ROJO, posicion, ancho - 8)
 
     # --- Panel derecho ---
 
@@ -886,6 +953,10 @@ class VistaPygame:
         info = f"Sala: {sala_id}   Reloj: {estado.reloj}   Acciones: {estado.acciones_ejecutadas}"
         self._pantalla.blit(self._font.render(info, True, GRIS_CLARO), (px, y))
         y += 22
+        efectos = "; ".join(presentacion.describir_efectos(estado)) or "ninguno"
+        self._dibujar_texto_ajustado(f"Efectos: {efectos}", self._font, MAGENTA,
+                                     (px, y), self.PANEL_ANCHO - 30)
+        y += 20
 
         if not estado.partida_activa:
             msg = "VICTORIA" if estado.victoria else "DERROTA"
@@ -897,6 +968,7 @@ class VistaPygame:
             y += 42
 
         self._panel_content_y = y + 10
+        self._construir_botones(estado)
 
         # Labels de secciones
         if estado.partida_activa:
@@ -910,7 +982,7 @@ class VistaPygame:
                 txt, color, lx, ly = self._label_inventario
                 self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
             for txt, color, lx, ly in self._lineas_inventario:
-                self._pantalla.blit(self._font.render(txt, True, color), (lx, ly))
+                self._dibujar_texto_ajustado(txt, self._font, color, (lx, ly), self.PANEL_ANCHO - 30)
 
         # Botones
         for b in self._botones:
@@ -924,7 +996,8 @@ class VistaPygame:
         pygame.draw.line(self._pantalla, GRIS, (0, by), (self.ANCHO, by), 1)
 
         max_lineas = (self.BITACORA_ALTO - 30) // 17
-        total = len(self._bitacora)
+        mensajes = self.bitacora.obtener_mensajes()
+        total = len(mensajes)
 
         # Clamp scroll
         max_scroll = max(0, total - max_lineas)
@@ -944,8 +1017,7 @@ class VistaPygame:
             self._pantalla.blit(self._font_med.render("[Scroll Down]", True, GRIS), (self.ANCHO - 200, by + self.BITACORA_ALTO - 20))
 
         linea_y = by + 26
-        mensajes = self._bitacora[inicio:fin]
-        for msg in mensajes:
+        for msg in mensajes[inicio:fin]:
             color = ROJO if msg.startswith("[!]") else GRIS_CLARO
             txt = msg[:150]
             self._pantalla.blit(self._font.render(txt, True, color), (15, linea_y))
@@ -1076,16 +1148,22 @@ class VistaPygame:
         self._dibujar_minimapa(estado)
         self._dibujar_sala_actual(estado)
         self._dibujar_panel(estado)
-        self._construir_botones(estado)
         self._dibujar_bitacora()
 
     # --- Loop principal ---
 
     def nueva_sesion(self):
         """Limpia lo que la vista recuerda de la partida anterior antes de volver al menú."""
-        self._bitacora = []
+        self.bitacora = BitacoraPantalla()
+        self._bitacora = self.bitacora
         self._salas_visitadas = set()
         self._scroll_bitacora = 0
+        self._pagina_acciones = 0
+        self._sala_botones = None
+        self._pagina_sala = 0
+        self._sala_entidades = None
+        self._botones_sala = []
+        self._botones = []
 
     def cerrar(self):
         pygame.quit()
@@ -1110,6 +1188,14 @@ class VistaPygame:
                         if b.contiene(evento.pos):
                             if b.comando == "salir":
                                 salir_solicitado = True
+                            elif b.comando == "__acciones_anterior__":
+                                self._pagina_acciones = max(0, self._pagina_acciones - 1)
+                            elif b.comando == "__acciones_siguiente__":
+                                self._pagina_acciones += 1
+                            elif b.comando == "__sala_anterior__":
+                                self._pagina_sala = max(0, self._pagina_sala - 1)
+                            elif b.comando == "__sala_siguiente__":
+                                self._pagina_sala += 1
                             elif b.comando != "__noop__":
                                 controlador.procesar_comando(b.comando)
                             break
