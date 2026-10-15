@@ -33,7 +33,7 @@ def test_controlador_servicios_vista_y_motor_hasta_terminacion(monkeypatch, caps
     assert estado.inventario.esta_vacio()
     assert estado.mapa.obtener_sala(1).objetos[0].id_instancia == "moneda"
     assert "Partida terminada." in capsys.readouterr().out
-    assert any("JUGADOR_DERROTADO" in mensaje for mensaje in vista.bitacora.obtener_mensajes())
+    assert any("Has sido derrotado" in mensaje for mensaje in vista.bitacora.obtener_mensajes())
 
 
 def test_arranque_real_demo_por_subproceso():

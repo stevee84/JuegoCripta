@@ -1,4 +1,5 @@
 from logica.bitacora_pantalla import BitacoraPantalla
+from vista import presentacion_juego as presentacion
 
 
 class VistaConsola:
@@ -8,6 +9,7 @@ class VistaConsola:
         self.bitacora = BitacoraPantalla()
 
     def mostrar_estado(self, estado) -> None:
+        self._estado_presentado = estado
         if estado is None:
             print("Estado no disponible.")
             return
@@ -17,11 +19,10 @@ class VistaConsola:
         print(f"Acciones ejecutadas: {estado.acciones_ejecutadas}")
         print(f"Enemigos derrotados: {estado.enemigos_derrotados}")
         print(f"Partida activa: {estado.partida_activa}; victoria: {estado.victoria}")
-        efectos = [
-            f"{e.get('id', 'sin ID')}: {e.get('tipo', 'sin tipo')}, duración {e.get('duracion', '?')}"
-            for e in estado.efectos_activos if isinstance(e, dict)
-        ]
+        efectos = presentacion.describir_efectos(estado)
         print("Efectos: " + (", ".join(efectos) or "ninguno"))
+        if estado.sala_salida_id is not None:
+            print(f"Sala de salida: {estado.sala_salida_id}")
 
         jugador = estado.jugador
         if jugador is None:
@@ -44,21 +45,23 @@ class VistaConsola:
             print("Sala no disponible.")
             return
 
-        print(f"Sala: {sala.id_sala}")
+        contexto = getattr(self, "_contexto_presentacion", None)
+        print(f"Sala: {sala.id_sala}" + (" — SALIDA" if sala.id_sala == estado.sala_salida_id else ""))
         puertas = [
-            f"{p.id_puerta}: {p.direccion} -> {p.destino_sala_id} "
-            f"({'abierta' if p.abierta else 'cerrada'})"
+            presentacion.descripcion_puerta(p, estado, contexto)
             for p in sala.puertas
         ]
         enemigos = [
-            f"{e.nombre} ({e.id_actor}), vida: {e.vida}/{e.vida_max}"
+            f"{presentacion.etiqueta_enemigo(e, sala.enemigos, estado, contexto)} "
+            f"({e.id_actor}), vida: {e.vida}/{e.vida_max}" + (" — muerto" if not e.esta_vivo() else "")
             for e in sala.enemigos
         ]
         objetos = [
-            f"{o.id_instancia} ({o.tipo_ficha_id})" for o in sala.objetos
+            f"{i}. {presentacion.nombre_objeto(o, estado, contexto)} ({o.id_instancia})"
+            for i, o in enumerate(sala.objetos, 1)
         ]
         trampas = [
-            f"{t.id_trampa} ({t.tipo}), "
+            f"{presentacion.nombre_trampa(t, estado, contexto)}, "
             f"{'armada' if t.armada else 'desarmada'}"
             for t in sala.trampas
         ]
@@ -66,6 +69,32 @@ class VistaConsola:
         print("Enemigos: " + (", ".join(enemigos) or "ninguno"))
         print("Objetos: " + (", ".join(objetos) or "ninguno"))
         print("Trampas: " + (", ".join(trampas) or "ninguna"))
+        inv = estado.inventario
+        if inv is not None:
+            print(f"Inventario: {inv.get_cantidad()}/{inv.get_capacidad()}")
+            self.mostrar_inventario(inv.obtener_objetos(), inv.obtener_actual())
+        else:
+            print("Inventario no disponible.")
+        equipo = presentacion.equipo_disponible(estado, contexto)
+        for clase, etiqueta in (("arma", "Arma"), ("armadura", "Armadura")):
+            objeto = equipo.get(clase)
+            print(f"{etiqueta}: " + (presentacion.nombre_objeto(objeto, estado, contexto) if objeto else "ninguna"))
+        print("--- Últimos 20 mensajes ---")
+        self.mostrar_bitacora(self.bitacora.obtener_mensajes())
+
+    def mostrar_resumen(self, estado):
+        jugador = estado.jugador
+        if jugador is None:
+            return
+        sala = jugador.sala_actual
+        print(f"Tiempo: {estado.reloj} | Vida: {jugador.vida}/{jugador.vida_max}"
+              f" | Sala: {sala.id_sala if sala is not None else 'sin ubicación'}"
+              f" | Acciones: {estado.acciones_ejecutadas} | Derrotados: {estado.enemigos_derrotados}")
+        if not estado.partida_activa:
+            print("Partida terminada.")
+
+    def mostrar_criptas(self, datos):
+        print("\n".join(presentacion.lineas_criptas(datos)))
 
     def leer_comando(self) -> str:
         try:
@@ -74,9 +103,17 @@ class VistaConsola:
             return "SALIR"
 
     def mostrar_inventario(self, objetos, seleccionado=None):
-        for objeto in objetos:
+        contexto = getattr(self, "_contexto_presentacion", None)
+        estado = contexto.obtener_estado() if contexto is not None else getattr(self, "_estado_presentado", None)
+        inventario = getattr(estado, "inventario", None)
+        orden_real = inventario.obtener_objetos() if inventario is not None else list(objetos)
+        for i, objeto in enumerate(objetos, 1):
+            numero = next((pos for pos, real in enumerate(orden_real, 1) if real is objeto), i)
             marca = "*" if objeto is seleccionado else " "
-            print(f"{marca} {objeto.id_instancia} ({objeto.tipo_ficha_id}), {objeto.ubicacion}")
+            equipo = " [equipado]" if objeto.ubicacion == "equipado" else ""
+            seleccion = " [seleccionado]" if objeto is seleccionado else ""
+            print(f"{marca} {numero}. {presentacion.nombre_objeto(objeto, estado, contexto)} "
+                  f"({objeto.id_instancia}){equipo}{seleccion}")
         if not objetos:
             print("Inventario vacío.")
 
