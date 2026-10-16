@@ -8,6 +8,7 @@ from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.accion import Accion, ResultadoAccion
 from dto.estado_partida import EstadoPartida
+from estructuras.tabla_hash import tiene_duplicados
 from logica.cache_catalogo import DUEÑO_EN_USO
 from logica.inventario import Inventario
 from logica.historial_reversible import HistorialReversible
@@ -154,7 +155,7 @@ class JuegoService:
         ):
             raise ValueError("No se reemplaza un inventario con historial vigente.")
         ids = [o.id_instancia for o in inventario.obtener_objetos()]
-        if any(type(i) is not str or not i for i in ids) or len(set(ids)) != len(ids):
+        if any(type(i) is not str or not i for i in ids) or tiene_duplicados(ids):
             raise ValueError("Los objetos deben tener IDs de cadena únicos.")
         if estado.mapa is not None:
             for sala in estado.mapa.obtener_salas():

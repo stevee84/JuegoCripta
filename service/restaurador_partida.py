@@ -4,6 +4,7 @@ from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
 from dto.objeto_instancia import ObjetoInstancia
 from dto.evento import Evento
+from estructuras.tabla_hash import tiene_duplicados
 from logica.agenda_eventos import AgendaEventos
 from logica.historial_reversible import HistorialReversible
 from logica.inventario import Inventario
@@ -469,7 +470,7 @@ class RestauradorPartida:
                     raise ValueError("El evento temporal no corresponde a su puerta o trampa.")
                 setattr(entidad, campo, evento)
         for efecto in estado.efectos_activos:
-            if not efecto["eventos"] or len(set(efecto["eventos"])) != len(efecto["eventos"]):
+            if not efecto["eventos"] or tiene_duplicados(efecto["eventos"]):
                 raise ValueError("El efecto necesita eventos pendientes únicos.")
             for identificador in efecto["eventos"]:
                 evento = estado.agenda.buscar(identificador)

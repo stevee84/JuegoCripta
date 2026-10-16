@@ -4,6 +4,7 @@ from pathlib import Path
 from contratos.fuente_datos import FuenteDatos
 from datos.cliente_api import MAX_IDS_POR_SOLICITUD, CriptaAPIError
 from dto.sala import validar_id_sala
+from logica.ordenamiento import OrdenadorAdaptativo
 
 
 class FuenteOffline(FuenteDatos):
@@ -58,7 +59,7 @@ class FuenteOffline(FuenteDatos):
         carpeta = self._ruta / cripta_id
         archivos = [carpeta / "contenido.json"]
         if not archivos[0].exists():
-            archivos = sorted(carpeta.glob("contenido_*.json"))
+            archivos = OrdenadorAdaptativo().ordenar(list(carpeta.glob("contenido_*.json")), lambda r: r.name)
         registros = {}
         for archivo in archivos:
             for registro in self._leer_json(archivo).get("contenido", []):

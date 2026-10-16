@@ -64,3 +64,13 @@ class TablaHashImpl(TablaHash):
         self._tamanio = 0
         for clave, valor in items_viejos:
             self.insertar(clave, valor)
+
+
+def tiene_duplicados(elementos) -> bool:
+    """Detecta repetidos en O(n) promedio con la tabla propia (§7: sin set de biblioteca)."""
+    vistos = TablaHashImpl()
+    for elemento in elementos:
+        if vistos.contiene(elemento):
+            return True
+        vistos.insertar(elemento, True)
+    return False
