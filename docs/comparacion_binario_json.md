@@ -1,39 +1,69 @@
-# Comparacion Binario vs JSON (§4.10)
+# Comparación binario vs JSON (§4.10)
 
-Mediciones con una partida de 52 salas, ~150 enemigos, ~100 objetos, ~50 trampas.
-Python 3.14, Windows 11, promedio de 500 iteraciones.
+## Cómo se reproduce
+
+```
+python main.py --bench
+```
+
+Las filas `guardado_binario_*` y `guardado_json_*_alternativa` salen de
+`benchmarks/integrante2.py::medir_guardado`. Para cada una de las 4 criptas
+publicadas se arma una partida real (`InicializadorPartida` + `FuenteOffline`
+sobre las respuestas del API guardadas en `tests/fixtures/api_real/`).
+
+- **Mismo estado lógico:** el JSON es exactamente lo que devuelve
+  `GuardadoBinario.cargar` del binario, con las salas como lista de registros.
+- **Medición:** la preparación queda fuera del cronómetro (`perf_counter_ns`),
+  con 1 calentamiento y 15 repeticiones. Se informa la mediana.
+- **Leer una sala:** se lee la última sala del índice. En JSON hay que parsear
+  el archivo completo y buscarla; en binario se usa el índice ordenado con
+  búsqueda binaria.
+- **Coherencia:** el benchmark verifica que los dos formatos devuelvan la misma sala.
+
+Entorno de los números de abajo: Python 3.14.0, Windows 11 (10.0.26200).
 
 ## Resultados
 
-| Metrica              | Binario (v5)  | JSON          | Ventaja binario |
-|----------------------|---------------|---------------|-----------------|
-| Tamano en disco      | 52.7 KB       | 69.8 KB       | 1.3x compacto   |
-| Carga completa       | 1.29 ms       | 0.98 ms       | JSON mas rapido  |
-| Acceso a 1 sala      | 0.21 ms       | 0.90 ms       | 4.4x rapido      |
+| Cripta | Salas | Bytes binario | Bytes JSON | Binario más chico |
+|---|---:|---:|---:|---:|
+| cripta-01 | 6 | 7 538 | 12 547 | 40 % |
+| cripta-02 | 20 | 14 474 | 21 040 | 31 % |
+| cripta-03 | 40 | 25 594 | 35 138 | 27 % |
+| cripta-04 | 50 | 30 914 | 41 978 | 26 % |
 
-## Analisis
+Mediana en microsegundos por operación:
 
-- **Tamano:** el binario ahorra ~25% al eliminar claves repetidas, comillas y
-  delimitadores JSON. Cada campo ocupa exactamente los bytes de `struct.pack`.
+| Cripta | Leer 1 sala binario | Leer 1 sala JSON | Cargar todo binario | Cargar todo JSON | Guardar binario | Guardar JSON |
+|---|---:|---:|---:|---:|---:|---:|
+| cripta-01 (6) | 169 | 307 | 417 | 352 | 2 339 | 1 198 |
+| cripta-02 (20) | 183 | 495 | 655 | 381 | 2 510 | 1 753 |
+| cripta-03 (40) | 205 | 582 | 1 039 | 511 | 3 373 | 2 852 |
+| cripta-04 (50) | 193 | 585 | 1 173 | 578 | 3 552 | 3 324 |
 
-- **Carga completa:** JSON es ligeramente mas rapido porque `json.load` esta
-  implementado en C puro, mientras que `GuardadoBinario.cargar` recorre el
-  archivo con multiples llamadas a `struct.unpack_from` en Python.
+## Análisis
 
-- **Acceso directo a sala:** la ventaja real del binario. El indice al final del
-  archivo mapea cada `id_sala` a su offset, permitiendo leer una sola sala sin
-  deserializar las demas. JSON obliga a parsear todo el archivo para extraer
-  una sala.
+- **Leer una sala (la razón del formato):** en binario el tiempo se mantiene
+  casi constante (169–205 µs, dominado por abrir el archivo), porque la
+  cabecera apunta al índice y la búsqueda binaria salta directo al offset.
+  En JSON crece con la partida, porque siempre hay que parsear todo. Con 50
+  salas el binario es **3 veces más rápido**, y la diferencia aumenta con
+  criptas mayores, como las que se usarán en la revisión (§9).
+- **Tamaño:** el binario ocupa entre un 26 y un 40 % menos, porque no repite
+  nombres de claves, comillas ni delimitadores.
+- **Cargar todo:** JSON es unas 2 veces más rápido. `json.load` está escrito en
+  C, mientras que `GuardadoBinario.cargar` decodifica campo por campo con
+  `struct` en Python y además valida cada registro.
+- **Guardar:** el binario es más lento porque escribe en un archivo temporal,
+  valida la reconstrucción completa y recién entonces reemplaza el anterior
+  (si falla, el guardado previo queda intacto). JSON solo hace `json.dump`.
 
-## Justificacion del formato binario
+## Decisión
 
-El formato binario se justifica por:
+Se mantiene el binario. §4.10 exige poder recuperar una sala sin leer el
+archivo completo, y es la única operación donde JSON no tiene una respuesta
+equivalente. La desventaja en carga completa y guardado es de 1 a 2 ms por
+partida, ocurre una vez por sesión y es despreciable frente a una sola
+solicitud al API (~400 ms, §3.4).
 
-1. **Acceso directo por indice** (`leer_sala`): 4.4x mas rapido que JSON.
-   Permite restaurar salas individuales sin cargar la partida completa.
-2. **Tamano compacto:** reduce almacenamiento en disco un 25%.
-3. **Formato fijo:** la estructura de bytes fija facilita la validacion de
-   integridad (firma "CRPT", offsets dentro del archivo, checksums).
-4. **Desventaja aceptada:** la carga completa es marginalmente mas lenta que
-   JSON, pero la diferencia (0.3 ms) es irrelevante frente a la latencia de
-   red (~400 ms por solicitud API).
+**Límite conocido:** si el juego solo cargara partidas completas y nunca salas
+sueltas, JSON sería más simple y más rápido de cargar.
