@@ -43,6 +43,7 @@ class ControladorJuego:
         self._guardado = GuardadoBinario()
         self._ruta_partida = Path(RUTA_GUARDADO) / ARCHIVO_PARTIDA
         self._en_ejecucion = False
+        self._solicitudes_listado = 0
 
     def _vincular_bitacora(self):
         bitacora = getattr(self._vista, "bitacora", None)
@@ -211,7 +212,7 @@ class ControladorJuego:
     def _elegir_partida(self) -> bool:
         """Menú de criptas (y continuar); False si el jugador cierra la ventana."""
         try:
-            resp = self._fuente.listar_criptas()
+            resp = self._listar_criptas()
             criptas = resp.get("criptas", resp) if isinstance(resp, dict) else resp
             if not isinstance(criptas, list):
                 criptas = [criptas] if criptas else []
@@ -231,11 +232,28 @@ class ControladorJuego:
                 return True
 
     def _preparar_nueva_partida(self) -> None:
-        """El jugador eligió volver al menú: la partida anterior se descarta y
-        el presupuesto vuelve a contar desde cero (§5.1, por partida)."""
+        """El jugador eligió volver al menú: la partida anterior se descarta."""
         self._historial = None
-        if isinstance(self._fuente, ClienteAPI):
-            self._fuente._presupuesto = PresupuestoSolicitudes()
+
+    def _listar_criptas(self):
+        """Lista criptas y recuerda cuántas solicitudes costó: cuentan para la próxima partida (§5.1)."""
+        presupuesto = getattr(self._fuente, "_presupuesto", None)
+        antes = presupuesto._intentos if presupuesto is not None else 0
+        try:
+            return self._servicio.listar_criptas()
+        finally:
+            presupuesto = getattr(self._fuente, "_presupuesto", None)
+            self._solicitudes_listado = (presupuesto._intentos - antes) if presupuesto is not None else 0
+
+    def _nuevo_presupuesto(self) -> None:
+        """Cada partida (nueva o cargada) tiene su propio contador; solo arrastra el listado previo."""
+        if not isinstance(self._fuente, ClienteAPI):
+            return
+        presupuesto = PresupuestoSolicitudes()
+        for _ in range(self._solicitudes_listado):
+            presupuesto.registrar_intento()
+        self._solicitudes_listado = 0
+        self._fuente._presupuesto = presupuesto
 
     def procesar_comando(self, comando: str):
         self._vincular_bitacora()
@@ -282,7 +300,7 @@ class ControladorJuego:
                 nombre = presentacion.nombre_objeto(objeto, self._servicio.obtener_estado(), self._servicio)
                 resultado = ResultadoAccion(True, f"Seleccionado: {nombre}")
             elif operacion == "criptas":
-                datos = self._servicio.listar_criptas()
+                datos = self._listar_criptas()
                 if self._vista is not None:
                     mostrar = getattr(self._vista, "mostrar_criptas", None)
                     if mostrar is not None:
@@ -331,6 +349,7 @@ class ControladorJuego:
                     raise NotImplementedError("No se reemplaza una partida con historial vigente.")
                 if anterior is not None and not anterior.partida_activa:
                     self._preparar_nueva_partida()
+                self._nuevo_presupuesto()
                 self._servicio.iniciar_partida(partes[1])
                 self._historial = self._servicio.obtener_estado().historial
                 resultado = ResultadoAccion(True, "Partida iniciada.")
@@ -375,6 +394,7 @@ class ControladorJuego:
                 ruta = Path(partes[1]) if len(partes) == 2 else self._ruta_partida
                 if not ruta.is_file():
                     raise ValueError(f"No hay una partida guardada en {ruta}.")
+                self._nuevo_presupuesto()
                 self.cargar(str(ruta))
                 resultado = ResultadoAccion(True, f"Partida cargada: {self._resumen_partida()}. "
                                                   "El retroceso empieza de cero desde aquí.")

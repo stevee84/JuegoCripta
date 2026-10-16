@@ -405,26 +405,110 @@ def test_metricas_distinguen_disco_de_red(en_tmp):
     assert any("desde disco: " + str(total) in linea for linea in segunda.lineas_metricas())
 
 
-def test_volver_al_menu_permite_otra_partida_y_reinicia_presupuesto(en_tmp):
-    from datos.cliente_api import ClienteAPI
-    from datos.presupuesto_solicitudes import PresupuestoSolicitudes
-
+def test_volver_al_menu_permite_otra_partida(en_tmp):
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-03")
+    controlador.procesar_comando("cripta cripta-02")
     _jugar(controlador, 3)
-
     assert controlador._servicio.obtener_estado().partida_activa
     assert not controlador._historial.esta_vacio()
-    assert not controlador.procesar_comando("cripta cripta-02").exito
-
+    assert not controlador.procesar_comando("cripta cripta-03").exito
     controlador._preparar_nueva_partida()
+    assert controlador.procesar_comando("cripta cripta-03").exito
+
+
+@pytest.fixture
+def api_simulada(monkeypatch):
+    """ClienteAPI real; requests.request responde desde las fixtures reales y cuenta las llamadas."""
+    import requests
+    from urllib.parse import urlsplit
+    local = FuenteOffline(str(API_REAL))
+    estado = {"llamadas": 0, "fallar": False}
+
+    def request(metodo, url, **kwargs):
+        estado["llamadas"] += 1
+        if estado["fallar"]:
+            raise requests.exceptions.ConnectionError("sin red")
+        ruta, params = urlsplit(url).path.split("/v1", 1)[-1], kwargs.get("params") or {}
+        partes = ruta.strip("/").split("/")
+        if partes == ["criptas"]:
+            cuerpo = local.listar_criptas()
+        elif partes == ["catalogo", "version"]:
+            cuerpo = {"version": local.obtener_version_catalogo()}
+        elif partes == ["catalogo"]:
+            cuerpo = local.obtener_catalogo(params["ids"].split(","))
+        elif len(partes) == 2:
+            cuerpo = local.obtener_generales(partes[1])
+        elif partes[2] == "version":
+            cuerpo = {"id": partes[1], "version": local.obtener_version_cripta(partes[1])}
+        elif partes[2] == "salas":
+            cuerpo = local.obtener_pagina(partes[1], params["pagina"])
+        else:
+            cuerpo = local.obtener_contenido(partes[1], [int(i) for i in params["salas"].split(",")])
+
+        class Respuesta:
+            status_code = 200
+            def json(self):
+                return cuerpo
+        return Respuesta()
+
+    monkeypatch.setattr(requests, "request", request)
+    return estado
+
+
+def _controlador_http():
+    from controller.controlador_juego import ControladorJuego
+    from datos.cliente_api import ClienteAPI
+    from logica.historial_reversible import HistorialReversible
+    from vista.vista_consola import VistaConsola
+    controlador = ControladorJuego(MotorJuego(), VistaConsola(), ClienteAPI("https://simulada/v1"), HistorialReversible())
+    controlador.configurar_arranque(11, CacheCatalogo(25), "partidas")
+    controlador.conectar_inicializador(InicializadorPartida(), 11)
+    return controlador
+
+
+def test_presupuesto_por_partida_en_todos_los_caminos(en_tmp, api_simulada):
+    controlador = _controlador_http()
+    presupuesto = lambda: controlador._fuente._presupuesto
+
+    controlador.procesar_comando("criptas")
+    api_simulada["fallar"] = True
+    assert not controlador.procesar_comando("cripta cripta-01").exito
+    api_simulada["fallar"] = False
+    antes = api_simulada["llamadas"]
+    assert controlador.procesar_comando("cripta cripta-01").exito
+    # El reintento empieza de cero: no arrastra ni el listado ni los intentos fallidos.
+    assert presupuesto()._intentos == api_simulada["llamadas"] - antes
+    assert presupuesto()._limite == _leer(API_REAL / "cripta-01" / "generales.json")["presupuesto_solicitudes"]
+
+    antes = api_simulada["llamadas"]
+    controlador.procesar_comando("criptas")
     assert controlador.procesar_comando("cripta cripta-02").exito
+    # Reemplazar una partida sin acciones: cuenta el listado nuevo y nada de cripta-01.
+    assert presupuesto()._intentos == api_simulada["llamadas"] - antes
 
-    cliente = ClienteAPI(
-        "https://ejemplo.invalid",
-        presupuesto=PresupuestoSolicitudes(9),
-    )
-    cliente._presupuesto.registrar_intento()
-    controlador._fuente = cliente
+
+def test_offline_reporta_cero_solicitudes_contra_el_presupuesto_de_la_cripta(en_tmp):
+    limite = _leer(API_REAL / "cripta-01" / "generales.json")["presupuesto_solicitudes"]
+    esperado = {"intentos": 0, "limite": limite, "restantes": limite, "agotado": False}
+    controlador = _controlador()
+    controlador.procesar_comando("cripta cripta-01")
+    assert controlador._servicio.obtener_metricas()["presupuesto"] == esperado
+    assert any(f"0/{limite} solicitudes" in linea for linea in controlador.lineas_metricas())
+    assert controlador.procesar_comando("guardar").exito
+
+    otro = _controlador()
+    assert otro.procesar_comando("cargar").exito
+    assert otro._servicio.obtener_metricas()["presupuesto"] == esperado
+
+
+def test_metricas_de_cache_son_de_la_partida_y_no_acumuladas(en_tmp):
+    controlador = _controlador()
+    controlador.procesar_comando("cripta cripta-01")
+    primera = controlador._servicio.obtener_metricas()["cache"]
+    assert primera["aciertos"] == 0 and primera["fallos"] > 0
     controlador._preparar_nueva_partida()
-    assert cliente._presupuesto._intentos == 0
+    controlador.procesar_comando("cripta cripta-01")
+    segunda = controlador._servicio.obtener_metricas()["cache"]
+    # Misma caché caliente: todo se resuelve en memoria y no se arrastran los fallos anteriores.
+    assert segunda["fallos"] == 0 and segunda["aciertos"] == primera["fallos"]
+    assert segunda["tamano"] == primera["tamano"]
