@@ -17,7 +17,7 @@ class ClienteAPI(FuenteDatos):
     """Integrante 2. Implementación HTTP con cabecera, timeout y errores."""
 
     _MAX_REINTENTOS = 3
-    _MAX_ESPERA = 30
+    _ESPERA_POR_DEFECTO = 1
 
     def __init__(self, url_base: str, timeout: int = 10, presupuesto=None):
         self._url_base = url_base.rstrip("/")
@@ -58,6 +58,11 @@ class ClienteAPI(FuenteDatos):
                 raise CriptaAPIError(
                     f"Error de conexión con {url}"
                 )
+            except requests.exceptions.RequestException as error:
+                # Respuesta truncada, redirecciones, decodificación...: nunca escapan sin contexto.
+                raise CriptaAPIError(
+                    f"{type(error).__name__} en operación {metodo} {url}: {error}"
+                ) from error
 
             if resp.status_code == 200:
                 try:
@@ -72,10 +77,9 @@ class ClienteAPI(FuenteDatos):
                     cuerpo = resp.json()
                 except ValueError:
                     cuerpo = {}
-                espera = max(0.1, min(
-                    cuerpo.get("reintentar_en", 1),
-                    self._MAX_ESPERA,
-                ))
+                espera = cuerpo.get("reintentar_en", self._ESPERA_POR_DEFECTO) if isinstance(cuerpo, dict) else None
+                if type(espera) not in (int, float) or espera < 0:
+                    espera = self._ESPERA_POR_DEFECTO
                 if intento < self._MAX_REINTENTOS:
                     time.sleep(espera)
                     continue
