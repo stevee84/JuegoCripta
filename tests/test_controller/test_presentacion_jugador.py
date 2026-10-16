@@ -206,7 +206,8 @@ def test_registro_y_replay_conservan_ids_reales(controlador, tmp_path):
     assert [e.vida for e in original.jugador.sala_actual.enemigos] == [e.vida for e in reproducido.jugador.sala_actual.enemigos]
 
 
-def test_cierre_despues_de_abrir_y_rearme_en_el_mismo_intervalo(controlador):
+def test_cierre_despues_de_abrir_y_rearme_en_el_mismo_intervalo(controlador, capsys):
+    capsys.readouterr()
     estado = controlador._motor.estado
     puerta = estado.jugador.sala_actual.puertas[0]
     puerta.abierta, puerta.cierre_automatico = False, 10
@@ -216,6 +217,7 @@ def test_cierre_despues_de_abrir_y_rearme_en_el_mismo_intervalo(controlador):
     evento = controlador._motor._programar(10, "REARMAR_TRAMPA", trampa.id_trampa, trampa)
     trampa.evento_rearme_id, trampa.evento_rearme = evento.id_evento, evento
     resultado = controlador.procesar_comando("abrir N")
+    salida = capsys.readouterr().out
     assert resultado.exito and not puerta.abierta and trampa.armada
     assert presentacion.avisos_automaticos(resultado) == [
         "Trampa de dardos se ha rearmado.", "La puerta N se ha cerrado automáticamente."]
@@ -223,6 +225,8 @@ def test_cierre_despues_de_abrir_y_rearme_en_el_mismo_intervalo(controlador):
     mensajes = controlador._bitacora.obtener_mensajes()
     assert mensajes.count("La puerta N se ha cerrado automáticamente.") == 1
     assert mensajes.count("Trampa de dardos se ha rearmado.") == 1
+    assert salida.count("La puerta N se ha cerrado automáticamente.") == 1
+    assert salida.count("Trampa de dardos se ha rearmado.") == 1
     estado.inventario.agregar(objeto("pergamino-real", "itm_pergamino"))
     cantidad = len(mensajes)
     assert controlador.procesar_comando("retroceder").exito
@@ -233,6 +237,35 @@ def test_cierre_despues_de_abrir_y_rearme_en_el_mismo_intervalo(controlador):
     assert controlador.procesar_comando("estado").exito
     assert controlador.procesar_comando("bitacora").exito
     assert controlador._bitacora.obtener_mensajes() == anteriores
+
+
+def test_eventos_automaticos_cancelados_no_se_anuncian(controlador):
+    estado = controlador._motor.estado
+    puerta = estado.jugador.sala_actual.puertas[0]
+    puerta.abierta = True
+    trampa = Trampa("trampa-cancelada", "trp_dardos")
+    trampa.ficha, trampa.armada = dict(FICHAS["trp_dardos"]), False
+    estado.jugador.sala_actual.trampas.append(trampa)
+
+    cierre = controlador._motor._programar(
+        10, "CERRAR_PUERTA", puerta.id_puerta, puerta
+    )
+    puerta.evento_cierre_id, puerta.evento_cierre = cierre.id_evento, cierre
+    rearme = controlador._motor._programar(
+        10, "REARMAR_TRAMPA", trampa.id_trampa, trampa
+    )
+    trampa.evento_rearme_id, trampa.evento_rearme = rearme.id_evento, rearme
+    estado.agenda.cancelar(cierre.id_evento)
+    estado.agenda.cancelar(rearme.id_evento)
+
+    cantidad = len(controlador._bitacora.obtener_mensajes())
+    resultado = controlador.procesar_comando("esperar")
+    nuevos = controlador._bitacora.obtener_mensajes()[cantidad:]
+    assert resultado.exito and puerta.abierta and not trampa.armada
+    assert not any(
+        "automáticamente" in mensaje or "rearmado" in mensaje
+        for mensaje in nuevos
+    )
 
 
 def test_presentacion_despues_de_cargar_sin_peticiones_adicionales(controlador, tmp_path, monkeypatch, capsys):
@@ -310,6 +343,40 @@ def vista_grafica(monkeypatch):
     vista = VistaPygame()
     yield vista
     vista.cerrar()
+
+
+def test_gui_recibe_avisos_automaticos_una_vez_y_no_al_deshacer(
+    vista_grafica, tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+    estado = crear_estado()
+    motor = MotorJuego()
+    motor.iniciar(estado)
+    control = ControladorJuego(motor, vista_grafica, None)
+    control.conectar_inventario(estado.inventario, estado.catalogo_inicial)
+
+    puerta = estado.jugador.sala_actual.puertas[0]
+    puerta.abierta, puerta.cierre_automatico = False, 10
+    trampa = Trampa("trampa-real", "trp_dardos")
+    trampa.ficha, trampa.armada = dict(FICHAS["trp_dardos"]), False
+    estado.jugador.sala_actual.trampas.append(trampa)
+    evento = motor._programar(10, "REARMAR_TRAMPA", trampa.id_trampa, trampa)
+    trampa.evento_rearme_id, trampa.evento_rearme = evento.id_evento, evento
+
+    assert control.procesar_comando("abrir N").exito
+    mensajes = vista_grafica.bitacora.obtener_mensajes()
+    assert mensajes.count("La puerta N se ha cerrado automáticamente.") == 1
+    assert mensajes.count("Trampa de dardos se ha rearmado.") == 1
+    assert control._bitacora is vista_grafica.bitacora
+
+    estado.inventario.agregar(objeto("pergamino-real", "itm_pergamino"))
+    cantidad = len(mensajes)
+    assert control.procesar_comando("retroceder").exito
+    nuevos = vista_grafica.bitacora.obtener_mensajes()[cantidad:]
+    assert nuevos and not any(
+        "automáticamente" in mensaje or "rearmado" in mensaje
+        for mensaje in nuevos
+    )
 
 
 def test_gui_inventario_lleno_enemigos_controles_y_paginas(vista_grafica, tmp_path, monkeypatch):
