@@ -192,16 +192,29 @@ def test_adapta_versiones_json_sin_modificar_la_fuente(paquete, monkeypatch):
 
 def test_consola_seleccion_victoria_y_puntaje(paquete, monkeypatch):
     from vista.vista_consola import VistaConsola
-    controlador = ControladorJuego(MotorJuego(), VistaConsola(), FuenteOffline(str(paquete[0])))
+
+    controlador = ControladorJuego(
+        MotorJuego(),
+        VistaConsola(),
+        FuenteOffline(str(paquete[0])),
+    )
     controlador.conectar_inicializador(InicializadorPartida(), 91)
-    comandos = iter(["cripta c1", "recoger objeto:0:2", "abrir N", "mover N"])
+
+    comandos = iter([
+        "cripta c1",
+        "recoger objeto:0:2",
+        "abrir N",
+        "mover N",
+        "salir",
+    ])
     monkeypatch.setattr("builtins.input", lambda _: next(comandos))
+
     controlador.iniciar()
     estado = controlador._servicio.obtener_estado()
     assert estado.victoria and not estado.partida_activa
+
     resultados = controlador._puntajes.listar()
     assert len(resultados) == 1 and resultados[0]["cripta_id"] == "c1"
-
 
 def test_main_offline_y_replay_sin_entrada_ni_vista(paquete, tmp_path):
     raiz = Path(__file__).resolve().parents[2]

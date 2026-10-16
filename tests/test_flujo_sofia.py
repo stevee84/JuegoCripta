@@ -22,7 +22,7 @@ def test_controlador_servicios_vista_y_motor_hasta_terminacion(monkeypatch, caps
     vista = VistaConsola()
     historial = HistorialReversible()
     controlador = ControladorJuego(motor, vista, None, historial)
-    comandos = iter(["recoger moneda", "soltar", "mover norte", "esperar"])
+    comandos = iter(["recoger moneda", "soltar", "mover norte", "esperar", "salir"])
     monkeypatch.setattr("builtins.input", lambda _: next(comandos))
     controlador.iniciar(estado)
     assert estado.historial is historial
@@ -153,7 +153,9 @@ def test_comandos_rechazados_y_fin_de_entrada_no_consumen_tiempo(monkeypatch):
     for comando in ("", "atacar", "recoger", "mover", "esperar extra", "usar", "equipar", "retroceder"):
         assert not controlador.procesar_comando(comando).exito
     assert estado.reloj == 0 and estado.historial.esta_vacio()
+
     def fin(_):
         raise EOFError
+
     monkeypatch.setattr("builtins.input", fin)
     assert VistaConsola().leer_comando() == "SALIR"
