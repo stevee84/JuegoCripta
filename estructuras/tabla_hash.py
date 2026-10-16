@@ -47,6 +47,21 @@ class TablaHashImpl(TablaHash):
     def __len__(self) -> int:
         return self._tamanio
 
+    def __contains__(self, clave) -> bool:
+        return self.contiene(clave)
+
+    def __getitem__(self, clave):
+        if not self.contiene(clave):
+            raise KeyError(clave)
+        return self.obtener(clave)
+
+    def __eq__(self, otra) -> bool:
+        if not isinstance(otra, TablaHashImpl) or len(self) != len(otra):
+            return False
+        return all(otra.contiene(clave) and otra.obtener(clave) == valor for clave, valor in self)
+
+    __hash__ = None
+
     def __iter__(self):
         for bucket in self._buckets:
             for clave, valor in bucket:

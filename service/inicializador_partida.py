@@ -262,7 +262,7 @@ class InicializadorPartida:
         contenido = decodificador.convertir_contenido(
             {"contenido": registros}, {"entidades": catalogo.entidades()}
         )
-        for sala_id, entidades in contenido.items():
+        for sala_id, entidades in contenido:
             sala = mapa.obtener_sala(sala_id)
             sala.enemigos, sala.objetos, sala.trampas = (
                 entidades["enemigos"], entidades["objetos"], entidades["trampas"]

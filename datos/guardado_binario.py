@@ -5,6 +5,7 @@ import tempfile
 import zlib
 
 from dto.sala import validar_id_sala
+from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
 
 
@@ -597,7 +598,7 @@ class GuardadoBinario:
             extras = self._extras_por_defecto()
 
         # rooms
-        salas = {}
+        salas = TablaHashImpl()
         try:
             for i in range(num_salas):
                 idx_offset = offset_indice + i * 36
@@ -606,9 +607,9 @@ class GuardadoBinario:
                 if room_offset >= offset_indice:
                     return None
                 sala, _ = self._leer_sala_datos(registros, room_offset)
-                if sala["id_sala"] != id_sala or id_sala in salas:
+                if sala["id_sala"] != id_sala or salas.contiene(id_sala):
                     return None
-                salas[id_sala] = sala
+                salas.insertar(id_sala, sala)
         except (struct.error, IndexError, ValueError):
             return None
 

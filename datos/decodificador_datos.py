@@ -1,6 +1,16 @@
 from dto.sala import Sala, Puerta, Trampa, validar_id_sala
 from dto.actor import Enemigo
 from dto.objeto_instancia import ObjetoInstancia
+from estructuras.tabla_hash import TablaHashImpl
+
+
+def pares_por_sala(registros):
+    """(id_sala, registro) de un JSON leído (dict) o de una TablaHashImpl propia."""
+    return registros.items() if isinstance(registros, dict) else iter(registros)
+
+
+def registro_de_sala(registros, id_sala):
+    return registros[id_sala] if isinstance(registros, dict) else registros.obtener(id_sala)
 
 
 class DecodificadorDatos:
@@ -10,18 +20,13 @@ class DecodificadorDatos:
     def _buscar_ficha(fichas, ficha_id):
         if not isinstance(ficha_id, str) or not ficha_id:
             raise TypeError("El ID de ficha debe ser una cadena no vacía.")
-        if isinstance(fichas, dict):
-            entidades = fichas.get("entidades")
-            if isinstance(entidades, list):
-                for ficha in entidades:
-                    if isinstance(ficha, dict) and ficha.get("id") == ficha_id:
-                        return ficha
-            elif ficha_id in fichas:
-                ficha = fichas[ficha_id]
-                if isinstance(ficha, dict) and ficha.get("id", ficha_id) == ficha_id:
-                    return ficha
-        elif isinstance(fichas, list):
-            for ficha in fichas:
+        if hasattr(fichas, "resolver"):  # CatalogoPartida (TablaHashImpl propia)
+            ficha = fichas.resolver(ficha_id)
+            if isinstance(ficha, dict):
+                return ficha
+        else:
+            entidades = fichas.get("entidades") if isinstance(fichas, dict) else fichas
+            for ficha in entidades if isinstance(entidades, list) else []:
                 if isinstance(ficha, dict) and ficha.get("id") == ficha_id:
                     return ficha
         raise ValueError(f"Falta resolver la ficha {ficha_id}.")
@@ -87,13 +92,13 @@ class DecodificadorDatos:
         registros = datos.get("contenido")
         if not isinstance(registros, list):
             raise ValueError("contenido debe ser una lista.")
-        adaptado = {}
+        adaptado = TablaHashImpl()
         for registro in registros:
             if not isinstance(registro, dict):
                 raise ValueError("Cada contenido de sala debe ser un objeto.")
             sala_id = registro.get("sala")
             validar_id_sala(sala_id)
-            if sala_id in adaptado:
+            if adaptado.contiene(sala_id):
                 raise ValueError("El contenido repite una sala.")
             entrada = {"enemigos": [], "objetos": [], "trampas": []}
 
@@ -159,7 +164,7 @@ class DecodificadorDatos:
                 rearme = ficha.get("rearme")
                 trampa.tiempo_rearme = 300 if rearme is None else rearme
                 entrada["trampas"].append(trampa)
-            adaptado[sala_id] = entrada
+            adaptado.insertar(sala_id, entrada)
         return adaptado
 
     def convertir_contenido(self, datos: dict, fichas=None):
@@ -168,12 +173,12 @@ class DecodificadorDatos:
         El contrato externo usa ``{"contenido": [{"sala": 1, ...}]}``; el
         registro interno usa claves ``int``. Las claves textuales no se convierten.
         """
-        if not isinstance(datos, dict):
-            raise TypeError("El contenido debe ser un objeto JSON.")
-        if "contenido" in datos:
+        if isinstance(datos, dict) and "contenido" in datos:
             return self._adaptar_contenido_externo(datos, fichas)
-        resultado = {}
-        for sala_id, contenido in datos.items():
+        if not isinstance(datos, (dict, TablaHashImpl)):
+            raise TypeError("El contenido debe ser un objeto JSON.")
+        resultado = TablaHashImpl()
+        for sala_id, contenido in pares_por_sala(datos):
             validar_id_sala(sala_id)
             entrada = {"enemigos": [], "objetos": [], "trampas": []}
 
@@ -212,14 +217,14 @@ class DecodificadorDatos:
                     trampa.tiempo_rearme = t["tiempo_rearme"]
                 entrada["trampas"].append(trampa)
 
-            resultado[sala_id] = entrada
+            resultado.insertar(sala_id, entrada)
         return resultado
 
     def aplicar_contenido(self, mapa, contenido):
         """Vincula DTO ya adaptados con salas existentes, sin pedir datos externos."""
-        if mapa is None or not isinstance(contenido, dict):
+        if mapa is None or not isinstance(contenido, TablaHashImpl):
             raise ValueError("Se requieren mapa y contenido adaptado.")
-        for sala_id, entrada in contenido.items():
+        for sala_id, entrada in contenido:
             validar_id_sala(sala_id)
             sala = mapa.obtener_sala(sala_id)
             if sala is None:

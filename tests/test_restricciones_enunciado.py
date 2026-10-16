@@ -48,3 +48,32 @@ def _infracciones(ruta):
 def test_sin_estructuras_ni_ordenamientos_de_biblioteca(ruta):
     encontradas = [f"{ruta.relative_to(RAIZ)}:{linea} {que}" for linea, que in _infracciones(ruta)]
     assert not encontradas, "\n".join(encontradas)
+
+
+def test_indices_de_datos_usan_la_tabla_hash_propia(tmp_path, monkeypatch):
+    """§7: los índices sala→contenido, sala→registro y id→ficha no son dict de Python."""
+    from datos.decodificador_datos import DecodificadorDatos
+    from datos.fuente_offline import FuenteOffline
+    from datos.guardado_binario import GuardadoBinario
+    from estructuras.tabla_hash import TablaHashImpl
+    from logica.cache_catalogo import CacheCatalogo
+    from logica.motor_juego import MotorJuego
+    from service.inicializador_partida import CatalogoPartida, InicializadorPartida, crear_repositorio
+    from service.juego_service import JuegoService
+
+    monkeypatch.chdir(tmp_path)
+    fuente = FuenteOffline(str(RAIZ / "tests" / "fixtures" / "api_real"))
+    servicio = JuegoService(MotorJuego(), fuente, CacheCatalogo(25))
+    servicio.conectar_inicializador(InicializadorPartida())
+    servicio.iniciar_partida("cripta-01")
+
+    contenido = DecodificadorDatos().convertir_contenido(
+        fuente.obtener_contenido("cripta-01", [1, 2]), servicio._fichas_del_estado(servicio.obtener_estado()))
+    assert isinstance(contenido, TablaHashImpl)
+    assert isinstance(servicio._fichas_del_estado(servicio.obtener_estado()), CatalogoPartida)
+
+    servicio.guardar_partida(str(tmp_path / "p.bin"))
+    assert isinstance(GuardadoBinario().cargar(str(tmp_path / "p.bin"))["salas"], TablaHashImpl)
+
+    respuesta = crear_repositorio(CacheCatalogo(25), fuente, "x").resolver_lote(["itm_antorcha"])
+    assert list(respuesta) == ["entidades"] and isinstance(respuesta["entidades"], list)

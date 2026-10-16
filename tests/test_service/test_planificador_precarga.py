@@ -106,10 +106,8 @@ class TestPlanificadorPrecarga(unittest.TestCase):
         plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
         # 15 ids -> 2 chunks (10 + 5)
         ids = list(range(15))
-        self.repo.resolver_lote.return_value = {fid: {"d": 1} for fid in ids[:10]}
-
         def resolver_side(chunk):
-            return {fid: {"d": 1} for fid in chunk}
+            return {"entidades": [{"id": fid, "d": 1} for fid in chunk]}
         self.repo.resolver_lote.side_effect = resolver_side
 
         resultado = plan.solicitar_lote(ids)
@@ -119,7 +117,7 @@ class TestPlanificadorPrecarga(unittest.TestCase):
     def test_solicitar_lote_marca_cargadas(self):
         mapa = _crear_mapa_lineal(5)
         plan = PlanificadorPrecarga(self.repo, mapa, self.presupuesto)
-        self.repo.resolver_lote.return_value = {0: {"d": 1}}
+        self.repo.resolver_lote.return_value = {"entidades": [{"id": 0, "d": 1}]}
         plan.solicitar_lote([0])
         self.assertIn(0, plan._cargadas)
 

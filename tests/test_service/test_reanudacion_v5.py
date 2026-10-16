@@ -125,7 +125,7 @@ def test_restaurador_v5_conserva_identidades_y_datos_originales(tmp_path):
     servicio.guardar_partida(ruta)
     datos = GuardadoBinario().cargar(ruta)
     antes = copy.deepcopy(datos)
-    nuevo = RestauradorPartida().restaurar_para_reanudar(datos, fichas)
+    nuevo = RestauradorPartida().restaurar_para_reanudar(datos, {"entidades": list(fichas.values())})
     assert firma(nuevo) == firma(estado)
     assert datos == antes
     assert nuevo.reanudable and nuevo.limitaciones_carga == ("historial",)
