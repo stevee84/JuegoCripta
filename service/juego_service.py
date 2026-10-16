@@ -38,6 +38,8 @@ class JuegoService:
         self._acciones_coordinadas = 0
         self._operaciones_inventario = None
         self._resultado_registrado = None
+        self._limite_presupuesto = None
+        self._base_cache = (None, None)
 
     def iniciar_partida(self, cripta_id: str, estado=None):
         if not isinstance(cripta_id, str) or not cripta_id.strip():
@@ -81,6 +83,7 @@ class JuegoService:
             raise ValueError("No hay un motor conectado.")
         from service.inicializador_partida import InicializadorPartida
         preparados, self._preparacion_inicio = self._preparacion_inicio, None
+        base_cache = self._cache, self._cache.metricas() if self._cache is not None else None
         datos = getattr(self._inicializador, "_preparados", None)
         if isinstance(self._inicializador, InicializadorPartida):
             if (preparados is not None and preparados[:2] == (cripta_id, self._fuente)
@@ -122,6 +125,8 @@ class JuegoService:
         )
         self._motor.iniciar(estado)
         self._cache = getattr(estado, "cache_inicial", self._cache)
+        self._base_cache = base_cache
+        self._limite_presupuesto = getattr(estado, "presupuesto_solicitudes", None)
         self._inventario = inventario
         self._versiones = versiones
         self._estado_inicial = estado
@@ -281,11 +286,18 @@ class JuegoService:
     def _establecer_presupuesto(self, cripta_id):
         from service.inicializador_partida import establecer_presupuesto
 
-        if isinstance(self._fuente, ClienteAPI):
+        if not isinstance(self._fuente, ClienteAPI):
+            # Offline el límite solo se reporta (§5.1); un paquete sin generales no bloquea la carga.
+            obtener = getattr(self._fuente, "obtener_generales", None)
             try:
-                establecer_presupuesto(self._fuente, self._fuente.obtener_generales(cripta_id))
-            except CriptaAPIError as error:
-                raise ValueError(str(error)) from error
+                self._limite_presupuesto = establecer_presupuesto(self._fuente, obtener(cripta_id)) if obtener else None
+            except (CriptaAPIError, ValueError, AttributeError):
+                self._limite_presupuesto = None
+            return
+        try:
+            self._limite_presupuesto = establecer_presupuesto(self._fuente, self._fuente.obtener_generales(cripta_id))
+        except CriptaAPIError as error:
+            raise ValueError(str(error)) from error
 
     def _catalogo_para_carga(self, datos):
         from service.restaurador_partida import RestauradorPartida
@@ -327,6 +339,7 @@ class JuegoService:
             datos = binario.cargar(ruta)
         except (zlib.error, UnicodeError, ValueError) as error:
             raise ValueError("No se pudo leer el archivo binario: contenido corrupto.") from error
+        base_cache = self._cache, self._cache.metricas() if self._cache is not None else None
         if datos is None:
             raise ValueError("No se pudo leer el archivo binario o su versión es incompatible.")
         try:
@@ -351,6 +364,7 @@ class JuegoService:
         operaciones.sincronizar_referencias()
         self._sincronizar_fichas_en_uso()
         self._versiones = (estado.version_cripta, estado.version_catalogo)
+        self._base_cache = base_cache
         self._versiones_exigidas = None
         self._semilla = estado.semilla
         self._estado_inicial = None  # Una carga no es el inicio de un replay.
@@ -409,18 +423,35 @@ class JuegoService:
         self._resultado_registrado = estado
         return True
 
+    def _metricas_cache_de_la_partida(self) -> dict:
+        """§5.1: la caché sigue caliente entre partidas, pero se reporta solo lo de esta."""
+        actual = self._cache.metricas()
+        cache_base, base = self._base_cache
+        if cache_base is self._cache and base is not None:
+            for clave in ("aciertos", "fallos", "precargadas", "desde_disco", "desde_red"):
+                actual[clave] -= base[clave]
+            actual["total"] = actual["aciertos"] + actual["fallos"]
+            actual["tasa_acierto"] = round(actual["aciertos"] / actual["total"], 2) if actual["total"] else 0.0
+        return actual
+
     def obtener_metricas(self) -> dict:
         estado = self.obtener_estado()
         resultado = {}
         if self._cache is not None:
-            resultado["cache"] = self._cache.metricas()
-        presupuesto = getattr(self._fuente, "_presupuesto", None) if self._fuente else None
+            resultado["cache"] = self._metricas_cache_de_la_partida()
+        presupuesto = getattr(self._fuente, "_presupuesto", None) if isinstance(self._fuente, ClienteAPI) else None
         if presupuesto is not None:
             resultado["presupuesto"] = {
                 "intentos": presupuesto._intentos,
                 "limite": presupuesto._limite,
                 "restantes": presupuesto.restantes(),
                 "agotado": presupuesto.agotado(),
+            }
+        elif self._limite_presupuesto is not None:
+            # Offline: las lecturas locales no son solicitudes de red (§5.1).
+            resultado["presupuesto"] = {
+                "intentos": 0, "limite": self._limite_presupuesto,
+                "restantes": self._limite_presupuesto, "agotado": False,
             }
         if estado is not None:
             resultado["partida"] = {
