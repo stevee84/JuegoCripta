@@ -192,25 +192,35 @@ class JuegoService:
             entidades.extend(sala.enemigos)
             for enemigo in sala.enemigos:
                 entidades.extend(enemigo.botin_preparado)
-        fichas = {}
+        from service.inicializador_partida import CatalogoPartida
+
+        fichas = CatalogoPartida()
         operaciones = getattr(self._motor, "_servicio_inventario", None)
         catalogo = getattr(operaciones, "_catalogo", None)
-        if isinstance(catalogo, dict):
+
+        def agregar(ficha):
+            if isinstance(ficha, dict) and isinstance(ficha.get("id"), str):
+                previa = fichas.resolver(ficha["id"])
+                if previa is not None and previa != ficha:
+                    raise ValueError("Hay fichas contradictorias para un mismo ID.")
+                fichas.agregar(ficha)
+
+        if isinstance(catalogo, dict):  # catálogo recibido como JSON {id: ficha}: solo se lee
             for ficha_id, ficha in catalogo.items():
                 if isinstance(ficha, dict) and ficha.get("id") == ficha_id:
-                    fichas[ficha_id] = ficha
+                    agregar(ficha)
+        elif catalogo is not None and hasattr(catalogo, "entidades"):
+            for ficha in catalogo.entidades():
+                agregar(ficha)
         for entidad in entidades:
             ficha = getattr(entidad, "ficha", None)
             if ficha is None:
-                operaciones = getattr(self._motor, "_servicio_inventario", None)
                 tipo = getattr(entidad, "tipo_ficha_id", getattr(entidad, "tipo", None))
-                catalogo = getattr(operaciones, "_catalogo", None)
                 if tipo is not None and isinstance(catalogo, dict):
                     ficha = catalogo.get(tipo)
-            if isinstance(ficha, dict) and isinstance(ficha.get("id"), str):
-                if ficha["id"] in fichas and fichas[ficha["id"]] != ficha:
-                    raise ValueError("Hay fichas contradictorias para un mismo ID.")
-                fichas[ficha["id"]] = ficha
+                elif tipo is not None and hasattr(catalogo, "resolver"):
+                    ficha = catalogo.resolver(tipo)
+            agregar(ficha)
         return fichas
 
     def guardar_partida(self, ruta, guardado=None):
@@ -265,7 +275,7 @@ class JuegoService:
         repositorio = crear_repositorio(self._cache, self._fuente, version_catalogo)
         entidades = []
         for inicio in range(0, len(ids), MAX_IDS_POR_SOLICITUD):
-            entidades += repositorio.resolver_lote(ids[inicio:inicio + MAX_IDS_POR_SOLICITUD]).values()
+            entidades += repositorio.resolver_lote(ids[inicio:inicio + MAX_IDS_POR_SOLICITUD])["entidades"]
         return {"entidades": entidades}
 
     def _establecer_presupuesto(self, cripta_id):

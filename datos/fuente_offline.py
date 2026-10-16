@@ -4,6 +4,7 @@ from pathlib import Path
 from contratos.fuente_datos import FuenteDatos
 from datos.cliente_api import MAX_IDS_POR_SOLICITUD, CriptaAPIError
 from dto.sala import validar_id_sala
+from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
 
 
@@ -60,15 +61,15 @@ class FuenteOffline(FuenteDatos):
         archivos = [carpeta / "contenido.json"]
         if not archivos[0].exists():
             archivos = OrdenadorAdaptativo().ordenar(list(carpeta.glob("contenido_*.json")), lambda r: r.name)
-        registros = {}
+        registros = TablaHashImpl()
         for archivo in archivos:
             for registro in self._leer_json(archivo).get("contenido", []):
                 validar_id_sala(registro.get("sala"))
-                registros[registro["sala"]] = registro
-        faltantes = [s for s in sala_ids if s not in registros]
+                registros.insertar(registro["sala"], registro)
+        faltantes = [s for s in sala_ids if not registros.contiene(s)]
         if faltantes:
             raise CriptaAPIError(f"Falta contenido offline de {cripta_id} para las salas {faltantes}")
-        return {"contenido": [registros[s] for s in sala_ids]}
+        return {"contenido": [registros.obtener(s) for s in sala_ids]}
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
         self._validar_lote(ids, "obtener_catalogo")
