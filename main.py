@@ -34,8 +34,9 @@ def main() -> None:
 
     if config.bench:
         import json
+        from benchmarks.integrante2 import PROVEEDORES
         from benchmarks.integrante3 import ejecutar
-        print(json.dumps(ejecutar(), ensure_ascii=False, indent=2))
+        print(json.dumps(ejecutar(proveedores=PROVEEDORES), ensure_ascii=False, indent=2))
         return
 
     fuente = _crear_fuente(config)
