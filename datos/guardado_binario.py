@@ -5,6 +5,7 @@ import tempfile
 import zlib
 
 from dto.sala import validar_id_sala
+from logica.ordenamiento import OrdenadorAdaptativo
 
 
 class GuardadoBinario:
@@ -145,7 +146,8 @@ class GuardadoBinario:
                 self._escribir_sala(f, sala)
 
             # index (ordenado por id_sala para busqueda binaria)
-            offsets_salas.sort(key=lambda x: x[0] if isinstance(x[0], int) else str(x[0]))
+            offsets_salas = OrdenadorAdaptativo().ordenar(
+                offsets_salas, lambda x: x[0] if isinstance(x[0], int) else str(x[0]))
             offset_indice = f.tell()
             for id_sala, offset in offsets_salas:
                 f.write(self._empaquetar_id_sala(id_sala))
