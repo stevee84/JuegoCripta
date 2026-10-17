@@ -136,6 +136,8 @@ class VistaPygame:
         self._label_acciones = None
         self._label_inventario = None
         self._lineas_inventario = []
+        self._orden_inventario = None  # None = orden real; si no, "peso" | "valor" | "nombre"
+        self._vista_ordenada = None
         self._panel_content_y = 160
         self._corriendo = True
         self._modo = "demo"
@@ -345,7 +347,8 @@ class VistaPygame:
         pass
 
     def mostrar_inventario(self, objetos, seleccionado=None):
-        pass
+        """Respuesta del comando `inventario CRITERIO`: vista ordenada sin tocar el orden real."""
+        self._vista_ordenada = list(objetos)
 
     def mostrar_bitacora(self, mensajes):
         # La consulta no reinserta lo que ya almacena la bitácora compartida.
@@ -486,16 +489,22 @@ class VistaPygame:
         if inv.esta_vacio():
             return y
 
+        orden_activo = self._orden_inventario
+        y_etiqueta = y - 20
+        y = self._colocar_fila(
+            [(f"{etiqueta}", f"__orden__:{criterio or 'real'}", AZUL if criterio == orden_activo else GRIS_OSCURO)
+             for etiqueta, criterio in (("Real", None), ("Peso", "peso"), ("Valor", "valor"), ("Nombre", "nombre"))],
+            px, panel_w, y)
         actual = inv.obtener_actual()
         equipados = [o for o in equipo.values() if o is not None]
-        objetos = inv.obtener_objetos()
+        objetos = self._objetos_en_orden(inv, contexto)
         # Reserva anterior/siguiente, acciones del objeto y Guardar/Salir.
         limite = self.ALTO - self.BITACORA_ALTO - 10 - self.BTN_H - 8
         filas = max(1, min(5, (limite - y - 2 * (self.BTN_H + self.BTN_GAP) - 4) // self.FILA_INV))
         indice = next(i for i, obj in enumerate(objetos) if obj is actual)
         inicio = (indice // filas) * filas
         self._label_inventario = (f"Inventario {inv.get_cantidad()}/{inv.get_capacidad()} "
-                                  f"({inicio + 1}-{min(inicio + filas, len(objetos))}):", GRIS_CLARO, px, y - 20)
+                                  f"({inicio + 1}-{min(inicio + filas, len(objetos))}):", GRIS_CLARO, px, y_etiqueta)
         for numero, objeto in enumerate(objetos[inicio:inicio + filas], inicio + 1):
             marca = "[E] " if any(objeto is e for e in equipados) else ""
             texto = f"{numero}. {marca}{presentacion.nombre_objeto(objeto, estado, contexto)} — {efecto_objeto(objeto)}"
@@ -509,6 +518,24 @@ class VistaPygame:
         y = self._colocar_fila([("< Anterior", "anterior", GRIS_OSCURO),
                                ("Siguiente >", "siguiente", GRIS_OSCURO)], px, panel_w, y)
         return self._colocar_cuadricula(self._acciones_objeto(actual, equipados), px, panel_w, y)
+
+    def _objetos_en_orden(self, inv, contexto):
+        """Orden real o la vista pedida; se recalcula cada cuadro para no quedar desactualizada."""
+        if self._orden_inventario is None:
+            return inv.obtener_objetos()
+        consultar = getattr(contexto, "consultar_inventario", None)
+        if consultar is not None:
+            return consultar(self._orden_inventario)
+        reales = inv.obtener_objetos()
+        vista = self._vista_ordenada or []
+        if len(vista) == len(reales) and all(any(o is r for r in reales) for o in vista):
+            return vista
+        return reales
+
+    def _elegir_orden(self, controlador, criterio):
+        self._orden_inventario = None if criterio == "real" else criterio
+        self._vista_ordenada = None
+        controlador.procesar_comando("inventario" if criterio == "real" else f"inventario {criterio}")
 
     @staticmethod
     def _acciones_objeto(objeto, equipados):
@@ -1159,6 +1186,8 @@ class VistaPygame:
         self._salas_visitadas = set()
         self._scroll_bitacora = 0
         self._pagina_acciones = 0
+        self._orden_inventario = None
+        self._vista_ordenada = None
         self._sala_botones = None
         self._pagina_sala = 0
         self._sala_entidades = None
@@ -1196,6 +1225,8 @@ class VistaPygame:
                                 self._pagina_sala = max(0, self._pagina_sala - 1)
                             elif b.comando == "__sala_siguiente__":
                                 self._pagina_sala += 1
+                            elif b.comando.startswith("__orden__:"):
+                                self._elegir_orden(controlador, b.comando.split(":", 1)[1])
                             elif b.comando != "__noop__":
                                 controlador.procesar_comando(b.comando)
                             break
