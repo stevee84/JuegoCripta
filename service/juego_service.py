@@ -3,6 +3,7 @@ import os
 import tempfile
 import zlib
 
+from datos.decodificador_datos import DecodificadorDatos
 from datos.registro_partida import RegistroPartida
 from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
@@ -40,6 +41,7 @@ class JuegoService:
         self._resultado_registrado = None
         self._limite_presupuesto = None
         self._base_cache = (None, None)
+        self._cargador = None
 
     def iniciar_partida(self, cripta_id: str, estado=None):
         if not isinstance(cripta_id, str) or not cripta_id.strip():
@@ -57,6 +59,7 @@ class JuegoService:
             self._versiones = None
             self._acciones_coordinadas = 0
             self._resultado_registrado = None
+            self._cargador = None
             self._sincronizar_fichas_en_uso()
             return estado
         if self._fuente is None:
@@ -124,6 +127,7 @@ class JuegoService:
         )
         self._motor.iniciar(estado)
         self._cache = getattr(estado, "cache_inicial", self._cache)
+        self._cargador = estado.__dict__.pop("cargador_contenido", None)
         self._base_cache = base_cache
         self._limite_presupuesto = getattr(estado, "presupuesto_solicitudes", None)
         self._inventario = inventario
@@ -358,6 +362,12 @@ class JuegoService:
                 self._cache.liberar_referencia(ficha_id)
         operaciones._cache = self._cache
         operaciones.sincronizar_referencias()
+        self._cargador = None
+        if getattr(catalogo, "vincula_por_referencia", False) and any(
+                not sala.contenido_cargado for sala in estado.mapa.obtener_salas()):
+            from service.cargador_contenido import CargadorContenido
+            self._cargador = CargadorContenido(
+                estado.cripta_id, self._fuente, estado.mapa, catalogo, DecodificadorDatos())
         self._sincronizar_fichas_en_uso()
         self._versiones = (estado.version_cripta, estado.version_catalogo)
         self._base_cache = base_cache
@@ -514,6 +524,15 @@ class JuegoService:
                 estado.mapa.obtener_sala(puerta.destino_sala_id) is None
             ):
                 return ResultadoAccion(False, "El destino no está cargado en el mapa.")
+            if accion.tipo == "MOVER" and puerta is not None and puerta.abierta and self._cargador is not None:
+                destino = estado.mapa.obtener_sala(puerta.destino_sala_id)
+                if not destino.contenido_cargado:
+                    # Apéndice B: el contenido llega antes de confirmar la entrada; la espera
+                    # de red no avanza el reloj porque el motor todavía no actuó.
+                    try:
+                        self._cargador.asegurar(destino)
+                    except (CriptaAPIError, ValueError) as error:
+                        return ResultadoAccion(False, f"No se pudo cargar la sala {destino.id_sala}: {error}")
         elif accion.direccion is not None:
             return ResultadoAccion(False, f"{accion.tipo} no recibe dirección.")
         elif accion.tipo in ("ESPERAR", "EQUIPAR") and accion.objetivo is not None:
@@ -594,6 +613,7 @@ class JuegoService:
             inventario._cursor = cursor
             nodo.valor.ficha = ficha_anterior
         if resultado.exito:
+            self._precargar_vecindad()
             self._sincronizar_fichas_en_uso()
         if resultado.exito and self._operaciones_inventario is not None:
             try:
@@ -614,6 +634,17 @@ class JuegoService:
             fichas += [o.tipo_ficha_id for o in sala.objetos]
             fichas += [t.tipo for t in sala.trampas]
         return [f for f in fichas if f]
+
+    def _precargar_vecindad(self):
+        """§4.2: adelanta el contenido de las salas vecinas pendientes. Es una optimización:
+        si falla (por ejemplo, sin presupuesto), el MOVER lo vuelve a intentar e informa."""
+        estado = self.obtener_estado()
+        if self._cargador is None or estado is None or not estado.partida_activa:
+            return
+        try:
+            self._cargador.precargar_cerca(estado.jugador.sala_actual)
+        except (CriptaAPIError, ValueError):
+            pass
 
     def _sincronizar_fichas_en_uso(self):
         if self._cache is None:

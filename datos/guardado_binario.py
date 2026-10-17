@@ -14,7 +14,8 @@ class GuardadoBinario:
 
     MAGIC = b"CRPT"
     # v6: textos de largo variable (uint16 + UTF-8); v5 tenía campos fijos de 32 bytes.
-    VERSION = 6
+    # v7: cada sala indica si su contenido ya se cargó (carga gradual, §4.2).
+    VERSION = 7
     HEADER_FORMAT = "<4sHqIIII"  # firma, versión, semilla, reloj, salas, offset índice, offset jugador
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
     MAX_TEXTO = 0xFFFF
@@ -522,6 +523,7 @@ class GuardadoBinario:
         f.write(self._empaquetar_id_sala(sala.id_sala))
         f.write(struct.pack("<HHHH",
             len(puertas), len(enemigos), len(objetos), len(trampas)))
+        f.write(struct.pack("<B", 1 if getattr(sala, "contenido_cargado", True) else 0))
 
         for p in puertas:
             self._escribir_texto(f, p.id_puerta)
@@ -645,11 +647,14 @@ class GuardadoBinario:
         }, o
 
     def _leer_sala_datos(self, data, offset):
-        if offset < 0 or offset + 40 > len(data):
+        if offset < 0 or offset + 41 > len(data):
             raise ValueError("Registro de sala truncado.")
         o = offset
         id_sala = self._desempaquetar_id_sala(data[o:o+32]); o += 32
         np, ne, no_, nt = struct.unpack_from("<HHHH", data, o); o += 8
+        marca_cargada = data[o]; o += 1
+        if marca_cargada not in (0, 1):
+            raise ValueError("Marca de contenido inválida en el guardado.")
 
         puertas = []
         for _ in range(np):
@@ -721,6 +726,7 @@ class GuardadoBinario:
 
         sala = {
             "id_sala": id_sala,
+            "contenido_cargado": marca_cargada == 1,
             "puertas": puertas,
             "enemigos": enemigos,
             "objetos": objetos,

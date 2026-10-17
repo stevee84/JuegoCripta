@@ -11,6 +11,7 @@ from datos.cliente_api import ClienteAPI, CriptaAPIError
 from datos.almacen_persistente import AlmacenPersistente
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from logica.cache_catalogo import CacheCatalogo
+from service.cargador_contenido import CargadorContenido
 from service.catalogo_vivo import CatalogoVivo
 from service.repositorio_catalogo import RepositorioCatalogo
 from dto.actor import Jugador
@@ -205,33 +206,8 @@ class InicializadorPartida:
                 if puerta.llave_requerida is not None:
                     self._agregar_id(ids_fichas, puerta.llave_requerida)
 
-        registros = []
-        vistas = []
-        for inicio in range(0, len(ids_salas), 10):
-            lote = ids_salas[inicio:inicio + 10]
-            respuesta = fuente.obtener_contenido(cripta_id, lote)
-            if not isinstance(respuesta, dict) or not isinstance(respuesta.get("contenido"), list):
-                raise ValueError("Falta contenido del paquete local.")
-            for registro in respuesta["contenido"]:
-                if not isinstance(registro, dict):
-                    raise ValueError("El contenido de cada sala debe ser un objeto JSON.")
-                sala_id = registro.get("sala")
-                validar_id_sala(sala_id)
-                if sala_id not in lote or sala_id in vistas:
-                    raise ValueError("El contenido repite una sala o incluye una ajena al lote.")
-                vistas.append(sala_id)
-                registros.append(registro)
-                for campo in ("enemigos", "objetos", "trampas"):
-                    elementos = registro.get(campo, [])
-                    if not isinstance(elementos, list):
-                        raise ValueError(f"contenido.{campo} debe ser una lista.")
-                    for elemento in elementos:
-                        ficha_id = elemento if campo == "objetos" and isinstance(elemento, str) else (
-                            elemento.get("tipo") if isinstance(elemento, dict) else None
-                        )
-                        self._agregar_id(ids_fichas, ficha_id)
-        if len(vistas) != total:
-            raise ValueError("El paquete debe incluir contenido de todas las salas, incluso vacías.")
+        for sala in mapa.obtener_salas():
+            sala.contenido_cargado = False
 
         if cache is None:
             cache = CacheCatalogo()
@@ -239,38 +215,16 @@ class InicializadorPartida:
             # Mantener intacta la memoria que pueda pertenecer a otra partida.
             cache = CacheCatalogo(cache._capacidad)
         cache._version_catalogo_partida = version_catalogo
-        repositorio = crear_repositorio(cache, fuente, version_catalogo)
-        catalogo = CatalogoVivo(repositorio)
-        resueltas = []
-        pendientes = OrdenadorAdaptativo().ordenar(ids_fichas, lambda ficha_id: ficha_id)
-        while pendientes:
-            lote, pendientes = pendientes[:10], pendientes[10:]
-            respuesta = repositorio.resolver_lote(lote)
-            for ficha_id in lote:
-                ficha = decodificador._buscar_ficha(respuesta, ficha_id)
-                if ficha.get("id") != ficha_id or not isinstance(ficha.get("clase"), str):
-                    raise ValueError("Una ficha no contiene su ID o clase válidos.")
-                resueltas.append(ficha_id)
-                if ficha.get("clase") == "enemigo":
-                    botin = ficha.get("suelta") or []
-                    if not isinstance(botin, list):
-                        raise ValueError("suelta debe ser una lista de IDs.")
-                    for referencia in botin:
-                        self._agregar_id(ids_fichas, referencia)
-                        if (referencia not in lote and referencia not in pendientes
-                                and referencia not in resueltas):
-                            pendientes.append(referencia)
+        catalogo = CatalogoVivo(crear_repositorio(cache, fuente, version_catalogo))
 
-        contenido = decodificador.convertir_contenido(
-            {"contenido": registros}, catalogo
-        )
-        for sala_id, entidades in contenido:
-            sala = mapa.obtener_sala(sala_id)
-            sala.enemigos, sala.objetos, sala.trampas = (
-                entidades["enemigos"], entidades["objetos"], entidades["trampas"]
-            )
-            for enemigo in sala.enemigos:
-                enemigo.sala_actual = sala
+        # §4.2/§9: si el presupuesto alcanza con holgura se carga todo (cero esperas en
+        # las puertas); si no, las 10 salas pendientes más cercanas y el resto al moverse.
+        cargador = CargadorContenido(cripta_id, fuente, mapa, catalogo, decodificador)
+        # Las llaves del esqueleto se resuelven en el mismo lote de catálogo que el contenido.
+        if cargador.alcanza_para_todo():
+            cargador.cargar_todo(fichas_extra=ids_fichas)
+        else:
+            cargador.cargar(cargador.mas_cercanas(mapa.obtener_sala(inicial)), fichas_extra=ids_fichas)
 
         estado = EstadoPartida(semilla, cripta_id)
         estado.presupuesto_solicitudes = generales["presupuesto_solicitudes"]
@@ -282,4 +236,5 @@ class InicializadorPartida:
         estado.mapa, estado.inventario = mapa, Inventario(capacidad)
         estado.catalogo_inicial = catalogo
         estado.cache_inicial = cache
+        estado.cargador_contenido = cargador
         return estado, estado.inventario
