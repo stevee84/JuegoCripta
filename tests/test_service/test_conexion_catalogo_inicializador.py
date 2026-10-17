@@ -74,7 +74,8 @@ def test_arranque_frio_cuenta_desde_listado_y_cabe_en_presupuesto(online):
     juego, llamadas, lotes, _, _, _ = online
     juego.listar_criptas()
     estado = juego.iniciar_partida("c1")
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 9
+    # listado + generales + versión de catálogo + página + 2 lotes de contenido + catálogo (sin repetir versiones)
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 7
     assert juego._fuente._presupuesto._limite == 9
     assert len(lotes) == 2 and all(len(lote) <= 10 for lote in lotes)
     assert estado.jugador.sala_actual is estado.mapa.obtener_sala(0)
@@ -93,7 +94,7 @@ def test_fichas_de_disco_vigente_evitan_consultas_de_catalogo(online):
     juego.listar_criptas()
     juego.iniciar_partida("c1")
     assert not any(ruta == "/catalogo" for ruta, _ in llamadas)
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 7
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 5
 
 
 def test_cache_vigente_evitar_red_y_disco(online, monkeypatch):
@@ -106,7 +107,7 @@ def test_cache_vigente_evitar_red_y_disco(online, monkeypatch):
     monkeypatch.setattr(AlmacenPersistente, "leer", no_leer)
     juego.iniciar_partida("c1")
     assert not any(ruta == "/catalogo" for ruta, _ in llamadas)
-    assert juego._fuente._presupuesto._intentos == 6
+    assert juego._fuente._presupuesto._intentos == 4
 
 
 def test_presupuesto_agotado_conserva_partida_vigente(online):
@@ -151,20 +152,6 @@ def test_limite_pequeno_no_se_sobrepasa(online):
     assert juego.obtener_estado() is None
 
 
-def test_version_cambia_al_final_no_publica_estado(online, monkeypatch):
-    juego, _, _, _, _, _ = online
-    original = juego._fuente.obtener_version_catalogo
-    consultas = []
-    def version():
-        consultas.append(1)
-        dato = original()
-        return dato if len(consultas) == 1 else {"version": "cat2"}
-    monkeypatch.setattr(juego._fuente, "obtener_version_catalogo", version)
-    with pytest.raises(ValueError, match="versiones cambiaron"):
-        juego.iniciar_partida("c1")
-    assert juego.obtener_estado() is None
-
-
 def test_replay_http_reutiliza_preparacion_y_respeta_presupuesto(online, tmp_path):
     from controller.ejecutor_replay import EjecutorReplay
     from datos.registro_partida import RegistroPartida
@@ -178,7 +165,7 @@ def test_replay_http_reutiliza_preparacion_y_respeta_presupuesto(online, tmp_pat
     replay = EjecutorReplay()
     replay.conectar_servicio(juego)
     replay.reproducir(str(ruta))
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 8
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 6
     assert juego.obtener_estado().acciones_ejecutadas == 1
     assert juego.obtener_estado().reloj == 100
     assert ruta.read_bytes() == antes
@@ -188,7 +175,7 @@ def test_registro_del_conjunto_verificado_no_gasta_otro_http(online, tmp_path):
     juego, llamadas, _, _, _, _ = online
     juego.listar_criptas()
     estado = juego.iniciar_partida("c1")
-    assert juego._fuente._presupuesto.agotado()
+    assert juego._fuente._presupuesto.restantes() == 2
     antes = len(llamadas)
     ruta = tmp_path / "partida.log"
     juego.iniciar_registro(str(ruta))

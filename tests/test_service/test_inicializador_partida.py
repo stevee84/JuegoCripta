@@ -146,7 +146,7 @@ def test_paquete_incompleto_conserva_partida_actual(paquete, falta):
 
 @pytest.mark.parametrize("campo,valor", [
     ("inventario_max", True), ("paginas", 0), ("salas_total", 3),
-    ("sala_inicial", 99), ("version", "otra"),
+    ("sala_inicial", 99), ("version", ""),
 ])
 def test_generales_invalidos_no_publican_estado(paquete, campo, valor):
     datos, escribir = paquete

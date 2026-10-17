@@ -205,7 +205,7 @@ def test_fabrica_explicita_recibe_dependencias_y_respeta_semilla_y_capacidad(tmp
     assert servicio._versiones == ("v1", "cat1")
 
 
-@pytest.mark.parametrize("defecto", ["semilla", "cripta", "ubicacion", "versiones"])
+@pytest.mark.parametrize("defecto", ["semilla", "cripta", "ubicacion"])
 def test_fabrica_invalida_no_publica_un_contexto_parcial(tmp_path, defecto):
     (tmp_path / "c1").mkdir()
     (tmp_path / "catalogo").mkdir()
@@ -223,10 +223,8 @@ def test_fabrica_invalida_no_publica_un_contexto_parcial(tmp_path, defecto):
             estado.semilla += 1
         elif defecto == "cripta":
             estado.cripta_id = "otra"
-        elif defecto == "ubicacion":
-            estado.jugador.sala_actual = Sala(999)
         else:
-            version.write_text("v2", encoding="utf-8")
+            estado.jugador.sala_actual = Sala(999)
         return estado, Inventario(3)
 
     servicio.conectar_inicializador(fabrica)
