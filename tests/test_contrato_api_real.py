@@ -505,13 +505,13 @@ def test_metricas_de_cache_son_de_la_partida_y_no_acumuladas(en_tmp):
     controlador = _controlador()
     controlador.procesar_comando("cripta cripta-01")
     primera = controlador._servicio.obtener_metricas()["cache"]
-    assert primera["aciertos"] == 0 and primera["fallos"] > 0
+    assert primera["fallos"] > 0 and primera["desde_red"] == primera["fallos"]
     controlador._preparar_nueva_partida()
     controlador.procesar_comando("cripta cripta-01")
     segunda = controlador._servicio.obtener_metricas()["cache"]
     # Misma caché caliente: todo se resuelve en memoria y no se arrastran los fallos anteriores.
-    assert segunda["fallos"] == 0 and segunda["aciertos"] == primera["fallos"]
-    assert segunda["tamano"] == primera["tamano"]
+    assert segunda["fallos"] == 0 and segunda["desde_red"] == segunda["desde_disco"] == 0
+    assert segunda["aciertos"] > 0 and segunda["tamano"] == primera["tamano"]
 
 
 # ── Guardado v6: IDs sin límite de 32 bytes (§9: cripta desconocida) ──
@@ -541,3 +541,27 @@ def test_guardado_v5_se_rechaza_como_incompatible(en_tmp):
     ruta.write_bytes(struct.pack("<4sH32sqIIII", b"CRPT", 5, b"cripta-01", 1, 0, 0, 0, 0))
     assert GuardadoBinario().cargar(str(ruta)) is None
     assert GuardadoBinario().leer_sala(str(ruta), 1) is None
+
+
+# ── §4.4: --cache-size limita de verdad las fichas en memoria ──────────
+
+def test_cache_size_limita_las_fichas_retenidas_y_recupera_desde_disco(en_tmp, monkeypatch):
+    servicio = _servicio(CacheCatalogo(3))
+    estado = servicio.iniciar_partida("cripta-04")
+    entidades = [e for s in estado.mapa.obtener_salas() for e in (*s.enemigos, *s.objetos, *s.trampas)]
+    assert entidades
+    # Ninguna entidad guarda su ficha: todas la leen del catálogo vivo.
+    assert all(e.__dict__.get("_ficha") is None and e.__dict__.get("_catalogo_ficha") is not None for e in entidades)
+    assert servicio._cache.metricas()["tamano"] <= 3
+
+    pedidos_a_red = []
+    original = FuenteOffline.obtener_catalogo
+    monkeypatch.setattr(FuenteOffline, "obtener_catalogo",
+                        lambda self, ids: pedidos_a_red.append(ids) or original(self, ids))
+    antes = servicio.obtener_metricas()["cache"]["desde_disco"]
+    remota = next(s for s in estado.mapa.obtener_salas() if s.objetos and s is not estado.jugador.sala_actual)
+    ficha = remota.objetos[0].ficha
+    assert ficha["id"] == remota.objetos[0].tipo_ficha_id
+    assert servicio._cache.metricas()["tamano"] <= 3
+    assert servicio.obtener_metricas()["cache"]["desde_disco"] > antes
+    assert pedidos_a_red == []

@@ -1,4 +1,5 @@
 #SOFIA
+from dto.ficha_resoluble import FichaResoluble
 
 
 def validar_id_sala(id_sala) -> None:
@@ -95,10 +96,12 @@ class Puerta:
 
 #----------------------------------------------------------------------------------
 
-class Trampa:
+class Trampa(FichaResoluble):
     """
     Representa una trampa ubicada dentro de una sala.
     """
+
+    CAMPO_TIPO = "tipo"
 
     def __init__(
         self,

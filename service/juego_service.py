@@ -270,17 +270,17 @@ class JuegoService:
                 del estado.servicio_inventario
 
     def _resolver_catalogo(self, ids, version_catalogo):
-        """§4.3: memoria → disco vigente → red, en lotes del máximo del API."""
+        """§4.3/§4.4: deja las fichas en caché o disco (memoria → disco → red, lotes del API)
+        y devuelve un catálogo vivo: las entidades cargadas no retienen sus fichas."""
         from logica.cache_catalogo import CacheCatalogo
+        from service.catalogo_vivo import CatalogoVivo
         from service.inicializador_partida import crear_repositorio
 
         if self._cache is None:
             self._cache = CacheCatalogo()
-        repositorio = crear_repositorio(self._cache, self._fuente, version_catalogo)
-        entidades = []
-        for inicio in range(0, len(ids), MAX_IDS_POR_SOLICITUD):
-            entidades += repositorio.resolver_lote(ids[inicio:inicio + MAX_IDS_POR_SOLICITUD])["entidades"]
-        return {"entidades": entidades}
+        catalogo = CatalogoVivo(crear_repositorio(self._cache, self._fuente, version_catalogo))
+        catalogo.precargar(ids)
+        return catalogo
 
     def _establecer_presupuesto(self, cripta_id):
         from service.inicializador_partida import establecer_presupuesto

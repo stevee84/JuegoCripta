@@ -76,7 +76,9 @@ def test_arranque_frio_cuenta_desde_listado_y_cabe_en_presupuesto(online):
     estado = juego.iniciar_partida("c1")
     assert len(llamadas) == juego._fuente._presupuesto._intentos == 7
     assert juego._fuente._presupuesto._limite == 9
-    assert len(lotes) == 2 and all(len(lote) <= 10 for lote in lotes)
+    # Las lecturas de fichas pasan por el repositorio; a la red solo va el lote inicial y el del botín (≤10).
+    pedidos_catalogo = [params for ruta, params in llamadas if ruta == "/catalogo"]
+    assert len(pedidos_catalogo) == 2 and all(len(p["ids"].split(",")) <= 10 for p in pedidos_catalogo)
     assert estado.jugador.sala_actual is estado.mapa.obtener_sala(0)
     assert juego._operaciones_inventario is juego._motor._servicio_inventario
     assert sum(ruta == "/criptas/c1" for ruta, _ in llamadas) == 1

@@ -1,4 +1,7 @@
-class ObjetoInstancia:
+from dto.ficha_resoluble import FichaResoluble
+
+
+class ObjetoInstancia(FichaResoluble):
     """Integrante 1. Representa una instancia concreta de un objeto (varias comparten tipo/ficha)."""
 
     def __init__(self, id_instancia: str, tipo_ficha_id: str):
