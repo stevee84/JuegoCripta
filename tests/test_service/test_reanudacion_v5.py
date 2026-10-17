@@ -329,7 +329,7 @@ def test_carga_reconecta_las_fijaciones_de_cache(tmp_path):
     assert cache.fichas_fijadas("general") == sorted({o.tipo_ficha_id for o in estado.inventario.obtener_objetos()})
 
 
-def test_guardar_no_sobrescribe_log_y_cargar_no_lo_desconecta(tmp_path):
+def test_guardar_no_sobrescribe_log_y_carga_invalida_no_lo_desconecta(tmp_path):
     servicio, _ = preparar()
     log = tmp_path / "partida.log"
     log.write_text("registro anterior", encoding="utf-8")
@@ -337,8 +337,10 @@ def test_guardar_no_sobrescribe_log_y_cargar_no_lo_desconecta(tmp_path):
     antes = pickle.dumps(servicio.obtener_estado())
     with pytest.raises(ValueError, match="registro activo"):
         servicio.guardar_partida(log)
-    with pytest.raises(ValueError, match="registro activo"):
-        servicio.cargar_partida(tmp_path / "partida.bin")
+    binario = tmp_path / "partida.bin"
+    binario.write_bytes(b"guardado corrupto")
+    with pytest.raises(ValueError, match="archivo binario"):
+        servicio.cargar_partida(binario)
     assert servicio._ruta_registro is log
     assert log.read_text(encoding="utf-8") == "registro anterior"
     assert pickle.dumps(servicio.obtener_estado()) == antes

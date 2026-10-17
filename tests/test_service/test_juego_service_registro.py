@@ -95,14 +95,40 @@ def test_ruta_existente_se_conserva_sin_conexion_parcial(partida):
     assert pickle.dumps(servicio.obtener_estado()) == antes
 
 
-def test_segundo_registro_no_se_crea(partida):
+def test_segundo_registro_sustituye_conexion_sin_borrar_el_anterior(partida):
     servicio, ruta = partida
     servicio.iniciar_registro(ruta)
+    cabecera = ruta.read_bytes()
     otra = ruta.with_name("otro.log")
-    with pytest.raises(ValueError, match="ya tiene"):
-        servicio.iniciar_registro(otra)
-    assert not otra.exists()
-    assert len(leer(ruta)) == 1
+    servicio.iniciar_registro(otra)
+    assert servicio._ruta_registro == otra
+    assert otra.read_bytes() == cabecera
+    assert servicio.ejecutar_accion(servicio.resolver_accion("ATACAR", "e1")).exito
+    assert ruta.read_bytes() == cabecera
+    assert len(leer(otra)) == 2
+
+
+def test_fallo_al_conectar_nuevo_registro_conserva_conexion_anterior(partida, monkeypatch):
+    servicio, ruta = partida
+    servicio.iniciar_registro(ruta)
+    marca = servicio._marca_registro
+    otra = ruta.with_name("otro.log")
+    stat = type(otra).stat
+
+    def fallar(destino, *args, **kwargs):
+        if destino == otra:
+            raise OSError("no se pudo inspeccionar el archivo nuevo")
+        return stat(destino, *args, **kwargs)
+
+    with monkeypatch.context() as contexto:
+        contexto.setattr(type(otra), "stat", fallar)
+        with pytest.raises(OSError, match="no se pudo conectar el log"):
+            servicio.iniciar_registro(otra)
+    assert servicio._ruta_registro == ruta
+    assert servicio._marca_registro == marca
+    assert len(leer(otra)) == 1  # La cabecera creada tampoco se elimina.
+    assert servicio.ejecutar_accion(servicio.resolver_accion("ATACAR", "e1")).exito
+    assert len(leer(ruta)) == 2
 
 
 def test_version_modificada_no_crea_cabecera(partida):
@@ -127,6 +153,11 @@ def test_log_modificado_se_detecta_antes_de_ejecutar(partida, cambio):
         with ruta.open("a", encoding="utf-8") as archivo:
             archivo.write("datos externos\n")
     antes = pickle.dumps(servicio.obtener_estado())
+    nueva = ruta.with_name("reiniciado.log")
+    with pytest.raises((ValueError, OSError)):
+        servicio.iniciar_registro(nueva)
+    assert not nueva.exists()
+    assert servicio._ruta_registro == ruta
     resultado = servicio.ejecutar_accion(servicio.resolver_accion("ATACAR", "e1"))
     assert not resultado.exito
     assert pickle.dumps(servicio.obtener_estado()) == antes

@@ -262,7 +262,6 @@ class VistaPygame:
         return fondo
 
     def mostrar_menu_criptas(self, criptas, opcion_continuar=None):
-    def mostrar_menu_criptas(self, criptas, opcion_continuar=None):
         """Muestra un menú para seleccionar cripta. Retorna el id seleccionado o None."""
         seleccion = None
         scroll = 0
@@ -857,9 +856,8 @@ class VistaPygame:
         for numero, objeto in enumerate(sala.objetos, 1):
             entidades.append((
                 GLYPH_OBJETO,
-                nombre_objeto(objeto)[:16],
+                f"{numero}. {presentacion.nombre_objeto(objeto, estado)}",
                 AMARILLO,
-                efecto_objeto(objeto)[:18],
                 efecto_objeto(objeto)[:18],
                 self._sprite_para_objeto(objeto),
             ))

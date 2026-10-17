@@ -1,9 +1,12 @@
 import os
+import re
 import shlex
 import struct
 import tempfile
 import zlib
+from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from configuracion import ARCHIVO_PARTIDA, RUTA_GUARDADO
 from datos.cliente_api import ClienteAPI, CriptaAPIError
@@ -111,6 +114,10 @@ class ControladorJuego:
                 raise ValueError("No se reemplaza un historial vigente.")
             self._servicio.iniciar_partida(estado.cripta_id, estado)
             self._historial = estado.historial
+            self._publicar(
+                "Esta sesión usa un estado externo (por ejemplo, la demo): "
+                "no dispone de reproducción desde su inicio."
+            )
 
         if hasattr(self._vista, "ejecutar"):
             self._iniciar_pygame(estado)
@@ -151,6 +158,19 @@ class ControladorJuego:
     def _resumen_partida(self) -> str:
         estado = self._servicio.obtener_estado()
         return f"{estado.cripta_id}, sala {estado.jugador.sala_actual.id_sala}, reloj {estado.reloj}"
+
+    def _iniciar_registro_automatico(self) -> str:
+        """Solo el arranque interactivo compartido; replay no pasa por aquí."""
+        try:
+            cripta = self._servicio.obtener_estado().cripta_id
+            identificador = re.sub(r"[^A-Za-z0-9_-]", "_", cripta)[:64] or "cripta"
+            fecha = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+            ruta = self._ruta_partida.parent / "logs" / f"{identificador}-{fecha}-{uuid4().hex}.log"
+            self._servicio.iniciar_registro(ruta)
+        except (OSError, ValueError, TypeError) as error:
+            # La partida ya está iniciada: advertir, no fingir un rechazo sin efectos.
+            return f"No se podrá reproducir esta partida: no se pudo crear el registro: {error}"
+        return f"Registro de acciones: {ruta}."
 
     def _guardar(self, ruta: Path) -> str:
         estado = self._servicio.obtener_estado()
@@ -352,11 +372,12 @@ class ControladorJuego:
                 self._nuevo_presupuesto()
                 self._servicio.iniciar_partida(partes[1])
                 self._historial = self._servicio.obtener_estado().historial
-                resultado = ResultadoAccion(True, "Partida iniciada.")
+                registro = self._iniciar_registro_automatico()
+                resultado = ResultadoAccion(True, f"Partida iniciada. {registro}")
             elif operacion == "registro":
                 self._servicio.iniciar_registro(partes[1])
                 resultado = ResultadoAccion(
-                    True, "Registro de acciones del motor iniciado."
+                    True, f"Registro de acciones del motor iniciado en {partes[1]}."
                 )
             elif operacion in ("usar", "retroceder"):
                 if len(partes) >= 2:
@@ -397,7 +418,8 @@ class ControladorJuego:
                 self._nuevo_presupuesto()
                 self.cargar(str(ruta))
                 resultado = ResultadoAccion(True, f"Partida cargada: {self._resumen_partida()}. "
-                                                  "El retroceso empieza de cero desde aquí.")
+                                                  "El retroceso empieza de cero desde aquí. "
+                                                  "Esta sesión cargada no dispone de reproducción desde su inicio.")
             else:
                 raise ValueError("Comando desconocido. Consulta ayuda.")
         except (ValueError, TypeError, OSError, NotImplementedError, struct.error, CriptaAPIError) as error:
