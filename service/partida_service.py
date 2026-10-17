@@ -30,6 +30,7 @@ class PartidaService:
         contenido = decodificador.convertir_contenido(datos["salas"])
         for id_sala, registro in pares_por_sala(datos["salas"]):
             sala = decodificador.convertir_sala(registro)
+            sala.contenido_cargado = registro.get("contenido_cargado", True)
             sala.enemigos = contenido.obtener(id_sala)["enemigos"]
             sala.objetos = contenido.obtener(id_sala)["objetos"]
             for enemigo in sala.enemigos:

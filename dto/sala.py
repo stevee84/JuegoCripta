@@ -1,4 +1,5 @@
 #SOFIA
+from dto.ficha_resoluble import FichaResoluble
 
 
 def validar_id_sala(id_sala) -> None:
@@ -28,6 +29,22 @@ class Sala:
         self.enemigos = []
         self.objetos = []
         self.ultimo_rastro = None
+        # False: la sala existe (id y puertas) pero su contenido aún no llegó de la fuente.
+        self.contenido_cargado = True
+
+    def incorporar_contenido(self, enemigos, objetos, trampas) -> None:
+        """Agrega el contenido recibido de la fuente y marca la sala como cargada.
+
+        Agrega al final, nunca reemplaza: un enemigo activo pudo entrar o dejar
+        botín antes de que llegara el contenido (§2.4). Es infraestructura, no una
+        acción del juego: no pasa por mutaciones ni por el historial (§2.11).
+        """
+        for enemigo in enemigos:
+            enemigo.sala_actual = self
+            self.enemigos.append(enemigo)
+        self.objetos.extend(objetos)
+        self.trampas.extend(trampas)
+        self.contenido_cargado = True
 
 
     _DIR_ALIAS = {"N": "NORTE", "S": "SUR", "E": "ESTE", "O": "OESTE"}
@@ -79,10 +96,12 @@ class Puerta:
 
 #----------------------------------------------------------------------------------
 
-class Trampa:
+class Trampa(FichaResoluble):
     """
     Representa una trampa ubicada dentro de una sala.
     """
+
+    CAMPO_TIPO = "tipo"
 
     def __init__(
         self,

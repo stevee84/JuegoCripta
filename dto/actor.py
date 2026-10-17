@@ -1,5 +1,8 @@
 #SOFIA
-class Actor:
+from dto.ficha_resoluble import FichaResoluble
+
+
+class Actor(FichaResoluble):
     """
     Clase base para representar cualquier entidad que participa
     dentro del juego.
