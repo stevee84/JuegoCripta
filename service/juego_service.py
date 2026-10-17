@@ -229,7 +229,7 @@ class JuegoService:
         return fichas
 
     def guardar_partida(self, ruta, guardado=None):
-        """Valida el v5 antes de reemplazar el destino; no serializa el undo."""
+        """Valida el binario antes de reemplazar el destino; no serializa el undo."""
         from datos.guardado_binario import GuardadoBinario
         from service.restaurador_partida import RestauradorPartida
 

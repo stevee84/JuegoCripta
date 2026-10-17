@@ -17,7 +17,7 @@ class RestauradorPartida:
     """Reconstruye el guardado sin modificar el formato ni iniciar el motor.
 
     cargar/restaurar conservan la inspección parcial existente.
-    restaurar_para_reanudar conecta los datos v5 con fichas compatibles.
+    restaurar_para_reanudar conecta los datos del guardado con fichas compatibles.
     """
 
     def __init__(self, guardado=None):
@@ -254,7 +254,7 @@ class RestauradorPartida:
             estado.limitaciones_carga = ("historial",)
             return estado
         except (KeyError, TypeError, IndexError, AttributeError) as error:
-            raise ValueError(f"Datos v5 incompletos o inválidos: {error}") from error
+            raise ValueError(f"Datos del guardado incompletos o inválidos: {error}") from error
 
     def _completar_v5(self, estado, datos, catalogo):
         for campo in ("version_cripta", "version_catalogo"):
