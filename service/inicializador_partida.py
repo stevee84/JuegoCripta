@@ -11,6 +11,7 @@ from datos.cliente_api import ClienteAPI, CriptaAPIError
 from datos.almacen_persistente import AlmacenPersistente
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from logica.cache_catalogo import CacheCatalogo
+from service.catalogo_vivo import CatalogoVivo
 from service.repositorio_catalogo import RepositorioCatalogo
 from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
@@ -239,7 +240,8 @@ class InicializadorPartida:
             cache = CacheCatalogo(cache._capacidad)
         cache._version_catalogo_partida = version_catalogo
         repositorio = crear_repositorio(cache, fuente, version_catalogo)
-        catalogo = CatalogoPartida()
+        catalogo = CatalogoVivo(repositorio)
+        resueltas = []
         pendientes = OrdenadorAdaptativo().ordenar(ids_fichas, lambda ficha_id: ficha_id)
         while pendientes:
             lote, pendientes = pendientes[:10], pendientes[10:]
@@ -248,7 +250,7 @@ class InicializadorPartida:
                 ficha = decodificador._buscar_ficha(respuesta, ficha_id)
                 if ficha.get("id") != ficha_id or not isinstance(ficha.get("clase"), str):
                     raise ValueError("Una ficha no contiene su ID o clase válidos.")
-                catalogo.agregar(ficha)
+                resueltas.append(ficha_id)
                 if ficha.get("clase") == "enemigo":
                     botin = ficha.get("suelta") or []
                     if not isinstance(botin, list):
@@ -256,11 +258,11 @@ class InicializadorPartida:
                     for referencia in botin:
                         self._agregar_id(ids_fichas, referencia)
                         if (referencia not in lote and referencia not in pendientes
-                                and catalogo.resolver(referencia) is None):
+                                and referencia not in resueltas):
                             pendientes.append(referencia)
 
         contenido = decodificador.convertir_contenido(
-            {"contenido": registros}, {"entidades": catalogo.entidades()}
+            {"contenido": registros}, catalogo
         )
         for sala_id, entidades in contenido:
             sala = mapa.obtener_sala(sala_id)

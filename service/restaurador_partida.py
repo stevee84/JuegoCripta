@@ -332,15 +332,20 @@ class RestauradorPartida:
 
         from service.inicializador_partida import CatalogoPartida
 
-        fichas = CatalogoPartida()
+        vivo = getattr(catalogo, "vincula_por_referencia", False)
+        fichas = catalogo if vivo else CatalogoPartida()
         for ficha_id in self.ids_fichas(datos):
             ficha = DecodificadorDatos._buscar_ficha(catalogo, ficha_id)
             if ficha.get("id") != ficha_id:
                 raise ValueError(f"La ficha no coincide con su ID: {ficha_id}.")
-            fichas.agregar(ficha)
+            if not vivo:
+                fichas.agregar(ficha)
+
+        def vincular(entidad, ficha_id):
+            DecodificadorDatos._vincular_ficha(entidad, fichas.resolver(ficha_id), catalogo)
         for actor in actores:
             if actor.tipo_ficha_id is not None:
-                actor.ficha = fichas.resolver(actor.tipo_ficha_id)
+                vincular(actor, actor.tipo_ficha_id)
                 if actor is not estado.jugador and actor.ficha.get("clase") != "enemigo":
                     raise ValueError("La ficha del enemigo tiene clase inválida.")
                 if actor is not estado.jugador:
@@ -348,11 +353,11 @@ class RestauradorPartida:
                     if not isinstance(suelta, list) or suelta != [o.tipo_ficha_id for o in actor.botin_preparado]:
                         raise ValueError("El botín preparado no coincide con la ficha del enemigo.")
         for objeto in objetos:
-            objeto.ficha = fichas.resolver(objeto.tipo_ficha_id)
+            vincular(objeto, objeto.tipo_ficha_id)
             if objeto.ficha.get("clase") in (None, "enemigo", "trampa"):
                 raise ValueError("La ficha del objeto tiene clase inválida.")
         for trampa in trampas:
-            trampa.ficha = fichas.resolver(trampa.tipo)
+            vincular(trampa, trampa.tipo)
             if trampa.ficha.get("clase") != "trampa":
                 raise ValueError("La ficha de la trampa tiene clase inválida.")
 

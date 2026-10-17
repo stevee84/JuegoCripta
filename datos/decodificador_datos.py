@@ -31,6 +31,14 @@ class DecodificadorDatos:
                     return ficha
         raise ValueError(f"Falta resolver la ficha {ficha_id}.")
 
+    @staticmethod
+    def _vincular_ficha(entidad, ficha, fichas):
+        """Con un catálogo vivo la entidad no retiene la ficha (§4.4); si no, se asigna como antes."""
+        if getattr(fichas, "vincula_por_referencia", False):
+            entidad.conectar_catalogo(fichas)
+        else:
+            entidad.ficha = ficha
+
     def _preparar_botin(self, enemigo, fichas):
         suelta = enemigo.ficha.get("suelta", [])
         if suelta is None:
@@ -41,7 +49,7 @@ class DecodificadorDatos:
             ficha = self._buscar_ficha(fichas, ficha_id)
             objeto = ObjetoInstancia(
                 f"botin:{enemigo.id_actor}:{posicion}", ficha_id)
-            objeto.ficha = ficha
+            self._vincular_ficha(objeto, ficha, fichas)
             objeto.ubicacion = "botin_preparado"
             enemigo.botin_preparado.append(objeto)
 
@@ -129,7 +137,7 @@ class DecodificadorDatos:
                     vida, ataque, defensa, velocidad,
                     ficha.get("comportamiento", "guardian"))
                 enemigo.vida_max = vida_max
-                enemigo.ficha = ficha
+                self._vincular_ficha(enemigo, ficha, fichas)
                 enemigo.tipo_ficha_id = ficha_id
                 self._preparar_botin(enemigo, fichas)
                 entrada["enemigos"].append(enemigo)
@@ -148,7 +156,7 @@ class DecodificadorDatos:
                 if ficha.get("clase") in (None, "enemigo", "trampa"):
                     raise ValueError("La ficha de un objeto tiene una clase inválida.")
                 objeto = ObjetoInstancia(instancia, ficha_id)
-                objeto.ficha = ficha
+                self._vincular_ficha(objeto, ficha, fichas)
                 objeto.ubicacion = sala_id
                 entrada["objetos"].append(objeto)
 
@@ -160,7 +168,7 @@ class DecodificadorDatos:
                 if ficha.get("clase") != "trampa":
                     raise ValueError("La ficha de una trampa tiene una clase inválida.")
                 trampa = Trampa(datos_trampa.get("instancia"), ficha_id)
-                trampa.ficha = ficha
+                self._vincular_ficha(trampa, ficha, fichas)
                 rearme = ficha.get("rearme")
                 trampa.tiempo_rearme = 300 if rearme is None else rearme
                 entrada["trampas"].append(trampa)

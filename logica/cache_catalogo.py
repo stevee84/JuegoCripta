@@ -119,6 +119,14 @@ class CacheCatalogo:
         """IDs fijados en orden alfabético; con ``dueño``, solo los suyos."""
         return [f for f, dueños in self._fijados if dueño is None or dueño in dueños]
 
+    def __getstate__(self):
+        # §2.11: la caché es infraestructura; al copiar o serializar el estado del juego
+        # viaja solo su configuración, nunca su contenido ni su orden LRU.
+        return {"_capacidad": self._capacidad}
+
+    def __setstate__(self, estado):
+        self.__init__(estado["_capacidad"])
+
     def metricas(self) -> dict:
         total = self._aciertos + self._fallos
         return {
