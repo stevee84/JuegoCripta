@@ -2,16 +2,6 @@
 
 Este documento recopila únicamente los faltantes o incumplimientos detectados durante la revisión del proyecto.
 
-## 1. Propósito del proyecto
-
-### Falta evidencia empírica para la tabla hash propia
-
-- **Requisito:** las estructuras de datos elegidas deben estar implementadas y su elección debe justificarse con mediciones propias; que el programa funcione o que solo se indique su complejidad teórica no es suficiente.
-- **Ubicación:** `estructuras/tabla_hash.py`; `service/inicializador_partida.py`, clase `CatalogoPartida`; rutas de carga y reconstrucción que ahora utilizan `TablaHashImpl`; `benchmarks/integrante2.py` y `benchmarks/integrante3.py`.
-- **Incumplimiento:** el modo oficial ya mide caché, recuperación desde disco y guardado/carga frente a JSON, además de los subsistemas que medía antes. Sin embargo, no contiene ninguna medición de `TablaHashImpl`, pese a que esta estructura sustenta el índice de `CatalogoPartida`, los índices transitorios de salas y contenido y la detección de duplicados. Su elección y su comportamiento de encadenamiento y `rehash` solo se justifican de forma teórica y mediante pruebas funcionales, no con evidencia empírica producida por `--bench`.
-- **Comprobación realizada:** se ejecutó `python3 main.py --bench` correctamente y se obtuvieron 523 filas. Aparecieron mediciones `cache_*` y `guardado_*` para los nuevos proveedores, pero ningún nombre o proveedor relacionado con tabla hash, `CatalogoPartida`, colisiones o redimensionamiento. La búsqueda en `benchmarks/` tampoco encontró uso de `TablaHashImpl` ni `CatalogoPartida`.
-- **Pendiente sugerido:** incorporar a `--bench` mediciones reproducibles de inserción, consulta presente/ausente y redimensionamiento de `TablaHashImpl` con tamaños y distribuciones de claves pertinentes, y relacionarlas con una alternativa aplicable a los índices que realmente usa el proyecto.
-
 ## 4.6 Pergaminos de retroceso e historial reversible
 
 ### Los cambios posicionales pueden fallar después de un traslado irreversible de pergamino
@@ -65,24 +55,6 @@ Los incumplimientos ya documentados sobre crecimiento cuadrático con varios ras
 - **Incumplimiento:** aunque `CacheCatalogo` limita su propio arreglo, el arranque copia cada ficha resuelta a `CatalogoPartida`, una tabla hash sin capacidad ni desalojo, y la conserva en `estado.catalogo_inicial`. Además, como se materializa el contenido de toda la cripta, enemigos, objetos y trampas de salas remotas mantienen referencias directas a sus fichas. Esas referencias siguen accesibles aunque la LRU haya desalojado la entrada, por lo que recuperar una ficha liberada no obliga a leerla de disco y el límite de memoria deja de representar el catálogo realmente retenido. Este comportamiento también incumple el tope exigido en §4.4.
 - **Comprobación realizada:** se inicializó una cripta sintética de 30 salas con 30 tipos de objeto distintos y una llave, usando `CacheCatalogo(5)`. Al terminar, la caché reportó correctamente `tamano = 5` y `capacidad = 5`, pero `estado.catalogo_inicial.entidades()` conservaba las 31 fichas y los 30 objetos de las salas remotas seguían teniendo `objeto.ficha` resuelta. El proceso retenía así al menos 31 fichas pese al límite 5.
 - **Pendiente sugerido:** no mantener un catálogo paralelo ilimitado ni fichas resueltas de todas las salas. Conservar por instancia el ID de tipo y resolver mediante el repositorio; fijar únicamente las referencias activas definidas por el enunciado y liberar las demás para que una ausencia real de la LRU se recupere desde el almacenamiento persistente.
-
-### El guardado impone un límite no declarado de 32 bytes a los IDs
-
-- **Requisito:** no depender de los IDs observados en las criptas de desarrollo; el contrato declara identificadores textuales, pero no establece una longitud máxima de 32 bytes.
-- **Ubicación:** `datos/guardado_binario.py`, constantes y método `_empaquetar_cadena()` (líneas 16-39), y escrituras de IDs de actores, objetos, trampas, puertas, fichas y eventos (por ejemplo, líneas 194-222 y 518-554).
-- **Incumplimiento:** el formato reserva 32 bytes para casi todos los identificadores y rechaza cualquier cadena UTF-8 mayor con `ValueError`. Por ello una cripta desconocida puede iniciar y jugar con IDs válidos para el contrato, pero no puede guardarse si uno supera ese tamaño. El mensaje aún dice «formato v2» aunque la versión actual es 5.
-- **Comprobación realizada:** sobre un estado válido se asignó a un objeto un `id_instancia` de 50 caracteres y se invocó `GuardadoBinario.guardar()`. La operación falló reproduciblemente con `ValueError: La cadena excede los 32 bytes del formato v2.` No se encontró en el enunciado una longitud máxima para IDs que permita asumir ese límite.
-- **Pendiente sugerido:** codificar cadenas con longitud explícita y bytes variables —validando tamaños estructurales antes de escribir— o documentar y validar un máximo que forme parte real del contrato de datos. Añadir pruebas de ida y vuelta con IDs multibyte y longitudes superiores a las muestras conocidas.
-
-## 10.2 Interfaz funcional mínima
-
-### La interfaz gráfica no permite consultar vistas ordenadas del inventario
-
-- **Requisito:** la interfaz final debe permitir recorrer y consultar el inventario, incluidas vistas ordenadas. El programa selecciona Pygame como vista predeterminada mediante `--vista pygame`.
-- **Ubicación:** `vista/vista_pygame.py`, métodos `_seccion_inventario()` y `_acciones_objeto()` (líneas 470-527); `main.py`, función `_crear_vista()` (líneas 16-29). La funcionalidad que falta sí está disponible por consola en `controller/controlador_juego.py`, rama `inventario [peso|valor|nombre]` (líneas 265 y 273-276).
-- **Incumplimiento:** el panel gráfico enumera únicamente `inv.obtener_objetos()`, es decir, el orden real, y ofrece seleccionar elementos, avanzar, retroceder, equipar, usar, retroceder con pergamino y soltar. No crea ningún botón, menú ni otro control que invoque `inventario peso`, `inventario valor` o `inventario nombre`; además, `VistaPygame.mostrar_inventario()` está vacío. Por tanto, un usuario de la interfaz gráfica predeterminada no puede solicitar ninguna de las vistas ordenadas exigidas.
-- **Comprobación realizada:** se revisaron todos los comandos generados por los botones de Pygame y se buscaron los criterios `peso`, `valor`, `nombre` y llamadas al comando `inventario`; no existe ninguna ruta gráfica para ellos. Las 80 pruebas de controlador, presentación y consola aprobaron. Después se instaló aisladamente `pygame-ce 2.5.8` para Python 3.14 fuera del proyecto y las siete pruebas gráficas aprobaron con los controladores SDL ficticios; esas pruebas solo exigen recorrido del orden real, no vistas ordenadas.
-- **Pendiente sugerido:** añadir controles gráficos para ordenar temporalmente por peso, valor y nombre, mostrar la vista resultante sin alterar el orden real ni el cursor y permitir seleccionar inequívocamente un objeto desde ella. Agregar una prueba de cada criterio que compruebe tanto el orden mostrado como la conservación del inventario real.
 
 ## Apéndice B. Casos que deben tener un resultado definido
 
