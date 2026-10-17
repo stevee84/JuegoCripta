@@ -83,15 +83,15 @@ def crear_repositorio(cache, fuente, version_catalogo):
 
 
 def establecer_presupuesto(fuente, generales):
-    """Aplica el presupuesto_solicitudes de la cripta a un cliente HTTP (§5.1)."""
-    if not isinstance(fuente, ClienteAPI):
-        return
-    if fuente._presupuesto is None:
-        fuente._presupuesto = PresupuestoSolicitudes()
+    """Devuelve el presupuesto_solicitudes de la cripta y, si la fuente es HTTP, lo aplica (§5.1)."""
     limite = InicializadorPartida._entero(generales.get("presupuesto_solicitudes"), "presupuesto_solicitudes", 1)
-    fuente._presupuesto.establecer_limite(limite)
-    if fuente._presupuesto._intentos > limite:
-        raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
+    if isinstance(fuente, ClienteAPI):
+        if fuente._presupuesto is None:
+            fuente._presupuesto = PresupuestoSolicitudes()
+        fuente._presupuesto.establecer_limite(limite)
+        if fuente._presupuesto._intentos > limite:
+            raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
+    return limite
 
 
 class InicializadorPartida:
@@ -262,7 +262,7 @@ class InicializadorPartida:
         contenido = decodificador.convertir_contenido(
             {"contenido": registros}, {"entidades": catalogo.entidades()}
         )
-        for sala_id, entidades in contenido.items():
+        for sala_id, entidades in contenido:
             sala = mapa.obtener_sala(sala_id)
             sala.enemigos, sala.objetos, sala.trampas = (
                 entidades["enemigos"], entidades["objetos"], entidades["trampas"]
@@ -271,6 +271,7 @@ class InicializadorPartida:
                 enemigo.sala_actual = sala
 
         estado = EstadoPartida(semilla, cripta_id)
+        estado.presupuesto_solicitudes = generales["presupuesto_solicitudes"]
         estado.version_cripta, estado.version_catalogo = version, version_catalogo
         estado.sala_salida_id, estado.llave_salida_id = salida, generales["llave_salida"]
         estado.exigir_fichas_resueltas = True

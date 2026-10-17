@@ -1,9 +1,10 @@
-from datos.decodificador_datos import DecodificadorDatos
+from datos.decodificador_datos import DecodificadorDatos, pares_por_sala, registro_de_sala
 from datos.guardado_binario import GuardadoBinario
 from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
 from dto.objeto_instancia import ObjetoInstancia
 from dto.evento import Evento
+from estructuras.tabla_hash import TablaHashImpl, tiene_duplicados
 from logica.agenda_eventos import AgendaEventos
 from logica.historial_reversible import HistorialReversible
 from logica.inventario import Inventario
@@ -136,9 +137,9 @@ class RestauradorPartida:
         return estado
 
     def _reconstruir_mapa(self, registros):
-        if not isinstance(registros, dict):
-            raise ValueError("salas debe ser un diccionario con IDs enteros.")
-        for id_sala, registro in registros.items():
+        if not isinstance(registros, (dict, TablaHashImpl)):
+            raise ValueError("salas debe ser una tabla de registros con IDs enteros.")
+        for id_sala, registro in pares_por_sala(registros):
             self._entero(id_sala, "id_sala")
             if not isinstance(registro, dict):
                 raise ValueError("El registro de sala debe ser un diccionario.")
@@ -149,10 +150,10 @@ class RestauradorPartida:
         decodificador = DecodificadorDatos()
         contenido = decodificador.convertir_contenido(registros)
         mapa = MapaCripta()
-        for id_sala, registro in registros.items():
+        for id_sala, registro in pares_por_sala(registros):
             sala = decodificador.convertir_sala(registro)
-            sala.enemigos = contenido[id_sala]["enemigos"]
-            sala.objetos = contenido[id_sala]["objetos"]
+            sala.enemigos = contenido.obtener(id_sala)["enemigos"]
+            sala.objetos = contenido.obtener(id_sala)["objetos"]
             for enemigo in sala.enemigos:
                 enemigo.sala_actual = sala
             mapa.agregar_sala(sala)
@@ -226,7 +227,7 @@ class RestauradorPartida:
         agregar(datos.get("jugador_tipo_ficha_id"))
         for objeto in datos["inventario"]["objetos"]:
             agregar(objeto["tipo_ficha_id"])
-        for sala in datos["salas"].values():
+        for _, sala in pares_por_sala(datos["salas"]):
             for objeto in sala["objetos"]:
                 agregar(objeto["tipo_ficha_id"])
             for trampa in sala["trampas"]:
@@ -283,7 +284,7 @@ class RestauradorPartida:
         puertas, trampas = [], []
         ids_botin = []
         for sala in estado.mapa.obtener_salas():
-            registro = datos["salas"][sala.id_sala]
+            registro = registro_de_sala(datos["salas"], sala.id_sala)
             for puerta, dato in zip(sala.puertas, registro["puertas"]):
                 puerta.fue_abierta_con_llave_requerida = self._booleano(
                     dato["fue_abierta_con_llave_requerida"], "puerta.fue_abierta_con_llave_requerida")
@@ -329,15 +330,17 @@ class RestauradorPartida:
                     raise ValueError(f"IDs duplicados de {atributo}.")
                 ids.append(identificador)
 
-        fichas = {}
+        from service.inicializador_partida import CatalogoPartida
+
+        fichas = CatalogoPartida()
         for ficha_id in self.ids_fichas(datos):
             ficha = DecodificadorDatos._buscar_ficha(catalogo, ficha_id)
             if ficha.get("id") != ficha_id:
                 raise ValueError(f"La ficha no coincide con su ID: {ficha_id}.")
-            fichas[ficha_id] = ficha
+            fichas.agregar(ficha)
         for actor in actores:
             if actor.tipo_ficha_id is not None:
-                actor.ficha = fichas[actor.tipo_ficha_id]
+                actor.ficha = fichas.resolver(actor.tipo_ficha_id)
                 if actor is not estado.jugador and actor.ficha.get("clase") != "enemigo":
                     raise ValueError("La ficha del enemigo tiene clase inválida.")
                 if actor is not estado.jugador:
@@ -345,11 +348,11 @@ class RestauradorPartida:
                     if not isinstance(suelta, list) or suelta != [o.tipo_ficha_id for o in actor.botin_preparado]:
                         raise ValueError("El botín preparado no coincide con la ficha del enemigo.")
         for objeto in objetos:
-            objeto.ficha = fichas[objeto.tipo_ficha_id]
+            objeto.ficha = fichas.resolver(objeto.tipo_ficha_id)
             if objeto.ficha.get("clase") in (None, "enemigo", "trampa"):
                 raise ValueError("La ficha del objeto tiene clase inválida.")
         for trampa in trampas:
-            trampa.ficha = fichas[trampa.tipo]
+            trampa.ficha = fichas.resolver(trampa.tipo)
             if trampa.ficha.get("clase") != "trampa":
                 raise ValueError("La ficha de la trampa tiene clase inválida.")
 
@@ -469,7 +472,7 @@ class RestauradorPartida:
                     raise ValueError("El evento temporal no corresponde a su puerta o trampa.")
                 setattr(entidad, campo, evento)
         for efecto in estado.efectos_activos:
-            if not efecto["eventos"] or len(set(efecto["eventos"])) != len(efecto["eventos"]):
+            if not efecto["eventos"] or tiene_duplicados(efecto["eventos"]):
                 raise ValueError("El efecto necesita eventos pendientes únicos.")
             for identificador in efecto["eventos"]:
                 evento = estado.agenda.buscar(identificador)

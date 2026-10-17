@@ -126,7 +126,7 @@ def test_fallback_disco_antiguo_no_se_publica(online):
     juego, _, _, red, _, _ = online
     AlmacenPersistente(RUTA_CACHE_CATALOGO).guardar("arma", {"id": "arma", "clase": "arma", "ataque_bonus": 999}, "cat-viejo")
     red["fallar_catalogo"] = True
-    with pytest.raises(ValueError, match="Falta resolver"):
+    with pytest.raises(ValueError, match="catálogo inaccesible|conexión"):
         juego.iniciar_partida("c1")
     assert juego.obtener_estado() is None
 

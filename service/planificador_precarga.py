@@ -1,4 +1,5 @@
 from dto.sala import validar_id_sala
+from estructuras.tabla_hash import TablaHashImpl
 
 
 class PlanificadorPrecarga:
@@ -75,16 +76,19 @@ class PlanificadorPrecarga:
         # Filtrar ya cargadas
         return [sid for sid in ids if sid not in self._cargadas]
 
-    def solicitar_lote(self, sala_ids: list) -> dict:
+    def solicitar_lote(self, sala_ids: list) -> TablaHashImpl:
+        """Pide en lotes de 10; devuelve sala_id → datos para las salas que llegaron."""
         for sala_id in sala_ids:
             validar_id_sala(sala_id)
-        resultado = {}
-        # Chunks de 10
+        resultado = TablaHashImpl()
         for i in range(0, len(sala_ids), 10):
             chunk = sala_ids[i:i + 10]
-            parcial = self._repositorio.resolver_lote(chunk)
-            resultado.update(parcial)
-            for sala_id in parcial:
+            entidades = self._repositorio.resolver_lote(chunk)["entidades"]
+            for sala_id in chunk:
+                datos = next((e for e in entidades if e.get("id") in (sala_id, str(sala_id))), None)
+                if datos is None:
+                    continue
+                resultado.insertar(sala_id, datos)
                 if sala_id not in self._cargadas:
                     self._cargadas.append(sala_id)
         return resultado

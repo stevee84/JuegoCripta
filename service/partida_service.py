@@ -1,4 +1,4 @@
-from datos.decodificador_datos import DecodificadorDatos
+from datos.decodificador_datos import DecodificadorDatos, pares_por_sala
 from datos.guardado_binario import GuardadoBinario
 from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
@@ -28,10 +28,10 @@ class PartidaService:
         estado.mapa = MapaCripta()
         decodificador = DecodificadorDatos()
         contenido = decodificador.convertir_contenido(datos["salas"])
-        for id_sala, registro in datos["salas"].items():
+        for id_sala, registro in pares_por_sala(datos["salas"]):
             sala = decodificador.convertir_sala(registro)
-            sala.enemigos = contenido[id_sala]["enemigos"]
-            sala.objetos = contenido[id_sala]["objetos"]
+            sala.enemigos = contenido.obtener(id_sala)["enemigos"]
+            sala.objetos = contenido.obtener(id_sala)["objetos"]
             for enemigo in sala.enemigos:
                 enemigo.sala_actual = sala
             estado.mapa.agregar_sala(sala)

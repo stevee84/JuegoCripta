@@ -123,7 +123,7 @@ def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v2(tmp_path):
     cargado = guardado.cargar(str(ruta))
     assert cargado["cripta_id"] == estado.cripta_id
     assert cargado["jugador"]["sala_actual_id"] == 1
-    assert sorted(cargado["salas"]) == [1, 2]
+    assert sorted(cargado["salas"].claves()) == [1, 2]
     assert guardado.leer_sala(str(ruta), 2)["id_sala"] == 2
 
 

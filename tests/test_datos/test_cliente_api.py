@@ -69,12 +69,12 @@ class TestError429:
 
     @patch("datos.cliente_api.time.sleep")
     @patch("datos.cliente_api.requests.request")
-    def test_espera_maxima_30(self, mock_req, mock_sleep, cliente):
-        r429 = _mock_response(429, {"reintentar_en": 999})
+    def test_respeta_reintentar_en_aunque_sea_largo(self, mock_req, mock_sleep, cliente):
+        r429 = _mock_response(429, {"reintentar_en": 45})
         r200 = _mock_response(200, [])
         mock_req.side_effect = [r429, r200]
         cliente.listar_criptas()
-        mock_sleep.assert_called_once_with(30)
+        mock_sleep.assert_called_once_with(45)
 
 
 class TestTimeout:
@@ -91,6 +91,28 @@ class TestConnectionError:
         mock_req.side_effect = requests.exceptions.ConnectionError()
         with pytest.raises(CriptaAPIError, match="conexión"):
             cliente.listar_criptas()
+
+
+
+class TestOtrasExcepcionesDeRequests:
+    @pytest.mark.parametrize("excepcion", [
+        requests.exceptions.ChunkedEncodingError("respuesta truncada"),
+        requests.exceptions.ContentDecodingError("gzip roto"),
+        requests.exceptions.TooManyRedirects("bucle"),
+    ])
+    @patch("datos.cliente_api.requests.request")
+    def test_se_convierten_en_error_con_operacion_y_url(self, mock_req, cliente, excepcion):
+        mock_req.side_effect = excepcion
+        with pytest.raises(CriptaAPIError, match=rf"{type(excepcion).__name__} en operación GET .*/criptas"):
+            cliente.listar_criptas()
+
+    @pytest.mark.parametrize("valor", [-5, "diez", None, True])
+    @patch("datos.cliente_api.time.sleep")
+    @patch("datos.cliente_api.requests.request")
+    def test_reintentar_en_invalido_usa_espera_por_defecto(self, mock_req, mock_sleep, cliente, valor):
+        mock_req.side_effect = [_mock_response(429, {"reintentar_en": valor}), _mock_response(200, [])]
+        cliente.listar_criptas()
+        mock_sleep.assert_called_once_with(1)
 
 
 class TestOtrosCodigos:
