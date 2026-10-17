@@ -3,6 +3,50 @@ from estructuras.lista_doble import ListaDobleImpl
 from dto.objeto_instancia import ObjetoInstancia
 
 
+def _indice_identidad(valores, buscado):
+    for posicion, valor in enumerate(valores):
+        if valor is buscado:
+            return posicion
+    return None
+
+
+class _ContextoValidacionReversion:
+    """Vistas superficiales para validar todos los inversos sin mutar el juego."""
+
+    def __init__(self):
+        self._listas = []
+        self._inventarios = []
+        self._agendas = []
+
+    def lista(self, original):
+        for lista, virtual in self._listas:
+            if lista is original:
+                return virtual
+        virtual = list(original)
+        self._listas.append((original, virtual))
+        return virtual
+
+    def inventario(self, inventario):
+        for original, virtual in self._inventarios:
+            if original is inventario:
+                return virtual
+        nodos = []
+        actual = inventario._lista.primero
+        while actual is not None:
+            nodos.append(actual)
+            actual = actual.siguiente
+        self._inventarios.append((inventario, nodos))
+        return nodos
+
+    def agenda(self, agenda):
+        for original, virtual in self._agendas:
+            if original is agenda:
+                return virtual
+        virtual = list(agenda.recorrer())
+        self._agendas.append((agenda, virtual))
+        return virtual
+
+
 def _preparar_orden_suelo(sala):
     """Asigna marcas de orden sin copiar los objetos de la sala."""
     siguiente = getattr(sala, "_siguiente_orden_suelo", 0)
@@ -141,13 +185,28 @@ class TransaccionAccion:
         if self._revertida:
             return
 
-        while self._cambios.primero is not None:
-            nodo = self._cambios.primero
-            cambio = nodo.valor
+        inventario = getattr(estado, "inventario", None)
+        if inventario is not None:
+            self.validar_capacidad(inventario)
 
-            # Quita el registro solamente después de deshacerlo.
-            cambio.deshacer(estado)
-            self._cambios.quitar_nodo(nodo)
+        # Simula primero todos los inversos. Las vistas contienen referencias,
+        # no copias de entidades ni del estado completo.
+        contexto = _ContextoValidacionReversion()
+        nodo = self._cambios.primero
+        while nodo is not None:
+            validar = getattr(nodo.valor, "validar_deshacer", None)
+            if validar is not None:
+                validar(estado, contexto)
+            nodo = nodo.siguiente
+
+        # Ningún registro se descarta hasta que la validación completa terminó.
+        nodo = self._cambios.primero
+        while nodo is not None:
+            nodo.valor.deshacer(estado)
+            nodo = nodo.siguiente
+
+        while self._cambios.primero is not None:
+            self._cambios.quitar_nodo(self._cambios.primero)
 
         self._revertida = True
 
@@ -179,6 +238,19 @@ class CambioRecogerObjeto(CambioReversible):
 
     def objetos_referenciados(self):
         return [self._objeto]
+
+    def validar_deshacer(self, estado, contexto) -> None:
+        if self._deshecho:
+            return
+        nodos = contexto.inventario(self._inventario)
+        posicion = _indice_identidad(nodos, self._nodo)
+        if posicion is None:
+            raise ValueError("Debes deshacer primero los cambios posteriores.")
+        nodos.pop(posicion)
+        suelo = contexto.lista(self._sala.objetos)
+        if _indice_identidad(suelo, self._objeto) is not None:
+            raise ValueError("El objeto ya está en la sala.")
+        suelo.insert(min(self._posicion, len(suelo)), self._objeto)
 
     def deshacer(self, estado) -> None:
         if self._deshecho:
@@ -265,12 +337,81 @@ class CambioLista(CambioReversible):
     def __init__(self, lista, posicion, valor, insertado):
         self.lista, self.posicion = lista, posicion
         self.valor, self.insertado = valor, insertado
+        self.anterior = lista[posicion - 1] if posicion > 0 else None
+        posicion_siguiente = posicion if insertado else posicion + 1
+        self.siguiente = (
+            lista[posicion_siguiente]
+            if posicion_siguiente < len(lista) else None
+        )
+        self._intercambiado = None
+        if not insertado and hasattr(lista, "preparar_extraccion"):
+            posicion_real, self._intercambiado = lista.preparar_extraccion(valor)
+            if posicion_real != posicion:
+                raise ValueError("La posición del enemigo no coincide con su índice.")
+
+    @staticmethod
+    def _posicion_restauracion(lista, anterior, siguiente, posicion):
+        indice_siguiente = _indice_identidad(lista, siguiente)
+        if indice_siguiente is not None:
+            return indice_siguiente
+        indice_anterior = _indice_identidad(lista, anterior)
+        if indice_anterior is not None:
+            return indice_anterior + 1
+        return min(posicion, len(lista))
+
+    def validar_deshacer(self, estado, contexto) -> None:
+        virtual = contexto.lista(self.lista)
+        posicion = _indice_identidad(virtual, self.valor)
+        especializada = hasattr(self.lista, "extraer_o1")
+        if self.insertado:
+            if posicion is None:
+                raise ValueError(
+                    "El elemento insertado ya no pertenece a la lista.")
+            if especializada:
+                ultimo = virtual.pop()
+                if posicion < len(virtual):
+                    virtual[posicion] = ultimo
+            else:
+                virtual.pop(posicion)
+            return
+        if posicion is not None:
+            raise ValueError("El elemento retirado ya pertenece a la lista.")
+        if especializada:
+            if self._intercambiado is None:
+                if self.posicion != len(virtual):
+                    raise ValueError(
+                        "El orden de enemigos cambió antes del retroceso.")
+                virtual.append(self.valor)
+            else:
+                if (not 0 <= self.posicion < len(virtual)
+                        or virtual[self.posicion] is not self._intercambiado):
+                    raise ValueError(
+                        "El orden de enemigos cambió antes del retroceso.")
+                virtual.append(self._intercambiado)
+                virtual[self.posicion] = self.valor
+            return
+        posicion = self._posicion_restauracion(
+            virtual, self.anterior, self.siguiente, self.posicion)
+        virtual.insert(posicion, self.valor)
 
     def deshacer(self, estado):
         if self.insertado:
-            self.lista.pop(self.posicion)
+            if hasattr(self.lista, "extraer_o1"):
+                self.lista.extraer_o1(self.valor)
+                return
+            posicion = _indice_identidad(self.lista, self.valor)
+            if posicion is None:
+                raise ValueError(
+                    "El elemento insertado ya no pertenece a la lista.")
+            self.lista.pop(posicion)
         else:
-            self.lista.insert(self.posicion, self.valor)
+            if hasattr(self.lista, "restaurar_extraccion"):
+                self.lista.restaurar_extraccion(
+                    self.valor, self.posicion, self._intercambiado)
+                return
+            posicion = self._posicion_restauracion(
+                self.lista, self.anterior, self.siguiente, self.posicion)
+            self.lista.insert(posicion, self.valor)
 
     def objetos_referenciados(self):
         return [self.valor] if isinstance(self.valor, ObjetoInstancia) else []
@@ -289,6 +430,21 @@ class CambioAgenda(CambioReversible):
     def __init__(self, agenda, evento, insertado):
         self.agenda, self.evento = agenda, evento
         self.insertado = insertado
+
+    def validar_deshacer(self, estado, contexto) -> None:
+        eventos = contexto.agenda(self.agenda)
+        posicion = _indice_identidad(eventos, self.evento)
+        if self.insertado:
+            if posicion is None:
+                raise ValueError("El evento insertado ya no está en la agenda.")
+            eventos.pop(posicion)
+            return
+        if any(evento.id_evento == self.evento.id_evento
+               or (evento.tiempo, evento.secuencia)
+               == (self.evento.tiempo, self.evento.secuencia)
+               for evento in eventos):
+            raise ValueError("El evento que se desea restaurar entra en conflicto.")
+        eventos.append(self.evento)
 
     def deshacer(self, estado):
         if self.insertado:
@@ -331,6 +487,22 @@ class CambioSoltarObjeto(CambioReversible):
     def objetos_referenciados(self):
         return [self._objeto]
 
+    def validar_deshacer(self, estado, contexto) -> None:
+        if self._deshecho:
+            return
+        suelo = contexto.lista(self._sala.objetos)
+        posicion = _indice_identidad(suelo, self._objeto)
+        if posicion is None:
+            raise ValueError(
+                "El objeto que se desea restaurar no está en la sala.")
+        nodos = contexto.inventario(self._inventario)
+        if _indice_identidad(nodos, self._retiro.nodo) is not None:
+            raise ValueError("El nodo retirado ya está en el inventario.")
+        if len(nodos) >= self._inventario.get_capacidad():
+            raise ValueError("El inventario está lleno.")
+        suelo.pop(posicion)
+        nodos.append(self._retiro.nodo)
+
     def deshacer(self, estado) -> None:
         if self._deshecho:
             return
@@ -371,6 +543,14 @@ class CambioPosicionInventario(CambioReversible):
 
     def objetos_referenciados(self):
         return [self._nodo.valor]
+
+    def validar_deshacer(self, estado, contexto) -> None:
+        if self._deshecho:
+            return
+        if _indice_identidad(
+                contexto.inventario(self._inventario), self._nodo) is None:
+            raise ValueError(
+                "El nodo que se desea reordenar no está en el inventario.")
 
     def deshacer(self, estado):
         if not self._deshecho:
@@ -435,6 +615,16 @@ class CambioConsumirObjeto(CambioReversible):
 
     def objetos_referenciados(self):
         return [self._objeto]
+
+    def validar_deshacer(self, estado, contexto) -> None:
+        if self._deshecho:
+            return
+        nodos = contexto.inventario(self._inventario)
+        if _indice_identidad(nodos, self._retiro.nodo) is not None:
+            raise ValueError("El nodo consumido ya está en el inventario.")
+        if len(nodos) >= self._inventario.get_capacidad():
+            raise ValueError("El inventario está lleno.")
+        nodos.append(self._retiro.nodo)
 
     def deshacer(self, estado):
         if not self._deshecho:
