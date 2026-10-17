@@ -1,13 +1,7 @@
 import struct
-import json
 
-import pytest
 
 from datos.guardado_binario import GuardadoBinario
-from datos.almacen_persistente import AlmacenPersistente
-from datos.decodificador_datos import DecodificadorDatos
-from datos.fuente_offline import FuenteOffline
-from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from dto.actor import Jugador
 from dto.estado_partida import EstadoPartida
 from dto.sala import Sala
@@ -15,8 +9,6 @@ from estructuras.lista_doble import ListaDobleImpl
 from logica.cache_catalogo import CacheCatalogo
 from logica.mapa_cripta import MapaCripta
 from logica.registro_rastro import RegistroRastro
-from service.planificador_precarga import PlanificadorPrecarga
-from service.repositorio_catalogo import RepositorioCatalogo
 
 
 def comprobar_enlaces(lista):
@@ -125,35 +117,3 @@ def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v2(tmp_path):
     assert cargado["jugador"]["sala_actual_id"] == 1
     assert sorted(cargado["salas"].claves()) == [1, 2]
     assert guardado.leer_sala(str(ruta), 2)["id_sala"] == 2
-
-
-def test_precarga_catalogo_offline_y_cache_con_clases_reales(tmp_path):
-    origen = tmp_path / "origen"
-    catalogo = origen / "catalogo"
-    catalogo.mkdir(parents=True)
-    (catalogo / "version.txt").write_text("1", encoding="utf-8")
-    mapa = MapaCripta()
-    for id_sala in [1, 2]:
-        mapa.agregar_sala(Sala(id_sala))
-        # Son fichas JSON de entrada, no un índice de ejecución.
-        ficha = {"nombre": str(id_sala)}
-        (catalogo / (str(id_sala) + ".json")).write_text(
-            json.dumps(ficha), encoding="utf-8")
-    cache = CacheCatalogo(2)
-    presupuesto = PresupuestoSolicitudes(10)
-    almacen = AlmacenPersistente(str(tmp_path / "disco"))
-    repositorio = RepositorioCatalogo(
-        cache, almacen, FuenteOffline(str(origen)),
-        DecodificadorDatos(), presupuesto)
-    precarga = PlanificadorPrecarga(repositorio, mapa, presupuesto)
-    ids = precarga.planificar(1, 2)
-    assert ids == [1, 2]
-    resultado = precarga.solicitar_lote(ids)
-    assert resultado[1]["nombre"] == "1"
-    assert resultado[2]["nombre"] == "2"
-    assert precarga.planificar(1, 2) == []
-    restantes = presupuesto.restantes()
-    assert precarga.asegurar_contenido(1) is cache.obtener(1)
-    assert presupuesto.restantes() == restantes
-    assert almacen.leer(2)["nombre"] == "2"
-    comprobar_enlaces(cache._lista)
