@@ -152,6 +152,7 @@ class RestauradorPartida:
         mapa = MapaCripta()
         for id_sala, registro in pares_por_sala(registros):
             sala = decodificador.convertir_sala(registro)
+            sala.contenido_cargado = registro.get("contenido_cargado", True)
             sala.enemigos = contenido.obtener(id_sala)["enemigos"]
             sala.objetos = contenido.obtener(id_sala)["objetos"]
             for enemigo in sala.enemigos:
