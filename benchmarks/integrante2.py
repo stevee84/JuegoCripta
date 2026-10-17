@@ -19,6 +19,7 @@ from datos.decodificador_datos import DecodificadorDatos
 from datos.fuente_offline import FuenteOffline
 from datos.guardado_binario import GuardadoBinario
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+from estructuras.tabla_hash import TablaHashImpl
 from logica.cache_catalogo import CacheCatalogo
 from logica.motor_juego import MotorJuego
 from service.inicializador_partida import InicializadorPartida
@@ -178,4 +179,75 @@ def medir_guardado(repeticiones, tamanos):
     return filas
 
 
-PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado)
+def _claves(distribucion, n):
+    """Claves con la forma real de los índices del proyecto."""
+    if distribucion == "id_ficha_texto":
+        return [f"itm_{i:05d}" for i in range(n)], [f"ent_{i:05d}" for i in range(n)]
+    return list(range(1, n + 1)), list(range(n + 1, 2 * n + 1))  # id_sala_entero
+
+
+def _tabla_llena(claves):
+    tabla = TablaHashImpl()
+    for clave in claves:
+        tabla.insertar(clave, clave)
+    return tabla
+
+
+def _buscar_binario(arreglo, clave):
+    izquierda, derecha = 0, len(arreglo)
+    while izquierda < derecha:
+        medio = (izquierda + derecha) // 2
+        if arreglo[medio][0] < clave:
+            izquierda = medio + 1
+        else:
+            derecha = medio
+    if izquierda < len(arreglo) and arreglo[izquierda][0] == clave:
+        return arreglo[izquierda][1]
+    return None
+
+
+def medir_tabla_hash(repeticiones, tamanos):
+    """TablaHashImpl (encadenamiento + rehash) contra las alternativas aplicables a sus índices:
+    lista de pares con búsqueda secuencial y arreglo ordenado con búsqueda binaria (como la caché)."""
+    filas = []
+    for distribucion in ("id_ficha_texto", "id_sala_entero"):
+        for n in tamanos:
+            presentes, ausentes = _claves(distribucion, n)
+            muestra = _tabla_llena(presentes)
+            capacidad_final = muestra._capacidad
+            rehashes = 0
+            while TablaHashImpl._CAPACIDAD_INICIAL * 2 ** rehashes < capacidad_final:
+                rehashes += 1
+            for clave in presentes:
+                if muestra.obtener(clave) != clave:
+                    raise AssertionError("La tabla hash no devolvió el valor insertado.")
+            etiquetas = {"distribucion": distribucion}
+
+            def preparar_insercion(presentes=presentes):
+                tabla = TablaHashImpl()
+
+                def insertar():
+                    for clave in presentes:
+                        tabla.insertar(clave, clave)
+                return insertar
+
+            filas.append(medir("tabla_hash_insertar", n, repeticiones, preparar_insercion,
+                               rehashes=rehashes, capacidad_final=capacidad_final, **etiquetas))
+            ordenado = [(clave, clave) for clave in presentes]  # ya vienen en orden ascendente
+            for caso, claves in (("presente", presentes), ("ausente", ausentes)):
+                filas.append(medir(f"tabla_hash_buscar_{caso}", n, repeticiones,
+                                   lambda claves=claves, presentes=presentes:
+                                       (lambda t=_tabla_llena(presentes): [t.obtener(c) for c in claves]),
+                                   **etiquetas))
+                filas.append(medir(f"lista_pares_buscar_{caso}_alternativa", n, repeticiones,
+                                   lambda claves=claves, ordenado=ordenado:
+                                       (lambda: [_buscar_lineal(ordenado, c) for c in claves]),
+                                   **etiquetas))
+                filas.append(medir(f"arreglo_ordenado_buscar_{caso}_alternativa", n, repeticiones,
+                                   lambda claves=claves, ordenado=ordenado:
+                                       (lambda: [_buscar_binario(ordenado, c) for c in claves]),
+                                   **etiquetas))
+    return filas
+
+
+PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado, medir_tabla_hash)

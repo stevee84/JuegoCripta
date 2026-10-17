@@ -40,3 +40,17 @@ def test_binario_y_json_miden_el_mismo_estado_de_las_4_criptas():
         binario = next(f["bytes"] for f in propias if f["formato"] == "binario")
         texto = next(f["bytes"] for f in propias if f["formato"] == "json")
         assert binario < texto
+
+
+def test_tabla_hash_mide_insercion_rehash_busquedas_y_alternativas():
+    from benchmarks.integrante2 import medir_tabla_hash
+    filas = medir_tabla_hash(repeticiones=1, tamanos=(8, 100))
+    nombres = {f["medicion"] for f in filas}
+    for caso in ("presente", "ausente"):
+        assert {f"tabla_hash_buscar_{caso}", f"lista_pares_buscar_{caso}_alternativa",
+                f"arreglo_ordenado_buscar_{caso}_alternativa"} <= nombres
+    inserciones = {(f["distribucion"], f["n"]): f for f in filas if f["medicion"] == "tabla_hash_insertar"}
+    assert set(d for d, _ in inserciones) == {"id_ficha_texto", "id_sala_entero"}
+    assert inserciones[("id_ficha_texto", 8)]["rehashes"] == 0
+    assert inserciones[("id_ficha_texto", 100)]["rehashes"] >= 3
+    assert inserciones[("id_ficha_texto", 100)]["capacidad_final"] * 0.75 >= 100
