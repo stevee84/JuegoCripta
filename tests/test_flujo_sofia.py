@@ -121,11 +121,11 @@ def test_binario_corrupto_no_lanza_error_de_struct(tmp_path, corrupcion):
     elif corrupcion == "indice":
         datos.pop()
     elif corrupcion == "offset":
-        struct.pack_into("<I", datos, header[6] + 32, len(datos) + 100)
+        struct.pack_into("<I", datos, header[5] + 32, len(datos) + 100)
     elif corrupcion == "jugador":
         datos = datos[:guardado.HEADER_SIZE + 10]
     else:
-        offset = struct.unpack_from("<I", datos, header[6] + 32)[0]
+        offset = struct.unpack_from("<I", datos, header[5] + 32)[0]
         struct.pack_into("<H", datos, offset + 32, 65535)
     ruta.write_bytes(datos)
     assert guardado.cargar(ruta) is None
@@ -138,7 +138,7 @@ def test_guardado_fallido_conserva_archivo_anterior(tmp_path):
     estado = crear_partida_minima()
     guardado.guardar(ruta, estado)
     anterior = ruta.read_bytes()
-    estado.jugador.nombre = "á" * 40
+    estado.jugador.nombre = "á" * 40000  # 80 000 bytes UTF-8: supera el uint16 del formato
     with pytest.raises(ValueError, match="bytes"):
         guardado.guardar(ruta, estado)
     assert ruta.read_bytes() == anterior

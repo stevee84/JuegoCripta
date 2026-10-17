@@ -512,3 +512,32 @@ def test_metricas_de_cache_son_de_la_partida_y_no_acumuladas(en_tmp):
     # Misma caché caliente: todo se resuelve en memoria y no se arrastran los fallos anteriores.
     assert segunda["fallos"] == 0 and segunda["aciertos"] == primera["fallos"]
     assert segunda["tamano"] == primera["tamano"]
+
+
+# ── Guardado v6: IDs sin límite de 32 bytes (§9: cripta desconocida) ──
+
+@pytest.mark.parametrize("largo", [50, 200, 1000])
+def test_guardado_conserva_ids_largos_y_multibyte(en_tmp, largo):
+    servicio = _servicio()
+    estado = servicio.iniciar_partida("cripta-02")
+    sala = estado.mapa.obtener_sala(2)
+    objeto = sala.objetos[0]
+    objeto.id_instancia = ("obj-ñandú-🗝-" * largo)[:largo]
+    ruta = en_tmp / "largo.bin"
+    servicio.guardar_partida(str(ruta))
+
+    datos = GuardadoBinario().cargar(str(ruta))
+    assert datos["salas"][2]["objetos"][0]["id_instancia"] == objeto.id_instancia
+    assert GuardadoBinario().leer_sala(str(ruta), 2)["objetos"][0]["id_instancia"] == objeto.id_instancia
+
+    otro = _servicio()
+    cargado = otro.cargar_partida(str(ruta))
+    assert cargado.mapa.obtener_sala(2).objetos[0].id_instancia == objeto.id_instancia
+
+
+def test_guardado_v5_se_rechaza_como_incompatible(en_tmp):
+    import struct
+    ruta = en_tmp / "viejo.bin"
+    ruta.write_bytes(struct.pack("<4sH32sqIIII", b"CRPT", 5, b"cripta-01", 1, 0, 0, 0, 0))
+    assert GuardadoBinario().cargar(str(ruta)) is None
+    assert GuardadoBinario().leer_sala(str(ruta), 1) is None
