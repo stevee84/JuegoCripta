@@ -156,6 +156,7 @@ class VistaPygame:
         self._sprite_trampa_dardos = self._cargar_sprite("trampa_dardos.png", "objetos")
         self._sprite_rata_muerta = self._cargar_sprite("rata_muerta.png", "personajes")
         self._sprite_guardian_oseo = self._cargar_sprite("guardian_oseo.png", "personajes")   
+        self._sprite_guardian_muerto = self._cargar_sprite("guardian_muerto.png", "personajes")
         self._fondo_menu = self._cargar_fondo_menu()
         self._fondo_sala = self._cargar_fondo_sala()
 
@@ -838,12 +839,18 @@ class VistaPygame:
                     sprite,
                 ))
             else:
+                sprite = None
+                if es_rata:
+                    sprite = self._sprite_rata_muerta
+                elif es_guardian:
+                    sprite = self._sprite_guardian_muerto
+
                 entidades.append((
                     GLYPH_ENEMIGO_MUERTO,
                     f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
                     GRIS,
                     "muerto",
-                    self._sprite_rata_muerta if es_rata else None,
+                    sprite,
                 ))
 
         for numero, objeto in enumerate(sala.objetos, 1):

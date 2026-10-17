@@ -86,7 +86,6 @@ class HistorialReversible:
         if self.esta_vacio():
             raise ValueError("No hay acciones cerradas para deshacer.")
         self._intervalos.primero.valor.validar_capacidad(inventario, espacios)
-        self._intervalos.primero.valor.validar_transferencias()
 
     def objetos_referenciados(self):
         objetos = []
@@ -130,11 +129,6 @@ class HistorialReversible:
 
         nodo = self._intervalos.primero
         transaccion = nodo.valor
-
-        inventario = getattr(estado, "inventario", None)
-        if inventario is not None:
-            transaccion.validar_capacidad(inventario)
-            transaccion.validar_transferencias()
 
         # Retira la transacción después de revertir sus cambios.
         transaccion.revertir(estado)

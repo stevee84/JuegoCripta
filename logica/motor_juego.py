@@ -8,7 +8,7 @@ from logica.cambios import CambioAzar
 from logica.comportamiento_enemigos import ComportamientoEnemigos
 from logica.gestor_efectos import GestorEfectos
 from logica.historial_reversible import HistorialReversible
-from logica.mutaciones import atributo, agregar, quitar, registrar
+from logica.mutaciones import atributo, agregar, quitar_identidad, registrar
 from logica.registro_rastro import RegistroRastro
 from logica.reglas_combate import ReglasCombate
 from logica.servicio_inventario import ServicioInventario
@@ -104,6 +104,7 @@ class MotorJuego(MotorJuegoContrato):
                     and estado.mapa.obtener_sala(estado.sala_salida_id) is None):
                 raise ValueError("La sala de salida no existe en el mapa.")
             for sala in estado.mapa.obtener_salas():
+                sala.reconstruir_indice_enemigos()
                 for objeto in sala.objetos:
                     if objeto.id_instancia in ids_objetos:
                         raise ValueError("Los objetos deben tener IDs únicos.")
@@ -268,7 +269,7 @@ class MotorJuego(MotorJuegoContrato):
                 sala is not None
                 and estado.mapa is not None
                 and estado.mapa.obtener_sala(sala.id_sala) is sala
-                and any(enemigo is actor for enemigo in sala.enemigos)
+                and sala.contiene_enemigo(actor)
             )
 
         if not pertenece:
@@ -363,7 +364,7 @@ class MotorJuego(MotorJuegoContrato):
             objetivo = accion.objetivo
             if (not isinstance(objetivo, Enemigo) or not objetivo.esta_vivo()
                     or sala is None or objetivo.sala_actual is not sala
-                    or not any(e is objetivo for e in sala.enemigos)):
+                    or not sala.contiene_enemigo(objetivo)):
                 return "El objetivo debe ser un enemigo vivo de esta sala."
         elif accion.tipo in ("MOVER", "ABRIR"):
             puerta = sala.obtener_salida(accion.direccion) if sala is not None else None
@@ -372,6 +373,9 @@ class MotorJuego(MotorJuegoContrato):
             destino = estado.mapa.obtener_sala(puerta.destino_sala_id) if estado.mapa is not None else None
             if destino is None:
                 return "La sala de destino no existe."
+            if (accion.tipo == "MOVER"
+                    and not getattr(destino, "contenido_cargado", True)):
+                return "El contenido de la sala destino está pendiente."
             if accion.tipo == "MOVER" and not puerta.abierta:
                 return "La puerta está cerrada."
             if accion.tipo == "MOVER":
@@ -531,10 +535,11 @@ class MotorJuego(MotorJuegoContrato):
 
     def activar_enemigos_sala(self, sala):
         """
-        Activa los enemigos vivos de una sala en orden de ID.
+        Activa enemigos vivos por ID textual ascendente.
 
         Usa ordenamiento por inserción sobre una lista auxiliar
-        para conservar el orden original de sala.enemigos.
+        para conservar el orden original de sala.enemigos. Los IDs de instancia
+        son texto opaco: el orden es lexicográfico ("e10" precede a "e2").
         """
         pendientes = []
 
@@ -560,7 +565,7 @@ class MotorJuego(MotorJuegoContrato):
         estado = self.estado
         if (estado is None or not isinstance(enemigo, Enemigo) or not enemigo.esta_vivo()
                 or enemigo.sala_actual is None or not estado.partida_activa
-                or not any(e is enemigo for e in enemigo.sala_actual.enemigos)):
+                or not enemigo.sala_actual.contiene_enemigo(enemigo)):
             return False
         atributo(estado, enemigo, "activo", True)
         accion_pendiente = bool(estado.agenda.buscar_por_actor_tipo(
@@ -578,7 +583,7 @@ class MotorJuego(MotorJuegoContrato):
         estado = self.estado
         if (not isinstance(enemigo, Enemigo) or not enemigo.esta_activo()
                 or enemigo.sala_actual is None
-                or not any(e is enemigo for e in enemigo.sala_actual.enemigos)):
+                or not enemigo.sala_actual.contiene_enemigo(enemigo)):
             return []
         registrar(estado, CambioAzar(estado.azar))
         accion = self.comportamientos.decidir_accion(enemigo, estado)
@@ -592,10 +597,7 @@ class MotorJuego(MotorJuegoContrato):
             for destino in estado.mapa.vecinos_abiertos(enemigo.sala_actual):
                 if destino.id_sala == accion["destino"]:
                     origen = enemigo.sala_actual
-                    for i, actor in enumerate(origen.enemigos):
-                        if actor is enemigo:
-                            quitar(estado, origen.enemigos, i)
-                            break
+                    quitar_identidad(estado, origen.enemigos, enemigo)
                     agregar(estado, destino.enemigos, enemigo)
                     atributo(estado, enemigo, "sala_actual", destino)
                     resultado.append({"tipo": "ENEMIGO_MOVIDO", "actor": enemigo.id_actor,
