@@ -114,8 +114,7 @@ class JuegoService:
             is not estado.jugador.sala_actual
         ):
             raise ValueError("La fábrica no entregó jugador y ubicación válidos.")
-        if versiones != self.obtener_versiones(cripta_id):
-            raise ValueError("Las versiones cambiaron durante la inicialización.")
+        # Las versiones se validaron en preparar(); no se repite la consulta (2 HTTP) (§5.1).
         # Publica el contexto solo después de validar todos los datos.
         if estado.inventario is not None and estado.inventario is not inventario:
             raise ValueError("La fábrica entregó dos inventarios distintos.")
@@ -310,10 +309,7 @@ class JuegoService:
             self._establecer_presupuesto(datos["cripta_id"])
             if self.obtener_versiones(datos["cripta_id"]) != versiones:
                 raise ValueError("Las versiones de cripta o catálogo no coinciden con el guardado.")
-            catalogo = self._resolver_catalogo(ids, versiones[1])
-            if self.obtener_versiones(datos["cripta_id"]) != versiones:
-                raise ValueError("Las versiones cambiaron durante la carga.")
-            return catalogo
+            return self._resolver_catalogo(ids, versiones[1])
         if not ids:
             return {}
         actual = self.obtener_estado()
