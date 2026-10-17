@@ -74,14 +74,13 @@ def test_arranque_frio_cuenta_desde_listado_y_cabe_en_presupuesto(online):
     juego, llamadas, lotes, _, _, _ = online
     juego.listar_criptas()
     estado = juego.iniciar_partida("c1")
-    # listado + generales + versión de catálogo + página + 2 lotes de contenido + catálogo (sin repetir versiones)
     assert len(llamadas) == juego._fuente._presupuesto._intentos == 7
     assert juego._fuente._presupuesto._limite == 9
     assert len(lotes) == 2 and all(len(lote) <= 10 for lote in lotes)
     assert estado.jugador.sala_actual is estado.mapa.obtener_sala(0)
     assert juego._operaciones_inventario is juego._motor._servicio_inventario
     assert sum(ruta == "/criptas/c1" for ruta, _ in llamadas) == 1
-    assert sum(ruta == "/catalogo/version" for ruta, _ in llamadas) == 2
+    assert sum(ruta == "/catalogo/version" for ruta, _ in llamadas) == 1  # no se repite al publicar
     assert AlmacenPersistente(RUTA_CACHE_CATALOGO).validar_version("oro", "cat1")
 
 
