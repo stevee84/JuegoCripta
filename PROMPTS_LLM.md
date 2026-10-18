@@ -1,6 +1,6 @@
 # PROMPTS_LLM
 
-Bitácora de prompts del equipo (§10.3 del enunciado) del proyecto CRIPTA: Steven (Integrante 2), Sofía (Integrante 1) y Joshua (Integrante 3).
+Bitácora de prompts del equipo (§10.3 del enunciado) del proyecto CRIPTA: Steven (Integrante 2), Sofía Delgado (Integrante 1) y Joshua (Integrante 3).
 
 ---
 
@@ -408,7 +408,7 @@ Mismo contrato FuenteDatos pero leyendo archivos locales en vez de HTTP. datos_o
 
 ---
 
-# Sofía — Integrante 1: Motor del juego y simulación
+# Sofía Delgado — Integrante 1: Motor del juego y simulación
 
 Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
 
