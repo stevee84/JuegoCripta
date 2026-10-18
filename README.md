@@ -299,6 +299,7 @@ Todas se crean automáticamente, relativas al directorio desde el que se ejecuta
 ```text
 main.py               Punto de entrada
 configuracion.py      Opciones de línea de comandos y rutas
+PROMPTS_LLM.md        Bitácora de prompts del equipo (§10.3)
 dto/                  Entidades y estado de la partida
 logica/               Motor, reglas, agenda, inventario, caché, historial
 service/              Arranque, carga de contenido, catálogo y guardado
@@ -310,6 +311,7 @@ contratos/            Interfaces entre capas
 assets/               Imágenes de la vista gráfica
 benchmarks/           Mediciones para --bench
 tests/                Pruebas automáticas y respuestas reales del servicio
+stubs/                Dobles de prueba usados por los tests
 docs/                 Enunciado y resultados de las mediciones
 ```
 
