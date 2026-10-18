@@ -113,7 +113,10 @@ def test_bench_desde_main_no_inicializa_fuente_ni_vista(monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda *args: pytest.fail("No debe pedir entrada"))
     main.main()
     from benchmarks.integrante2 import PROVEEDORES
-    assert json.loads(capsys.readouterr().out) == {"prueba_modo": True, "proveedores": len(PROVEEDORES)}
+    from benchmarks.bench_ampliado import PROVEEDORES as ADICIONALES
+    # Una sola vía de registro: originales + complementarios, sin el agregador `adicionales`.
+    assert json.loads(capsys.readouterr().out) == {
+        "prueba_modo": True, "proveedores": len(PROVEEDORES) + len(ADICIONALES)}
 
 
 def test_pergamino_por_controlador_delega_una_vez_al_motor_sin_tiempo(tmp_path, monkeypatch):
