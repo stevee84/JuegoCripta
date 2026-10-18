@@ -31,7 +31,8 @@ python -m pytest -q
 ```bash
 python main.py --demo --semilla 123
 python main.py --offline --cache-size 25 --semilla 123
-python main.py --replay partida.log --offline
+python main.py --replay partidas/logs/NOMBRE.log
+python main.py --replay partidas/logs/NOMBRE.log --offline
 python main.py --bench > mediciones.json
 ```
 
@@ -49,7 +50,7 @@ puede configurarse al construir InicializadorPartida. No sustituye datos de comb
 
 `--replay` conecta la misma fábrica y ejecuta sin vista ni entrada. También
 EjecutorReplay.reproducir(ruta), sin servicio inyectado, utiliza el paquete
-local `datos/`. Requiere las versiones exactas del log y un paquete completo.
+local `datos_offline/`. Requiere datos y versiones compatibles con el log.
 
 El arranque con ClienteAPI está conectado. JuegoService instala el contador
 antes del listado de criptas, conservando cualquier contador ya proporcionado.
@@ -135,8 +136,9 @@ equipo/bonos, efectos, botín, rastro, puertas, salida y sesión. El equipo
 no vuelve a sumar sus bonos. Requiere las fichas de la versión guardada:
 una fuente compatible (incluida FuenteOffline) o las fichas resueltas de
 la partida vigente con las mismas versiones. La carga inválida no
-reemplaza la partida actual. No se carga durante una acción ni con un log
-activo; una partida cargada tampoco se presenta como inicio de un replay.
+reemplaza la partida actual. No se carga durante una acción en curso;
+una carga válida desconecta el registro anterior, sin modificarlo.
+Una partida cargada tampoco se presenta como inicio de un replay.
 
 El historial previo al guardado se descarta por acuerdo del equipo.
 `limitaciones_carga = ("historial",)`; las nuevas acciones conservan sus
@@ -190,9 +192,55 @@ Las fichas sintéticas y AdaptadorFichas sirven para pruebas.
 El inicializador utiliza el esquema externo descrito en el enunciado.
 Las pruebas sintéticas no sustituyen la comprobación de paquetes/versiones reales.
 
-RegistroPartida utiliza JSON Lines y anexado de acciones exitosas.
-Las consultas y rechazos no se registran como acciones.
-El retroceso no borra acciones anteriores del log.
+### Registro automático y reproducción (§4.11 y §10.1)
+
+Cada `cripta ID` iniciado correctamente crea y conecta su log **antes de la
+primera acción**, tanto desde consola como desde el menú de pygame, mediante
+el flujo compartido del controlador. No es necesario ejecutar `registro`.
+La ruta se muestra al iniciar y se deriva de `Configuracion.ruta_guardado`:
+`<ruta_guardado>/logs/`, por defecto `partidas/logs/`.
+Se crean los directorios y un archivo nuevo con nombre
+`<cripta-sanitizada>-<fecha-hora-UTC>-<identificador-unico>.log`, sin sobrescribir.
+El identificador original de la cripta se conserva en la cabecera.
+
+RegistroPartida utiliza JSON Lines: cabecera con cripta, versiones y semilla,
+seguida del anexado de acciones exitosas e IDs reales. Crear el log no repite
+las consultas HTTP del inicializador. Consultas, selecciones del cursor,
+rechazos y operaciones de sesión no se registran como acciones.
+El retroceso no borra acciones anteriores ni permite reiniciar el registro.
+
+Para reproducir sin vista ni interacción:
+
+```bash
+python main.py --replay partidas/logs/NOMBRE.log
+python main.py --replay partidas/logs/NOMBRE.log --offline
+```
+
+`--offline` usa el paquete de `Configuracion.ruta_datos_offline` (por defecto
+`datos_offline/`). Se necesitan los datos requeridos de la cripta y el catálogo
+con las versiones exactas de la cabecera. El modo normal utiliza la fuente
+configurada y puede recurrir a una copia local compatible; si no existe una
+fuente compatible, se rechaza la reproducción, sin sustituir datos distintos.
+`--replay` no crea otro log ni modifica el original.
+
+En consola, `registro "RUTA"` permite elegir otra ruta **antes de la primera
+acción**. Se crea y valida el archivo nuevo antes de sustituir la conexión;
+si falla, continúa conectado el anterior. Ningún archivo previo se sobrescribe
+ni elimina. Después de actuar se rechaza el cambio, incluso si se retrocede.
+El guardado y la exportación parcial no pueden sobrescribir el registro activo.
+
+Si falla la creación automática, la partida ya iniciada puede continuar, con
+el aviso explícito «No se podrá reproducir esta partida: no se pudo crear el
+registro…» y el motivo. Puede elegirse una ruta manual antes de actuar.
+Si falla anexar una acción, se informa que fue ejecutada y que el log está
+incompleto; las acciones siguientes quedan bloqueadas, como antes.
+
+Al cargar, se desconecta el registro anterior y no se crea un log que finja
+reproducir la sesión desde el comienzo. Se advierte esa limitación y se
+mantiene la política de historial vacío al cargar. Una carga inválida conserva
+la partida y la conexión anteriores. Los estados externos, como `--demo`,
+tampoco se declaran reproducibles: se informa su limitación y se conserva
+el rechazo de JuegoService a registrarlos como un inicio nuevo.
 
 ServicioInventario.exportar_representacion entrega capacidad,
 instancias, cursor, orden, equipo y datos del historial.
@@ -275,3 +323,10 @@ ocultamente el contador compartido ni se habilita una partida incompleta.
 
 Verificación final del bloque: 789 pruebas aprobadas con `python -m pytest -q`,
 incluidas las pruebas de API real. Se conservan arriba las cifras históricas.
+
+Verificación del registro automático (§4.11): 168 pruebas específicas aprobadas;
+suite completa con `python -m pytest -q`: 965 aprobadas y 11 omitidas por no
+tener pygame instalado en el entorno de verificación. El arranque compartido
+de pygame se prueba con una vista de prueba, sin ventana. Se comprueba además
+el replay real de logs automáticos con datos offline y fixtures de la API,
+comparando reloj, jugador, inventario/equipo, sala, estado del azar y eventos.

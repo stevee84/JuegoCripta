@@ -328,8 +328,6 @@ class JuegoService:
         from service.restaurador_partida import RestauradorPartida
 
         actual = self.obtener_estado()
-        if self.tiene_registro():
-            raise ValueError("No se carga otra partida mientras hay un registro activo.")
         if actual is not None and actual.historial is not None and actual.historial.hay_intervalo_abierto():
             raise ValueError("No se carga durante una acción.")
         if not isinstance(self._motor, MotorJuego):
@@ -684,15 +682,17 @@ class JuegoService:
         """Cabecera real, antes de la primera acción coordinada.
 
         No puede convertir un estado externo o una partida avanzada en un
-        log reproducible desde el inicio. No sobrescribe rutas existentes.
+        log reproducible desde el inicio. Permite elegir otra ruta antes de
+        actuar, conectándola solo después de crearla y validarla. Nunca
+        sobrescribe ni elimina el archivo previamente conectado.
         """
         estado = self.obtener_estado()
         if estado is None or estado is not self._estado_inicial:
             raise ValueError("El registro requiere una partida nueva inicializada por JuegoService.")
-        if self._ruta_registro is not None:
-            raise ValueError("Esta partida ya tiene un registro conectado.")
         if self._acciones_coordinadas or estado.reloj != 0:
             raise ValueError("El registro debe iniciarse antes de la primera acción.")
+        if self._ruta_registro is not None and self._marca_archivo() != self._marca_registro:
+            raise ValueError("El log fue reemplazado o modificado externamente.")
         from service.inicializador_partida import InicializadorPartida
         if isinstance(self._inicializador, InicializadorPartida):
             # El conjunto completo fue verificado al publicarlo. Registrar ese
@@ -705,15 +705,16 @@ class JuegoService:
         if not isinstance(ruta, (str, Path)) or not str(ruta).strip():
             raise ValueError("Se requiere una ruta para el registro.")
         destino = Path(ruta).absolute()
+        destino.parent.mkdir(parents=True, exist_ok=True)
         self._registro.crear(
             str(destino), estado.cripta_id, *self._versiones, estado.semilla
         )
-        self._ruta_registro = destino
         try:
-            self._marca_registro = self._marca_archivo()
+            datos = destino.stat()
         except OSError as error:
-            self._ruta_registro = None
-            raise OSError("Se creó la cabecera, pero no se pudo conectar el log.") from error
+            raise OSError(f"Se creó la cabecera, pero no se pudo conectar el log: {error}") from error
+        self._ruta_registro = destino
+        self._marca_registro = datos.st_dev, datos.st_ino, datos.st_size, datos.st_mtime_ns
 
     def _marca_archivo(self):
         datos = self._ruta_registro.stat()
