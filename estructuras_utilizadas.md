@@ -741,6 +741,8 @@ La búsqueda cuesta O(log n), pero la operación completa es O(n + r): se lee to
 | 4.10 Guardado | Binario v7: cabecera + registros + índice ordenado | Leer una sala con búsqueda binaria sin leer el archivo | Steven |
 | 4.11 Replay | JSON Lines append-only, log automático | Anexar O(b); validar todo antes de reproducir | Joshua |
 
+**Evidencia:** todas las cifras del Documento de Decisiones salen de `python main.py --bench`, que desde el 18/10/2026 incluye también `benchmarks/bench_ampliado.py` (precarga BFS, catálogo, rastreadores, inventario por posición, replay y perfiles de frecuencia). La corrida de entrega está en `docs/mediciones_entrega.json` (633 filas, Windows 11, Python 3.14.0). Si en otro equipo el guardado mide 198 bytes más, es la biblioteca zlib (zlib-ng frente a zlib clásico), no el formato.
+
 **Preguntas probables y dónde está la respuesta:**
 
 - *¿Por qué la caché no usa tabla hash?* Por indicación del profesor: arreglo ordenado con búsqueda binaria (§4.4). Las tablas hash propias (`TablaHashImpl`) sí se usan fuera de la caché, por ejemplo en el contenido por sala, la carga del guardado y los enemigos de cada sala.
