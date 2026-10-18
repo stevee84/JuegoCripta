@@ -271,7 +271,8 @@ solicitudes por arranque, no tiempos). Varias mediciones incluyen la alternativa
 python main.py --bench > mediciones_entrega.json
 ```
 
-La corrida usada en el Documento de Decisiones está en
+El **Documento de Decisiones de Diseño** (§8) está en
+[`docs/decisiones_diseno.pdf`](docs/decisiones_diseno.pdf). La corrida de mediciones que usa está en
 [`docs/mediciones_entrega.json`](docs/mediciones_entrega.json) (633 filas, Python 3.14.0, Windows 11).
 Los resultados comentados están en:
 
@@ -326,7 +327,7 @@ assets/               Imágenes de la vista gráfica
 benchmarks/           Mediciones para --bench
 tests/                Pruebas automáticas y respuestas reales del servicio
 stubs/                Dobles de prueba usados por los tests
-docs/                 Enunciado y resultados de las mediciones
+docs/                 Enunciado, Documento de Decisiones y resultados de las mediciones
 ```
 
 ## Equipo
