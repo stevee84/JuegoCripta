@@ -220,20 +220,25 @@ def test_main_offline_y_replay_sin_entrada_ni_vista(paquete, tmp_path):
     raiz = Path(__file__).resolve().parents[2]
     inicio = subprocess.run(
         [sys.executable, str(raiz / "main.py"), "--offline", "--semilla", "91", "--vista", "consola"],
-        input="cripta c1\nregistro partida.log\natacar enemigo-0\nesperar\nsalir\n",
+        input="cripta c1\natacar enemigo-0\nesperar\nsalir\n",
         cwd=tmp_path, text=True, capture_output=True, timeout=15,
     )
     assert inicio.returncode == 0, inicio.stderr
     assert "Inicialización bloqueada" not in inicio.stdout
-    assert (tmp_path / "partida.log").exists()
-    log = (tmp_path / "partida.log").read_bytes()
+    logs = list((tmp_path / "partidas/logs").glob("*.log"))
+    assert len(logs) == 1
+    ruta = logs[0]
+    assert str(ruta.relative_to(tmp_path)) in inicio.stdout
+    log = ruta.read_bytes()
+    assert len(log.splitlines()) == 3
     replay = subprocess.run(
-        [sys.executable, str(raiz / "main.py"), "--offline", "--replay", "partida.log"],
+        [sys.executable, str(raiz / "main.py"), "--offline", "--replay", str(ruta)],
         input="", cwd=tmp_path, text=True, capture_output=True, timeout=15,
     )
     assert replay.returncode == 0, replay.stderr
     assert "Sala:" not in replay.stdout and "> " not in replay.stdout
-    assert (tmp_path / "partida.log").read_bytes() == log
+    assert ruta.read_bytes() == log
+    assert list((tmp_path / "partidas/logs").glob("*.log")) == logs
 
 
 def test_error_http_controlado_no_publica_partida(monkeypatch):
