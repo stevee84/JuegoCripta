@@ -47,6 +47,11 @@ def test_obtener_generales_no_existe(fuente):
         fuente.obtener_generales("inexistente")
 
 
+def test_cripta_sin_paquete_explica_como_generarlo(fuente):
+    with pytest.raises(CriptaAPIError, match="capturar_api"):
+        fuente.obtener_generales("inexistente")
+
+
 def test_obtener_pagina(fuente):
     assert fuente.obtener_pagina("c1", 1) == {"pag": 1}
 
