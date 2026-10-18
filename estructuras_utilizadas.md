@@ -82,7 +82,7 @@ No se requiere sustituir la estructura. Conviene conservar sincronizados el mont
    - `Sala.incorporar_contenido(enemigos, objetos, trampas)` **agrega** al final de las listas, asigna `sala_actual` a los enemigos y marca la sala como cargada. No reemplaza nada: si un enemigo dejó botín antes de que llegara el contenido, se conserva.
    - La incorporación no pasa por el historial reversible, porque es infraestructura y no estado del juego (§2.11).
 3. **Búsqueda en anchura por niveles (`CargadorContenido.mas_cercanas`).**
-   - Usa listas `frontera`, `siguiente` y `visitadas`, y acumula pares `(distancia, id_sala)`.
+   - Usa las listas `frontera` y `siguiente` para los niveles, y dos `TablaHashImpl` propias: `visitadas` (salas ya alcanzadas) y `pendientes` (salas sin contenido). Acumula pares `(distancia, id_sala)`.
    - Los pares se ordenan con `OrdenadorAdaptativo` por distancia y luego por ID. De ahí se toman las primeras 10 salas pendientes.
 4. **Lotes con orden de incorporación fijo (`_cargar_lotes`).**
    - Cada lote tiene como máximo 10 salas (`MAX_IDS_POR_SOLICITUD`).
@@ -111,7 +111,7 @@ No se requiere sustituir la estructura. Conviene conservar sincronizados el mont
 
 #### Costos
 
-- `mas_cercanas()` es un BFS O(V + E). Comprobar `id in visitadas` sobre una lista cuesta O(V), así que en el peor caso el recorrido es O(V²). Con las criptas reales (hasta 50 salas) el costo es despreciable.
+- `mas_cercanas()` es un BFS **O(V + E)**: comprobar si una sala ya fue visitada o si está pendiente es O(1) promedio con las tablas hash. Antes `visitadas` era una lista y cada `in` costaba O(V), lo que llevaba el peor caso a O(V²); se corrigió el 18/10/2026 pensando en las criptas más grandes de la revisión (§9). Ordenar los pares añade O(V log V).
 - `pendientes()` recorre las salas en O(V).
 - `MapaCripta.obtener_sala(id)` sigue siendo una búsqueda lineal O(V). Solo se usa al vincular y al incorporar, no en cada decisión.
 - Incorporar un lote cuesta O(contenido del lote), porque solo agrega al final de las listas.
@@ -122,6 +122,7 @@ No se requiere sustituir la estructura. Conviene conservar sincronizados el mont
 - `tests/test_dto/test_sala_contenido.py` y `tests/test_logica/test_salas_pendientes_motor.py` comprueban que `incorporar_contenido` agrega sin reemplazar (el botín previo se conserva) y que el motor rechaza moverse a una sala pendiente sin abrir un intervalo.
 - Las pruebas de contrato contra respuestas reales del API (`tests/test_contrato_api_real.py`) cargan las 4 criptas con la estrategia de holgura.
 - En modo offline, un agente jugó cripta-01 completa: el reporte final fue “Presupuesto: 0/9 solicitudes usadas”.
+- `tests/test_service/test_cargador_bfs.py` comprueba el orden por distancia y luego por ID, que se omitan las salas ya cargadas y que en una cuadrícula de 900 salas se elija el lote correcto de 10.
 
 #### Por qué algunas alternativas no son adecuadas
 
@@ -133,7 +134,6 @@ No se requiere sustituir la estructura. Conviene conservar sincronizados el mont
 
 #### Sugerencia
 
-- Reemplazar la lista `visitadas` del BFS por una `TablaHashImpl` para que el recorrido sea O(V + E) también en criptas grandes.
 - Agregar en `MapaCripta` un índice `id_sala → sala` para que `obtener_sala()` sea O(1) promedio.
 
 ### 4.3 Resolución de referencias del catálogo
@@ -249,7 +249,7 @@ La deduplicación de IDs usa listas (`f not in ids_fichas`), con costo O(u) por 
 
 #### Sugerencia
 
-- Propagar el error de escritura del almacén, o escribir de forma atómica, para garantizar que una ficha desalojada siempre pueda recuperarse del disco.
+- Propagar el error de escritura del almacén, o escribir de forma atómica, para garantizar que una ficha desalojada siempre pueda recuperarse del disco. **Decisión: se deja como está, a propósito**: si el disco falla (permisos, disco lleno) el juego sigue funcionando y, en el peor caso, al volver a necesitar esa ficha se gasta una solicitud de red. Propagar el error haría caer la partida por un problema de infraestructura.
 - Si la capacidad de la caché creciera mucho, el arreglo ordenado tendría inserciones O(c). Con la restricción de no usar tabla hash en la caché, un árbol AVL (como `IndiceOrdenado`) daría O(log c) en todas las operaciones.
 
 ### 4.5 Inventario
@@ -623,15 +623,16 @@ La búsqueda cuesta O(log n), pero la operación completa es O(n + r): se lee to
 
 #### Comparación reproducible contra JSON
 
-`python main.py --bench` ejecuta `benchmarks/integrante2.py::medir_guardado` sobre las 4 criptas publicadas. El JSON contiene **exactamente el mismo estado lógico** que devuelve `GuardadoBinario.cargar`, y el benchmark verifica que ambos formatos devuelvan la misma sala. Resultados (versión 6, mediana, `docs/comparacion_binario_json.md`):
+`python main.py --bench` ejecuta `benchmarks/integrante2.py::medir_guardado` sobre las 4 criptas publicadas. El JSON contiene **exactamente el mismo estado lógico** que devuelve `GuardadoBinario.cargar`, y el benchmark verifica que ambos formatos devuelvan la misma sala. Resultados (versión 7, medidos el 18/10/2026, mediana, `docs/comparacion_binario_json.md`):
 
 | Cripta | Bytes binario / JSON | Leer 1 sala binario / JSON | Cargar todo binario / JSON |
 |---|---|---|---|
-| cripta-01 (6 salas) | 5.353 / 12.547 | 166 / 294 µs | 428 / 331 µs |
-| cripta-04 (50 salas) | 16.958 / 41.978 | 204 / 583 µs | 1.259 / 604 µs |
+| cripta-01 (6 salas) | 5.359 / 12.709 | 219 / 304 µs | 472 / 324 µs |
+| cripta-04 (50 salas) | 17.008 / 43.328 | 213 / 601 µs | 1.209 / 607 µs |
 
-- **Leer una sala**, la razón del formato: el binario se mantiene casi constante y con 50 salas es 2,9 veces más rápido; en JSON crece porque hay que parsear todo.
-- **Tamaño:** el binario ocupa entre un 57 y un 60 % menos.
+- **Leer una sala**, la razón del formato: el binario se mantiene casi constante y con 50 salas es 2,8 veces más rápido; en JSON crece porque hay que parsear todo.
+- **Tamaño:** el binario ocupa entre un 58 y un 61 % menos.
+- **Guardar:** en criptas chicas el binario es más lento por la escritura temporal y la validación; con 50 salas quedan parejos (2,8 ms frente a 3,2 ms).
 - **Cargar todo:** JSON es unas 2 veces más rápido, porque `json.load` está en C y el binario decodifica y valida campo por campo. La diferencia es de 1 a 2 ms por partida.
 
 #### Por qué las estructuras son adecuadas
@@ -651,8 +652,8 @@ La búsqueda cuesta O(log n), pero la operación completa es O(n + r): se lee to
 
 #### Sugerencias
 
-1. Guardar en el índice el largo de cada registro, para que `leer_sala()` no recorra el índice buscando el final y baje a O(log n + r).
-2. Volver a correr `--bench` con la versión 7 para actualizar la tabla de `docs/comparacion_binario_json.md`, que está medida con la v6.
+1. Guardar en el índice el largo de cada registro, para que `leer_sala()` no recorra el índice buscando el final y baje a O(log n + r). **Decisión: no se hace antes de la entrega**: obligaría a una versión 8 que invalida los guardados v7, y la ganancia es mínima (el índice de 50 salas son 1.800 bytes y la búsqueda ya es binaria).
+2. La tabla de `docs/comparacion_binario_json.md` ya está medida con la versión 7 (18/10/2026); conviene volver a correr `--bench` si cambia el formato.
 
 ### 4.11 Bitácora de partida y reproducción
 
