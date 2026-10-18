@@ -25,6 +25,17 @@ class ClienteAPI(FuenteDatos):
         self._client_id: str = str(uuid.uuid4())
         self._presupuesto = presupuesto
 
+    # ── Presupuesto (contrato FuenteDatos) ───────────────────────────
+
+    def usa_red(self) -> bool:
+        return True
+
+    def presupuesto(self):
+        return self._presupuesto
+
+    def asignar_presupuesto(self, presupuesto) -> None:
+        self._presupuesto = presupuesto
+
     # ── Ayudante privado ──────────────────────────────────────────────
 
     def _solicitar(self, metodo: str, url: str, *,
