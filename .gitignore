@@ -10,3 +10,5 @@ build/
 partidas/
 cache/
 puntajes.dat
+datos_offline/
+partida.bin
