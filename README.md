@@ -54,6 +54,15 @@ usar las equivalentes de la biblioteca estándar.
 | `pygame-ce` | Vista gráfica (la vista por defecto) |
 | `pytest` | Pruebas automáticas (no hace falta para jugar) |
 
+Obtener el código y entrar a la carpeta del proyecto:
+
+```bash
+git clone https://github.com/stevee84/JuegoCripta.git
+cd JuegoCripta
+```
+
+Crear el entorno virtual e instalar las dependencias:
+
 ```bash
 python -m venv .venv
 # Windows:      .venv\Scripts\activate
