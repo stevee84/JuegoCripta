@@ -1,2 +1,12 @@
-requests
-pytest
+# CRIPTA — dependencias (Python 3.11 o superior).
+# Instalación: python -m pip install -r requirements.txt
+
+# Cliente HTTP del servicio web de criptas.
+requests>=2.31
+
+# Vista gráfica, que es la vista por defecto. pygame-ce publica el módulo "pygame"
+# con soporte para las versiones recientes de Python; no instalarlo junto a "pygame".
+pygame-ce>=2.5.0
+
+# Pruebas automáticas (python -m pytest). No se necesita para jugar.
+pytest>=8.0
