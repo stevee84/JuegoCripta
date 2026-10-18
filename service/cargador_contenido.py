@@ -1,5 +1,6 @@
 from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
 from dto.sala import validar_id_sala
+from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
 
 RESERVA_SOLICITUDES = 3
@@ -47,9 +48,17 @@ class CargadorContenido:
         return restantes >= 2 * lotes + RESERVA_SOLICITUDES  # contenido + catálogo estimado + reserva
 
     def mas_cercanas(self, origen, cantidad=MAX_IDS_POR_SOLICITUD):
-        """Salas pendientes por distancia (BFS por todas las puertas) y luego por id."""
+        """Salas pendientes por distancia (BFS por todas las puertas) y luego por id.
+
+        visitadas y pendientes son tablas hash propias: cada consulta es O(1) promedio,
+        así el recorrido completo cuesta O(V + E) aun en criptas grandes (§9).
+        """
+        pendientes = TablaHashImpl()
+        for sala_id in self.pendientes():
+            pendientes.insertar(sala_id, True)
         distancias = [(0, origen.id_sala)]
-        visitadas = [origen.id_sala]
+        visitadas = TablaHashImpl()
+        visitadas.insertar(origen.id_sala, True)
         frontera = [origen]
         distancia = 0
         while frontera:
@@ -58,14 +67,13 @@ class CargadorContenido:
             for sala in frontera:
                 for puerta in sala.puertas:
                     destino = puerta.destino_sala
-                    if destino is not None and destino.id_sala not in visitadas:
-                        visitadas.append(destino.id_sala)
+                    if destino is not None and not visitadas.contiene(destino.id_sala):
+                        visitadas.insertar(destino.id_sala, True)
                         distancias.append((distancia, destino.id_sala))
                         siguiente.append(destino)
             frontera = siguiente
         ordenadas = OrdenadorAdaptativo().ordenar(distancias, lambda par: par)
-        pendientes = self.pendientes()
-        return [sala_id for _, sala_id in ordenadas if sala_id in pendientes][:cantidad]
+        return [sala_id for _, sala_id in ordenadas if pendientes.contiene(sala_id)][:cantidad]
 
     # ── carga ─────────────────────────────────────────────────────────
 

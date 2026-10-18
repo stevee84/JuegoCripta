@@ -20,46 +20,48 @@ sobre las respuestas del API guardadas en `tests/fixtures/api_real/`).
   búsqueda binaria.
 - **Coherencia:** el benchmark verifica que los dos formatos devuelvan la misma sala.
 
-Entorno de los números de abajo (guardado v6): Python 3.14.0, Windows 11 (10.0.26200).
+Entorno de los números de abajo (guardado v7, 18/10/2026): Python 3.14.0, Windows 11 (10.0.26200).
 
-## Resultados (formato v6)
+## Resultados (formato v7)
 
 | Cripta | Salas | Bytes binario | Bytes JSON | Binario más chico |
 |---|---:|---:|---:|---:|
-| cripta-01 | 6 | 5 353 | 12 547 | 57 % |
-| cripta-02 | 20 | 8 737 | 21 040 | 58 % |
-| cripta-03 | 40 | 14 280 | 35 138 | 59 % |
-| cripta-04 | 50 | 16 958 | 41 978 | 60 % |
+| cripta-01 | 6 | 5 359 | 12 709 | 58 % |
+| cripta-02 | 20 | 8 757 | 21 580 | 59 % |
+| cripta-03 | 40 | 14 320 | 36 218 | 60 % |
+| cripta-04 | 50 | 17 008 | 43 328 | 61 % |
 
-En v5 cada ID ocupaba 32 bytes fijos; en v6 ocupa 2 bytes de largo más su texto UTF-8.
+En v5 cada ID ocupaba 32 bytes fijos; desde v6 ocupa 2 bytes de largo más su texto UTF-8.
 Por eso el binario bajó, por ejemplo de 30 914 a 16 958 bytes en cripta-04, y además ya
-no limita el largo de los IDs (§9).
+no limita el largo de los IDs (§9). La v7 agrega un byte por sala (`contenido_cargado`,
+carga gradual de §4.2): en cripta-04 son 50 bytes más (17 008).
 
 Mediana en microsegundos por operación:
 
 | Cripta | Leer 1 sala binario | Leer 1 sala JSON | Cargar todo binario | Cargar todo JSON | Guardar binario | Guardar JSON |
 |---|---:|---:|---:|---:|---:|---:|
-| cripta-01 (6) | 166 | 294 | 428 | 331 | 2 404 | 1 235 |
-| cripta-02 (20) | 179 | 385 | 650 | 437 | 2 798 | 2 013 |
-| cripta-03 (40) | 241 | 520 | 1 046 | 571 | 3 555 | 2 809 |
-| cripta-04 (50) | 204 | 583 | 1 259 | 604 | 3 470 | 3 322 |
+| cripta-01 (6) | 219 | 304 | 472 | 324 | 2 648 | 1 493 |
+| cripta-02 (20) | 242 | 386 | 749 | 390 | 2 572 | 2 105 |
+| cripta-03 (40) | 214 | 578 | 1 046 | 536 | 2 885 | 2 722 |
+| cripta-04 (50) | 213 | 601 | 1 209 | 607 | 2 768 | 3 243 |
 
 ## Análisis
 
 - **Leer una sala (la razón del formato):** en binario el tiempo se mantiene
-  casi constante (166–241 µs, dominado por abrir el archivo), porque la
+  casi constante (213–242 µs, dominado por abrir el archivo), porque la
   cabecera apunta al índice y la búsqueda binaria salta directo al offset.
   En JSON crece con la partida, porque siempre hay que parsear todo. Con 50
-  salas el binario es **2,9 veces más rápido**, y la diferencia aumenta con
+  salas el binario es **2,8 veces más rápido**, y la diferencia aumenta con
   criptas mayores, como las que se usarán en la revisión (§9).
-- **Tamaño:** el binario ocupa entre un 57 y un 60 % menos, porque no repite
+- **Tamaño:** el binario ocupa entre un 58 y un 61 % menos, porque no repite
   nombres de claves, comillas ni delimitadores, y los textos solo ocupan su largo real.
 - **Cargar todo:** JSON es unas 2 veces más rápido. `json.load` está escrito en
   C, mientras que `GuardadoBinario.cargar` decodifica campo por campo con
   `struct` en Python y además valida cada registro.
-- **Guardar:** el binario es más lento porque escribe en un archivo temporal,
-  valida la reconstrucción completa y recién entonces reemplaza el anterior
-  (si falla, el guardado previo queda intacto). JSON solo hace `json.dump`.
+- **Guardar:** en criptas chicas el binario es más lento, porque escribe en un archivo
+  temporal, valida la reconstrucción completa y recién entonces reemplaza el anterior
+  (si falla, el guardado previo queda intacto); JSON solo hace `json.dump`. Con 50
+  salas los dos quedan parejos (2,8 ms frente a 3,2 ms), porque el JSON escribe más bytes.
 
 ## Decisión
 
