@@ -319,6 +319,6 @@ docs/                 Enunciado y resultados de las mediciones
 
 | Integrante | Bloque |
 |---|---|
-| Sofía | Simulación y reglas: entidades, agenda de eventos, motor, combate, enemigos y efectos |
+| Sofía Delgado | Simulación y reglas: entidades, agenda de eventos, motor, combate, enemigos y efectos |
 | Steven Moya Porras | Datos y persistencia: cliente HTTP, presupuesto, catálogo y caché, modo offline, guardado binario |
 | Joshua Cabrera Bonilla | Interacción: inventario, historial reversible, controlador y vistas |
