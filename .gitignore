@@ -12,3 +12,6 @@ cache/
 puntajes.dat
 datos_offline/
 partida.bin
+# Claves y configuración personal de los agentes de IA (nunca al repo)
+.env
+*.local.json
