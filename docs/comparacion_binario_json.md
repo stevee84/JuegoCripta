@@ -36,6 +36,13 @@ Por eso el binario bajó, por ejemplo de 30 914 a 16 958 bytes en cripta-04, y a
 no limita el largo de los IDs (§9). La v7 agrega un byte por sala (`contenido_cargado`,
 carga gradual de §4.2): en cripta-04 son 50 bytes más (17 008).
 
+**Nota sobre zlib.** El estado del generador aleatorio se guarda comprimido con `zlib`. Esta
+instalación de Python en Windows usa zlib-ng (`zlib.ZLIB_RUNTIME_VERSION` = `1.3.1.zlib-ng`), que
+comprime ese bloque en 3 375 bytes; con zlib clásico 1.3.1 (por ejemplo en Linux/WSL) ocupa
+3 573 bytes. Por eso en otro entorno cada archivo puede medir exactamente 198 bytes más
+(cripta-01: 5 557; cripta-04: 17 206) con el mismo formato v7 y el mismo estado recuperado.
+Lo verificó Sofía reproduciendo las dos series cambiando solo el compresor.
+
 Mediana en microsegundos por operación:
 
 | Cripta | Leer 1 sala binario | Leer 1 sala JSON | Cargar todo binario | Cargar todo JSON | Guardar binario | Guardar JSON |

@@ -1,4 +1,5 @@
-from datos.cliente_api import MAX_IDS_POR_SOLICITUD, ClienteAPI, CriptaAPIError
+from contratos.fuente_datos import usa_red
+from datos.cliente_api import MAX_IDS_POR_SOLICITUD, CriptaAPIError
 from dto.sala import validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
@@ -33,7 +34,7 @@ class CargadorContenido:
         return [s.id_sala for s in self._mapa.obtener_salas() if not s.contenido_cargado]
 
     def _presupuesto(self):
-        return self._fuente._presupuesto if isinstance(self._fuente, ClienteAPI) else None
+        return self._fuente.presupuesto() if usa_red(self._fuente) else None
 
     def solicitudes_restantes(self):
         """None si la fuente no gasta presupuesto (offline)."""

@@ -54,6 +54,15 @@ usar las equivalentes de la biblioteca estándar.
 | `pygame-ce` | Vista gráfica (la vista por defecto) |
 | `pytest` | Pruebas automáticas (no hace falta para jugar) |
 
+Obtener el código y entrar a la carpeta del proyecto:
+
+```bash
+git clone https://github.com/stevee84/JuegoCripta.git
+cd JuegoCripta
+```
+
+Crear el entorno virtual e instalar las dependencias:
+
 ```bash
 python -m venv .venv
 # Windows:      .venv\Scripts\activate
@@ -261,11 +270,26 @@ garantizar una reproducción fiel en lugar de continuar con datos distintos.
 `python main.py --bench` imprime en JSON tiempos por subsistema, con la preparación fuera del
 cronómetro: agenda de eventos, búsquedas y recuperación de fichas en la caché, inventario,
 historial de retroceso, ordenamientos, tabla hash, guardado y carga, y el ciclo completo de
-la simulación (muy por debajo de los 20 ms exigidos). Cada medición incluye la alternativa
-descartada. Los resultados comentados están en:
+la simulación (muy por debajo de los 20 ms exigidos). También incluye las mediciones
+complementarias de `benchmarks/bench_ampliado.py`: precarga BFS (tabla hash frente a listas),
+resolución del catálogo por lotes, rastreadores, retiro del inventario por posición, anexado y
+validación del registro de replay, y perfiles de frecuencia (conteos de llamadas por ciclo y de
+solicitudes por arranque, no tiempos). Varias mediciones incluyen la alternativa descartada.
+
+```bash
+python main.py --bench > mediciones_entrega.json
+```
+
+El **Documento de Decisiones de Diseño** (§8) está en
+[`docs/decisiones_diseno.pdf`](docs/decisiones_diseno.pdf). La corrida de mediciones que usa está en
+[`docs/mediciones_entrega.json`](docs/mediciones_entrega.json) (633 filas, Python 3.14.0, Windows 11).
+Los resultados comentados están en:
 
 - [`docs/comparacion_binario_json.md`](docs/comparacion_binario_json.md): guardado binario frente a JSON.
 - [`docs/tabla_hash_mediciones.md`](docs/tabla_hash_mediciones.md): tabla hash frente a lista y arreglo ordenado.
+
+Los tiempos dependen del equipo; los bytes del guardado también pueden variar unos bytes según la
+biblioteca zlib de la instalación de Python (ver la nota en la comparación binario frente a JSON).
 
 ## Pruebas
 
@@ -312,7 +336,7 @@ assets/               Imágenes de la vista gráfica
 benchmarks/           Mediciones para --bench
 tests/                Pruebas automáticas y respuestas reales del servicio
 stubs/                Dobles de prueba usados por los tests
-docs/                 Enunciado y resultados de las mediciones
+docs/                 Enunciado, Documento de Decisiones y resultados de las mediciones
 ```
 
 ## Equipo
