@@ -18,6 +18,11 @@ class TestRepositorioCatalogo(unittest.TestCase):
         self.presupuesto = MagicMock()
         self.presupuesto.agotado.return_value = False
         self.fuente.obtener_version_catalogo.return_value = "v1"
+        # El almacén entrega versión y datos en una sola lectura; cada prueba fija
+        # self.version_disco para simular una copia vigente o de una versión anterior.
+        self.version_disco = "v1"
+        self.almacen.leer_con_version.side_effect = lambda fid: (
+            self.version_disco, self.almacen.leer(fid))
         self.repo = RepositorioCatalogo(self.cache, self.almacen, self.fuente, MagicMock(), self.presupuesto)
 
     def test_resolver_desde_cache(self):
@@ -28,7 +33,6 @@ class TestRepositorioCatalogo(unittest.TestCase):
     def test_resolver_desde_disco(self):
         self.cache.obtener.return_value = None
         self.almacen.leer.return_value = ficha("f2", "escudo")
-        self.almacen.validar_version.return_value = True
         self.assertEqual(self.repo.resolver("f2"), ficha("f2", "escudo"))
         self.cache.insertar.assert_called_once_with("f2", ficha("f2", "escudo"))
         self.cache.registrar_origen.assert_called_once_with("disco")
@@ -59,7 +63,7 @@ class TestRepositorioCatalogo(unittest.TestCase):
     def test_error_de_red_con_copia_antigua_en_disco_usa_la_copia(self):
         self.cache.obtener.return_value = None
         self.almacen.leer.return_value = ficha("f6", "vieja")
-        self.almacen.validar_version.return_value = False
+        self.version_disco = "antigua"  # la copia en disco quedó de una versión anterior
         self.fuente.obtener_catalogo.side_effect = CriptaAPIError("Error de conexión")
         self.assertEqual(self.repo.resolver("f6"), ficha("f6", "vieja"))
         self.cache.registrar_origen.assert_called_once_with("disco")
@@ -67,7 +71,6 @@ class TestRepositorioCatalogo(unittest.TestCase):
     def test_resolver_lote_mixto_en_el_orden_pedido(self):
         self.cache.obtener.side_effect = lambda fid: ficha("a", "cached") if fid == "a" else None
         self.almacen.leer.side_effect = lambda fid: ficha("b", "disco") if fid == "b" else None
-        self.almacen.validar_version.return_value = True
         self.fuente.obtener_catalogo.return_value = {"entidades": [ficha("c", "red")]}
         resultado = self.repo.resolver_lote(["c", "a", "b"])
         self.assertEqual([f["nombre"] for f in resultado["entidades"]], ["red", "cached", "disco"])
@@ -79,6 +82,16 @@ class TestRepositorioCatalogo(unittest.TestCase):
         self.fuente.obtener_catalogo.assert_not_called()
         self.fuente.obtener_version_catalogo.assert_not_called()
 
+    def test_una_sola_lectura_de_disco_por_ficha(self):
+        """§9: leer() + validar_version() abrían y parseaban el mismo archivo dos veces."""
+        self.cache.obtener.return_value = None
+        self.almacen.leer_con_version.side_effect = None
+        self.almacen.leer_con_version.return_value = ("v1", ficha("f7", "disco"))
+        self.assertEqual(self.repo.resolver("f7"), ficha("f7", "disco"))
+        self.almacen.leer_con_version.assert_called_once_with("f7")
+        self.almacen.leer.assert_not_called()
+        self.almacen.validar_version.assert_not_called()
+
     def test_version_catalogo_ok(self):
         self.fuente.obtener_version_catalogo.return_value = "v2"
         self.assertEqual(self.repo.version_catalogo(), "v2")
@@ -87,6 +100,41 @@ class TestRepositorioCatalogo(unittest.TestCase):
         self.fuente.obtener_version_catalogo.side_effect = CriptaAPIError("Timeout al conectar con /catalogo/version")
         with self.assertRaisesRegex(CriptaAPIError, "Timeout"):
             self.repo.version_catalogo()
+
+
+class TestModoDegradado(unittest.TestCase):
+    """§3.1: un 500 pasajero en /catalogo/version deja de degradar la partida en silencio."""
+
+    def setUp(self):
+        self.cache, self.almacen = MagicMock(), MagicMock()
+        self.fuente, self.presupuesto = MagicMock(), MagicMock()
+        self.presupuesto.agotado.return_value = False
+        self.cache.obtener.return_value = None
+        self.version_disco = "v1"
+        self.almacen.leer_con_version.side_effect = lambda fid: (
+            self.version_disco, self.almacen.leer(fid))
+        self.fuente.obtener_version_catalogo.side_effect = CriptaAPIError(
+            "Error 500 en operación GET /catalogo/version")
+        self.repo = RepositorioCatalogo(
+            self.cache, self.almacen, self.fuente, MagicMock(), self.presupuesto)
+
+    def test_avisa_al_servir_del_disco_sin_poder_validar_la_version(self):
+        self.almacen.leer.return_value = ficha("f1", "quizas_vieja")
+        with self.assertLogs("cripta", level="WARNING") as registrado:
+            self.assertEqual(self.repo.resolver("f1"), ficha("f1", "quizas_vieja"))
+        aviso = " ".join(registrado.output)
+        self.assertIn("MODO DEGRADADO", aviso)
+        self.assertIn("f1", aviso)
+        # La recuperación no cambia: se sigue sirviendo del disco.
+        self.cache.registrar_origen.assert_called_once_with("disco")
+        self.almacen.leer_con_version.assert_called_once_with("f1")
+
+    def test_una_partida_con_la_version_disponible_no_registra_nada(self):
+        self.fuente.obtener_version_catalogo.side_effect = None
+        self.fuente.obtener_version_catalogo.return_value = "v1"
+        self.almacen.leer.return_value = ficha("f1", "vigente")
+        with self.assertNoLogs("cripta", level="WARNING"):
+            self.repo.resolver("f1")
 
 
 if __name__ == "__main__":

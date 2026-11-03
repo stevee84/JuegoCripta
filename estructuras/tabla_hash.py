@@ -7,8 +7,9 @@ class TablaHashImpl(TablaHash):
     _CAPACIDAD_INICIAL = 17
     _FACTOR_CARGA_MAX = 0.75
 
-    def __init__(self):
-        self._capacidad = self._CAPACIDAD_INICIAL
+    def __init__(self, capacidad_inicial: int = _CAPACIDAD_INICIAL):
+        # Dimensionar de entrada evita rehashes cuando ya se conoce el tamaño.
+        self._capacidad = max(1, capacidad_inicial)
         self._buckets: list[list[tuple]] = [[] for _ in range(self._capacidad)]
         self._tamanio = 0
 

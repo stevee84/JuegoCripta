@@ -51,6 +51,9 @@ def _cuadricula(lado):
 
 
 def _bfs_lista(cargador, origen):
+    """BFS completo sobre listas y orden final por (distancia, id): el algoritmo de la
+    Parte I. Se conserva como oraculo del resultado de mas_cercanas() y como alternativa
+    medida; no es lo que corre el juego."""
     from logica.ordenamiento import OrdenadorAdaptativo
     pendientes = cargador.pendientes()
     visitadas = [origen.id_sala]
@@ -87,7 +90,7 @@ def medir_precarga(repeticiones, tamanos):
             'salas_seleccionadas': 10,
         }
         for nombre, metodo in (
-            ('precarga_bfs_hash', lambda c=cargador, o=origen: c.mas_cercanas(o)),
+            ('precarga_bfs_cortado_monticulo', lambda c=cargador, o=origen: c.mas_cercanas(o)),
             ('precarga_bfs_lista_alternativa', lambda c=cargador, o=origen: _bfs_lista(c, o)),
         ):
             filas.append(medir(nombre, lado * lado, repeticiones,

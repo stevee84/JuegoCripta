@@ -18,6 +18,8 @@ def parsear_argumentos():
     parser.add_argument("--bench", action="store_true", help="Ejecutar benchmarks sin vista interactiva")
     parser.add_argument("--vista", choices=["consola", "pygame"], default="pygame", help="Tipo de vista: consola o pygame")
     parser.add_argument("--semilla", type=int, default=None, help="Semilla para azar determinista")
+    parser.add_argument("--log-nivel", choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING",
+                        help="Detalle del registro de red, caché y persistencia en stderr")
     args = parser.parse_args()
     if args.cache_size <= 0:
         parser.error("--cache-size debe ser un entero positivo")
@@ -37,6 +39,7 @@ class Configuracion:
         self.bench: bool = args.bench
         self.vista: str = getattr(args, "vista", "pygame")
         self.semilla: int | None = args.semilla
+        self.log_nivel: str = getattr(args, "log_nivel", "WARNING")
         self.url_api: str = URL_API
         self.ruta_datos_offline: str = RUTA_DATOS_OFFLINE
         self.ruta_guardado: str = RUTA_GUARDADO

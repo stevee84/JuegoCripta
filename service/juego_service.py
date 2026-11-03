@@ -14,6 +14,7 @@ from logica.cache_catalogo import DUEÑO_EN_USO
 from logica.inventario import Inventario
 from logica.historial_reversible import HistorialReversible
 from logica.servicio_inventario import ServicioInventario
+from registro import log
 
 
 class JuegoService:
@@ -432,7 +433,7 @@ class JuegoService:
         actual = self._cache.metricas()
         cache_base, base = self._base_cache
         if cache_base is self._cache and base is not None:
-            for clave in ("aciertos", "fallos", "precargadas", "desde_disco", "desde_red"):
+            for clave in ("aciertos", "fallos", "precargadas", "desde_disco", "desde_red", "desalojos"):
                 actual[clave] -= base[clave]
             actual["total"] = actual["aciertos"] + actual["fallos"]
             actual["tasa_acierto"] = round(actual["aciertos"] / actual["total"], 2) if actual["total"] else 0.0
@@ -641,8 +642,10 @@ class JuegoService:
             return
         try:
             self._cargador.precargar_cerca(estado.jugador.sala_actual)
-        except (CriptaAPIError, ValueError):
-            pass
+        except (CriptaAPIError, ValueError) as error:
+            # ponytail: se avisa en cada acción, así que una falla persistente repite el aviso
+            # una vez por turno; si molesta, recordar el último motivo y bajar las repeticiones a DEBUG.
+            log.warning("precarga de vecindad fallida en %s: %s", estado.jugador.sala_actual, error)
 
     def _sincronizar_fichas_en_uso(self):
         if self._cache is None:

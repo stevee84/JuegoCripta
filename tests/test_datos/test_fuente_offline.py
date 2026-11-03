@@ -75,6 +75,45 @@ def test_obtener_contenido_sala_faltante(fuente):
         fuente.obtener_contenido("c1", [1, 9])
 
 
+def test_cache_contenido_no_mezcla_criptas(fuente, tmp_path):
+    """La tabla cacheada es por cripta: pedir otra no debe devolver salas de la anterior."""
+    c2 = tmp_path / "c2"
+    c2.mkdir()
+    (c2 / "contenido.json").write_text(
+        json.dumps({"contenido": [{"sala": 1, "dato": "otra_cripta"}]}), encoding="utf-8")
+
+    assert fuente.obtener_contenido("c1", [1]) == {"contenido": [{"sala": 1, "dato": "a"}]}
+    assert fuente.obtener_contenido("c2", [1]) == {"contenido": [{"sala": 1, "dato": "otra_cripta"}]}
+    # Volver a la primera tampoco arrastra la segunda, y la sala 2 (ausente en c2) sigue ahí.
+    assert fuente.obtener_contenido("c1", [1, 2]) == {
+        "contenido": [{"sala": 1, "dato": "a"}, {"sala": 2, "dato": "b"}]}
+    with pytest.raises(CriptaAPIError, match=r"\[2\]"):
+        fuente.obtener_contenido("c2", [2])
+
+
+def test_cache_contenido_evita_releer_el_paquete(fuente):
+    """Lotes sucesivos de la misma cripta parsean el paquete una sola vez."""
+    lecturas = []
+    leer_real = fuente._leer_json
+    fuente._leer_json = lambda ruta: (lecturas.append(ruta), leer_real(ruta))[1]
+
+    assert fuente.obtener_contenido("c1", [1]) == {"contenido": [{"sala": 1, "dato": "a"}]}
+    assert fuente.obtener_contenido("c1", [2]) == {"contenido": [{"sala": 2, "dato": "b"}]}
+    assert fuente.obtener_contenido("c1", [1, 2])["contenido"][1]["dato"] == "b"
+    assert len(lecturas) == 1
+
+
+def test_cache_contenido_se_invalida_si_cambia_el_paquete(fuente, tmp_path):
+    """Un paquete reescrito o ausente no puede quedar servido desde la caché."""
+    assert fuente.obtener_contenido("c1", [1]) == {"contenido": [{"sala": 1, "dato": "a"}]}
+    (tmp_path / "c1" / "contenido.json").write_text(
+        json.dumps({"contenido": [{"sala": 1, "dato": "corregido"}]}), encoding="utf-8")
+    assert fuente.obtener_contenido("c1", [1]) == {"contenido": [{"sala": 1, "dato": "corregido"}]}
+    (tmp_path / "c1" / "contenido.json").unlink()
+    with pytest.raises(CriptaAPIError):
+        fuente.obtener_contenido("c1", [1])
+
+
 def test_obtener_catalogo(fuente):
     r = fuente.obtener_catalogo(["f1", "f_no"])
     assert r == {"entidades": [{"id": "f1", "nombre": "Ficha1"}]}

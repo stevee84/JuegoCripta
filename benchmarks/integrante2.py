@@ -10,6 +10,8 @@ las respuestas reales del API guardadas en tests/fixtures/api_real.
 import contextlib
 import json
 import os
+import shutil
+import struct
 import tempfile
 from pathlib import Path
 
@@ -55,7 +57,7 @@ def _buscar_lineal(pares, ficha_id):
 
 
 def medir_cache(repeticiones, tamanos):
-    """Búsquedas en la caché (arreglo ordenado + búsqueda binaria) contra la lista lineal."""
+    """Búsquedas en la caché (tabla hash propia) contra la lista lineal."""
     filas = []
     for n in tamanos:
         presentes = [_ficha(i)["id"] for i in range(n)]
@@ -64,7 +66,7 @@ def medir_cache(repeticiones, tamanos):
             filas.append(medir(
                 f"cache_buscar_{caso}", n, repeticiones,
                 lambda n=n, claves=claves: (lambda cache=_cache_llena(n): [cache.obtener(c) for c in claves]),
-                estructura="arreglo_ordenado_busqueda_binaria", busquedas_por_lote=n))
+                estructura="tabla_hash_propia", busquedas_por_lote=n))
             filas.append(medir(
                 f"cache_lista_lineal_{caso}_alternativa", n, repeticiones,
                 lambda n=n, claves=claves: (lambda pares=_lista_llena(n): [_buscar_lineal(pares, c) for c in claves]),
@@ -250,4 +252,231 @@ def medir_tabla_hash(repeticiones, tamanos):
     return filas
 
 
-PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado, medir_tabla_hash)
+class _FuenteContada(FuenteOffline):
+    """Las respuestas reales del API, contando cada llamada contra el presupuesto (§5.1).
+
+    Lee los fixtures como FuenteOffline, pero se declara de red: así el arranque
+    le aplica el presupuesto_solicitudes de la cripta y las solicitudes quedan
+    contadas igual que con HTTP, sin latencia ni red.
+    """
+
+    def __init__(self, ruta):
+        super().__init__(ruta)
+        self._presupuesto = PresupuestoSolicitudes()
+
+    def usa_red(self):
+        return True
+
+    def presupuesto(self):
+        return self._presupuesto
+
+    def asignar_presupuesto(self, presupuesto):
+        self._presupuesto = presupuesto
+
+    def obtener_generales(self, cripta_id):
+        self._presupuesto.registrar_intento(f"generales {cripta_id}")
+        return super().obtener_generales(cripta_id)
+
+    def obtener_pagina(self, cripta_id, pagina):
+        self._presupuesto.registrar_intento(f"pagina {pagina}")
+        return super().obtener_pagina(cripta_id, pagina)
+
+    def obtener_contenido(self, cripta_id, sala_ids):
+        self._presupuesto.registrar_intento(f"contenido {len(sala_ids)} salas")
+        return super().obtener_contenido(cripta_id, sala_ids)
+
+    def obtener_catalogo(self, ids):
+        self._presupuesto.registrar_intento(f"catalogo {len(ids)} ids")
+        return super().obtener_catalogo(ids)
+
+    def obtener_version_cripta(self, cripta_id):
+        self._presupuesto.registrar_intento("version_cripta")
+        return super().obtener_version_cripta(cripta_id)
+
+    def obtener_version_catalogo(self):
+        self._presupuesto.registrar_intento("version_catalogo")
+        return super().obtener_version_catalogo()
+
+
+def _criptas_reales():
+    return [c["id"] for c in json.loads((API_REAL / "criptas.json").read_text(encoding="utf-8"))["criptas"]]
+
+
+def _arrancar(cripta_id, carpeta):
+    """Arranca la partida con la caché persistente dentro de ``carpeta``; devuelve la fuente contada."""
+    fuente = _FuenteContada(str(API_REAL))
+    with contextlib.chdir(carpeta):
+        servicio = JuegoService(MotorJuego(), fuente, CacheCatalogo(25))
+        servicio.conectar_inicializador(InicializadorPartida())
+        servicio.iniciar_partida(cripta_id)
+    return fuente
+
+
+def medir_presupuesto_red(repeticiones, tamanos):
+    """§5.1 y §4.4: solicitudes del arranque frente al presupuesto de cada cripta real,
+    con la caché persistente vacía (fría) y ya poblada por una partida anterior (caliente)."""
+    filas = []
+    with tempfile.TemporaryDirectory() as raiz:
+        for cripta_id in _criptas_reales():
+            limite = json.loads((API_REAL / cripta_id / "generales.json").read_text(encoding="utf-8"))["presupuesto_solicitudes"]
+            caliente = os.path.join(raiz, f"caliente_{cripta_id}")
+            os.makedirs(caliente)
+            fria = _arrancar(cripta_id, caliente)  # deja la caché de catálogo en disco
+            tibia = _arrancar(cripta_id, caliente)
+            if tibia.presupuesto()._intentos > fria.presupuesto()._intentos:
+                raise AssertionError("La caché persistente debería ahorrar solicitudes, no sumarlas.")
+            contador = [0]
+
+            def preparar_fria(cripta_id=cripta_id, contador=contador):
+                destino = os.path.join(raiz, f"fria_{cripta_id}_{contador[0]}")
+                contador[0] += 1
+                os.makedirs(destino)
+                return lambda: _arrancar(cripta_id, destino)
+
+            for nombre, caso, preparar, solicitudes in (
+                ("presupuesto_arranque_cache_fria", "fria", preparar_fria, fria.presupuesto()._intentos),
+                ("presupuesto_arranque_cache_caliente", "caliente",
+                 lambda cripta_id=cripta_id, d=caliente: (lambda: _arrancar(cripta_id, d)),
+                 tibia.presupuesto()._intentos),
+            ):
+                if solicitudes > limite:
+                    raise AssertionError(f"{cripta_id}: {solicitudes} solicitudes exceden el presupuesto {limite}.")
+                filas.append(medir(nombre, limite, repeticiones, preparar, cripta=cripta_id, caso_cache=caso,
+                                   solicitudes=solicitudes, presupuesto=limite, restantes=limite - solicitudes,
+                                   operaciones=fria.presupuesto().operaciones() if caso == "fria" else tibia.presupuesto().operaciones()))
+    return filas
+
+
+def medir_cache_escritura(repeticiones, tamanos):
+    """§4.4 lado escritura: insertar con la caché llena (desalojo LRU) y el costo extra
+    que añaden las fichas fijadas, que el desalojo debe saltar."""
+    filas = []
+    for n in tamanos:
+        nuevos = [_ficha(i) for i in range(n, 2 * n)]
+        for fijados in (0, n // 2):
+            def preparar(n=n, nuevos=nuevos, fijados=fijados):
+                cache = _cache_llena(n)
+                for i in range(fijados):  # las más recientes: el desalojo las recorre y las salta
+                    cache.fijar(_ficha(n - 1 - i)["id"], "bench")
+
+                def insertar():
+                    for ficha in nuevos:
+                        cache.insertar(ficha["id"], ficha)
+                return insertar
+
+            filas.append(medir("cache_insertar_con_desalojo", n, repeticiones, preparar,
+                               estructura="lru_lista_doble_mas_tabla_hash",
+                               fijados=fijados, desalojos=n - fijados))
+
+        def preparar_alternativa(n=n, nuevos=nuevos):
+            pares = _lista_llena(n)
+
+            def insertar():
+                for ficha in nuevos:
+                    if _buscar_lineal(pares, ficha["id"]) is None:
+                        if len(pares) >= n:
+                            pares.pop(0)
+                        pares.append((ficha["id"], ficha))
+            return insertar
+
+        filas.append(medir("cache_lista_lineal_insertar_alternativa", n, repeticiones, preparar_alternativa,
+                           estructura="lista_pares_fifo_busqueda_secuencial", fijados=0, desalojos=n))
+    return filas
+
+
+def _ids_catalogo_real():
+    return [r.stem for r in sorted(API_REAL.glob("catalogo/*.json")) if r.stem != "version"]
+
+
+def _repositorio_contado(carpeta, capacidad=200):
+    fuente = _FuenteContada(str(API_REAL))
+    repo = RepositorioCatalogo(CacheCatalogo(capacidad), AlmacenPersistente(carpeta), fuente,
+                               DecodificadorDatos(), PresupuestoSolicitudes())
+    return repo, fuente
+
+
+def medir_catalogo(repeticiones, tamanos):
+    """§4.3: lotes de 10 ids contra la alternativa descartada de un id por solicitud,
+    y un lote con ids repetidos entre salas para medir la deduplicación."""
+    filas = []
+    ids = _ids_catalogo_real()
+    repetidos = [ids[i % len(ids)] for i in range(len(ids) * 3)]  # las mismas fichas en varias salas
+    unicos = []
+    for ficha_id in repetidos:
+        if ficha_id not in unicos:
+            unicos.append(ficha_id)
+    with tempfile.TemporaryDirectory() as raiz:
+        contador = [0]
+
+        def resolver(pedidos, tamano_lote, carpeta):
+            repo, fuente = _repositorio_contado(carpeta)
+
+            def correr():
+                for inicio in range(0, len(pedidos), tamano_lote):
+                    repo.resolver_lote(pedidos[inicio:inicio + tamano_lote])
+            return correr, fuente
+
+        def preparar(pedidos, tamano_lote):
+            def construir(pedidos=pedidos, tamano_lote=tamano_lote):
+                carpeta = os.path.join(raiz, f"cat_{contador[0]}")
+                contador[0] += 1
+                return resolver(pedidos, tamano_lote, carpeta)[0]
+            return construir
+
+        casos = (
+            ("catalogo_resolver_lotes_de_10", ids, LOTE_API, "lote_de_10"),
+            ("catalogo_resolver_uno_por_solicitud_alternativa", ids, 1, "un_id_por_solicitud"),
+            ("catalogo_resolver_ids_repetidos", repetidos, LOTE_API, "lote_de_10_con_repetidos"),
+        )
+        for nombre, pedidos, tamano_lote, estrategia in casos:
+            carpeta = os.path.join(raiz, f"ref_{nombre}")
+            correr, fuente = resolver(pedidos, tamano_lote, carpeta)
+            correr()
+            filas.append(medir(nombre, len(pedidos), repeticiones, preparar(pedidos, tamano_lote),
+                               estrategia=estrategia, ids_pedidos=len(pedidos),
+                               ids_unicos=len(unicos) if pedidos is repetidos else len(pedidos),
+                               solicitudes=fuente.presupuesto()._intentos))
+    return filas
+
+
+def medir_version_guardado(repeticiones, tamanos):
+    """§4.10: detectar un archivo con una versión de formato incompatible, frente al JSON
+    sin marca de versión, que lo acepta y entrega un estado de otra época."""
+    filas = []
+    binario = GuardadoBinario()
+    cripta_id = _criptas_reales()[0]
+    with tempfile.TemporaryDirectory() as carpeta:
+        servicio, estado = _partida_real(cripta_id, carpeta)
+        ruta_valida = os.path.join(carpeta, "valida.bin")
+        ruta_bin = os.path.join(carpeta, "incompatible.bin")
+        servicio.guardar_partida(ruta_valida)
+        shutil.copyfile(ruta_valida, ruta_bin)
+        with open(ruta_bin, "rb") as archivo:
+            datos = bytearray(archivo.read())
+        struct.pack_into("<H", datos, 4, binario.VERSION + 1)  # misma firma, versión futura
+        with open(ruta_bin, "wb") as archivo:
+            archivo.write(datos)
+        if binario.cargar(ruta_bin) is not None:
+            raise AssertionError("Una versión incompatible debe rechazarse, no cargarse.")
+        n = len(datos)
+        filas.append(medir("guardado_version_incompatible_detectar", n, repeticiones,
+                           lambda r=ruta_bin: (lambda: binario.cargar(r)),
+                           formato="binario", bytes=n, resultado="rechazado",
+                           version_archivo=binario.VERSION + 1, version_soportada=binario.VERSION))
+
+        ruta_json = os.path.join(carpeta, "sin_version.json")
+        with open(ruta_json, "w", encoding="utf-8") as archivo:
+            json.dump(_datos_json(binario.cargar(ruta_valida)), archivo)
+
+        def cargar_sin_control(ruta=ruta_json):
+            with open(ruta, encoding="utf-8") as archivo:
+                return json.load(archivo)  # no hay versión que comparar: se acepta cualquier cosa
+
+        filas.append(medir("guardado_json_sin_version_alternativa", os.path.getsize(ruta_json), repeticiones,
+                           lambda f=cargar_sin_control: f, formato="json",
+                           bytes=os.path.getsize(ruta_json), resultado="aceptado_sin_control"))
+    return filas
+
+
+PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado, medir_tabla_hash,
+               medir_presupuesto_red, medir_cache_escritura, medir_catalogo, medir_version_guardado)

@@ -95,6 +95,14 @@ class TestRehash:
             t.insertar(i, i)
         assert t._capacidad > cap_inicial
 
+    def test_capacidad_inicial_evita_rehash(self):
+        t = TablaHashImpl(1024)
+        for i in range(512):
+            t.insertar(i, i)
+        assert t._capacidad == 1024
+        assert all(t.obtener(i) == i for i in range(512))
+        assert TablaHashImpl()._capacidad == 17  # sin argumentos, igual que antes
+
     def test_datos_intactos_tras_rehash(self):
         t = TablaHashImpl()
         for i in range(20):

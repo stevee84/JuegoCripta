@@ -67,7 +67,8 @@ def fichas_disponibles(estado, contexto=None):
                 fichas[ficha["id"]] = ficha
     for cache in (getattr(estado, "cache_inicial", None),
                   getattr(operaciones, "_cache", None), getattr(contexto, "_cache", None)):
-        for ficha_id, nodo in getattr(cache, "_arreglo", ()):
+        # La tabla directamente: aquí el orden no importa y _arreglo la ordenaría en cada cuadro.
+        for ficha_id, nodo in getattr(cache, "_tabla", None) or ():
             fichas.setdefault(ficha_id, nodo.valor.ficha)
     for entidad in entidades_disponibles(estado):
         ficha = getattr(entidad, "ficha", None)

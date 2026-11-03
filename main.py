@@ -40,6 +40,8 @@ def _consola_utf8() -> None:
 def main() -> None:
     _consola_utf8()
     config = Configuracion()
+    import registro
+    registro.configurar(getattr(config, "log_nivel", None))
 
     if config.bench:
         import json

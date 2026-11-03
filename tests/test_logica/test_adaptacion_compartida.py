@@ -111,7 +111,7 @@ def test_guardado_con_mapa_real_conserva_cabecera_e_indice_v2(tmp_path):
     cabecera = struct.unpack_from(GuardadoBinario.HEADER_FORMAT, datos)
     assert cabecera[:2] == (b"CRPT", GuardadoBinario.VERSION)
     assert cabecera[2:5] == (7, 123, 2)
-    assert len(datos) == cabecera[5] + 2 * 36
+    assert len(datos) == cabecera[5] + 2 * GuardadoBinario.INDICE_ENTRADA
     cargado = guardado.cargar(str(ruta))
     assert cargado["cripta_id"] == estado.cripta_id
     assert cargado["jugador"]["sala_actual_id"] == 1

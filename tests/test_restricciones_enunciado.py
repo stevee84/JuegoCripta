@@ -12,8 +12,21 @@ import pytest
 RAIZ = Path(__file__).resolve().parents[1]
 CARPETAS = ("datos", "logica", "service", "controller", "dto", "estructuras")
 LLAMADAS_PROHIBIDAS = {"sorted", "set", "frozenset"}
-MODULOS_PROHIBIDOS = {"heapq", "bisect"}
+# §6.2: también las bibliotecas de grafos y rutas, para que Dijkstra se implemente a mano.
+MODULOS_PROHIBIDOS = {"heapq", "bisect", "collections", "graphlib", "networkx",
+                      "igraph", "graph_tool", "pygraphviz", "dijkstar", "scipy"}
 NOMBRES_PROHIBIDOS = {"deque", "OrderedDict", "defaultdict", "Counter"}
+
+
+# §6.2 veda estructuras de datos hechas, no las clases abstractas de tipado.
+MODULOS_PERMITIDOS = {"collections.abc"}
+
+
+def _prohibido(modulo):
+    """`scipy.sparse.csgraph` cuenta como su paquete raíz; `collections.abc`, no."""
+    if not modulo or modulo in MODULOS_PERMITIDOS:
+        return False
+    return modulo.split(".")[0] in MODULOS_PROHIBIDOS
 
 
 def _archivos():
@@ -34,10 +47,10 @@ def _infracciones(ruta):
             yield nodo.lineno, "set literal"
         elif isinstance(nodo, ast.Import):
             for alias in nodo.names:
-                if alias.name in MODULOS_PROHIBIDOS:
+                if _prohibido(alias.name):
                     yield nodo.lineno, f"import {alias.name}"
         elif isinstance(nodo, ast.ImportFrom):
-            if nodo.module in MODULOS_PROHIBIDOS:
+            if _prohibido(nodo.module):
                 yield nodo.lineno, f"from {nodo.module}"
             for alias in nodo.names:
                 if alias.name in NOMBRES_PROHIBIDOS:

@@ -15,9 +15,11 @@ class GuardadoBinario:
     MAGIC = b"CRPT"
     # v6: textos de largo variable (uint16 + UTF-8); v5 tenía campos fijos de 32 bytes.
     # v7: cada sala indica si su contenido ya se cargó (carga gradual, §4.2).
-    VERSION = 7
+    # v8: el índice guarda el largo del registro junto al offset, para que leer_sala sea O(log n).
+    VERSION = 8
     HEADER_FORMAT = "<4sHqIIII"  # firma, versión, semilla, reloj, salas, offset índice, offset jugador
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
+    INDICE_ENTRADA = 40  # id de sala (32) + offset (4) + largo del registro (4)
     MAX_TEXTO = 0xFFFF
 
     # --- helpers ---
@@ -151,16 +153,17 @@ class GuardadoBinario:
             # rooms
             offsets_salas = []
             for sala in salas:
-                offsets_salas.append((sala.id_sala, f.tell()))
+                inicio = f.tell()
                 self._escribir_sala(f, sala)
+                offsets_salas.append((sala.id_sala, inicio, f.tell() - inicio))
 
             # index (ordenado por id_sala para busqueda binaria)
             offsets_salas = OrdenadorAdaptativo().ordenar(
                 offsets_salas, lambda x: x[0] if isinstance(x[0], int) else str(x[0]))
             offset_indice = f.tell()
-            for id_sala, offset in offsets_salas:
+            for id_sala, offset, largo in offsets_salas:
                 f.write(self._empaquetar_id_sala(id_sala))
-                f.write(struct.pack("<I", offset))
+                f.write(struct.pack("<II", offset, largo))
 
             # patch header
             f.seek(0)
@@ -582,7 +585,7 @@ class GuardadoBinario:
             return None
 
         semilla, reloj, num_salas, offset_indice, offset_jugador = header[2:7]
-        if offset_indice + num_salas * 36 != len(data):
+        if offset_indice + num_salas * self.INDICE_ENTRADA != len(data):
             return None
 
         registros = data[:offset_indice]
@@ -603,7 +606,7 @@ class GuardadoBinario:
         salas = TablaHashImpl()
         try:
             for i in range(num_salas):
-                idx_offset = offset_indice + i * 36
+                idx_offset = offset_indice + i * self.INDICE_ENTRADA
                 id_sala = self._desempaquetar_id_sala(data[idx_offset:idx_offset + 32])
                 room_offset = struct.unpack_from("<I", data, idx_offset + 32)[0]
                 if room_offset >= offset_indice:
@@ -746,19 +749,20 @@ class GuardadoBinario:
                 num_salas, offset_indice, offset_jugador = header[4:7]
                 f.seek(0, 2)
                 if (offset_jugador < self.HEADER_SIZE + 2
-                        or offset_indice + num_salas * 36 != f.tell()):
+                        or offset_indice + num_salas * self.INDICE_ENTRADA != f.tell()):
                     return None
                 f.seek(offset_indice)
-                indice_raw = f.read(num_salas * 36)
+                indice_raw = f.read(num_salas * self.INDICE_ENTRADA)
                 # Busqueda binaria en indice ordenado por id_sala
                 lo, hi = 0, num_salas - 1
-                target_offset = None
+                target_offset = largo = None
                 while lo <= hi:
                     mid = (lo + hi) // 2
-                    base = mid * 36
+                    base = mid * self.INDICE_ENTRADA
                     rid = self._desempaquetar_id_sala(indice_raw[base:base+32])
                     if rid == id_sala:
-                        target_offset = struct.unpack("<I", indice_raw[base+32:base+36])[0]
+                        # v8: el largo viene en el índice, no hay que recorrer los demás offsets.
+                        target_offset, largo = struct.unpack("<II", indice_raw[base+32:base+40])
                         break
                     elif (rid if isinstance(rid, int) else str(rid)) < (id_sala if isinstance(id_sala, int) else str(id_sala)):
                         lo = mid + 1
@@ -766,15 +770,10 @@ class GuardadoBinario:
                         hi = mid - 1
                 if target_offset is None:
                     return None
-                if target_offset < offset_jugador or target_offset >= offset_indice:
+                if target_offset < offset_jugador or target_offset + largo > offset_indice:
                     return None
-                fin = offset_indice
-                for i in range(num_salas):
-                    off = struct.unpack("<I", indice_raw[i * 36 + 32:i * 36 + 36])[0]
-                    if off > target_offset and off < fin:
-                        fin = off
                 f.seek(target_offset)
-                datos_sala = f.read(fin - target_offset)
+                datos_sala = f.read(largo)
                 sala, _ = self._leer_sala_datos(datos_sala, 0)
                 return sala if sala["id_sala"] == id_sala else None
         except (OSError, struct.error, IndexError, ValueError):

@@ -327,3 +327,30 @@ def test_ficha_local_ausente_se_recupera_de_memoria_vigente(paquete):
     contexto.iniciar_partida("c1")
     (paquete[0] / "catalogo/oro.json").unlink()
     assert contexto.iniciar_partida("c1").mapa.obtener_sala(0).enemigos[0].botin_preparado[0].ficha["id"] == "oro"
+
+
+def test_fallo_de_api_al_preparar_conserva_el_tipo_y_dice_que_fue_la_api(paquete):
+    """§3.1: arriba se debe poder distinguir "la API está caída" de "el JSON es inválido"."""
+    from datos.cliente_api import CriptaAPIError
+
+    class FuenteCaida(FuenteOffline):
+        def obtener_generales(self, cripta_id):
+            raise CriptaAPIError("Error 503 en operación GET /criptas/c1")
+
+    with pytest.raises(ValueError) as excepcion:
+        InicializadorPartida().preparar("c1", FuenteCaida(str(paquete[0])))
+    assert isinstance(excepcion.value.__cause__, CriptaAPIError)
+    mensaje = str(excepcion.value)
+    assert "c1" in mensaje and "CriptaAPIError" in mensaje and "503" in mensaje
+
+
+def test_json_invalido_no_se_confunde_con_un_fallo_de_api(paquete):
+    """El mismo ValueError, pero sin causa de red: el JSON es el culpable."""
+    class FuenteSinGenerales(FuenteOffline):
+        def obtener_generales(self, cripta_id):
+            return {"id": "otra"}
+
+    with pytest.raises(ValueError) as excepcion:
+        InicializadorPartida().preparar("c1", FuenteSinGenerales(str(paquete[0])))
+    assert excepcion.value.__cause__ is None
+    assert "Faltan generales" in str(excepcion.value)
