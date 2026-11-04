@@ -1477,3 +1477,63 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se construyó y por qué.** Cada cripta reproducible crea su log en partidas/logs antes de la primera acción, con nombre único e id seguro; se muestra la ruta, se registran las acciones exitosas, se puede cambiar con registro RUTA antes de actuar y se rechaza el cambio después. Las pruebas reproducen el log y comparan reloj, jugador, inventario, equipo, sala, azar y eventos pendientes.
 
 **Complejidad o costo.** Anexar cuesta O(b) en el tamaño del registro (O(1) si está acotado) y no relee el log; crear el archivo no usa red.
+
+---
+
+# Joshua Cabrera Bonilla — Parte II
+
+**Herramienta:** Claude Code v2.1.317 (Claude Opus 5.5), con spec-kit 1.2.3. Los prompts se redactaron con apoyo de Claude (claude.ai) a partir del enunciado de la Parte II y de las observaciones del profesor sobre la primera parte.
+
+| # | Tema | Fecha |
+| --- | --- | --- |
+| 26 | Constitución del proyecto (`/speckit-constitution`) | 02/11/2026 |
+| 27 | Correcciones a la constitución antes de confirmarla | 02/11/2026 |
+
+## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
+
+> **Prompt**
+>
+> /speckit-constitution Proyecto Cripta, Estructuras de Datos II-2026, segunda parte sobre el código ya entregado de la primera. Redacta la constitución en español con estos principios, cada uno con su justificación y cómo se verifica:
+>
+> I. Estructuras propias en los problemas evaluados. Las estructuras de datos de los problemas evaluados (agenda, índices, cachés, búsquedas de ruta, mapa conocido, resolubilidad, línea de tiempo, historial) se implementan a mano. Prohibido usar dict o set como índice, caché o tabla de búsqueda, y prohibidos heapq, bisect, collections (deque, OrderedDict, defaultdict, Counter), networkx y cualquier biblioteca de grafos o rutas. Se permiten dict para leer JSON y list como almacenamiento contiguo de bajo nivel. Prohibido sorted() y list.sort() en los ordenamientos evaluados. Las alternativas de biblioteca solo pueden aparecer en --bench como comparación. Todo plan.md o tarea que proponga una dependencia prohibida es un defecto que debe detectarse en /speckit-analyze.
+>
+> II. Acceso por identificador eficiente. Toda búsqueda frecuente por id (salas, actores, objetos, puertas) usa una estructura propia con acceso esperado O(1), como la tabla hash propia ya existente. No se aceptan recorridos lineales en operaciones que se ejecutan en cada turno o en cada búsqueda de ruta.
+>
+> III. Determinismo. Misma cripta, misma semilla y mismas acciones producen la misma partida. El modelo usa solo su instancia random.Random(semilla). La hora real y la latencia de red nunca alteran la simulación. La agenda desempata por tiempo virtual y luego por número de secuencia. Todo desempate nuevo (por ejemplo, la vecina de menor id) se define en la especificación de forma independiente del algoritmo.
+>
+> IV. Separación MVC. El modelo contiene las reglas y el estado. La vista solo presenta y recoge interacción, sin introducir reglas ni alterar resultados. El controlador interpreta comandos y coordina. Red y disco van detrás de adaptadores. --replay, --bench y --verificar nunca instancian la vista.
+>
+> V. Datos desde el servicio. Ningún dato de una cripta concreta (estadísticas, cantidades, costos, rangos, ubicaciones de llaves) se escribe en el código. Todo viene del servicio o de la fuente offline compatible. Lo persistido se invalida mediante la validación de versión existente, nunca borrando archivos a mano.
+>
+> VI. Presupuesto de solicitudes. Se respeta presupuesto_solicitudes, que viene de la cripta a través del contrato FuenteDatos. Toda solicitud HTTP cuenta, incluidos los reintentos y la consulta de llaves. El tiempo real de espera no avanza el reloj virtual.
+>
+> VII. Estado reversible sin copias completas. Todo cambio de estado del juego, incluido el conocimiento del jugador, se registra como un cambio reversible para el pergamino de retroceso (límite de 5 acciones) y para la línea de tiempo. No se implementa el retroceso con copias completas. Las únicas copias completas permitidas son los puntos de control de la línea de tiempo, como máximo uno cada K acciones del jugador. Las acciones rechazadas no consumen tiempo ni dejan cambios parciales. Las consultas (historia, mapa, estado) no modifican el estado ni el historial.
+>
+> VIII. Contratos estables y cambios mínimos. Se conservan nombres, firmas, constructores y archivos que usan otros integrantes. La identidad de las instancias se mantiene por sus ids reales. Antes de modificar un componente compartido se identifican sus consumidores y se acuerda el cambio en el plan.md. Se preservan las decisiones ya entregadas: carga gradual de contenido, catálogo vivo con protección de fichas activas, lotes de hasta diez ids, registro de partida JSON Lines con ids estables y creación automática del log, y guardado binario versionado.
+>
+> IX. Rendimiento medido. Toda afirmación de rendimiento o complejidad se respalda con --bench. Cada medición compara la estructura elegida contra al menos una alternativa descartada, separa la preparación del intervalo cronometrado, usa calentamiento y repeticiones, y genera criptas sintéticas deterministas por semilla. Las mediciones deben estar conectadas a --bench. Un benchmark que ningún punto de entrada ejecuta no cuenta como evidencia. Las operaciones de cada subsistema (no solo la operación masiva) se miden con cargas realistas: ciclos sobre criptas reales y operaciones de punta a punta, no solo la estructura aislada. Límites: ciclo de eventos de 20 ms con decenas de cazadores, resolubilidad de 200 ms, historia de 50 ms con 5 000 acciones, paso de «ir a» de 5 ms.
+>
+> X. Especificación primero y trazabilidad. Cada capacidad tiene spec.md confirmado en Git antes de su código. spec.md describe reglas, historias, escenarios y requisitos numerados (FR-xxx), sin nombrar estructuras, clases ni módulos. plan.md elige estructuras y no inventa reglas. Cada tarea cita sus FR y cada prueba cita el FR que verifica. Cada caso del Apéndice B es un escenario con prueba o con un partida.log. Si la especificación estaba mal, se corrige primero la especificación y luego el código, en commits separados. Cada comando de spec-kit con texto propio se registra en PROMPTS_LLM.md.
+>
+> XI. Pruebas. Se mantienen unittest y pytest. Las pruebas nuevas no rompen las existentes. Se distingue entre pruebas aprobadas, omitidas, con fixtures de API y contra el servicio en línea.
+>
+> Gobernanza: la constitución prevalece sobre spec, plan y tareas. Una enmienda requiere acuerdo de los tres integrantes, versión semántica y fecha. /speckit-analyze verifica el cumplimiento de cada principio antes de implementar. Stack: Python 3.11 o superior, sin dependencias nuevas salvo requests y pygame ya existentes.
+
+**Qué se obtuvo.** `.specify/memory/constitution.md` v1.0.0 con los 11 principios (cada uno con justificación y verificación), restricciones técnicas, flujo de trabajo y gobernanza. Recoge los principios de §2.3 y las prohibiciones de §6.2 del enunciado, las decisiones ya entregadas en la Parte I (presupuesto en `FuenteDatos`, carga gradual, catálogo vivo, logs automáticos, guardado versionado) y, como principios II y IX, las observaciones del profesor sobre la primera parte (búsqueda de salas lineal y benchmarks no conectados a `--bench` o sin medir operaciones completas).
+
+**Qué hubo que corregir.** La revisión contra el enunciado encontró cinco imprecisiones, corregidas en el Prompt 27 antes del primer commit.
+
+## Prompt 27 — Correcciones a la constitución antes de confirmarla
+
+> **Prompt**
+>
+> Corrige .specify/memory/constitution.md sin cambiar la versión 1.0.0 ni nada más:
+> 1. Principio VII: aclara que la prohibición de copias completas aplica a copias en memoria usadas como mecanismo de retroceso o de línea de tiempo; el archivo de guardado de partida no cuenta como copia prohibida.
+> 2. Restricciones técnicas: agrega a los puntos de entrada --forzar, --checkpoint-cada K y --replay partida.log --hasta t.
+> 3. Principio IX, límites: ciclo de eventos de 20 ms entre dos decisiones del jugador, en la cripta de referencia con decenas de cazadores; resolubilidad de 200 ms en la cripta publicada más grande; historia de 50 ms con al menos 5 000 acciones del jugador y K por defecto; paso de «ir a» de 5 ms con el mapa conocido completo de la cripta de referencia. Agrega que estos valores pueden ajustarse por enmienda del enunciado.
+> 4. Principio XI, verificación: la suite completa se ejecuta con pytest, que también ejecuta las pruebas escritas con unittest.
+> 5. Principio V, verificación: los datos persistidos de la cripta con versión incompatible se invalidan y se vuelven a solicitar; un archivo de partida de la primera parte se reporta como incompatible o se migra explícitamente, nunca se carga en silencio.
+> 6. En el Sync Impact Report, elimina la frase que dice que el informe se elimina antes de confirmar.
+> No modifiques otros archivos.
+
+**Qué se obtuvo y por qué.** Se corrigieron cinco puntos que contradecían el enunciado o prometían algo que el proyecto no hace: el guardado de partida parecía una copia prohibida (§3.6); faltaban banderas de §7.2; los límites no tenían las condiciones de §6.1; se afirmaba ejecutar dos ejecutores de pruebas; y se trataba igual el caché de la cripta que un archivo de partida de la Parte I (Apéndice B). La versión se mantuvo en 1.0.0 porque las correcciones se hicieron antes de ratificarla en Git.
