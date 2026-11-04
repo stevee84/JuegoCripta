@@ -8,7 +8,9 @@ Este documento registra, para cada punto revisado del enunciado:
 - por qué se prefirió frente a otras estructuras pertinentes;
 - y, cuando corresponda, la estructura sugerida para corregir una elección inadecuada.
 
-Las secciones se agregarán con el mismo número de punto del enunciado.
+Las secciones usan el mismo número de punto del enunciado.
+
+**Última actualización: 18/10/2026.** Revisado contra el código de la rama `Steve` (igual a `main` salvo la limpieza de entrega). Las secciones 4.2, 4.3, 4.4, 4.6, 4.7, 4.9, 4.10 y 4.11 se actualizaron con las correcciones posteriores a la revisión anterior; 4.1, 4.5 y 4.8 no cambiaron. Al final hay un resumen para repasar antes de la defensa.
 
 ## 4. Problemas de estructuras de datos a resolver
 
@@ -66,211 +68,189 @@ No se requiere sustituir la estructura. Conviene conservar sincronizados el mont
 
 ### 4.2 Traer el contenido antes de que haga falta
 
-**Evaluación: parcialmente adecuada; la estructura prevista no está integrada y faltan estados de solicitud.**
-
-#### Estructuras utilizadas actualmente
-
-1. **Grafo mediante listas de adyacencia.**
-   - `MapaCripta` guarda las salas en una lista `_salas`.
-   - Cada `Sala` guarda sus conexiones en la lista `puertas` y cada `Puerta` mantiene una referencia `destino_sala` una vez vinculado el esqueleto.
-   - Esta representación permite recorrer vecinos usando solo las puertas de la sala actual.
-2. **Listas auxiliares para la carga inicial.**
-   - `InicializadorPartida._construir()` reúne IDs de salas, registros recibidos y salas vistas en las listas `ids_salas`, `registros` y `vistas`.
-   - Recorre `ids_salas` en segmentos de diez y solicita sincrónicamente el contenido de todas las salas antes de publicar la partida.
-3. **Planificación BFS aislada.**
-   - `PlanificadorPrecarga` contiene una búsqueda en anchura por niveles mediante las listas `frontera`, `siguiente`, `visitados` y `resultado`.
-   - `_cargadas` es una lista de IDs usada para evitar solicitudes repetidas.
-   - `solicitar_lote()` divide en segmentos de diez.
-   - Esta clase solo aparece conectada en pruebas; no se utiliza desde `JuegoService`, `InicializadorPartida`, `ControladorJuego` ni el movimiento del motor.
-
-#### Qué resuelve correctamente la implementación activa
-
-- El grafo por adyacencia es adecuado para explotar el esqueleto completo y consultar vecindad sin una matriz de tamaño `salas_total²`.
-- Las referencias `destino_sala` permiten recorrer vecinos locales sin buscar el mapa completo en cada paso.
-- La carga inicial divide las solicitudes de contenido en lotes de hasta diez.
-- Como toda la carga es síncrona y ocurre antes de entregar el estado al motor, el jugador no puede moverse mientras falte contenido. Por ello tampoco avanza el reloj virtual durante una espera de red.
-- La incorporación sigue el orden determinista de los lotes y registros procesados por el inicializador.
-
-#### Problemas de la estructura y su integración
-
-1. **El planificador no forma parte de la ejecución real.** La aplicación no realiza una precarga gradual por cercanía: descarga el contenido de todas las salas durante cada inicialización. Esto evita pausas en puertas, pero desaprovecha la estrategia BFS implementada y puede consumir muchas solicitudes al iniciar criptas grandes.
-2. **No existe una tabla de estados por sala.** No se representa explícitamente `NO_SOLICITADA`, `PENDIENTE`, `DISPONIBLE` o `FALLIDA`. Las listas vacías de una `Sala` tampoco permiten distinguir entre “contenido vacío” y “contenido todavía desconocido”.
-3. **No se modelan respuestas pendientes.** No hay una estructura que asocie una sala con su solicitud en curso, ni una cola que determine el orden en que deben incorporarse respuestas concurrentes. La ejecución actual es determinista porque bloquea y procesa todo secuencialmente, pero no soportaría el caso pendiente exigido si se habilitara precarga en segundo plano.
-4. **`_cargadas` y `visitados` son listas.** Comprobar `id in lista` cuesta O(n). En BFS se repite esa comprobación para cada arista; en el peor caso puede degradar el recorrido hacia O(V·E). También permite que la deduplicación de solicitudes empeore conforme crece la cripta.
-5. **La búsqueda global de salas es lineal.** `MapaCripta.obtener_sala()` recorre `_salas`, por lo que localizar repetidamente IDs durante planificación cuesta O(V).
-6. **La deduplicación no está ligada a la versión.** `_cargadas` solo contiene IDs y vive dentro de una instancia no integrada del planificador. La ruta activa no conserva un índice de contenido por `(cripta_id, version_cripta, sala_id)`. Se comprobó que iniciar dos veces `cripta-01` con la misma versión volvió a solicitar el lote `(1, 2, 3, 4, 5, 6)` completo en ambas ocasiones.
-
-Las 45 pruebas dirigidas de inicialización, adaptación y `PlanificadorPrecarga` pasan, pero prueban por separado el cargador total y el planificador; no demuestran que este último participe en el flujo real de movimiento.
-
-#### Por qué algunas alternativas no son adecuadas
-
-- **Matriz de adyacencia:** permitiría comprobar una conexión en O(1), pero consumiría O(V²) memoria en criptas normalmente dispersas y no aporta ventaja al recorrer los pocos vecinos de una sala.
-- **Solo una lista de IDs cargados:** es simple, pero tiene búsquedas O(n), no guarda la versión, no representa solicitudes pendientes y no asocia el ID con su contenido.
-- **Solo una cola de solicitudes:** conserva orden, pero no evita duplicados ni permite consultar en O(1) si una sala ya está disponible o pendiente.
-- **Precargar siempre toda la cripta:** garantiza disponibilidad y simplifica el determinismo, pero aumenta el tiempo inicial y puede desperdiciar presupuesto en salas lejanas que nunca se visitan.
-- **Incorporar respuestas apenas llegan:** reduce latencia, pero hace que el estado dependa del orden real de la red y viola el determinismo.
-
-#### Estructura sugerida
-
-Se recomienda integrar una estructura compuesta:
-
-1. **Grafo por listas de adyacencia**, conservando el modelo actual de puertas y referencias locales.
-2. **Índice hash de salas por ID** además de la lista de recorrido del mapa. Así `obtener_sala(id)` pasa de O(V) a O(1) promedio sin perder el orden estable de publicación.
-3. **Tabla hash de contenido y estado**, con clave `(cripta_id, version_cripta, sala_id)` y un registro que contenga:
-   - estado `NO_SOLICITADA`, `PENDIENTE`, `DISPONIBLE` o `FALLIDA`;
-   - contenido decodificado cuando esté disponible;
-   - identificador y número de orden del lote que la solicitó.
-4. **Conjunto de IDs planificados** para impedir que una sala disponible o pendiente vuelva a agregarse a otro lote.
-5. **Cola FIFO de lotes**, cada uno con un máximo de diez salas. El BFS agrega vecinos por distancia y la cola conserva el orden determinista de solicitud.
-6. **Índice de respuestas pendientes por número de lote.** Las respuestas pueden descargarse concurrentemente, pero deben quedar almacenadas temporalmente y aplicarse al modelo solo cuando corresponda el siguiente número de lote.
-
-Antes de confirmar un movimiento, el servicio debe consultar la tabla: si el destino está `DISPONIBLE`, mueve al jugador; si está `PENDIENTE`, espera esa respuesta sin tocar el reloj virtual; si está ausente o falló, realiza una solicitud controlada y solo confirma el movimiento después de publicar el contenido. La clave con versión permite reutilizar contenido sin mezclar datos obsoletos.
-
-### 4.3 Resolución de referencias del catálogo
-
-**Evaluación: adecuada para el requisito funcional, con una mejora recomendable en la deduplicación inicial.**
+**Evaluación: adecuada. La carga gradual por cercanía está integrada en el flujo real, distingue salas pendientes de salas vacías y respeta el presupuesto.**
 
 #### Estructuras utilizadas
 
-1. **Lista temporal de IDs únicos.**
-   - `InicializadorPartida` descubre referencias en generales, puertas, enemigos, objetos, trampas y botines.
-   - `_agregar_id()` evita duplicados mediante `ficha_id not in ids_fichas`.
-   - Antes de consultar la red, los IDs se ordenan de forma determinista y se dividen en lotes de hasta diez.
-2. **Tabla hash propia para el catálogo de la partida.**
-   - `CatalogoPartida` utiliza `TablaHashImpl`, implementada con encadenamiento separado, factor de carga máximo de 0,75 y redimensionamiento automático.
-   - La clave es el ID de catálogo y el valor es la única ficha compartida por todas las instancias de ese tipo durante la partida.
-3. **Caché LRU compartida entre partidas.**
-   - `CacheCatalogo` combina una lista doble con un arreglo ordenado.
-   - La lista doble conserva el orden de uso reciente y permite mover un nodo al frente en O(1).
-   - El arreglo ordenado relaciona `ficha_id` con el nodo de la lista mediante búsqueda binaria O(log c), donde `c` es la capacidad de la caché.
-   - Otro arreglo ordenado registra las fichas fijadas y sus dueños para impedir que se desalojen mientras estén en uso.
-4. **Almacenamiento persistente indexado por archivo.**
-   - `AlmacenPersistente` guarda cada ficha en `<ficha_id>.json`, junto con la versión global del catálogo.
-   - La ruta del archivo funciona como índice persistente directo por ID.
-5. **Repositorio por niveles.**
-   - `RepositorioCatalogo` consulta en orden: memoria → disco con versión vigente → red.
-   - `resolver_lote()` reúne únicamente los faltantes y realiza una sola consulta de red para hasta diez IDs.
+1. **Grafo mediante listas de adyacencia.**
+   - `MapaCripta` guarda las salas en la lista `_salas`.
+   - Cada `Sala` guarda sus conexiones en la lista `puertas`. Cada `Puerta` recibe una referencia `destino_sala` cuando `MapaCripta.vincular_salidas()` resuelve los IDs una sola vez.
+   - Recorrer vecinos usa solo las puertas de la sala; no se consulta el mapa completo.
+2. **Marca de estado por sala (`Sala.contenido_cargado`).**
+   - `True` indica que el contenido ya llegó. `False` indica que la sala existe (ID y puertas), pero su contenido todavía no se pidió.
+   - Así se distingue “sala vacía” de “contenido desconocido”, que antes eran lo mismo: listas vacías.
+   - `Sala.incorporar_contenido(enemigos, objetos, trampas)` **agrega** al final de las listas, asigna `sala_actual` a los enemigos y marca la sala como cargada. No reemplaza nada: si un enemigo dejó botín antes de que llegara el contenido, se conserva.
+   - La incorporación no pasa por el historial reversible, porque es infraestructura y no estado del juego (§2.11).
+3. **Búsqueda en anchura por niveles (`CargadorContenido.mas_cercanas`).**
+   - Usa las listas `frontera` y `siguiente` para los niveles, y dos `TablaHashImpl` propias: `visitadas` (salas ya alcanzadas) y `pendientes` (salas sin contenido). Acumula pares `(distancia, id_sala)`.
+   - Los pares se ordenan con `OrdenadorAdaptativo` por distancia y luego por ID. De ahí se toman las primeras 10 salas pendientes.
+4. **Lotes con orden de incorporación fijo (`_cargar_lotes`).**
+   - Cada lote tiene como máximo 10 salas (`MAX_IDS_POR_SOLICITUD`).
+   - La lista `orden` conserva el orden en que se **pidieron** las salas. El contenido se incorpora en ese orden, nunca en el que llega la respuesta, así el resultado no depende de la red (§2.4).
+   - Es una operación de todo o nada: primero se piden todos los lotes y se resuelven sus fichas, y solo después se incorpora. Si algo falla, ninguna sala cambia.
+5. **Contador de presupuesto (`PresupuestoSolicitudes`).**
+   - Limita las solicitudes HTTP de la partida al `presupuesto_solicitudes` que publica la cripta.
+   - En offline no existe contador y las lecturas no cuentan (§5.1).
 
-#### Dónde y cómo se resuelven las referencias
+#### Dónde y cómo se utilizan
 
-- El inicializador descubre primero todos los IDs conocidos y añade después los IDs de objetos declarados en `suelta` por las fichas de enemigos.
-- Cada lote se resuelve por medio de `RepositorioCatalogo`, nunca mediante una solicitud individual por cada entidad en el flujo normal de inicialización.
-- Las fichas resueltas se insertan en `CatalogoPartida` y el decodificador asigna esa misma referencia a cada `Enemigo`, `ObjetoInstancia` o `Trampa` correspondiente.
-- La partida no se publica si falta una ficha requerida, por lo que una entidad real no se muestra ni se simula con una referencia sin resolver.
-- La caché sobrevive al cambio de cripta cuando la versión global del catálogo coincide. Si la ficha no está en memoria, el repositorio intenta recuperarla del almacenamiento persistente vigente antes de gastar red.
+- `InicializadorPartida._construir()` arma el **esqueleto completo** (todas las páginas y las llaves) y delega el contenido en `CargadorContenido`.
+- **Estrategia adaptativa según el presupuesto:**
+  - **Con holgura** (`alcanza_para_todo()`: quedan al menos `2·lotes + 3` solicitudes), se carga todo al inicio. Es el caso de las 4 criptas publicadas, que cargan con entre 5 y 8 solicitudes de presupuestos que van de 9 a 52. El jugador nunca espera en una puerta.
+  - **Con presupuesto ajustado**, al inicio se carga solo la sala inicial y su vecindad (un lote). Después de cada acción, `precargar_cerca()` adelanta el lote de las vecinas pendientes si quedan al menos 2 solicitudes; la última se reserva para poder moverse.
+- **Antes de confirmar un `MOVER`**, `JuegoService` llama a `asegurar(destino)`: si la sala está pendiente, se carga primero. La espera no avanza el reloj virtual, porque el reloj solo lo mueve el motor (Apéndice B).
+- **Sin presupuesto y con el destino pendiente**, el movimiento se rechaza con un mensaje y sin consumir tiempo.
+- **Red de seguridad en el motor:** `MotorJuego` rechaza un `MOVER` hacia una sala con `contenido_cargado = False` antes de abrir el intervalo, por si algún flujo llegara sin pasar por el servicio.
 
-#### Por qué las estructuras son adecuadas
+#### Por qué es adecuada
 
-- La tabla hash de `CatalogoPartida` ofrece resolución ID→ficha en O(1) promedio, operación repetida por la vista y la simulación.
-- Guardar una sola ficha por ID evita duplicar estadísticas y garantiza que distintas instancias compartan los mismos datos técnicos.
-- La combinación índice + lista doble implementa una política LRU sin buscar linealmente el nodo que debe actualizarse en cada acierto.
-- El límite de capacidad evita que la caché en memoria crezca sin control, mientras que el disco conserva fichas reutilizables entre criptas.
-- La versión global impide mezclar fichas persistidas de catálogos diferentes en la ruta utilizada por el inicializador.
-- Ordenar los IDs antes de formar lotes hace determinista el orden de las consultas aunque las referencias se descubran desde distintas salas.
+- La marca booleana por sala resuelve el problema central de la versión anterior: saber qué falta sin una estructura aparte.
+- El BFS por distancia aprovecha cada solicitud con las salas que más probablemente se visiten a continuación.
+- Incorporar en orden de solicitud hace la carga determinista, aunque las respuestas tarden distinto.
+- La estrategia adaptativa evita las dos fallas extremas: descargar toda la cripta cuando el presupuesto no alcanza, o hacer esperar al jugador cuando sí alcanza.
+
+#### Costos
+
+- `mas_cercanas()` es un BFS **O(V + E)**: comprobar si una sala ya fue visitada o si está pendiente es O(1) promedio con las tablas hash. Antes `visitadas` era una lista y cada `in` costaba O(V), lo que llevaba el peor caso a O(V²); se corrigió el 18/10/2026 pensando en las criptas más grandes de la revisión (§9). Ordenar los pares añade O(V log V).
+- `pendientes()` recorre las salas en O(V).
+- `MapaCripta.obtener_sala(id)` sigue siendo una búsqueda lineal O(V). Solo se usa al vincular y al incorporar, no en cada decisión.
+- Incorporar un lote cuesta O(contenido del lote), porque solo agrega al final de las listas.
 
 #### Comprobaciones realizadas
 
-- Dos enemigos `e-201` y `e-202` de tipo `ent_rata_gigante` resultaron ser objetos actor distintos, pero `ratas[0].ficha is ratas[1].ficha` fue verdadero.
-- Los IDs enviados durante la primera inicialización de `cripta-01` no se repitieron entre lotes.
-- Al iniciar nuevamente la misma cripta con la misma caché y versión, no se realizó ningún lote adicional de catálogo.
-- Las 52 pruebas dirigidas de repositorio, caché, tabla hash e integración del catálogo finalizaron correctamente.
+- `tests/test_carga_gradual.py` usa una cripta sintética cuyo contenido completo no cabe en el presupuesto: arranca igual, se recorre y se gana sin pasarse del presupuesto, un `MOVER` hacia una sala pendiente sin presupuesto no consume tiempo, y una partida guardada con salas pendientes las sigue cargando al continuar.
+- `tests/test_dto/test_sala_contenido.py` y `tests/test_logica/test_salas_pendientes_motor.py` comprueban que `incorporar_contenido` agrega sin reemplazar (el botín previo se conserva) y que el motor rechaza moverse a una sala pendiente sin abrir un intervalo.
+- Las pruebas de contrato contra respuestas reales del API (`tests/test_contrato_api_real.py`) cargan las 4 criptas con la estrategia de holgura.
+- En modo offline, un agente jugó cripta-01 completa: el reporte final fue “Presupuesto: 0/9 solicitudes usadas”.
+- `tests/test_service/test_cargador_bfs.py` comprueba el orden por distancia y luego por ID, que se omitan las salas ya cargadas y que en una cuadrícula de 900 salas se elija el lote correcto de 10.
+
+#### Por qué algunas alternativas no son adecuadas
+
+- **Precargar siempre toda la cripta:** era el comportamiento anterior. Garantiza disponibilidad, pero una cripta grande con presupuesto ajustado no podía ni arrancar. Hoy se usa solo cuando el presupuesto alcanza con holgura.
+- **`PlanificadorPrecarga` aislado:** tenía un BFS correcto, pero no participaba en el flujo real. Se eliminó; `CargadorContenido` reutiliza su idea y sí está conectado.
+- **Matriz de adyacencia:** O(V²) de memoria en criptas dispersas, sin ventaja para recorrer pocos vecinos.
+- **Incorporar cada respuesta apenas llega:** el estado dependería del orden real de la red y se perdería el determinismo.
+- **Una tabla de estados con cuatro valores (no solicitada, pendiente, disponible, fallida):** la carga es síncrona, así que “pendiente” y “fallida” nunca se observan desde el modelo. La marca booleana más el todo-o-nada cubren el mismo caso con menos estructura.
+
+#### Sugerencia
+
+- Agregar en `MapaCripta` un índice `id_sala → sala` para que `obtener_sala()` sea O(1) promedio.
+
+### 4.3 Resolución de referencias del catálogo
+
+**Evaluación: adecuada. Las referencias se resuelven por lotes de hasta 10, incluido el botín de forma transitiva, y cada tipo de ficha existe una sola vez en memoria.**
+
+#### Estructuras utilizadas
+
+1. **Listas temporales de IDs únicos.**
+   - `InicializadorPartida` reúne las llaves de las puertas y la llave de salida con `_agregar_id()`.
+   - `CargadorContenido._validar()` reúne los IDs de enemigos, objetos y trampas de cada lote.
+   - Antes de consultar, los IDs se ordenan con `OrdenadorAdaptativo` y se dividen en lotes de hasta 10.
+2. **Resolución transitiva del botín (`CargadorContenido._resolver_fichas`).**
+   - Usa una lista `pendientes` como cola de trabajo y una lista `vistas` para no repetir IDs.
+   - Cuando una ficha es de clase `enemigo`, los IDs de su campo `suelta` se agregan a `pendientes`. Así el botín queda resuelto antes de que un enemigo muera.
+3. **Catálogo de la partida que no retiene fichas (`CatalogoVivo`).**
+   - No guarda fichas propias. Cada `resolver(id)` pasa por el repositorio: caché → disco → red.
+   - Reemplazó como catálogo de la partida a `CatalogoPartida`, que guardaba todas las fichas en una `TablaHashImpl` sin límite. `CatalogoPartida` queda solo como índice temporal para validar fichas al conectar el inventario y al restaurar una partida sin catálogo vivo.
+4. **Caché LRU compartida entre partidas (`CacheCatalogo`).**
+   - Combina una lista doble para el orden de uso con un arreglo ordenado `(ficha_id, nodo)` con búsqueda binaria O(log c). Ver §4.4.
+5. **Almacenamiento persistente indexado por archivo (`AlmacenPersistente`).**
+   - Cada ficha se guarda en `<ficha_id>.json` junto con la versión del catálogo. La ruta funciona como índice directo por ID.
+6. **Repositorio por niveles (`RepositorioCatalogo.resolver_lote`).**
+   - Consulta en orden memoria → disco con versión vigente → red, y pide a la red solo los faltantes, en una sola solicitud por lote.
+   - Si la red falla y existe una copia en disco de una versión anterior, la usa como respaldo en vez de perder la ficha.
+
+#### Dónde y cómo se resuelven las referencias
+
+- Las fichas de cada lote de contenido se resuelven juntas, antes de incorporar las salas. Una entidad nunca se muestra ni se simula sin su ficha.
+- Las entidades (`Enemigo`, `ObjetoInstancia`, `Trampa`) heredan `FichaResoluble`. Guardan solo `tipo_ficha_id` y leen `entidad.ficha` a través del `CatalogoVivo`. Dos ratas del mismo tipo leen la misma ficha de la caché.
+- La caché y el disco sobreviven al cambio de cripta cuando la versión del catálogo coincide. Al iniciar otra cripta con las mismas fichas no se gasta red.
+
+#### Por qué las estructuras son adecuadas
+
+- Pedir por lotes aprovecha que consultar 10 IDs cuesta prácticamente lo mismo que consultar 1 (§3.3).
+- Resolver el botín de forma transitiva evita una solicitud de emergencia en mitad del combate.
+- Una sola ficha por tipo evita duplicar estadísticas e inconsistencias entre instancias.
+- Ordenar los IDs antes de formar lotes hace determinista el orden de las consultas, aunque se descubran desde salas distintas.
+
+#### Comprobaciones realizadas
+
+- Las pruebas de repositorio, caché e inicialización verifican que no se repitan IDs entre lotes y que reiniciar la misma cripta no pida catálogo otra vez.
+- Las pruebas de contrato contra el API real resuelven las fichas de las 4 criptas, incluido el botín.
 
 #### Por qué no se utilizaron otras estructuras
 
-- **Una lista simple como catálogo principal:** requeriría O(n) para resolver cada ID y repetiría ese costo cada vez que la vista o el modelo consulte una ficha.
-- **Una ficha copiada dentro de cada instancia:** aumentaría la memoria y permitiría inconsistencias entre instancias del mismo tipo.
-- **Solicitudes individuales por ID:** desperdiciarían presupuesto y latencia, pues consultar uno cuesta prácticamente lo mismo que consultar diez.
-- **Una tabla hash sin política de desalojo:** daría búsquedas rápidas, pero crecería indefinidamente al compartir el catálogo entre criptas.
-- **Una cola FIFO para desalojo:** expulsaría por antigüedad de inserción, aunque una ficha se utilice con frecuencia. LRU refleja mejor la reutilización reciente.
-- **Solo una lista doble para LRU:** actualizar el orden sería O(1) después de localizar el nodo, pero encontrarlo por ID exigiría recorrer toda la lista.
-- **Consultar siempre el disco:** evitaría red, pero añadiría I/O a cada resolución; la caché en memoria debe ser el primer nivel.
+- **Una lista simple como catálogo principal:** O(n) por cada resolución.
+- **La ficha copiada dentro de cada instancia:** más memoria e inconsistencias entre instancias. Además, impedía que `--cache-size` limitara la memoria real (§4.4).
+- **Solicitudes individuales por ID:** desperdician presupuesto y latencia.
+- **Una tabla hash sin desalojo como catálogo de partida:** era `CatalogoPartida`; retenía todas las fichas y anulaba el límite de la caché.
+- **Consultar siempre el disco:** evita la red, pero añade I/O a cada lectura. La memoria debe ser el primer nivel.
 
 #### Mejora sugerida
 
-La lista `ids_fichas` deduplica con búsquedas lineales. Con `u` IDs únicos y muchas referencias repetidas, el descubrimiento puede acercarse a O(u²). Se recomienda mantener simultáneamente:
-
-- una **lista** para conservar un orden reproducible de descubrimiento; y
-- una **tabla hash o conjunto** para decidir en O(1) promedio si el ID ya fue agregado.
-
-También sería razonable reemplazar el arreglo ordenado de `CacheCatalogo` por una tabla hash ID→nodo si la capacidad dejara de ser pequeña. La implementación actual es aceptable con la capacidad predeterminada de 25: ofrece búsqueda O(log c), orden estable y una política LRU correcta; con capacidades grandes, sus inserciones y eliminaciones O(c) serían menos convenientes que la combinación clásica tabla hash + lista doble.
+La deduplicación de IDs usa listas (`f not in ids_fichas`), con costo O(u) por consulta y hasta O(u²) en total, donde `u` es la cantidad de IDs únicos. Con los catálogos actuales (11 tipos en cripta-01) no se nota. Para catálogos grandes conviene mantener una lista para el orden y una `TablaHashImpl` para la pertenencia.
 
 ### 4.4 Reutilización y caché persistente
 
-**Evaluación: la política LRU y el nivel persistente son apropiados, pero el límite de memoria no se cumple realmente. La estructura global necesita corrección.**
+**Evaluación: adecuada. `--cache-size` limita la cantidad real de fichas en memoria; una ficha desalojada se recupera del disco sin usar la red, y las fichas en uso nunca se desalojan.**
 
 #### Estructuras utilizadas
 
 1. **Caché LRU acotada (`CacheCatalogo`).**
-   - Una lista doble mantiene las fichas desde la más reciente hasta la menos reciente.
-   - Un arreglo ordenado `_arreglo` relaciona cada `ficha_id` con su nodo de la lista.
-   - Un segundo arreglo ordenado `_fijados` relaciona cada ID con una lista de dueños que impiden su desalojo.
-2. **Catálogo de partida no acotado (`CatalogoPartida`).**
-   - Usa `TablaHashImpl` para conservar todas las fichas resueltas durante la inicialización.
-   - Las entidades también guardan directamente el diccionario de ficha en su atributo `ficha`.
-3. **Almacenamiento persistente por ID (`AlmacenPersistente`).**
-   - Cada ficha se guarda en un JSON independiente con `{version, datos}`.
-   - El nombre de archivo se deriva del ID, por lo que no se necesita recorrer todos los archivos para leer una ficha concreta.
-4. **Registro de referencias en uso.**
-   - `JuegoService` fija las fichas de enemigos vivos, objetos del suelo de la sala actual y trampas de la sala actual.
-   - `ServicioInventario` fija las fichas de objetos en inventario, equipo e historial reversible.
-   - Los dueños `general` y `en_uso` permiten que una ficha siga protegida hasta que todos sus usos la liberen.
+   - Una `ListaDobleImpl` mantiene las fichas de la más reciente (frente) a la menos reciente (final).
+   - Un arreglo ordenado `_arreglo` de pares `(ficha_id, nodo)` localiza cada ficha con búsqueda binaria.
+   - No usa tabla hash, por indicación del profesor para la caché.
+2. **Registro de fijaciones por dueño (`_fijados`).**
+   - Es otro arreglo ordenado de pares `(ficha_id, [dueños])`.
+   - Hay dos dueños: `DUEÑO_GENERAL` (inventario, equipo e historial, vía `ServicioInventario`) y `DUEÑO_EN_USO` (enemigos vivos, objetos del suelo y trampas de la sala actual, vía `JuegoService._sincronizar_fichas_en_uso`).
+   - Una ficha sigue protegida mientras le quede algún dueño. Antes, un solo indicador hacía que el inventario y la sala se “pisaran” la protección.
+3. **Entidades que no retienen la ficha (`FichaResoluble` + `CatalogoVivo`).**
+   - `entidad.ficha` es una propiedad: si la entidad está conectada a un catálogo vivo, cada lectura pasa por la caché y, si fue desalojada, por el disco.
+   - La entidad solo guarda `tipo_ficha_id`. Por eso la única copia en memoria es la de la caché.
+4. **Almacenamiento persistente por ID (`AlmacenPersistente`).**
+   - Un JSON por ficha con `{version, datos}`, en `cache/catalogo/`. Sobrevive al cierre del programa.
+5. **Métricas de la caché.**
+   - Aciertos, fallos, fallos resueltos desde disco y desde red. Se reportan al terminar la partida (§5.1).
+
+#### Cómo funciona
+
+- **Acierto:** búsqueda binaria en `_arreglo` O(log c), y luego `mover_al_frente(nodo)` en la lista doble O(1).
+- **Fallo:** el repositorio busca en el disco y, si la versión es vigente, inserta en la caché. Solo si no está en disco pide a la red; lo que llega de la red se escribe primero en disco.
+- **Desalojo:** recorre la lista desde el final hasta encontrar la primera ficha **no fijada** y la elimina de la lista y del arreglo. Como ninguna entidad guarda la ficha, desaparece de la memoria.
+- **Volver a necesitarla:** el repositorio la reconstruye desde el JSON del disco y la reinserta, sin red.
+- El estado guardado y el retroceso no incluyen la caché: `CacheCatalogo.__getstate__` conserva solo la capacidad, y `CatalogoVivo` y `FichaResoluble` excluyen el catálogo al serializar (§2.11).
 
 #### Aspectos correctamente resueltos
 
-- `--cache-size` llega desde `configuracion.py` hasta `CacheCatalogo`; el valor predeterminado es 25 y se rechazan valores no positivos.
-- LRU es una política justificable: libera primero la ficha no fijada cuyo uso fue menos reciente, porque es una candidata razonable a tardar más en volver a necesitarse.
-- Consultar una ficha actualiza su recencia moviendo el mismo nodo al frente de la lista doble.
-- El desalojo recorre desde el extremo menos reciente y omite fichas fijadas.
-- El repositorio consulta memoria, después disco vigente y por último red. Una ficha recuperada de red se escribe en disco antes de intentar insertarla en la caché.
-- El almacenamiento de fichas sobrevive al proceso y se valida con la versión global del catálogo.
-- Los guardados de partida incluyen las versiones de cripta y catálogo; antes de reanudar se comparan con los endpoints de versión sin descargar todo el catálogo.
-- El guardado binario conserva esqueleto y contenido de la partida. Su reutilización se bloquea cuando no coincide la versión de la cripta.
+- `--cache-size` (25 por defecto, entero positivo) llega desde `configuracion.py` hasta `CacheCatalogo`.
+- El problema de la revisión anterior está corregido: `CatalogoPartida` ya no retiene fichas y las entidades tampoco, así que el límite de la caché es el límite real.
+- LRU libera primero la ficha que lleva más tiempo sin usarse, la candidata razonable a tardar más en volver a necesitarse.
+- Los guardados de partida incluyen las versiones de cripta y catálogo y se comparan antes de reanudar.
 
-#### Problema principal: el desalojo no libera la ficha del modelo
+#### Costos y riesgos
 
-`CacheCatalogo._evictar()` elimina la entrada del arreglo y de la lista LRU, pero existen otras referencias fuertes:
+- Presencia O(log c); insertar o eliminar en `_arreglo` cuesta O(c) por el desplazamiento. Con `c = 25` es despreciable.
+- Buscar una víctima puede recorrer hacia atrás varias fichas fijadas, hasta O(c).
+- **Riesgo pendiente:** `AlmacenPersistente.guardar()` descarta en silencio los errores de escritura (`except OSError: pass`). Si una ficha no llegó a escribirse y luego se desaloja, volver a necesitarla gastaría una solicitud de red.
 
-- `CatalogoPartida._tabla` conserva todas las fichas resueltas, sin límite de capacidad.
-- Cada enemigo, objeto y trampa conserva la ficha en su atributo `ficha`.
-- `estado.catalogo_inicial` mantiene accesible el catálogo completo después de inicializar.
+#### Comprobaciones realizadas
 
-Por ello, una ficha desalojada del LRU continúa en memoria y puede seguir obteniéndose desde `CatalogoPartida` o desde una entidad. Volver a necesitarla no obliga a recuperarla del disco, como exige el punto.
-
-**Comprobación realizada:** con una caché de capacidad 2 se insertaron las fichas `a`, `b` y `c` tanto en el LRU como en `CatalogoPartida`. Después del desalojo, `cache.obtener("a")` devolvió `None`, pero `catalogo.resolver("a")` todavía devolvió la ficha. La caché contenía 2 entradas y la tabla de la partida 3.
-
-Esto también significa que `--cache-size` limita únicamente el índice LRU, no la cantidad real de fichas de catálogo mantenidas por el programa.
-
-#### Otros costos y riesgos
-
-- La operación frecuente de presencia usa búsqueda binaria O(log c), no O(1). Es razonable con `c=25`, pero `--cache-size` es configurable y el proyecto ya dispone de una tabla hash propia.
-- Insertar o eliminar en `_arreglo` desplaza elementos y cuesta O(c).
-- Buscar una víctima puede recorrer hacia atrás muchas fichas fijadas, hasta O(c).
-- `AlmacenPersistente.guardar()` descarta silenciosamente errores de escritura. Si una ficha no llegó a persistirse y luego se desaloja de una caché corregida, volver a necesitarla produciría una solicitud de red, contrario a la garantía esperada.
-- Como se indicó en 4.2, no existe una caché persistente independiente para esqueleto y contenido entre partidas; esos datos solo se conservan dentro de un archivo de partida guardada. Su persistencia es opcional en el enunciado, pero sería útil para evitar descargas repetidas.
-
-Las 77 pruebas dirigidas de caché, repositorio, datos reales y reanudación pasan. Verifican el comportamiento interno del LRU, pero no detectan que otra estructura conserva la ficha después del desalojo.
+- `test_cache_size_limita_las_fichas_retenidas_y_recupera_desde_disco` (`tests/test_contrato_api_real.py`): con una caché de 3 y cripta-04 completa, ninguna entidad guarda su ficha, la caché nunca pasa de 3 y leer la ficha de un objeto lejano la trae del disco sin pedirla a la red.
+- `test_cache_ficha_compartida_por_dos_duenos_no_se_desaloja`: liberar desde la sala no desprotege una ficha que también está en el inventario.
+- Partida offline real: “Fallos resueltos desde disco: 11; desde la red: 0”.
 
 #### Por qué LRU es preferible a otras políticas
 
-- **FIFO:** libera la ficha más antigua aunque se consulte constantemente; no aprovecha la localidad temporal.
-- **Desalojo aleatorio:** es simple, pero puede expulsar una ficha que acaba de usarse y no ofrece una justificación basada en el patrón de acceso.
-- **LFU:** conserva las fichas históricamente frecuentes, pero necesita contadores y una estructura adicional para actualizar prioridades; además, puede retener fichas que fueron populares en una cripta anterior y ya no son útiles.
-- **Caché sin límite:** evita recuperaciones, pero contradice directamente el tope configurable.
-- **Solo almacenamiento persistente:** cumple supervivencia entre procesos, pero obliga a realizar I/O de disco en cada acceso.
-- **Arreglo ordenado sin lista LRU:** localiza por ID, pero no mantiene eficientemente el orden de uso reciente.
+- **FIFO:** libera la ficha más antigua aunque se use constantemente.
+- **Aleatorio:** puede expulsar una ficha recién usada.
+- **LFU:** necesita contadores y puede retener fichas que fueron populares en una cripta anterior.
+- **Caché sin límite:** contradice el tope configurable.
+- **Solo disco:** cumple la persistencia, pero obliga a hacer I/O en cada acceso.
 
-#### Estructura sugerida
+#### Sugerencia
 
-La caché debe convertirse en la autoridad única de fichas en memoria:
-
-1. **Tabla hash ID→nodo LRU.** Reutilizar `TablaHashImpl` para obtener presencia y ficha en O(1) promedio.
-2. **Lista doble LRU.** Conservarla para mover al frente, retirar la víctima y mantener la recencia en O(1).
-3. **Tabla hash de fijaciones o contador de referencias.** Asociar cada ID con sus dueños activos; una entrada solo es desalojable cuando no tiene dueños.
-4. **Entidades identificadas por ID.** Mantener siempre `tipo_ficha_id`, pero no una referencia permanente a una ficha desalojable. La ficha puede enlazarse mientras esté fijada o resolverse a través de un servicio de catálogo al mostrar/simular.
-5. **Eliminar el almacén no acotado de `CatalogoPartida`.** Puede transformarse en una fachada del repositorio y la caché, en vez de otra tabla que posea todas las fichas.
-6. **Escritura persistente confirmada.** Guardar de forma atómica y propagar el error; una ficha no debe considerarse recuperable desde disco hasta confirmar la escritura.
-
-Al desalojar una ficha no fijada deben desaparecer todas sus referencias fuertes de memoria. Si después se solicita su ID, el repositorio la reconstruye desde el JSON de la versión vigente y la reinserta en el LRU sin usar red. Solo una ausencia real o una versión distinta debe llegar al cliente HTTP.
+- Propagar el error de escritura del almacén, o escribir de forma atómica, para garantizar que una ficha desalojada siempre pueda recuperarse del disco. **Decisión: se deja como está, a propósito**: si el disco falla (permisos, disco lleno) el juego sigue funcionando y, en el peor caso, al volver a necesitar esa ficha se gasta una solicitud de red. Propagar el error haría caer la partida por un problema de infraestructura.
+- Si la capacidad de la caché creciera mucho, el arreglo ordenado tendría inserciones O(c). Con la restricción de no usar tabla hash en la caché, un árbol AVL (como `IndiceOrdenado`) daría O(log c) en todas las operaciones.
 
 ### 4.5 Inventario
 
@@ -338,160 +318,133 @@ No se requiere sustituir la estructura. Conviene mantener pruebas de invariantes
 
 ### 4.6 Pergaminos de retroceso e historial reversible
 
-**Evaluación: parcialmente adecuada. El historial acotado y las transacciones de cambios inversos son apropiados, pero un cambio genérico basado solo en índices puede impedir un retroceso completo cuando intervienen pergaminos excluidos del historial.**
+**Evaluación: adecuada. El historial acotado a 5, las transacciones de cambios inversos y la exclusión de los pergaminos cumplen §2.11. Se corrigieron los cambios de colección por índice y la falta de atomicidad.**
 
 #### Estructuras utilizadas
 
 1. **Lista doble de transacciones cerradas (`HistorialReversible`).**
    - La transacción más reciente se inserta al frente y la más antigua queda al final.
-   - El historial mantiene como máximo cinco nodos. Al insertar el sexto, elimina directamente el último nodo.
-   - Consultar, agregar la acción reciente, retirar la reciente y descartar la antigua cuestan O(1).
+   - Como máximo 5 nodos (`LIMITE = 5`). Al cerrar la sexta, se elimina directamente el último nodo **sin revertirlo**.
+   - Agregar, retirar la reciente y descartar la antigua cuestan O(1).
 2. **Pila de cambios inversos por acción (`TransaccionAccion`).**
-   - Cada transacción usa otra `ListaDobleImpl` y agrega el cambio más reciente al frente.
-   - Al deshacer, consume los cambios desde ese mismo extremo, por lo que aplica primero la inversa de la última mutación.
-   - Registrar cuesta O(1) y revertir cuesta O(k), donde `k` es la cantidad de mutaciones producidas por la acción y sus eventos posteriores.
-3. **Objetos de cambio o comandos inversos.**
-   - `CambioAtributo`, `CambioDato` y `CambioLista` guardan la referencia afectada y el valor, clave o posición mínimos necesarios.
+   - Otra `ListaDobleImpl`, con el cambio más reciente al frente.
+   - Al deshacer, recorre desde ese extremo: primero la inversa de la última mutación.
+3. **Objetos de cambio.**
+   - `CambioAtributo`, `CambioDato` y `CambioLista` guardan la referencia afectada y el valor anterior mínimo necesario.
    - Hay cambios especializados para agenda, azar, inventario, equipo, consumo, puertas y traslados de objetos.
-   - `CambioAzar` conserva el estado interno del generador seudoaleatorio; no copia el estado del juego.
-4. **Agenda reversible enlazada al mismo historial.**
-   - `AgendaEventos` registra inserciones, extracciones, cancelaciones, reprogramaciones y cambios de secuencia mientras existe un intervalo abierto.
-   - `CambioAgenda` conserva la referencia al evento y si la operación original lo insertó o retiró.
-5. **Intervalo abierto durante la simulación automática.**
-   - `MotorJuego.ejecutar_accion()` abre la transacción antes de aplicar la decisión y la cierra después de `avanzar_hasta_decision()`.
-   - Por ello, los turnos enemigos, pulsos y vencimientos de efectos, cierres de puertas, rearmes de trampas y cambios de reloj ejecutados antes de la siguiente decisión pertenecen a la misma transacción.
+   - `CambioAzar` conserva el estado del generador seudoaleatorio, no una copia del juego.
+4. **Agenda reversible conectada al mismo historial.**
+   - `AgendaEventos` registra inserciones, extracciones, cancelaciones, reprogramaciones y cambios de secuencia mientras haya un intervalo abierto.
+5. **Intervalo abierto durante la simulación.**
+   - `MotorJuego.ejecutar_accion()` abre la transacción antes de aplicar la decisión y la cierra al llegar a la siguiente decisión del jugador. Los turnos enemigos, efectos, cierres de puertas, rearmes y el reloj de ese tramo pertenecen a la misma transacción.
 
-#### Aspectos correctamente resueltos
+#### Cómo se usa un pergamino (`RETROCEDER`)
 
-- No se encontraron copias completas, `deepcopy`, serializaciones ni instantáneas de `EstadoPartida` en la implementación del historial.
-- La memoria requerida es proporcional a los cambios de las últimas cinco acciones, no a cinco copias de todo el juego.
-- Las mutaciones comunes se registran antes de ejecutarse mediante las funciones `atributo()`, `dato()`, `agregar()` y `quitar()`.
-- El orden LIFO dentro de cada transacción permite recuperar valores previos aunque un mismo atributo haya cambiado varias veces durante el intervalo.
-- Reloj, vida, ubicación, rastro, visitas, puertas, trampas, efectos, inventario, equipo, botín, estado final, contador de acciones, azar y agenda disponen de inversas utilizadas por el motor.
-- La restauración de agenda vuelve a insertar el mismo objeto `Evento`, actualizando montículo e índices AVL mediante la interfaz de `AgendaEventos`.
-- El límite de cinco acciones se aplica al cerrar cada intervalo; descartar la sexta más antigua no revierte sus efectos.
-- `RETROCEDER` consume el pergamino antes de deshacer y no abre una transacción nueva. Si el retroceso termina correctamente, el nodo permanece fuera del inventario y su ubicación es `consumido`.
-- Recoger y soltar pergaminos produce acciones con sus demás efectos reversibles, pero omite deliberadamente el cambio de cantidad/ubicación del pergamino. Esto permite que dos pergaminos consecutivos deshagan intervalos distintos sin reaparecer.
+1. Se valida que exista un intervalo cerrado y un pergamino seleccionado en el inventario.
+2. `ServicioInventario.consumir_pergamino()` retira el pergamino **fuera del historial** y lo marca como `consumido`.
+3. `HistorialReversible.deshacer_ultimo()` revierte la transacción más reciente y la quita.
+4. Si la reversión falla, el motor devuelve el pergamino al inventario: un intento fallido no cuesta un pergamino.
+5. No abre un intervalo, no consume tiempo virtual y no cuenta como acción del jugador.
+6. Recoger o soltar un pergamino se marca como no reversible. Así, la cantidad de pergaminos queda como estaba al invocar el retroceso, menos el consumido (§2.11).
 
-#### Problema de la estructura posicional genérica
+#### Correcciones respecto de la revisión anterior
 
-`CambioLista` guarda `(lista, posicion, valor, insertado)`, pero para deshacer una inserción ejecuta solamente `lista.pop(posicion)`. La posición deja de ser una identidad estable cuando una operación irreversible modifica esa lista.
+1. **Cambios de colección con identidad estable.**
+   - `CambioLista` ya no deshace con `pop(posicion)` sobre un índice histórico.
+   - Guarda el elemento y sus vecinos `anterior` y `siguiente`. Al deshacer, localiza la **misma instancia** por identidad y calcula el lugar de restauración respecto de los vecinos que aún existen (`_posicion_restauracion`).
+   - Esto resuelve el caso del pergamino recogido junto a un botín, en el que antes saltaba un `IndexError`.
+2. **Reversión validada y atómica.**
+   - `TransaccionAccion.revertir()` primero **simula todos los inversos** sobre vistas superficiales (`_ContextoValidacionReversion`: listas, inventarios y agendas virtuales con referencias, sin copiar entidades) y solo después aplica.
+   - Ningún registro se descarta hasta terminar la validación completa. Si algo es inválido, el estado no se toca.
 
-Se comprobó el siguiente caso:
+#### Prueba con 6 pergaminos (18/10/2026)
 
-1. El suelo contenía un pergamino.
-2. Matar a un enemigo añadió su botín detrás del pergamino y registró la inserción en la posición 1.
-3. Recoger el pergamino eliminó de forma irreversible el elemento anterior al botín, que pasó a la posición 0.
-4. Un primer pergamino deshizo la recogida sin restaurar el pergamino, como exige el enunciado.
-5. Al usar otro pergamino para deshacer el ataque, `CambioLista` intentó `pop(1)` sobre la lista `[botín]` y lanzó `IndexError`.
+En una partida offline real de cripta-01 se agregaron 6 pergaminos y se hicieron 6 acciones (recoger, esperar ×2, usar antorcha, esperar ×2):
 
-Además, `TransaccionAccion.revertir()` retira cada cambio de la pila inmediatamente después de aplicarlo. Si un cambio posterior falla, ya se aplicaron y eliminaron algunos inversos, por lo que la transacción no ofrece atomicidad ni puede reintentarse completa. Este incumplimiento también quedó registrado en `incumplimientos_enunciados.md`.
+| Pergamino | Resultado | Reloj |
+|---|---|---|
+| 1.º–5.º | “Último intervalo retrocedido” | 475 → 375 → 275 → 225 → 125 → 25 |
+| 6.º | “No hay acciones cerradas para deshacer” | se queda en 25 |
 
-#### Comprobaciones realizadas
+- Nunca se retroceden más de 5 acciones: la sexta no se deshace aunque queden pergaminos.
+- Cada retroceso exitoso gastó un pergamino y el fallido no (quedó 1 de 6).
+- Se restauraron la antorcha, su efecto, el reloj y el contador de acciones; los pergaminos no se restauraron.
 
-- Las 130 pruebas dirigidas de historial, cambios, pergaminos, agenda, efectos, trampas e inventario finalizaron correctamente.
-- Cubren el límite de cinco, orden inverso, reloj, vida, azar, agenda e índices, inventario, botín, puertas, trampas, efectos, victoria/derrota y consumo permanente de pergaminos.
-- El caso adicional anterior falla aunque toda la batería existente pase, porque combina una inserción reversible con un traslado irreversible que desplaza su índice.
-- `benchmarks/integrante3.py` mide registro con límite de cinco y reversión de cambios, y compara el enfoque incremental con una alternativa de instantáneas mediante copia profunda.
+#### Por qué las estructuras son adecuadas
 
-#### Por qué las estructuras principales son adecuadas
+- La lista doble exterior da O(1) para la acción más reciente (deshacer) y para la más antigua (descartar).
+- La pila interior representa el orden inverso de las mutaciones: si la vida pasó de 30 a 25 y luego a 20, deshacer al revés deja 30.
+- Se guardan deltas pequeños, no copias: la memoria es proporcional a los cambios de las últimas 5 acciones.
+- No hay `deepcopy`, serializaciones ni instantáneas de `EstadoPartida` en el historial (lo prohíbe §2.11).
 
-- La lista doble exterior ofrece acceso O(1) tanto a la acción más reciente como a la más antigua. Esto encaja con deshacer por un extremo y descartar por el otro.
-- La pila interior representa naturalmente el orden inverso de las mutaciones y evita ordenar cambios al retroceder.
-- Los objetos de cambio almacenan deltas pequeños y referencias concretas; agregar nuevos tipos de mutación no exige copiar ni conocer toda la estructura de `EstadoPartida`.
-- Mantener abierto un único intervalo durante la acción y la simulación automática establece explícitamente la frontera indicada por §2.11.
+#### Costos
+
+- Registrar un cambio O(1). Revertir una transacción O(k), con `k` cambios, más el costo de validar y aplicar cada uno.
+- Localizar un elemento por identidad en una lista cuesta O(m) en el tamaño de esa lista (por ejemplo, los objetos del suelo).
 
 #### Alternativas descartadas
 
-- **Instantánea completa por acción:** simplifica la restauración, pero está prohibida y su costo de memoria y copia depende del tamaño total del mapa, agenda e inventario.
-- **Registrar solo las acciones y volver a simular:** exige reproducir desde un punto anterior, conservar más información, controlar toda fuente de azar y pagar el costo de muchas acciones para deshacer una sola.
-- **Una pila global sin transacciones:** no permite identificar con seguridad cuáles cambios pertenecen a la última decisión y a sus eventos posteriores.
-- **Lista de Python para las cinco transacciones:** con el elemento reciente al frente, insertar y retirar desplaza referencias; con el reciente al final, descartar el más antiguo desplaza referencias. El límite de cinco reduce el impacto práctico, pero la lista doble expresa mejor las operaciones requeridas.
-- **Cola FIFO:** descarta correctamente lo antiguo, pero no ofrece por sí sola el orden LIFO necesario para deshacer la acción más reciente.
-- **Guardar únicamente índices de listas:** ocupa poco, pero los índices no son estables frente a modificaciones irreversibles o intercaladas, como demuestra el fallo encontrado.
+- **Instantánea completa por acción:** prohibida; además, su costo depende del tamaño de todo el mapa, la agenda y el inventario.
+- **Registrar solo las acciones y volver a simular:** exige reproducir desde un punto anterior y pagar muchas acciones para deshacer una.
+- **Una pila global sin transacciones:** no permite saber qué cambios pertenecen a la última decisión y a sus eventos.
+- **Lista de Python para las 5 transacciones:** insertar al frente o descartar al inicio desplaza referencias.
+- **Guardar solo índices de listas:** los índices no son estables frente a cambios irreversibles, como mostraba el fallo corregido.
 
-#### Estructura sugerida
+#### Sugerencia
 
-Se recomienda conservar la lista doble exterior y las transacciones de inversos, corrigiendo dos aspectos:
-
-1. **Cambios de colección con identidad estable.** Cada cambio debe guardar la identidad del elemento y referencias a vecinos estables o una marca de orden. Al deshacer una inserción debe localizar y validar la misma instancia, no ejecutar `pop()` sobre un índice histórico. Al restaurar una extracción debe calcular su lugar respecto de los vecinos que aún existan, como ya hacen los cambios especializados del inventario.
-2. **Reversión validada y atómica.** Antes de aplicar el primer inverso, la transacción debe validar todos los cambios que puedan fallar. Como protección adicional, no debe destruir los registros hasta completar el retroceso, o debe poder reaplicar en orden directo los inversos ya ejecutados si uno falla.
-
-Una alternativa válida para las colecciones con muchas mutaciones sería una lista doble con nodos estables e identidad propia. Para `Sala.objetos`, también puede mantenerse la lista actual junto con marcas de orden e índice por identidad; así se preserva la interfaz existente sin depender de posiciones que cambian cuando un pergamino queda fuera del historial.
+No se requiere sustituir la estructura. Conviene mantener como regresiones `test_pergamino_botin_y_dos_retrocesos_restauran_toda_la_accion` (`tests/test_logica/test_regresiones_incumplimientos.py`) y el escenario de 6 pergaminos.
 
 ### 4.7 El rastro del jugador
 
-**Evaluación: parcialmente adecuada. La representación del rastro y la decisión local cumplen sus costos, pero la colección de enemigos hace que el trabajo agregado de varios rastreadores pueda ser O(n²).**
+**Evaluación: adecuada. La decisión de cada rastreador cuesta O(d) en las salidas de su sala y el trabajo agregado de varios rastreadores ya no es O(n²).**
 
 #### Estructuras utilizadas
 
 1. **Grafo mediante listas de adyacencia.**
-   - Cada `Sala` conserva sus salidas en la lista `puertas`.
-   - Después de `MapaCripta.vincular_salidas()`, cada `Puerta` referencia directamente su `destino_sala`.
-   - El rastreador itera únicamente las puertas de su sala actual y no busca rutas ni consulta el arreglo global de salas.
-2. **Una marca temporal por sala.**
-   - `Sala.ultimo_rastro` guarda el último instante del reloj virtual en el que estuvo el jugador.
-   - `RegistroRastro.obtener_tiempo()` recibe directamente el objeto `Sala` desde la puerta y obtiene la marca en O(1).
-   - Las actualizaciones usan `CambioAtributo`, por lo que el rastro participa en el historial reversible.
-3. **Lista auxiliar de compatibilidad.**
-   - Si `RegistroRastro` se utiliza sin un mapa, `_presencias` guarda pares `(id_sala, tiempo)` y los busca linealmente.
-   - Esta ruta conserva una interfaz anterior, pero no interviene en la decisión normal del rastreador, que trabaja con salas enlazadas.
-4. **Lista de enemigos por sala.**
-   - `Sala.enemigos` es una lista de Python utilizada para iterar, validar pertenencia, retirar y agregar actores.
-   - Esta colección es adecuada para mostrar o recorrer secuencialmente, pero no para comprobar y retirar repetidamente actores conocidos en O(1).
+   - Después de `vincular_salidas()`, cada `Puerta` referencia su `destino_sala`. El rastreador solo itera las puertas de su sala.
+2. **Una marca temporal por sala (`Sala.ultimo_rastro`).**
+   - Guarda el último instante del reloj virtual en que estuvo el jugador.
+   - `RegistroRastro.obtener_tiempo()` la lee en O(1) a partir del objeto `Sala`.
+   - Se actualiza con `CambioAtributo`, así que participa del retroceso.
+3. **Enemigos de la sala con índices de pertenencia (`_ListaEnemigosSala`).**
+   - Es una lista compatible (`list`) que además mantiene dos tablas hash propias en la sala: `_enemigos_por_id` (`id_actor → enemigo`) y `_posiciones_enemigos` (`id_actor → posición`).
+   - `Sala.contiene_enemigo(actor)` comprueba la pertenencia en O(1) promedio.
+   - `extraer_o1(enemigo)` intercambia el enemigo con el último y hace `pop()` del final, sin recorrer ni desplazar el resto.
+   - Los índices se actualizan en `append`, en `incorporar_contenido` y al restaurar una extracción en el retroceso.
+4. **Lista auxiliar de compatibilidad.**
+   - `_presencias` guarda pares `(id_sala, tiempo)` solo si `RegistroRastro` se usa sin mapa. No interviene en el flujo normal.
 
 #### Costo de la decisión de rastro
 
-`ComportamientoEnemigos._accion_rastreador()` recorre las `d` puertas de la sala actual. Por cada puerta realiza trabajo constante:
-
-- comprueba si está abierta y tiene destino enlazado;
-- lee `destino_sala.ultimo_rastro` en O(1);
-- calcula la edad;
-- compara frescura y, en empate, el ID numérico de la sala.
-
-Por tanto, la decisión cuesta O(d), donde `d` es el número de salidas de esa sala. No depende de la cantidad total de salas, de la longitud del recorrido del jugador ni del número de rastros históricos. Las pruebas incluso sustituyen las búsquedas globales del mapa por funciones que fallan para demostrar que la decisión no las utiliza.
+`ComportamientoEnemigos._accion_rastreador()` recorre las `d` puertas de su sala. Por cada una comprueba si está abierta, lee `destino_sala.ultimo_rastro` en O(1), calcula la edad y compara. La decisión cuesta **O(d)** y no depende de la cantidad de salas ni del largo del recorrido del jugador.
 
 #### Política de caducidad
 
-La implementación elige **caducidad perezosa al consultar**. Una marca solo es válida cuando:
+**Caducidad perezosa al consultar.** Un rastro es vigente si:
 
 `0 <= reloj_actual - ultimo_rastro < 400`
 
-Esto descarta exactamente una antigüedad de 400, cualquier valor más antiguo y también rastros futuros. Si no hay vecino con marca vigente, el rastreador espera.
+Como hay un solo entero por sala, una marca vencida no hace crecer la memoria. Eliminarla activamente exigiría programar y cancelar eventos o recorrer salas, sin bajar el costo de la consulta.
 
-La decisión es adecuada porque solo existe un entero opcional por sala, no una entrada por visita. Conservar una marca vencida no hace crecer la memoria y comprobar su edad cuesta O(1), operación que ya debe realizarse al comparar vecinos. Eliminar activamente exigiría programar/cancelar un evento por actualización o recorrer periódicamente salas, aumentando la agenda y complicando el retroceso sin reducir el costo asintótico de la consulta.
+#### Corrección respecto de la revisión anterior
 
-#### Incumplimiento en el trabajo agregado
+Antes, `MotorJuego._turno_enemigo()` validaba la pertenencia con `any(e is enemigo for e in sala.enemigos)` (O(m)) y retiraba de una lista de Python desplazando elementos. Con `n` rastreadores en una sala, el total era `n(n+1)/2` visitas (55 para 10, 5.050 para 100, 45.150 para 300).
 
-Aunque la decisión aislada es O(d), `MotorJuego._turno_enemigo()` primero valida la pertenencia mediante:
+Hoy la validación usa `contiene_enemigo` (O(1) promedio) y la salida usa `extraer_o1` (O(1)). Procesar `a` rastreadores cuesta O(a + Σdᵢ), más los costos O(log n) de la agenda (§4.1).
 
-`any(e is enemigo for e in enemigo.sala_actual.enemigos)`
-
-Esta búsqueda cuesta O(m), donde `m` es la cantidad de enemigos de la sala. Si los `n` rastreadores de esa colección actúan, el total de validaciones es O(n²). Los que se desplazan vuelven a buscar su posición y luego se eliminan de una lista de Python, que desplaza elementos.
-
-**Comprobación realizada:** al instrumentar la lista y ejecutar un turno de cada rastreador se obtuvieron 55 visitas para 10 actores, 5.050 para 100 y 45.150 para 300, exactamente `n(n+1)/2`. Este incumplimiento también quedó registrado en `incumplimientos_enunciados.md`.
-
-Las 81 pruebas dirigidas de registro de rastro, mapa, comportamiento e integración pasan, pero no incluyen una medición agregada con muchos rastreadores.
+El intercambio con el último elemento cambia el orden físico de la lista, pero no afecta el determinismo: el orden en que actúan los enemigos lo decide la agenda por `(tiempo, secuencia)`.
 
 #### Por qué algunas alternativas no son adecuadas
 
-- **Lista con todas las visitas del jugador:** permitiría reconstruir la ruta, pero la decisión podría depender de la longitud recorrida y la memoria crecería con cada acción.
-- **Búsqueda global de salas con rastro:** costaría O(V) por rastreador aunque su sala tenga pocas salidas.
-- **Búsqueda de caminos BFS o DFS:** contradice la regla de examinar únicamente vecinos y añade un costo O(V + E) innecesario.
-- **Matriz de adyacencia:** permite comprobar una conexión en O(1), pero recorrer los vecinos exigiría revisar O(V) posiciones y consumir O(V²) memoria.
-- **Eventos de expiración para cada rastro:** eliminan marcas viejas, pero aumentan la agenda, requieren cancelación al refrescar y agregan cambios al historial. No ahorran memoria porque ya existe una sola marca por sala.
-- **Solo una tabla hash de enemigos:** ofrece pertenencia O(1) promedio, pero si se mantiene además una lista de Python sin coordinación, retirar del orden real continúa siendo O(m).
+- **Lista con todas las visitas del jugador:** la decisión dependería del largo del recorrido y la memoria crecería con cada acción.
+- **Búsqueda global de salas con rastro:** O(V) por rastreador.
+- **BFS o DFS:** contradice la regla de mirar solo vecinos y cuesta O(V + E).
+- **Eventos de expiración por rastro:** agrandan la agenda y el historial sin ahorrar memoria.
+- **Solo una lista de Python:** pertenencia y retiro O(m), lo que llevaba al O(n²) corregido.
 
-#### Estructura sugerida
+#### Sugerencia
 
-Se recomienda conservar las puertas enlazadas, el timestamp por sala y la caducidad perezosa. Para los enemigos de cada sala conviene usar una estructura compuesta:
-
-1. **Tabla hash `id_actor → nodo`**, para validar pertenencia y localizar al actor en O(1) promedio.
-2. **Lista doble de enemigos**, para mantener un orden estable de recorrido y retirar o insertar un nodo conocido en O(1).
-
-Con esta combinación, procesar `a` rastreadores cuesta O(a + Σdᵢ) para la lógica de pertenencia, traslado y decisión, donde `dᵢ` es el número de salidas examinado por cada actor. La agenda conserva aparte sus costos O(log n) ya analizados en §4.1.
-
-También sería conveniente reemplazar `_presencias` por una tabla hash si la ruta de compatibilidad sin mapa siguiera siendo pública y frecuente. No es necesario para el flujo actual del rastreador, que recibe referencias directas a `Sala`.
+No se requiere sustituir la estructura. Conviene conservar la prueba que cuenta las visitas con 10, 100 y 300 rastreadores para que no vuelva el costo cuadrático.
 
 ### 4.8 Bitácora en pantalla
 
@@ -559,263 +512,242 @@ No se requiere sustituir la estructura. Conviene mantener como invariantes `0 �
 
 ### 4.9 Ordenamiento
 
-**Evaluación: parcialmente adecuada. Los dos algoritmos propios, la selección adaptativa, la estabilidad y las mediciones son apropiados, pero el índice del guardado utiliza directamente `list.sort()`.**
+**Evaluación: adecuada. Los dos algoritmos propios, la selección adaptativa y la estabilidad se usan en todos los contextos evaluados, incluido el índice del guardado, y una prueba estática impide volver a ordenamientos de biblioteca.**
 
 #### Estructuras y algoritmos utilizados
 
 1. **Arreglos auxiliares de referencias.**
-   - `OrdenadorAdaptativo` recibe una lista y devuelve una lista nueva, sin alterar la colección original.
-   - Las claves se guardan junto a cada referencia para evitar recalcular criterios costosos.
+   - `OrdenadorAdaptativo` recibe una lista y devuelve una lista nueva; la original no cambia.
+   - Las claves se calculan una sola vez y se guardan junto a cada referencia.
 2. **Insertion sort estable.**
-   - Desplaza únicamente elementos con clave estrictamente mayor, por lo que conserva el orden relativo de los empates.
-   - Su costo puede expresarse como O(n + s), donde `s` es la cantidad de desplazamientos; el peor caso sin límite es O(n²).
-   - Requiere O(n) memoria en esta implementación porque ordena una copia y mantiene un arreglo paralelo de claves.
+   - Desplaza solo elementos con clave estrictamente mayor, así conserva el orden de los empates.
+   - Cuesta O(n + I), donde `I` es la cantidad de inversiones: es lineal solo si `I = O(n)`. El peor caso sin límite es O(n²).
 3. **Merge sort estable.**
-   - Divide recursivamente, ordena ambas mitades y las mezcla.
-   - En empate toma primero el elemento de la mitad izquierda, conservando estabilidad.
-   - Su tiempo es O(n log n) y requiere memoria auxiliar O(n) en el máximo nivel activo, además de las listas temporales creadas por la recursión.
+   - En empate toma primero el de la mitad izquierda.
+   - O(n log n) en tiempo y O(n) de memoria auxiliar.
 4. **Selector adaptativo.**
-   - Para `n ≤ 16` usa insertion sort, evitando la sobrecarga recursiva de merge en colecciones pequeñas.
-   - Para listas mayores calcula una vez todas las claves e intenta insertion sort con un límite de `n` desplazamientos.
-   - Si termina dentro del límite, aprovecha que los datos estaban ordenados o casi ordenados; si lo supera, descarta la copia parcial y aplica merge sort sobre los datos originales con claves ya calculadas.
+   - Con `n ≤ 16` usa insertion sort (`LIMITE_PEQUENO = 16`).
+   - Con más elementos intenta insertion sort con un límite de `n` desplazamientos (`FACTOR_DESPLAZAMIENTOS = 1`). Si lo supera, descarta su copia y aplica merge sort reutilizando las claves ya calculadas.
 
 #### Propiedades medibles utilizadas para elegir
 
-La elección no depende del nombre del contexto, sino de dos propiedades observadas en los datos:
+- **Cantidad de elementos**, con el umbral 16.
+- **Desplazamientos reales necesarios**, con el intento limitado a `n`.
 
-- **cantidad de elementos**, mediante el umbral 16; y
-- **cantidad real de desplazamientos requerida**, mediante el intento limitado a `n`.
+Una lista grande ya ordenada termina en O(n). Una invertida supera pronto el límite y pasa a merge sort; el intento fallido solo suma trabajo lineal.
 
-Una colección grande ya ordenada requiere cero desplazamientos y completa insertion sort en O(n). Una casi ordenada con pocos intercambios también puede terminar dentro del límite. Una colección invertida o suficientemente desordenada supera pronto el presupuesto y pasa a merge sort; el intento fallido añade solo trabajo lineal antes del O(n log n).
+#### Contextos integrados
 
-Las claves se evalúan una sola vez para `n > 16`, incluso si se cambia de algoritmo. Esta decisión es especialmente importante cuando obtener peso, valor o nombre implica resolver una ficha o cuando la función de criterio realiza trabajo costoso.
+1. **Vistas del inventario** por peso, valor o nombre (`ServicioInventario.vista_ordenada`), sin tocar nodos, cursor ni orden real.
+2. **Puntajes** por acciones, enemigos derrotados o reloj final (`RepositorioPuntajes.listar_ordenados`), sin reescribir el archivo.
+3. **Catálogo y carga de contenido:** IDs de fichas antes de formar lotes y pares `(distancia, id_sala)` del BFS de `CargadorContenido`.
+4. **Índice del guardado binario:** `GuardadoBinario` ordena los offsets de las salas por ID con `OrdenadorAdaptativo`. Antes usaba `list.sort()`; está **corregido**.
+5. **Archivos del paquete offline:** `FuenteOffline` ordena los archivos `contenido_*.json` con el mismo ordenador.
 
-#### Contextos integrados correctamente
+#### Prueba de restricciones
 
-1. **Vistas de inventario.** `ServicioInventario.vista_ordenada()` construye pares de clave y objeto para peso, valor o nombre. La lista ordenada no modifica nodos, cursor ni orden real.
-2. **Tabla de puntajes.** `RepositorioPuntajes.listar_ordenados()` aplica el ordenador a acciones ejecutadas, enemigos derrotados o reloj final, sin reescribir el archivo y conservando empates.
-3. **Listas auxiliares del catálogo.** `InicializadorPartida` ordena los IDs antes de formar lotes y `CatalogoPartida.entidades()` publica las fichas por ID mediante el mismo ordenador.
-
-#### Contexto incorrectamente integrado
-
-`GuardadoBinario._guardar()` crea `offsets_salas`, cuyos pares deben quedar ordenados por ID para que la carga parcial realice búsqueda binaria. Sin embargo, ejecuta:
-
-`offsets_salas.sort(key=...)`
-
-Este uso corresponde exactamente a uno de los ordenamientos evaluados y viola la prohibición de `list.sort()`. El índice queda funcionalmente ordenado, pero no demuestra ni utiliza la selección propia. El incumplimiento también quedó registrado en `incumplimientos_enunciados.md`.
-
-Los usos de `sorted()` dentro de pruebas y como alternativa comparativa de benchmark no forman parte de la implementación seleccionada. El `sorted()` de `FuenteOffline` ordena nombres de archivos para descubrir fixtures locales, no uno de los cuatro productos de ordenamiento evaluados; aun así, el uso del guardado sí es inequívocamente alcanzable en producción y está nombrado por el enunciado.
+`tests/test_restricciones_enunciado.py` revisa el código de producción con AST (no por texto, así que comentarios y cadenas no dan falsos positivos). Falla si aparece `sorted`, `.sort()`, `set`, `heapq`, `bisect`, `deque`, `OrderedDict`, `defaultdict` o `Counter` en `datos/`, `logica/`, `service/`, `controller/`, `dto/` o `estructuras/`. La vista y los benchmarks quedan fuera a propósito: la vista no resuelve problemas de §4 y los benchmarks miden alternativas de biblioteca.
 
 #### Evidencia empírica
 
-- `benchmarks/integrante3.py` mide tamaños 8, 16, 32, 64, 128 y 512.
-- Para cada tamaño utiliza datos ordenados, casi ordenados, invertidos y aleatorios.
-- Ejecuta tanto un criterio simple como uno artificialmente costoso.
-- Compara insertion sort, merge sort, el selector adaptativo y `sorted()` únicamente como referencia externa.
-- Calibra factores de desplazamiento 1, 2, 4 y 8.
-- La documentación del proyecto registra, para datos invertidos, 6,8 µs frente a 8,8 µs en `n=8`, y 86,7 µs frente a 44,7 µs en `n=32`; esto sustenta el umbral reducido a 16. Para `n=512` registra 33,7539 ms para insertion, 1,4299 ms para merge y 1,8152 ms para el adaptativo.
-- Una ejecución reducida realizada durante esta revisión produjo 192 mediciones para tamaños 8, 16 y 32, cubriendo los cuatro órdenes, ambos costos de criterio, los tres algoritmos propios/adaptativo y la referencia de Python.
-- Las 91 pruebas dirigidas de algoritmos e integración finalizaron correctamente, aunque no detectan el `.sort()` del guardado.
+- `benchmarks/integrante3.py` mide tamaños 8, 16, 32, 64, 128 y 512 con datos ordenados, casi ordenados, invertidos y aleatorios, y con un criterio simple y otro costoso.
+- Compara insertion, merge, el adaptativo y `sorted()` solo como referencia externa, y calibra factores de desplazamiento 1, 2, 4 y 8 (`docs/mediciones_integrante3_calibracion.json`).
+- Con datos invertidos: 6,8 µs frente a 8,8 µs en `n = 8`, y 86,7 µs frente a 44,7 µs en `n = 32`, lo que sustenta el umbral 16. Con `n = 512`: 33,75 ms insertion, 1,43 ms merge y 1,82 ms el adaptativo.
 
 #### Por qué se complementan ambos algoritmos
 
-- Insertion sort tiene implementación simple, es estable y aprovecha colecciones pequeñas o casi ordenadas, pero se degrada cuadráticamente con muchas inversiones.
-- Merge sort mantiene O(n log n) independientemente del orden inicial y es estable, pero usa memoria auxiliar y tiene mayor sobrecarga para entradas pequeñas.
-- El intento acotado obtiene la ventaja adaptativa de insertion sin aceptar su peor caso para listas grandes.
+- Insertion sort es simple y estable, y aprovecha datos pequeños o casi ordenados, pero se degrada con muchas inversiones.
+- Merge sort mantiene O(n log n) en cualquier caso, pero usa memoria auxiliar y tiene más sobrecarga en entradas pequeñas.
+- El intento acotado obtiene lo mejor de insertion sin aceptar su peor caso.
 
 #### Alternativas descartadas
 
-- **Usar siempre insertion sort:** favorece inventarios pequeños, pero perjudica índices, catálogos o puntajes grandes y desordenados con O(n²).
-- **Usar siempre merge sort:** garantiza O(n log n), pero desaprovecha datos pequeños u ordenados y añade recursión y copias.
-- **Medir solo el tamaño:** no distingue una lista grande ya ordenada de otra invertida.
-- **Contar todas las inversiones previamente:** permitiría clasificar el desorden, pero calcularlas ingenuamente sería O(n²); el intento limitado obtiene una señal útil mientras ya realiza trabajo de ordenamiento.
-- **Quicksort:** suele ser rápido, pero una versión simple no es estable y puede degradarse a O(n²); la estabilidad es necesaria para conservar el orden real en empates.
-- **Heap sort:** garantiza O(n log n) y poco espacio, pero no es estable de forma natural y no aprovecha datos casi ordenados.
-- **`list.sort()` o `sorted()`:** son alternativas muy optimizadas, pero están expresamente prohibidas para estos contextos y no permiten demostrar los algoritmos propios exigidos.
+- **Siempre insertion sort:** O(n²) en colecciones grandes desordenadas.
+- **Siempre merge sort:** desaprovecha los datos pequeños u ordenados.
+- **Medir solo el tamaño:** no distingue una lista ordenada de una invertida.
+- **Contar todas las inversiones antes:** hacerlo ingenuamente cuesta O(n²).
+- **Quicksort:** no es estable en su versión simple y puede caer a O(n²).
+- **Heap sort:** no es estable de forma natural y no aprovecha datos casi ordenados.
+- **`list.sort()` o `sorted()`:** prohibidos en estos contextos.
 
 #### Sugerencia
 
-Conservar el selector actual y reemplazar únicamente el `.sort()` del índice de guardado por `OrdenadorAdaptativo`. Conviene centralizar los cuatro contextos en esa interfaz y añadir una prueba estática o dinámica que impida regresiones hacia ordenamientos de biblioteca. Los umbrales deben permanecer configurables y volver a calibrarse si cambia el entorno, el costo de las claves o los tamaños reales de las colecciones.
+Conservar el selector y volver a calibrar los umbrales si cambian el entorno, el costo de las claves o los tamaños reales.
 
 ### 4.10 Guardado binario de la partida
 
-**Evaluación: parcialmente adecuada. El formato binario propio, el índice para carga parcial y la versión son funcionales; la comparación publicada contra JSON no puede reproducirse con los archivos del proyecto.**
+**Evaluación: adecuada. Formato binario propio (versión 7) con índice ordenado para leer una sala sin cargar el archivo, detección de versión, textos de largo variable y una comparación reproducible contra JSON.**
 
 #### Estructuras utilizadas
 
 1. **Cabecera binaria fija.**
-   - Empieza con la firma de cuatro bytes `CRPT` y la versión de formato `5`.
-   - Guarda además el ID de cripta, semilla, reloj, cantidad de salas, offset del índice y offset del jugador.
-   - `struct` usa orden little-endian y tamaños explícitos mediante `HEADER_FORMAT = "<4sH32sqIIII"`; la cabecera ocupa 62 bytes.
-2. **Registros binarios secuenciales.**
-   - Después de la cabecera se escriben jugador, estado adicional y una secuencia de registros de sala.
-   - Los campos escalares usan enteros y banderas de tamaño explícito; los identificadores ocupan bloques de 32 bytes.
-   - Cada sala comienza con su ID y las cantidades de puertas, enemigos, objetos y trampas. Esas cantidades permiten decodificar sus segmentos variables.
-   - Algunos datos internos de forma variable, como los datos de eventos y el estado del generador aleatorio, usan JSON delimitado por longitud; el segundo se comprime con zlib. Esto no convierte al archivo completo en JSON: la organización, cabecera, offsets y registros pertenecen al formato binario propio.
-3. **Arreglo de índice ordenado al final del archivo.**
-   - Por cada sala conserva un par fijo de 36 bytes: ID de sala de 32 bytes y offset de cuatro bytes.
-   - Los pares se ordenan por ID para habilitar búsqueda binaria.
-   - Actualmente el orden se obtiene con `list.sort()`, incumplimiento independiente ya documentado en §4.9; el índice resultante sí conserva el orden que necesita la carga parcial.
-4. **Diccionario de salas en la carga completa.**
-   - `cargar()` lee y valida todo el archivo y reconstruye un diccionario `id_sala → datos de sala`.
-   - Este índice en memoria permite que el restaurador relacione salas y referencias posteriormente.
-5. **Archivo temporal y reemplazo atómico.**
-   - `guardar()` escribe primero en un archivo temporal del mismo directorio y luego usa `os.replace()`.
-   - Un error de escritura no sustituye una instantánea anterior válida por un archivo parcialmente escrito.
+   - `HEADER_FORMAT = "<4sHqIIII"` (little-endian, 30 bytes): firma `CRPT`, versión `7`, semilla, reloj, cantidad de salas, offset del índice y offset del jugador.
+   - El ID de la cripta y las versiones ya no van en bloques fijos de 32 bytes: se escriben como texto de largo variable.
+2. **Textos de largo variable.**
+   - Cada texto es un `uint16` con el largo más los bytes UTF-8 (`_texto`), hasta 65.535 bytes.
+   - En la versión 5 cada ID ocupaba 32 bytes fijos, lo que limitaba los IDs y desperdiciaba espacio. Ahora un ID largo del API se puede guardar (§9) y el archivo es más chico (por ejemplo, cripta-04 bajó de 30.914 a 16.958 bytes).
+3. **Registros de sala secuenciales.**
+   - Cada sala empieza con su ID y las cantidades de puertas, enemigos, objetos y trampas, que permiten decodificar sus segmentos variables.
+   - **Versión 7:** cada sala incluye un byte `contenido_cargado`. Una partida guardada con salas pendientes (carga gradual, §4.2) las sigue cargando al continuar.
+   - Datos internos de forma variable, como los eventos o el estado del azar, van como JSON delimitado por largo; el del azar, comprimido con zlib. El archivo sigue siendo binario: cabecera, offsets e índice son propios.
+4. **Índice ordenado al final del archivo.**
+   - Una entrada por sala: ID (32 bytes) y offset (4 bytes).
+   - Se ordena por ID con `OrdenadorAdaptativo` (antes con `list.sort()`; corregido).
+5. **Tabla hash de salas en la carga completa.**
+   - `cargar()` reconstruye `id_sala → registro` en una `TablaHashImpl` propia, no en un `dict` (§7).
+6. **Archivo temporal y reemplazo atómico.**
+   - `guardar()` escribe en un temporal, valida que se pueda reconstruir y recién entonces usa `os.replace()`. Un fallo no destruye el guardado anterior.
 
-#### Recuperación de una sala específica
+#### Recuperación de una sala específica (`leer_sala`)
 
-`leer_sala()` no llama a `read()` sin límite ni carga el contenido completo. Su recorrido es:
+1. Leer solo la cabecera y comprobar firma y versión.
+2. Validar con `seek()` que el índice termina exactamente al final del archivo.
+3. Saltar al índice, leer sus `36·n` bytes y hacer **búsqueda binaria** por ID.
+4. Buscar en el índice el offset siguiente para saber dónde termina el registro.
+5. Saltar al registro, leer solo sus bytes, decodificarlo y comprobar el ID.
 
-1. leer solo la cabecera de 62 bytes y comprobar firma y versión;
-2. consultar el tamaño con `seek()` para validar que el índice termina exactamente al final del archivo;
-3. saltar al offset del índice y leer sus `36n` bytes;
-4. realizar búsqueda binaria por ID sobre ese bloque;
-5. recorrer los offsets del índice para encontrar el comienzo del registro siguiente en orden físico;
-6. saltar al registro objetivo y leer únicamente sus bytes;
-7. decodificar esa sala y verificar nuevamente su ID.
+La búsqueda cuesta O(log n), pero la operación completa es O(n + r): se lee todo el índice y se recorre para hallar el final del registro. No se leen el jugador, los extras ni las demás salas, que es lo que exige §4.10.
 
-La búsqueda por ID cuesta O(log n), pero la operación completa actual cuesta O(n + r) en tiempo y lectura, donde `n` es la cantidad de salas y `r` el tamaño del registro solicitado: se carga todo el índice y además se recorre para descubrir el final del registro. La memoria auxiliar es O(n + r). Aun así, no se leen el jugador, los extras ni los registros de las demás salas, por lo que satisface el requisito funcional de no leer el archivo completo.
+#### Detección de versión
 
-En una comprobación instrumentada con 500 salas, el archivo midió 121.344 bytes y `leer_sala(250)` realizó tres lecturas de 62, 18.000 y 206 bytes: 18.268 bytes en total, equivalentes al 15,05 % del archivo. La sala recuperada fue la solicitada.
-
-#### Detección de versión e integridad básica
-
-- Tanto `cargar()` como `leer_sala()` exigen simultáneamente `MAGIC == b"CRPT"` y `VERSION == 5`.
-- Un archivo con otra versión se rechaza devolviendo `None`; las capas de servicio lo convierten en un error que menciona una versión incompatible o no soportada.
-- También se validan tamaño mínimo, posición fija del jugador, terminación exacta del índice, offsets dentro de la zona de registros, IDs y longitudes suficientes para desempaquetar.
-- Al cambiar experimentalmente los dos bytes de versión de 5 a 6, tanto la carga completa como la carga de una sala devolvieron `None`.
-
-Esta detección evita interpretar silenciosamente otra versión con la disposición actual. No ofrece migración hacia versiones anteriores, pero el enunciado exige detectar la incompatibilidad, no migrarla.
+- `cargar()` y `leer_sala()` exigen la firma `CRPT` y la versión 7. Un archivo v5 o v6 se rechaza y el servicio informa “versión incompatible”, en lugar de interpretarlo mal.
+- También se validan el tamaño mínimo, la posición del jugador, el final exacto del índice, los offsets y los largos.
+- Al cargar se inicia un historial vacío: el retroceso no viaja en el guardado.
 
 #### Complejidades principales
 
-- **Guardado:** O(B + n log n) con la ordenación actual, donde `B` es la cantidad de bytes serializados y `n` la cantidad de salas; requiere O(n) referencias auxiliares para los offsets.
-- **Carga completa:** O(B) en tiempo y memoria porque `cargar()` lee el archivo entero y reconstruye todas las salas.
-- **Carga de una sala:** O(n + r) en tiempo y bytes leídos, y O(n + r) de memoria temporal, por la lectura completa del índice y el registro objetivo.
-- **Comprobación de versión:** O(1), incluida en la lectura de la cabecera.
+- **Guardado:** O(B + n log n), con `B` bytes serializados y `n` salas (el índice usa el ordenador propio).
+- **Carga completa:** O(B).
+- **Una sala:** O(n + r) de tiempo y bytes leídos.
+- **Versión:** O(1), dentro de la cabecera.
 
-#### Pruebas y mediciones encontradas
+#### Comparación reproducible contra JSON
 
-- Las 95 pruebas dirigidas de guardado, estrés, flujo y reanudación finalizaron correctamente.
-- La cobertura incluye round trip, lectura directa de sala, archivos inexistentes, firma corrupta, cientos de salas, inventario, efectos, agenda, azar, equipo, rastro, campos de sesión y corrupciones de versión, índice, offsets y contenido.
-- `docs/comparacion_binario_json.md` informa, para una partida de 52 salas y 500 iteraciones, 52,7 KB frente a 69,8 KB, carga completa de 1,29 ms frente a 0,98 ms y acceso a una sala de 0,21 ms frente a 0,90 ms.
-- Sin embargo, no existe un benchmark ni un serializador JSON asociado que permita volver a producir esos valores o verificar que representan exactamente el mismo estado. El faltante se registró en `incumplimientos_enunciados.md`.
+`python main.py --bench` ejecuta `benchmarks/integrante2.py::medir_guardado` sobre las 4 criptas publicadas. El JSON contiene **exactamente el mismo estado lógico** que devuelve `GuardadoBinario.cargar`, y el benchmark verifica que ambos formatos devuelvan la misma sala. Resultados (versión 7, medidos el 18/10/2026, mediana, `docs/comparacion_binario_json.md`):
+
+| Cripta | Bytes binario / JSON | Leer 1 sala binario / JSON | Cargar todo binario / JSON |
+|---|---|---|---|
+| cripta-01 (6 salas) | 5.359 / 12.709 | 219 / 304 µs | 472 / 324 µs |
+| cripta-04 (50 salas) | 17.008 / 43.328 | 213 / 601 µs | 1.209 / 607 µs |
+
+- **Leer una sala**, la razón del formato: el binario se mantiene casi constante y con 50 salas es 2,8 veces más rápido; en JSON crece porque hay que parsear todo.
+- **Tamaño:** el binario ocupa entre un 58 y un 61 % menos.
+- **Guardar:** en criptas chicas el binario es más lento por la escritura temporal y la validación; con 50 salas quedan parejos (2,8 ms frente a 3,2 ms).
+- **Cargar todo:** JSON es unas 2 veces más rápido, porque `json.load` está en C y el binario decodifica y valida campo por campo. La diferencia es de 1 a 2 ms por partida.
 
 #### Por qué las estructuras son adecuadas
 
-- La cabecera fija permite reconocer el archivo y ubicar sus secciones sin analizar todos los registros.
-- Los offsets convierten la búsqueda de una sala en acceso dirigido, en lugar de recorrer y decodificar todas las salas anteriores.
-- El índice al final permite conocer cada offset mientras se escribe el flujo una sola vez y completar luego la cabecera.
-- Los conteos y longitudes explícitos hacen posible recorrer registros variables sin delimitadores textuales.
-- La escritura temporal reduce el riesgo de perder el guardado anterior ante un fallo parcial.
+- La cabecera fija ubica las secciones sin analizar los registros.
+- Los offsets convierten la búsqueda de una sala en un acceso dirigido.
+- El índice al final permite escribir el flujo una sola vez y completar la cabecera después.
+- La escritura temporal protege el guardado anterior.
 
 #### Alternativas descartadas
 
-- **JSON como formato principal:** es portable y sencillo de inspeccionar, pero repite nombres de campos y, sin un índice externo, exige leer y analizar el documento completo para recuperar una sala.
-- **Binario secuencial sin índice:** reduce el espacio adicional, pero obliga a recorrer todos los registros anteriores hasta encontrar la sala solicitada.
-- **Tabla hash serializada:** podría aproximar acceso O(1), pero necesita resolver colisiones, reservar espacio y definir cuidadosamente una representación portable; para un archivo estático, un índice compacto y ordenado es más simple.
-- **Árbol B o base de datos embebida:** favorece actualizaciones y consultas frecuentes sobre archivos grandes, pero añade complejidad innecesaria cuando se escribe una instantánea completa y las salas no se modifican dentro del archivo.
-- **Serialización nativa de Python (`pickle`):** simplifica la implementación, pero no constituye un formato controlado y portable, dificulta la compatibilidad explícita y no debe cargarse desde fuentes no confiables.
+- **JSON como formato principal:** más simple de inspeccionar, pero repite nombres de campos y obliga a leer el documento entero para una sala.
+- **Binario sin índice:** obliga a recorrer los registros anteriores.
+- **Tabla hash serializada:** complica colisiones y portabilidad en un archivo estático.
+- **Árbol B o base embebida:** complejidad innecesaria para una instantánea que no se modifica en el lugar.
+- **`pickle`:** no es un formato controlado ni portable, y no debe cargarse desde fuentes no confiables.
 
 #### Sugerencias
 
-1. Incorporar al índice la longitud de cada registro, o almacenar los registros físicamente en el mismo orden que el índice. Así `leer_sala()` podría leer entradas del índice bajo demanda y evitar el recorrido lineal para hallar el final.
-2. Sustituir el `list.sort()` por `OrdenadorAdaptativo`, como exige §4.9.
-3. Agregar el benchmark reproducible binario–JSON descrito en `incumplimientos_enunciados.md`, usando exactamente el mismo estado lógico y separando serialización, carga completa y acceso a una sala.
-4. Mantener pruebas que alteren explícitamente firma, versión, offsets y longitudes antes de intentar reconstruir objetos.
+1. Guardar en el índice el largo de cada registro, para que `leer_sala()` no recorra el índice buscando el final y baje a O(log n + r). **Decisión: no se hace antes de la entrega**: obligaría a una versión 8 que invalida los guardados v7, y la ganancia es mínima (el índice de 50 salas son 1.800 bytes y la búsqueda ya es binaria).
+2. La tabla de `docs/comparacion_binario_json.md` ya está medida con la versión 7 (18/10/2026); conviene volver a correr `--bench` si cambia el formato.
 
 ### 4.11 Bitácora de partida y reproducción
 
-**Evaluación: parcialmente adecuada. El formato append-only, la validación completa, la reproducción determinista y el rechazo de versiones incompatibles son apropiados, pero el registro debe activarse manualmente y por ello no cubre todas las partidas.**
+**Evaluación: adecuada. Cada partida reproducible crea su bitácora automáticamente; el formato append-only, la validación completa, la reproducción determinista y el rechazo de versiones incompatibles cumplen el punto.**
 
 #### Estructuras utilizadas
 
 1. **Archivo secuencial JSON Lines.**
-   - Cada línea es un objeto JSON independiente codificado en UTF-8.
-   - La primera línea es una cabecera con `cripta_id`, `version_cripta`, `version_catalogo` y `semilla`, además del discriminador `registro = "cabecera"`.
-   - Cada línea posterior representa una acción con tipo, ID estable del objetivo y dirección.
+   - Cada línea es un objeto JSON independiente en UTF-8.
+   - La primera es una cabecera con `cripta_id`, `version_cripta`, `version_catalogo` y `semilla`.
+   - Cada línea posterior es una acción con su tipo, el ID estable del objetivo y la dirección.
 2. **Creación exclusiva y anexado.**
-   - `RegistroPartida.crear()` abre la ruta con modo `x`: crea una bitácora nueva y se niega a truncar una existente.
-   - `anexar_accion()` abre con modo `a`, por lo que cada acción nueva se escribe al final sin reescribir registros anteriores.
-3. **Marca de identidad e integridad del archivo activo.**
-   - `JuegoService` conserva dispositivo, inodo, tamaño y tiempo de modificación del log.
-   - Antes de ejecutar otra acción compara esa marca para detectar eliminación, reemplazo o modificación externa.
-   - Tras anexar actualiza la marca con los nuevos metadatos.
+   - `RegistroPartida.crear()` abre con modo `x`: nunca trunca un archivo existente.
+   - `anexar_accion()` abre con modo `a`: cada acción se escribe al final sin reescribir lo anterior.
+3. **Marca de identidad del archivo activo.**
+   - `JuegoService` conserva dispositivo, inodo, tamaño y fecha del log, y antes de cada acción detecta si alguien lo borró, lo reemplazó o lo modificó.
 4. **Arreglo de acciones validado antes del replay.**
-   - `EjecutorReplay._leer_log()` recorre todas las líneas, valida su esquema y acumula pares `(número_de_línea, registro)`.
-   - Solo después de validar el log completo prepara una partida y comienza a ejecutar acciones.
-   - El número de línea permite reportar con precisión un registro inválido o una acción imposible.
-5. **Tupla de versiones esperadas.**
-   - El replay compara `(version_cripta, version_catalogo)` de la cabecera contra la fuente configurada.
-   - Si no coincide, intenta una fuente offline local; si tampoco coincide, aborta con un error explícito.
-   - Durante la inicialización fija temporalmente las versiones exigidas para impedir que cambien entre la comprobación y la construcción del estado.
+   - `EjecutorReplay._leer_log()` valida todas las líneas y guarda pares `(número_de_línea, registro)` antes de ejecutar nada.
+5. **Versiones esperadas.**
+   - El replay compara `(version_cripta, version_catalogo)` con la fuente. Si no coinciden, busca una copia offline compatible; si tampoco hay, aborta con un error explícito.
 6. **IDs estables en lugar de referencias de memoria.**
-   - Actores y objetos se registran por `id_actor` o `id_instancia`; movimiento y apertura registran la dirección.
-   - Durante el replay, `JuegoService.resolver_accion()` busca la instancia vigente correspondiente en sala o inventario.
-   - `EQUIPAR` conserva expresamente el ID del objeto seleccionado, porque el movimiento del cursor no es una acción registrada.
+   - Actores y objetos se registran por `id_actor` o `id_instancia`. `EQUIPAR` guarda el ID del objeto seleccionado, porque mover el cursor no es una acción registrada.
 
 #### Funcionamiento del registro
 
-`iniciar_registro()` solo acepta una partida nueva inicializada por `JuegoService`, con reloj cero y sin acciones coordinadas. Obtiene las versiones verificadas de la partida y crea la cabecera antes de que pueda anexarse una acción.
-
-Después de cada acción exitosa, `_cerrar_accion()` escribe una línea. Las acciones rechazadas, que no modifican el estado ni consumen tiempo, no se añaden. Si la escritura falla después de que el motor ya actuó, el servicio:
-
-- informa que el estado cambió pero el log quedó incompleto;
-- no finge que la acción fue rechazada ni la ejecuta otra vez;
-- bloquea acciones posteriores para evitar ampliar la divergencia.
-
-Esta política es coherente para un log ya conectado. El problema es que `_ruta_registro` comienza y vuelve a quedar en `None` al iniciar cada partida. Solo el comando opcional `registro RUTA` llama a `iniciar_registro()`. Una acción realizada sin ese paso no entra en ninguna bitácora. Este incumplimiento está registrado en `incumplimientos_enunciados.md`.
+- **Corrección:** antes la bitácora solo existía si el jugador escribía `registro RUTA`. Hoy, `ControladorJuego._iniciar_registro_automatico()` crea un archivo nuevo y único en `partidas/logs/<cripta>-<fecha>-<uuid>.log` al iniciar cada cripta reproducible, **antes** de la primera acción, en consola y en Pygame. La ruta se muestra al iniciar.
+- `registro RUTA` sigue disponible para elegir otra ruta, pero solo antes de la primera acción. Si falla el cambio, se conserva la conexión anterior.
+- Si la creación automática falla, el juego avisa que la partida no se podrá reproducir.
+- Al cargar una partida guardada o usar `--demo`, se avisa la limitación sin crear un inicio de replay ficticio.
+- Solo se anotan las acciones exitosas. Si la escritura falla después de que el motor ya actuó, se informa, no se repite la acción y se bloquean las siguientes para no ampliar la divergencia.
 
 #### Funcionamiento del replay
 
-1. Lee y valida la totalidad del archivo antes de modificar una partida.
-2. Rechaza líneas vacías, JSON inválido, claves duplicadas, campos desconocidos, tipos incorrectos y acciones fuera del vocabulario admitido.
-3. Comprueba las versiones de cripta y catálogo contra la fuente disponible.
-4. Si no coinciden, busca una copia offline con exactamente ambas versiones.
-5. Si tampoco existe, produce `No hay una copia local con versiones compatibles con el log.` y no inicializa otra partida silenciosamente.
-6. Configura la semilla de la cabecera y reconstruye el estado inicial mediante el mismo `InicializadorPartida` usado por el juego.
-7. Resuelve cada ID contra las instancias actuales y delega la acción al mismo `JuegoService` y `MotorJuego`.
-8. Si una acción ya no es posible, informa su número de línea y detiene el replay.
-
-El modo `main.py --replay partida.log` toma una rama anterior a la creación de cualquier vista. Las pruebas sustituyen `input()` y los constructores de vista por operaciones que fallan y confirman que no son invocados. El contexto de replay tampoco conecta un registro ni modifica la partida normal que pudiera existir.
+1. Lee y valida todo el archivo antes de modificar una partida.
+2. Rechaza líneas vacías, JSON inválido, claves duplicadas, campos desconocidos, tipos incorrectos y acciones fuera del vocabulario.
+3. Comprueba las versiones contra la fuente y, si no coinciden, busca una copia offline con ambas versiones.
+4. Usa la semilla de la cabecera y el mismo `InicializadorPartida`, `JuegoService` y `MotorJuego` que el juego normal.
+5. Si una acción ya no es posible, informa su número de línea y se detiene.
+6. `main.py --replay` corre sin vista ni entrada; si el archivo no existe, muestra un mensaje en vez de un traceback.
 
 #### Complejidad
 
-Para `a` registros, validar y almacenar el log cuesta O(a) tiempo y O(a) memoria. La reproducción añade el costo de las acciones del motor y de resolver objetivos. Las búsquedas actuales de un ID recorren linealmente los enemigos de la sala o los objetos del inventario, por lo que cada resolución cuesta O(e) u O(i), respectivamente.
-
-Anexar una acción requiere serializar un registro de tamaño pequeño y realizar una escritura al final; respecto de la cantidad histórica de acciones es O(1). El archivo sí crece O(a), como corresponde a una bitácora persistente completa, a diferencia del buffer fijo de pantalla de §4.8.
+- Validar y almacenar el log: O(a) en tiempo y memoria, con `a` registros.
+- Anexar una acción: serializar y escribir cuesta O(b) en los bytes del registro, O(1) si el tamaño está acotado. No se relee el archivo anterior.
+- Resolver cada objetivo recorre los enemigos de la sala o el inventario: O(e) u O(i).
 
 #### Comprobaciones realizadas
 
-- Las 114 pruebas dirigidas de registro, replay, conexión e inicialización finalizaron correctamente.
-- Se comprueban creación exclusiva, preservación de prefijos tras varios anexados, IDs estables, fallos de escritura, modificación externa, cabeceras inválidas, claves duplicadas y acciones imposibles.
-- Las pruebas comparan el estado serializado después de jugar normalmente y después de reproducir el mismo log, incluidos reloj, agenda, inventario, equipo, azar y retrocesos.
-- También ejecutan `main.py --offline --replay partida.log` como subproceso sin entrada ni vista.
-- Una prueba cambia las versiones del log y confirma que, sin copia compatible, no se llama a la fábrica ni se altera el estado previo.
-- La comprobación adicional de esta revisión confirmó el faltante: un ataque exitoso en una partida nueva, sin ejecutar `registro RUTA`, dejó `registro_activo = False` y no creó ningún `.log`.
-- `benchmarks/integrante3.py` compara el parseo JSON Lines con un arreglo JSON. La documentación registra para 512 acciones 2,0901 ms frente a 0,4837 ms; la alternativa es más rápida al leer, pero no permite anexar conservando un JSON completo sin reescribir su cierre.
+- Las pruebas crean una partida sin ejecutar `registro`, hacen acciones y reproducen el log. Comparan reloj, jugador, inventario, equipo, sala, azar y eventos pendientes, y confirman que `--replay` no crea otro archivo ni modifica el original.
+- En la prueba offline del 18/10/2026, el replay de un log real terminó sin errores.
 
 #### Por qué JSON Lines es adecuado
 
-- Cada registro forma una unidad textual independiente, fácil de inspeccionar y adjuntar a un reporte de error.
-- El modo append permite agregar una acción sin leer ni reescribir el historial anterior.
-- Una línea parcialmente escrita puede localizarse por su número y se rechaza antes de ejecutar el replay.
-- JSON representa explícitamente campos opcionales y escapa saltos de línea o caracteres Unicode sin romper la separación física de registros.
-- Los IDs estables evitan serializar direcciones de memoria o representaciones dependientes del proceso.
+- Cada línea es una unidad independiente, fácil de inspeccionar y adjuntar a un reporte.
+- El modo append agrega sin leer ni reescribir lo anterior.
+- Una línea dañada se localiza por su número y se rechaza antes de ejecutar.
+- Los IDs estables evitan depender de direcciones de memoria.
 
 #### Alternativas descartadas
 
-- **Arreglo JSON único:** se analiza más rápido según la medición, pero anexarlo exige retirar y volver a escribir el delimitador final o reescribir el documento completo.
-- **Texto separado por espacios:** es compacto, pero requiere reglas propias para escape, valores nulos, Unicode y argumentos con espacios.
-- **CSV:** funciona para columnas fijas, pero resulta menos claro para acciones con argumentos mutuamente excluyentes y requiere cuidado adicional con escapes.
-- **Formato binario:** podría ser más compacto, pero dificulta la inspección y el intercambio del archivo como reporte de error; además, la sección exige texto.
-- **Guardar instantáneas completas por acción:** simplificaría saltos aleatorios, pero multiplicaría el tamaño y ocultaría la secuencia exacta de decisiones que debe reproducirse.
-- **Usar nombres visibles como objetivos:** facilita lectura humana, pero los nombres pueden repetirse o cambiar; los IDs de instancia son inequívocos.
+- **Un arreglo JSON único:** se lee más rápido (512 acciones: 0,48 ms frente a 2,09 ms), pero para anexar hay que reescribir el cierre del arreglo o el documento completo.
+- **Texto separado por espacios o CSV:** necesitan reglas propias de escape y no expresan bien los argumentos opcionales.
+- **Formato binario:** dificulta inspeccionar el archivo como reporte de error, y la sección pide texto.
+- **Instantáneas por acción:** multiplican el tamaño y ocultan la secuencia de decisiones.
+- **Nombres visibles como objetivos:** pueden repetirse o cambiar; los IDs no.
 
 #### Sugerencias
 
-1. Activar automáticamente un archivo nuevo y único al iniciar cualquier partida reproducible, antes de admitir acciones desde consola o Pygame.
-2. Conservar `registro RUTA` como configuración anticipada de destino, no como condición para que exista bitácora.
-3. Mantener la validación previa completa y las comprobaciones de versión antes y durante la inicialización.
-4. Para logs muy grandes, una primera pasada de validación sin acumular registros y una segunda pasada de ejecución reducirían la memoria a O(1), manteniendo la garantía de no mutar el estado ante errores sintácticos posteriores.
+1. Mostrar un mensaje al terminar un replay correcto (por ejemplo, “Replay reproducido: N acciones”); hoy termina en silencio.
+2. Para logs muy grandes, validar en una primera pasada sin acumular registros y ejecutar en una segunda.
+
+## Resumen para la defensa
+
+| Punto | Estructura principal | Operación clave y costo | Responsable |
+|---|---|---|---|
+| 4.1 Agenda | Montículo mínimo indexado + 3 AVL (`IndiceOrdenado`) | Siguiente evento O(1) consultar, O(log n) extraer; cancelar por ID O(log n) | Sofía |
+| 4.2 Carga gradual | Grafo por adyacencia + `Sala.contenido_cargado` + BFS por distancia | Lotes de ≤10 salas más cercanas; incorporación en orden de solicitud | Steven |
+| 4.3 Catálogo | Lotes de ≤10 IDs + `CatalogoVivo` + repositorio memoria → disco → red | Una ficha por tipo; botín resuelto de forma transitiva | Steven |
+| 4.4 Caché | LRU: `ListaDobleImpl` + arreglo ordenado (búsqueda binaria), fijación por dueño; disco por ID | Acierto O(log c) + mover al frente O(1); desalojada → disco sin red | Steven |
+| 4.5 Inventario | Lista doble + cursor al nodo | Avanzar, soltar y mover al frente O(1); vistas ordenadas en copia | Joshua |
+| 4.6 Retroceso | Lista doble de ≤5 transacciones + pila de cambios inversos | Registrar O(1), deshacer O(k); validación completa antes de aplicar | Joshua y Sofía |
+| 4.7 Rastro | `ultimo_rastro` por sala + enemigos con índice hash por sala | Decisión O(d); pertenencia y retiro O(1) | Sofía |
+| 4.8 Bitácora | Cola circular de 20 | Agregar O(1), memoria fija | Joshua |
+| 4.9 Ordenamiento | Insertion (≤16 o pocos desplazamientos) + Merge | O(n + I) o O(n log n), estables; prueba AST contra `sorted`/`.sort()` | Joshua |
+| 4.10 Guardado | Binario v7: cabecera + registros + índice ordenado | Leer una sala con búsqueda binaria sin leer el archivo | Steven |
+| 4.11 Replay | JSON Lines append-only, log automático | Anexar O(b); validar todo antes de reproducir | Joshua |
+
+**Evidencia:** todas las cifras del Documento de Decisiones salen de `python main.py --bench`, que desde el 18/10/2026 incluye también `benchmarks/bench_ampliado.py` (precarga BFS, catálogo, rastreadores, inventario por posición, replay y perfiles de frecuencia). La corrida de entrega está en `docs/mediciones_entrega.json` (633 filas, Windows 11, Python 3.14.0). Si en otro equipo el guardado mide 198 bytes más, es la biblioteca zlib (zlib-ng frente a zlib clásico), no el formato.
+
+**Preguntas probables y dónde está la respuesta:**
+
+- *¿Por qué la caché no usa tabla hash?* Por indicación del profesor: arreglo ordenado con búsqueda binaria (§4.4). Las tablas hash propias (`TablaHashImpl`) sí se usan fuera de la caché, por ejemplo en el contenido por sala, la carga del guardado y los enemigos de cada sala.
+- *¿Cómo sé que `--cache-size` limita la memoria real?* Las entidades no guardan la ficha (`FichaResoluble`); la única copia es la de la caché (§4.4).
+- *¿Qué pasa si una cripta no cabe en el presupuesto?* Carga gradual por cercanía (§4.2).
+- *¿Por qué el retroceso no usa copias?* Lo prohíbe §2.11: se guardan solo los cambios inversos de las últimas 5 acciones (§4.6).
+- *¿Por qué binario y no JSON?* Para leer una sala sin cargar el archivo completo: 2,9 veces más rápido con 50 salas (§4.10).
+- *¿Dónde se elige offline?* Solo con `--offline` al lanzar; el modelo no sabe si los datos vienen de HTTP o de archivos (§3.4).

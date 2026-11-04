@@ -48,6 +48,10 @@ class FuenteOffline(FuenteDatos):
         return self._leer_json(ruta) if ruta.exists() else {"criptas": []}
 
     def obtener_generales(self, cripta_id: str) -> dict:
+        if not (self._ruta / cripta_id).is_dir():
+            raise CriptaAPIError(
+                f"No hay paquete offline de {cripta_id} (faltan sus generales en {self._ruta}). "
+                f"Genéralo con conexión: python -m tests.fixtures.capturar_api {self._ruta}")
         return self._leer_json(self._ruta / cripta_id / "generales.json")
 
     def obtener_pagina(self, cripta_id: str, pagina: int) -> dict:

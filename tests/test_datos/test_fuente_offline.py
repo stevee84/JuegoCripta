@@ -47,6 +47,11 @@ def test_obtener_generales_no_existe(fuente):
         fuente.obtener_generales("inexistente")
 
 
+def test_cripta_sin_paquete_explica_como_generarlo(fuente):
+    with pytest.raises(CriptaAPIError, match="capturar_api"):
+        fuente.obtener_generales("inexistente")
+
+
 def test_obtener_pagina(fuente):
     assert fuente.obtener_pagina("c1", 1) == {"pag": 1}
 
@@ -92,3 +97,20 @@ def test_json_corrupto(fuente, tmp_path):
     (tmp_path / "c1" / "generales.json").write_text("{roto", encoding="utf-8")
     with pytest.raises(CriptaAPIError, match="JSON inválido"):
         fuente.obtener_generales("c1")
+
+
+def test_presupuesto_es_parte_del_contrato_y_offline_no_gasta_red(fuente):
+    """§6: --offline cambia la fuente sin preguntar por el tipo concreto."""
+    from contratos.fuente_datos import usa_red
+    from datos.cliente_api import ClienteAPI
+    from datos.presupuesto_solicitudes import PresupuestoSolicitudes
+
+    assert not usa_red(fuente) and fuente.presupuesto() is None
+    fuente.asignar_presupuesto(PresupuestoSolicitudes())
+    assert fuente.presupuesto() is None
+    cliente = ClienteAPI("http://ejemplo.invalid")
+    assert usa_red(cliente) and cliente.presupuesto() is None
+    presupuesto = PresupuestoSolicitudes()
+    cliente.asignar_presupuesto(presupuesto)
+    assert cliente.presupuesto() is presupuesto
+    assert not usa_red(object())

@@ -29,14 +29,24 @@ def _crear_vista(config):
     return vista
 
 
+def _consola_utf8() -> None:
+    """En Windows la consola o una tubería usan cp1252 y rompen los acentos."""
+    import sys
+    for flujo in (sys.stdout, sys.stderr, sys.stdin):
+        if hasattr(flujo, "reconfigure"):
+            flujo.reconfigure(encoding="utf-8")
+
+
 def main() -> None:
+    _consola_utf8()
     config = Configuracion()
 
     if config.bench:
         import json
         from benchmarks.integrante2 import PROVEEDORES
+        from benchmarks.bench_ampliado import PROVEEDORES as PROVEEDORES_ADICIONALES
         from benchmarks.integrante3 import ejecutar
-        print(json.dumps(ejecutar(proveedores=PROVEEDORES), ensure_ascii=False, indent=2))
+        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES), ensure_ascii=False, indent=2))
         return
 
     fuente = _crear_fuente(config)
@@ -51,7 +61,11 @@ def main() -> None:
         servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=CacheCatalogo(config.cache_size))
         servicio.conectar_inicializador(InicializadorPartida())
         replay.conectar_servicio(servicio)
-        replay.reproducir(config.replay)
+        try:
+            replay.reproducir(config.replay)
+        except FileNotFoundError:
+            print(f"Error: no existe el archivo de replay {config.replay}.")
+            raise SystemExit(1) from None
         return
 
     from logica.cache_catalogo import CacheCatalogo
@@ -60,6 +74,8 @@ def main() -> None:
     from service.inicializador_partida import InicializadorPartida
     from controller.controlador_juego import ControladorJuego
 
+    if config.offline and not getattr(config, "demo", False):
+        print(f"Modo OFFLINE: se juega con los datos locales de {config.ruta_datos_offline}; no se usa la red.")
     vista = _crear_vista(config)
     semilla = config.semilla if config.semilla is not None else 0
     controlador = ControladorJuego(

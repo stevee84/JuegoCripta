@@ -7,7 +7,8 @@ las fichas se resuelven mediante RepositorioCatalogo con versiones verificadas.
 
 from configuracion import RUTA_CACHE_CATALOGO
 from datos.decodificador_datos import DecodificadorDatos
-from datos.cliente_api import ClienteAPI, CriptaAPIError
+from contratos.fuente_datos import usa_red
+from datos.cliente_api import CriptaAPIError
 from datos.almacen_persistente import AlmacenPersistente
 from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from logica.cache_catalogo import CacheCatalogo
@@ -76,8 +77,7 @@ class _AlmacenVigente:
 
 def crear_repositorio(cache, fuente, version_catalogo):
     """Memoria → disco vigente → red, con el presupuesto de la fuente."""
-    presupuesto = (fuente._presupuesto if isinstance(fuente, ClienteAPI)
-                   else PresupuestoSolicitudes())
+    presupuesto = fuente.presupuesto() if usa_red(fuente) else PresupuestoSolicitudes()
     return RepositorioCatalogo(
         cache, _AlmacenVigente(AlmacenPersistente(RUTA_CACHE_CATALOGO), version_catalogo),
         _FuenteCatalogo(fuente, version_catalogo), DecodificadorDatos(), presupuesto,
@@ -87,11 +87,11 @@ def crear_repositorio(cache, fuente, version_catalogo):
 def establecer_presupuesto(fuente, generales):
     """Devuelve el presupuesto_solicitudes de la cripta y, si la fuente es HTTP, lo aplica (§5.1)."""
     limite = InicializadorPartida._entero(generales.get("presupuesto_solicitudes"), "presupuesto_solicitudes", 1)
-    if isinstance(fuente, ClienteAPI):
-        if fuente._presupuesto is None:
-            fuente._presupuesto = PresupuestoSolicitudes()
-        fuente._presupuesto.establecer_limite(limite)
-        if fuente._presupuesto._intentos > limite:
+    if usa_red(fuente):
+        if fuente.presupuesto() is None:
+            fuente.asignar_presupuesto(PresupuestoSolicitudes())
+        fuente.presupuesto().establecer_limite(limite)
+        if fuente.presupuesto()._intentos > limite:
             raise ValueError("El presupuesto no alcanza para las consultas iniciales realizadas.")
     return limite
 
@@ -131,8 +131,8 @@ class InicializadorPartida:
     def preparar(self, cripta_id, fuente):
         """Consulta generales/versiones una vez y deja preparado el arranque."""
         self._preparados = None
-        if isinstance(fuente, ClienteAPI) and fuente._presupuesto is None:
-            fuente._presupuesto = PresupuestoSolicitudes()
+        if usa_red(fuente) and fuente.presupuesto() is None:
+            fuente.asignar_presupuesto(PresupuestoSolicitudes())
         try:
             generales = fuente.obtener_generales(cripta_id)
             if not isinstance(generales, dict) or generales.get("id") != cripta_id:

@@ -166,7 +166,7 @@ def test_loop_con_vista_real_sale_sin_cambiar_el_estado_de_partida(controlador, 
     assert not controlador._en_ejecucion
     assert controlador._motor.estado.partida_activa
     assert controlador._motor.estado.jugador.sala_actual.enemigos[0].vida == 2
-    assert "Guardado binario v6; al cargar se inicia un historial vacío" in capsys.readouterr().out
+    assert "Guardado binario v7; al cargar se inicia un historial vacío" in capsys.readouterr().out
 
 
 def test_fin_de_entrada_no_simula_derrota_ni_victoria(controlador, monkeypatch):

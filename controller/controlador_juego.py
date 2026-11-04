@@ -126,7 +126,7 @@ class ControladorJuego:
 
     def _iniciar_consola(self, estado) -> None:
         self._vista.mostrar_mensaje(
-            "Motor con turnos e historial integrados. Guardado binario v6; al cargar se inicia un historial vacío. "
+            "Motor con turnos e historial integrados. Guardado binario v7; al cargar se inicia un historial vacío. "
             "Consultar comandos: ayuda."
         )
         if self._fuente is not None:
@@ -353,7 +353,7 @@ class ControladorJuego:
                     "Inventario: siguiente, anterior, seleccionar ID (o nombre), inventario [peso|valor|nombre]. "
                     "usar [ID|NOMBRE] usa el seleccionado sin argumentos; equipar; soltar; retroceder [ID] sin tiempo.\n"
                     "Partidas: criptas; cripta ID; guardar [RUTA]; cargar [RUTA]; salir. "
-                    "Guardado v6: cargar inicia un historial vacío.\n"
+                    "Guardado v7: cargar inicia un historial vacío.\n"
                     "Técnicos: bitacora; puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final] ascendente; "
                     "registro RUTA antes de la primera acción; exportar_parcial RUTA sin validar reanudación."
                 )
