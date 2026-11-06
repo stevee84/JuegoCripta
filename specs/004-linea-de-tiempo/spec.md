@@ -19,6 +19,15 @@
 - **K**: la cantidad máxima de acciones del jugador entre dos puntos de control consecutivos.
 - **Resumen de estado**: lo que muestra una consulta de la línea de tiempo (FR-004).
 
+## Clarifications
+
+### Session 2026-11-06
+
+- Q: ¿En qué interfaces debe estar disponible el comando historia? → A: En ambas, consola y pygame, con el mismo resumen (FR-008).
+- Q: ¿Cómo imprime el resumen --replay partida.log --hasta t? → A: Con el mismo texto, líneas y orden que historia en la partida (FR-009).
+- Q: ¿Qué debe mostrar del mapa conocido el resumen de historia? → A: El mismo contenido que el comando de mapa conocido de la spec 003, en ese instante: salas exploradas con sus salidas, costos y estado recordado de puertas, y salas avistadas (FR-004).
+- Q: ¿Qué incluye «vida y estadísticas» del jugador en el resumen? → A: Vida actual y máxima, ataque, defensa y velocidad efectivos en ese instante, con equipo y efectos aplicados (FR-004).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Consultar el estado en un instante pasado (Priority: P1)
@@ -144,15 +153,15 @@ El desarrollador inicia el juego, el replay o el modo de medición con `--checkp
 - **FR-001**: El juego MUST permitir consultar `historia <t>`, que muestra el estado después de ejecutar todos los eventos con tiempo menor o igual que t; si a t le corresponde una decisión del jugador, el estado justo antes de tomarla.
 - **FR-002**: Cuando varios eventos ocurren en el mismo instante t, `historia <t>` MUST mostrar el estado después de todos ellos.
 - **FR-003**: El juego MUST permitir consultar `historia #k`, que muestra el estado justo antes de la acción número k del jugador. La numeración empieza en 1, cuenta solo las acciones aceptadas que siguen en la línea de tiempo, y #(n+1), con n la cantidad de acciones, es el estado actual.
-- **FR-004**: El resumen de una consulta MUST mostrar como mínimo: reloj, sala del jugador, vida y estadísticas del jugador, inventario, efectos activos, enemigos de la sala del jugador con su vida, y el mapa conocido por el jugador en ese momento.
+- **FR-004**: El resumen de una consulta MUST mostrar como mínimo: reloj; sala del jugador; vida actual y máxima, ataque, defensa y velocidad efectivos del jugador (con equipo y efectos aplicados); inventario; efectos activos; enemigos de la sala del jugador con su vida; y el mapa conocido por el jugador en ese momento, con el mismo contenido que el comando de mapa conocido (salas exploradas con sus salidas, costos y estado recordado de puertas, y salas avistadas).
 - **FR-005**: Una consulta MUST NOT consumir tiempo virtual, contar como acción del jugador, registrarse en partida.log ni alterar el estado del juego, el historial del pergamino de retroceso o el estado del generador aleatorio.
 - **FR-006**: El juego MUST rechazar con un mensaje, y sin efectos, `historia <t>` con t mayor que el reloj actual.
 - **FR-007**: El juego MUST rechazar con un mensaje, y sin efectos, un t que no sea un entero mayor o igual que 0, un #k fuera del rango 1..n+1 y cualquier consulta sin partida iniciada.
-- **FR-008**: La interfaz MUST ofrecer los comandos `historia <t>` e `historia #k` y mostrar el resumen de FR-004 (§7.3).
+- **FR-008**: Las dos interfaces, consola y pygame, MUST ofrecer los comandos `historia <t>` e `historia #k` y mostrar el mismo resumen de FR-004 (§7.3).
 
 **Reproducción sin interacción**
 
-- **FR-009**: `--replay partida.log --hasta <t>` MUST reproducir la partida hasta el instante t e imprimir el mismo resumen de FR-004, sin instanciar la vista.
+- **FR-009**: `--replay partida.log --hasta <t>` MUST reproducir la partida hasta el instante t e imprimir el resumen de FR-004 con el mismo texto, líneas y orden que `historia <t>`, sin instanciar la vista. Un t que no sea un entero mayor o igual que 0, o `--hasta` sin `--replay`, se rechaza con un mensaje antes de reproducir.
 - **FR-010**: Si t es posterior al final de la partida registrada, `--replay … --hasta t` MUST imprimir el estado final e indicar que la partida terminó antes del instante pedido.
 - **FR-011**: Sin `--hasta`, `--replay` MUST comportarse como en la Parte I, incluido el rechazo de logs con versiones incompatibles.
 
@@ -210,7 +219,6 @@ El desarrollador inicia el juego, el replay o el modo de medición con `--checkp
 
 - El K por defecto se fija en el plan con las mediciones de FR-024; esta especificación no lo fija.
 - La línea de tiempo se puede consultar con la partida terminada (victoria o muerte), porque consultar no modifica la partida.
-- El resumen de `--replay --hasta` es el mismo contenido que el de `historia`, impreso como texto.
 - Una acción del jugador incluye todos los eventos del reloj hasta su siguiente decisión, igual que el pergamino de retroceso de la Parte I.
 - El instante t se interpreta en las mismas unidades del reloj virtual que el resto del juego.
 - Dependencias: la spec 001 (Sofía) y la spec 003 (Steven) deben registrar sus cambios de estado de forma reversible para que FR-022 se pueda cumplir; el guardado de partida (Steven) debe incluir lo que pide FR-029.

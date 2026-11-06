@@ -1489,6 +1489,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 26 | Constitución del proyecto (`/speckit-constitution`) | 02/11/2026 |
 | 27 | Correcciones a la constitución antes de confirmarla | 02/11/2026 |
 | 28 | Especificación de la línea de tiempo (`/speckit-specify`) | 06/11/2026 |
+| 29 | Clarificación de la línea de tiempo (`/speckit-clarify`) | 06/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -1595,3 +1596,13 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `specs/004-linea-de-tiempo/spec.md` con 6 historias de usuario, los 6 casos de línea de tiempo del Apéndice B como escenarios de aceptación (US1-1, US1-2, US1-3, US3-1, US4-2 y US5-3), casos borde, 31 requisitos (FR-001 a FR-031) y 6 criterios de éxito, entre ellos el límite de 50 ms de §6.1. Además, `specs/004-linea-de-tiempo/checklists/requirements.md` con la validación de calidad de spec-kit. Antes de redactar el prompt se leyó, sin modificarlo, el código que usará la capacidad (motor, historial de retroceso, cambios reversibles, replay, registro de partida y guardado v8), para no especificar algo que contradiga lo existente. El texto del prompt lo redactó Claude Code y Joshua lo aprobó antes de ejecutarlo.
 
 **Qué hubo que corregir.** El comando dejó dos puntos marcados como [NEEDS CLARIFICATION]. Joshua pidió elegir la opción más conforme al enunciado y se tomó la opción A en ambos: (1) FR-012, el uso del pergamino no cuenta como acción #k y su consumo forma parte de la historia tal como quedó (§3.6); (2) FR-030, al cargar una partida se conserva el K con que se guardó, para que siga valiendo que una consulta no aplica ni deshace más de K acciones. Se ajustaron los escenarios US3-3 y US5-2 en consecuencia.
+
+## Prompt 29 — Clarificación de la línea de tiempo (`/speckit-clarify`)
+
+> **Prompt**
+>
+> /speckit-clarify Revisa specs/004-linea-de-tiempo/spec.md contra el enunciado de la Parte II (§3.6, §5.5, §6.1, Apéndice B) y la constitución v1.0.0. Las preguntas y respuestas deben quedar registradas en la especificación, en español.
+
+**Qué se obtuvo.** El comando hizo 4 preguntas y Joshua aceptó la opción recomendada en las cuatro: `historia` está disponible en consola y en pygame con el mismo resumen (FR-008); `--replay --hasta` imprime el mismo texto, líneas y orden que `historia` (FR-009); el mapa conocido del resumen tiene el mismo contenido que el comando de mapa conocido de la spec 003 (FR-004); y las estadísticas del resumen son vida actual y máxima, ataque, defensa y velocidad efectivos (FR-004). Las preguntas y respuestas quedaron en la sección `## Clarifications` de `spec.md`.
+
+**Qué hubo que corregir.** Nada en las respuestas. Al integrar FR-009 se agregó un valor por defecto que no se preguntó: un `--hasta` inválido, o sin `--replay`, se rechaza antes de reproducir. Se eliminó la suposición sobre el formato de `--replay --hasta`, porque la clarificación la reemplazó.
