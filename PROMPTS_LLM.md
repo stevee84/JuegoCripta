@@ -1488,6 +1488,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | --- | --- | --- |
 | 26 | Constitución del proyecto (`/speckit-constitution`) | 02/11/2026 |
 | 27 | Correcciones a la constitución antes de confirmarla | 02/11/2026 |
+| 28 | Especificación de la línea de tiempo (`/speckit-specify`) | 06/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -1537,3 +1538,60 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 > No modifiques otros archivos.
 
 **Qué se obtuvo y por qué.** Se corrigieron cinco puntos que contradecían el enunciado o prometían algo que el proyecto no hace: el guardado de partida parecía una copia prohibida (§3.6); faltaban banderas de §7.2; los límites no tenían las condiciones de §6.1; se afirmaba ejecutar dos ejecutores de pruebas; y se trataba igual el caché de la cripta que un archivo de partida de la Parte I (Apéndice B). La versión se mantuvo en 1.0.0 porque las correcciones se hicieron antes de ratificarla en Git.
+
+## Prompt 28 — Especificación de la línea de tiempo (`/speckit-specify`)
+
+> **Prompt**
+>
+> /speckit-specify Usa el número de feature 004 y el nombre corto linea-de-tiempo: la carpeta debe quedar specs/004-linea-de-tiempo/. No crees ramas de Git.
+>
+> Capacidad: línea de tiempo y puntos de control de Cripta (enunciado de la Parte II, §3.6, §5.5, §6.1, §7.3 y Apéndice B). Describe solo QUÉ debe hacer el juego y por qué. No nombres estructuras de datos, clases, módulos ni archivos de código. Respeta la constitución v1.0.0, en especial los principios III, IV, VII, IX y X.
+>
+> Contexto. El pergamino de retroceso de la Parte I sigue limitado a 5 acciones. La línea de tiempo es independiente: permite consultar, sin modificar la partida, el estado en cualquier instante desde el inicio.
+>
+> Reglas que la especificación debe recoger:
+> 1. Estado en el instante t: el estado después de ejecutar todos los eventos con tiempo menor o igual que t. Si a t le corresponde una decisión del jugador, es el estado justo antes de tomarla. Si varios eventos ocurren en el mismo t, se muestra el estado después de todos ellos.
+> 2. Acción número k: historia #k muestra el estado justo antes de la acción número k del jugador. Solo cuentan las acciones aceptadas que siguen en la línea de tiempo (las rechazadas y las revertidas con pergamino no cuentan).
+> 3. El resumen de una consulta muestra como mínimo: reloj, sala del jugador, vida y estadísticas, inventario, efectos activos, enemigos de esa sala con su vida y el mapa conocido por el jugador en ese momento.
+> 4. Una consulta no consume tiempo virtual, no es una acción del jugador, no se registra en partida.log y no altera ningún estado del juego, ni el historial de retroceso, ni el estado del generador aleatorio.
+> 5. Se rechaza, con un mensaje y sin efectos: historia <t> con t mayor que el reloj actual; un t que no sea un entero mayor o igual que 0; un #k fuera del rango de acciones existentes; una consulta sin partida iniciada.
+> 6. Las acciones revertidas con un pergamino dejan de existir en la línea de tiempo: la línea describe la historia de la partida tal como quedó. Ese recorte no debe recorrer toda la historia.
+> 7. --replay partida.log --hasta <t> reproduce la partida hasta t e imprime el mismo resumen, sin instanciar la vista. Si t es posterior al final de la partida, muestra el estado final e indica que la partida terminó antes. Sin --hasta, --replay se comporta como en la Parte I.
+> 8. Puntos de control: se permite guardar copias completas del estado, pero no más de una cada K acciones del jugador. K se configura con --checkpoint-cada K (entero mayor o igual que 1; otro valor se rechaza al arrancar). El valor por defecto lo escoge el grupo y se justifica con mediciones. Fuera de los puntos de control solo se almacena la información necesaria para reconstruir los cambios.
+> 9. Una consulta de cualquier instante no puede requerir aplicar o deshacer cambios de más de K acciones del jugador. Ubicar el punto de control más cercano al instante pedido es una búsqueda frecuente y su costo no debe crecer linealmente con la longitud de la partida.
+> 10. La reconstrucción puede hacerse hacia adelante desde un punto de control (re-simulando) o hacia atrás desde el estado actual (invirtiendo cambios); la elección se documenta con evidencia. Si se re-simula, el punto de control incluye el estado del generador aleatorio.
+> 11. La memoria total crece con la cantidad de cambios ocurridos más un punto de control cada K acciones; nunca con «acciones por tamaño del estado».
+> 12. Todo el estado que otras capacidades agregan (costos y cazadores de la spec 001, conocimiento del jugador y mapa conocido de la spec 003) forma parte de lo que la línea de tiempo reconstruye.
+> 13. Persistencia: guardar y cargar la partida conserva la línea de tiempo completa; después de cargar, toda consulta da el mismo resultado que antes de guardar. Como contrato con el guardado (sin definir el formato), el archivo debe conservar: los puntos de control, la información de cambios necesaria para reconstruir cualquier instante desde el inicio, el valor de K con que se crearon, el número de acciones y el reloj de cada punto de control, y el estado del generador aleatorio si la reconstrucción re-simula.
+> 14. Un archivo de partida de la Parte I se reporta como incompatible o se migra de forma explícita; nunca se carga en silencio.
+> 15. La interfaz permite consultar historia <t> e historia #k y ver el resumen.
+>
+> Historias de usuario (con prioridad):
+> - P1: Como jugador, consulto el estado en un instante pasado t para revisar qué pasó.
+> - P1: Como jugador, consulto el estado justo antes de mi acción número k.
+> - P2: Como jugador, uso un pergamino de retroceso y la línea de tiempo deja de mostrar lo revertido.
+> - P2: Como evaluador, reproduzco un partida.log hasta un instante t sin abrir la vista.
+> - P3: Como desarrollador, ajusto la frecuencia de puntos de control con --checkpoint-cada K y mido su efecto.
+> - P3: Como jugador, guardo y cargo la partida sin perder la línea de tiempo.
+>
+> Escenarios de aceptación obligatorios (Apéndice B), en formato Given/When/Then:
+> 1. historia <t> con t mayor que el reloj actual: se rechaza.
+> 2. historia después de usar un pergamino: no muestra las acciones revertidas.
+> 3. Varios eventos ocurren en el mismo instante t: historia <t> muestra el estado después de todos ellos.
+> 4. historia no consume tiempo virtual, no se registra en partida.log y no modifica el historial de retroceso.
+> 5. --replay partida.log --hasta t con t posterior al final de la partida: muestra el estado final e indica que la partida terminó antes.
+> 6. Se carga un archivo de partida de la primera parte: se reporta la incompatibilidad de formato o se migra explícitamente; nunca se carga en silencio.
+> Agrega también escenarios para: historia #1 (estado inicial), historia #k igual a la acción siguiente (estado actual), K = 1, y consultar después de guardar y cargar.
+>
+> Requisitos de rendimiento y medición (medibles):
+> - historia responde en menos de 50 ms en una partida de al menos 5 000 acciones del jugador con el K por defecto, medido en el equipo local sin red ni renderizado (§6.1).
+> - --bench mide memoria y tiempo de consulta para al menos tres valores de K y para la alternativa sin puntos de control, y con eso se justifica el K por defecto (§5.5, §6.3).
+> - --bench repite con la carga nueva las mediciones de la Parte I relacionadas (§5.6): un retroceso con pergamino medido de punta a punta (reloj, agenda, rastro, puertas, trampas, inventario) frente a la alternativa de copia completa; una reproducción completa de partida.log y el rechazo por versión incompatible; y la vista ordenada del inventario por peso, valor y nombre sin alterar el orden real, más el rechazo al llegar al máximo de inventario.
+>
+> Fuera de alcance: cambiar el límite de 5 acciones del pergamino; usar la línea de tiempo para volver a jugar desde un instante pasado.
+>
+> Marca como [NEEDS CLARIFICATION] lo que el enunciado no defina, por ejemplo: si el uso del pergamino cuenta como acción número k; qué muestra historia <t> justo en el instante del retroceso; qué K se usa al cargar una partida guardada con otro --checkpoint-cada; si historia se permite con la partida terminada.
+
+**Qué se obtuvo.** `specs/004-linea-de-tiempo/spec.md` con 6 historias de usuario, los 6 casos de línea de tiempo del Apéndice B como escenarios de aceptación (US1-1, US1-2, US1-3, US3-1, US4-2 y US5-3), casos borde, 31 requisitos (FR-001 a FR-031) y 6 criterios de éxito, entre ellos el límite de 50 ms de §6.1. Además, `specs/004-linea-de-tiempo/checklists/requirements.md` con la validación de calidad de spec-kit. Antes de redactar el prompt se leyó, sin modificarlo, el código que usará la capacidad (motor, historial de retroceso, cambios reversibles, replay, registro de partida y guardado v8), para no especificar algo que contradiga lo existente. El texto del prompt lo redactó Claude Code y Joshua lo aprobó antes de ejecutarlo.
+
+**Qué hubo que corregir.** El comando dejó dos puntos marcados como [NEEDS CLARIFICATION]. Joshua pidió elegir la opción más conforme al enunciado y se tomó la opción A en ambos: (1) FR-012, el uso del pergamino no cuenta como acción #k y su consumo forma parte de la historia tal como quedó (§3.6); (2) FR-030, al cargar una partida se conserva el K con que se guardó, para que siga valiendo que una consulta no aplica ni deshace más de K acciones. Se ajustaron los escenarios US3-3 y US5-2 en consecuencia.
