@@ -47,3 +47,69 @@ def test_cripta_grande_devuelve_un_lote_de_diez_desde_el_origen():
         sala.contenido_cargado = False
     cercanas = _cargador(mapa).mas_cercanas(mapa.obtener_sala(1))
     assert cercanas == [1, 2, 31, 3, 32, 61, 4, 33, 62, 91]
+
+
+def _referencia_bfs(cargador, origen, cantidad):
+    """Algoritmo anterior: BFS completo, V distancias y orden total por (distancia, id).
+
+    Sirve de oráculo del determinismo: el resultado del BFS cortado por niveles debe
+    coincidir exactamente con este, que es el orden que ya veían las partidas.
+    """
+    from logica.ordenamiento import OrdenadorAdaptativo
+    pendientes = cargador.pendientes()
+    distancias = [(0, origen.id_sala)]
+    visitadas = [origen.id_sala]
+    frontera, distancia = [origen], 0
+    while frontera:
+        distancia += 1
+        siguiente = []
+        for sala in frontera:
+            for puerta in sala.puertas:
+                destino = puerta.destino_sala
+                if destino is not None and destino.id_sala not in visitadas:
+                    visitadas.append(destino.id_sala)
+                    distancias.append((distancia, destino.id_sala))
+                    siguiente.append(destino)
+        frontera = siguiente
+    ordenadas = OrdenadorAdaptativo().ordenar(distancias, lambda par: par)
+    return [sid for _, sid in ordenadas if sid in pendientes][:cantidad]
+
+
+def test_mismo_orden_que_el_bfs_completo_en_varios_mapas():
+    for lado in (1, 2, 3, 5, 12):
+        total = lado * lado
+        for paso in (1, 2, 3, 7):  # distintos patrones de salas ya cargadas
+            mapa = _cuadricula(lado)
+            for sala in mapa.obtener_salas():
+                sala.contenido_cargado = sala.id_sala % paso == 0
+            cargador = _cargador(mapa)
+            for origen_id in (1, total // 2 + 1, total):
+                origen = mapa.obtener_sala(origen_id)
+                for cantidad in (1, 3, 10, total):
+                    assert cargador.mas_cercanas(origen, cantidad) == _referencia_bfs(
+                        cargador, origen, cantidad), (lado, paso, origen_id, cantidad)
+
+
+def test_corta_el_bfs_y_no_recorre_el_mapa_completo():
+    """El costo debe ser proporcional al lote pedido, no a las 900 salas (§5.2)."""
+    mapa = _cuadricula(30)
+    for sala in mapa.obtener_salas():
+        sala.contenido_cargado = False
+    visitas = []
+    for sala in mapa.obtener_salas():
+        sala.puertas = _PuertasEspiadas(sala.puertas, sala.id_sala, visitas)
+    assert _cargador(mapa).mas_cercanas(mapa.obtener_sala(1)) == [
+        1, 2, 31, 3, 32, 61, 4, 33, 62, 91]
+    assert len(visitas) < 40, f"se expandieron {len(visitas)} salas de 900"
+
+
+class _PuertasEspiadas(list):
+    """Lista de puertas que anota cada expansión del BFS."""
+
+    def __init__(self, puertas, id_sala, visitas):
+        super().__init__(puertas)
+        self._id_sala, self._visitas = id_sala, visitas
+
+    def __iter__(self):
+        self._visitas.append(self._id_sala)
+        return super().__iter__()

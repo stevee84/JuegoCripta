@@ -1,0 +1,22 @@
+name: Pruebas
+
+on: [push, pull_request]
+
+env:
+  # pygame-ce necesita un vídeo y un audio sin pantalla en CI.
+  SDL_VIDEODRIVER: dummy
+  SDL_AUDIODRIVER: dummy
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - name: Restricciones del enunciado §6.2
+        run: python -m pytest -q tests/test_restricciones_enunciado.py
+      - name: Pruebas completas
+        run: python -m pytest -q

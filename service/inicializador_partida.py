@@ -22,6 +22,7 @@ from estructuras.tabla_hash import TablaHashImpl
 from logica.inventario import Inventario
 from logica.mapa_cripta import MapaCripta
 from logica.ordenamiento import OrdenadorAdaptativo
+from registro import log
 
 
 class CatalogoPartida:
@@ -61,18 +62,18 @@ class _AlmacenVigente:
     def __init__(self, almacen, version):
         self._almacen, self._version = almacen, version
 
+    def leer_con_version(self, ficha_id):
+        version, datos = self._almacen.leer_con_version(ficha_id)
+        return (version, datos) if version == self._version else (None, None)
+
     def leer(self, ficha_id):
-        if not self._almacen.validar_version(ficha_id, self._version):
-            return None
-        return self._almacen.leer(ficha_id)
+        return self.leer_con_version(ficha_id)[1]
 
     def guardar(self, ficha_id, ficha, version):
         if version != self._version:
             raise ValueError("El catálogo cambió de versión durante el arranque.")
         self._almacen.guardar(ficha_id, ficha, version)
 
-    def validar_version(self, ficha_id, version):
-        return version == self._version and self._almacen.validar_version(ficha_id, version)
 
 
 def crear_repositorio(cache, fuente, version_catalogo):
@@ -122,10 +123,13 @@ class InicializadorPartida:
         return valor
 
     @staticmethod
-    def _agregar_id(ids, ficha_id):
+    def _agregar_id(ids, vistas, ficha_id):
+        """Acumula sin repetir conservando el orden de descubrimiento (define el orden
+        de las solicitudes). `vistas` es la tabla propia: pertenencia en O(1)."""
         if not isinstance(ficha_id, str) or not ficha_id:
-            raise ValueError("Cada referencia de catálogo debe tener un ID textual.")
-        if ficha_id not in ids:
+            raise ValueError(f"Una referencia de catálogo no tiene ID textual: {ficha_id!r}.")
+        if not vistas.contiene(ficha_id):
+            vistas.insertar(ficha_id, True)
             ids.append(ficha_id)
 
     def preparar(self, cripta_id, fuente):
@@ -141,7 +145,12 @@ class InicializadorPartida:
             version = self._version(generales.get("version"))
             version_catalogo = self._version(fuente.obtener_version_catalogo())
         except CriptaAPIError as error:
-            raise ValueError(str(error)) from error
+            # Se traduce a ValueError porque es lo que espera JuegoService, pero el tipo
+            # original queda en __cause__ y el texto dice que fue la API, no el JSON.
+            log.error("Preparación de la cripta %s: falló la API (%s).", cripta_id, error)
+            raise ValueError(
+                f"La API de la cripta {cripta_id} falló al preparar el arranque "
+                f"({type(error).__name__}): {error}") from error
         self._preparados = (cripta_id, fuente, generales, version, version_catalogo)
         return version, version_catalogo
 
@@ -149,7 +158,10 @@ class InicializadorPartida:
         try:
             return self._construir(cripta_id, semilla, fuente, cache)
         except CriptaAPIError as error:
-            raise ValueError(str(error)) from error
+            log.error("Arranque de la cripta %s: falló la API (%s).", cripta_id, error)
+            raise ValueError(
+                f"La API de la cripta {cripta_id} falló al construir la partida "
+                f"({type(error).__name__}): {error}") from error
         finally:
             self._preparados = None
 
@@ -175,7 +187,7 @@ class InicializadorPartida:
 
         decodificador = DecodificadorDatos()
         mapa = MapaCripta()
-        ids_salas = []
+        ids_salas = TablaHashImpl()  # detectar salas repetidas en O(1), no recorriendo la lista
         for numero in range(1, paginas + 1):
             pagina = fuente.obtener_pagina(cripta_id, numero)
             if (not isinstance(pagina, dict) or type(pagina.get("pagina")) is not int
@@ -186,32 +198,38 @@ class InicializadorPartida:
                 raise ValueError(f"La página {numero} está ausente o es inválida.")
             for registro in pagina["salas"]:
                 if not isinstance(registro, dict):
-                    raise ValueError("Cada sala debe ser un objeto JSON.")
+                    raise ValueError(
+                        f"Cada sala de la página {numero} debe ser un objeto JSON.")
                 sala = decodificador.convertir_sala(registro)
-                if sala.id_sala in ids_salas:
-                    raise ValueError("El esqueleto repite una sala.")
-                ids_salas.append(sala.id_sala)
+                if ids_salas.contiene(sala.id_sala):
+                    raise ValueError(
+                        f"El esqueleto repite la sala {sala.id_sala} en la página {numero}.")
+                ids_salas.insertar(sala.id_sala, True)
                 mapa.agregar_sala(sala)
         if len(ids_salas) != total:
-            raise ValueError("La cantidad de salas no coincide con salas_total.")
+            raise ValueError(
+                f"La cripta {cripta_id} entregó {len(ids_salas)} salas y salas_total "
+                f"declara {total}.")
         if mapa.obtener_sala(inicial) is None or mapa.obtener_sala(salida) is None:
             raise ValueError("La sala inicial o la salida no existe en el mapa.")
         mapa.vincular_salidas()
-        ids_fichas = []
-        self._agregar_id(ids_fichas, generales.get("llave_salida"))
+        ids_fichas, fichas_vistas = [], TablaHashImpl()
+        self._agregar_id(ids_fichas, fichas_vistas, generales.get("llave_salida"))
         for sala in mapa.obtener_salas():
             for puerta in sala.puertas:
                 if puerta.destino_sala is None:
-                    raise ValueError("Una puerta referencia una sala inexistente.")
+                    raise ValueError(
+                        f"La puerta {puerta.id_puerta} de la sala {sala.id_sala} referencia "
+                        "una sala inexistente.")
                 if puerta.llave_requerida is not None:
-                    self._agregar_id(ids_fichas, puerta.llave_requerida)
+                    self._agregar_id(ids_fichas, fichas_vistas, puerta.llave_requerida)
 
         for sala in mapa.obtener_salas():
             sala.contenido_cargado = False
 
         if cache is None:
             cache = CacheCatalogo()
-        if getattr(cache, "_version_catalogo_partida", None) != version_catalogo and cache._arreglo:
+        if getattr(cache, "_version_catalogo_partida", None) != version_catalogo and len(cache._tabla):
             # Mantener intacta la memoria que pueda pertenecer a otra partida.
             cache = CacheCatalogo(cache._capacidad)
         cache._version_catalogo_partida = version_catalogo

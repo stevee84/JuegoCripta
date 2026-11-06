@@ -89,8 +89,53 @@ class TestFijado:
         assert c.obtener("b") == 2
         assert len(c._arreglo) == 2
 
+    def test_insercion_descartada_deja_rastro(self, caplog):
+        c = crear_cache(capacidad=1)
+        c.insertar("a", 1)
+        c.fijar("a")
+        with caplog.at_level("WARNING", logger="cripta"):
+            c.insertar("b", 2)
+        assert "descarta" in caplog.text and "b" in caplog.text
 
-class TestBusquedaBinaria:
+    def test_dos_duenos_protegen_hasta_que_ambos_liberan(self):
+        c = crear_cache(capacidad=1)
+        c.insertar("a", 1)
+        c.fijar("a", "general")
+        c.fijar("a", "en_uso")
+        c.liberar_referencia("a", "general")
+        c.insertar("b", 2)
+        assert c.obtener("a") == 1 and c.obtener("b") is None
+        c.liberar_referencia("a", "en_uso")
+        c.insertar("b", 2)
+        assert c.obtener("a") is None and c.obtener("b") == 2
+
+
+class TestDesalojos:
+    def test_metricas_cuentan_desalojos(self):
+        c = crear_cache(capacidad=2)
+        assert c.metricas()["desalojos"] == 0
+        for clave in "abcde":
+            c.insertar(clave, clave)
+        assert c.metricas()["desalojos"] == 3
+        assert c.metricas()["tamano"] == 2
+
+    def test_orden_lru_no_cambio(self):
+        """El orden de la ListaDoble es el mismo que daba el arreglo ordenado."""
+        c = crear_cache(capacidad=3)
+        for clave in "abc":
+            c.insertar(clave, clave)
+        c.obtener("a")
+        c.insertar("b", "b2")
+        nodo, orden = c._lista.primero, []
+        while nodo is not None:
+            orden.append(nodo.valor.ficha_id)
+            nodo = nodo.siguiente
+        assert orden == ["b", "a", "c"]
+        c.insertar("d", "d")  # desaloja "c", el menos reciente
+        assert c.obtener("c") is None and c.obtener("a") == "a"
+
+
+class TestVistaOrdenada:
     def test_arreglo_ordenado(self):
         c = crear_cache(capacidad=10)
         for clave in ["d", "b", "a", "c"]:

@@ -9,10 +9,35 @@ Reemplaza al `dict` de Python, prohibido como índice por §7, en:
 - `CatalogoPartida`: índice `id_ficha → ficha` de la partida;
 - el contenido por sala (`DecodificadorDatos`, `FuenteOffline`): `id_sala → contenido`;
 - las salas del guardado (`GuardadoBinario.cargar`): `id_sala → registro`;
-- la detección de duplicados (`tiene_duplicados`).
+- la detección de duplicados (`tiene_duplicados`);
+- la caché LRU (`CacheCatalogo`): el índice `ficha_id → nodo` y el registro de fijaciones
+  `ficha_id → dueños`.
 
-La caché LRU **no** la usa, por indicación del profesor. Usa un arreglo ordenado con
-búsqueda binaria más una ListaDoble; ver `cache_buscar_*` en `--bench`.
+**Cambio respecto a la Parte I.** En la Parte I la caché usaba un arreglo ordenado con
+búsqueda binaria, porque se entendió que el profesor pedía que no usara tabla hash. Eso
+se consultó de nuevo y no aplica: §7 prohíbe el `dict` de Python, no la `TablaHashImpl`
+propia. La caché ahora usa la tabla propia y mantiene la ListaDoble para el orden LRU
+(el orden de uso no cambió). `_arreglo` y `_fijados` siguen existiendo como vistas
+ordenadas de solo lectura, que es como las recorren `fichas_fijadas()` y las pruebas.
+
+Costo medido de la caché, antes (arreglo ordenado) y después (tabla hash), en µs por
+operación, mediana de 15 repeticiones (`scratchpad/bench_cache.py`, mismo método que
+`benchmarks/integrante2.py::medir_cache`):
+
+| Operación | n=25 antes | n=25 después | n=128 antes | n=128 después | n=512 antes | n=512 después |
+|---|---:|---:|---:|---:|---:|---:|
+| `obtener` (acierto) | 1,30 | 0,71 | 1,57 | 0,65 | 2,04 | 0,68 |
+| `insertar` con desalojo | 4,01 | 3,85 | 5,08 | 3,71 | 6,71 | 3,93 |
+| `insertar` con desalojo, 50 % fijado | 9,14 | 8,28 | 41,73 | 27,82 | 191,60 | 107,96 |
+| `fijar` | 0,81 | 0,96 | 1,04 | 0,93 | 2,45 | 1,02 |
+| `liberar_referencia` | 1,06 | 1,04 | 1,32 | 1,03 | 1,90 | 1,26 |
+
+`obtener` pasa a ser constante (≈0,7 µs) en vez de crecer con log c, y a 512 fichas es
+3 veces más rápido. `fijar` y `liberar_referencia` también quedan constantes, porque ya
+no desplazan un arreglo. Con n=25 (la capacidad real del juego) la diferencia es
+pequeña, y `fijar` incluso cuesta 0,15 µs más: el costo de la tabla hash se nota solo
+con pocas claves. La ganancia importa para §9, con una cripta mayor y `--cache-size`
+más alto.
 
 ## Cómo se reproduce
 
@@ -62,6 +87,11 @@ Inserción con rehash (mediana del lote completo; rehashes = duplicaciones de ca
 | 8 | 4,7 µs | 3,8 µs | 0 | 0,59 µs |
 | 64 | 116,2 µs | 95,4 µs | 3 | 1,82 µs |
 | 512 | 1 033,1 µs | 859,5 µs | 6 | 2,02 µs |
+
+Esas 6 duplicaciones son evitables cuando el tamaño se conoce de antemano:
+`TablaHashImpl(capacidad_inicial)` dimensiona los buckets de entrada. Sin argumentos
+sigue arrancando en 17, igual que antes. La caché la construye con `capacidad * 2`, así
+que con `--cache-size 25` no rehashea nunca.
 
 ## Análisis
 

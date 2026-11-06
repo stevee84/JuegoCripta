@@ -198,10 +198,14 @@ La deduplicación de IDs usa listas (`f not in ids_fichas`), con costo O(u) por 
 
 1. **Caché LRU acotada (`CacheCatalogo`).**
    - Una `ListaDobleImpl` mantiene las fichas de la más reciente (frente) a la menos reciente (final).
-   - Un arreglo ordenado `_arreglo` de pares `(ficha_id, nodo)` localiza cada ficha con búsqueda binaria.
-   - No usa tabla hash, por indicación del profesor para la caché.
-2. **Registro de fijaciones por dueño (`_fijados`).**
-   - Es otro arreglo ordenado de pares `(ficha_id, [dueños])`.
+   - Una `TablaHashImpl` propia (`_tabla`) localiza cada ficha por su `ficha_id` en O(1) promedio.
+   - En la Parte I era un arreglo ordenado con búsqueda binaria, porque se entendió que el profesor
+     prohibía la tabla hash en la caché. Se consultó de nuevo: §7 prohíbe el `dict` de Python, no la
+     `TablaHashImpl` propia. El orden LRU no cambió; lo sigue definiendo la lista doble.
+2. **Registro de fijaciones por dueño (`_duenos`).**
+   - Es otra `TablaHashImpl` propia, de `ficha_id` a su lista de `[dueños]`.
+   - `_arreglo` y `_fijados` siguen existiendo como propiedades de solo lectura que devuelven la
+     vista ordenada por clave, que es como las recorren `fichas_fijadas()` y las pruebas.
    - Hay dos dueños: `DUEÑO_GENERAL` (inventario, equipo e historial, vía `ServicioInventario`) y `DUEÑO_EN_USO` (enemigos vivos, objetos del suelo y trampas de la sala actual, vía `JuegoService._sincronizar_fichas_en_uso`).
    - Una ficha sigue protegida mientras le quede algún dueño. Antes, un solo indicador hacía que el inventario y la sala se “pisaran” la protección.
 3. **Entidades que no retienen la ficha (`FichaResoluble` + `CatalogoVivo`).**
@@ -214,9 +218,9 @@ La deduplicación de IDs usa listas (`f not in ids_fichas`), con costo O(u) por 
 
 #### Cómo funciona
 
-- **Acierto:** búsqueda binaria en `_arreglo` O(log c), y luego `mover_al_frente(nodo)` en la lista doble O(1).
+- **Acierto:** consulta a `_tabla` O(1) promedio, y luego `mover_al_frente(nodo)` en la lista doble O(1).
 - **Fallo:** el repositorio busca en el disco y, si la versión es vigente, inserta en la caché. Solo si no está en disco pide a la red; lo que llega de la red se escribe primero en disco.
-- **Desalojo:** recorre la lista desde el final hasta encontrar la primera ficha **no fijada** y la elimina de la lista y del arreglo. Como ninguna entidad guarda la ficha, desaparece de la memoria.
+- **Desalojo:** recorre la lista desde el final hasta encontrar la primera ficha **no fijada** y la elimina de la lista y de la tabla. Como ninguna entidad guarda la ficha, desaparece de la memoria. `metricas()["desalojos"]` los cuenta; si la caché está llena y **todo** está fijado, la inserción se descarta y queda un aviso en el registro.
 - **Volver a necesitarla:** el repositorio la reconstruye desde el JSON del disco y la reinserta, sin red.
 - El estado guardado y el retroceso no incluyen la caché: `CacheCatalogo.__getstate__` conserva solo la capacidad, y `CatalogoVivo` y `FichaResoluble` excluyen el catálogo al serializar (§2.11).
 
@@ -229,9 +233,19 @@ La deduplicación de IDs usa listas (`f not in ids_fichas`), con costo O(u) por 
 
 #### Costos y riesgos
 
-- Presencia O(log c); insertar o eliminar en `_arreglo` cuesta O(c) por el desplazamiento. Con `c = 25` es despreciable.
-- Buscar una víctima puede recorrer hacia atrás varias fichas fijadas, hasta O(c).
-- **Riesgo pendiente:** `AlmacenPersistente.guardar()` descarta en silencio los errores de escritura (`except OSError: pass`). Si una ficha no llegó a escribirse y luego se desaloja, volver a necesitarla gastaría una solicitud de red.
+- Presencia, inserción y eliminación en `_tabla` son O(1) promedio: ya no hay desplazamiento de arreglo
+  ni búsqueda binaria. Medido en `docs/tabla_hash_mediciones.md`: `obtener` con acierto pasa de 2,04 µs a
+  0,68 µs con c = 512, y de 1,30 µs a 0,71 µs con c = 25 (la capacidad real del juego). `fijar` y
+  `liberar_referencia` quedan constantes (≈1,0 µs); con c = 25 `fijar` cuesta 0,15 µs **más** que el
+  arreglo, porque con pocas claves el costo de la tabla no se amortiza. La ganancia importa con
+  `--cache-size` alto o una cripta mayor (§9), no con la capacidad por defecto.
+- Buscar una víctima sigue pudiendo recorrer hacia atrás varias fichas fijadas, hasta O(c): eso lo
+  determina la lista doble, no el índice.
+- Leer `_arreglo` o `_fijados` materializa y ordena la vista completa, O(c log c) por lectura. Es
+  deliberado: solo las recorren `fichas_fijadas()`, la vista y las pruebas, nunca un bucle caliente.
+- **Riesgo resuelto:** `AlmacenPersistente.guardar()` ya no descarta en silencio los errores de
+  escritura; los registra con `log.error`, así que una ficha que no llegó a disco deja rastro en vez de
+  reaparecer como una solicitud de red inexplicable.
 
 #### Comprobaciones realizadas
 

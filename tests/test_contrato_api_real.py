@@ -240,7 +240,7 @@ def test_adaptador_de_fichas_usa_campos_que_existen_en_el_api():
     assert not faltantes, f"El adaptador busca campos que el API no manda: {faltantes}"
 
 
-def test_cache_no_usa_tablas_hash():
+def test_cache_no_usa_dict_ni_set_de_biblioteca():
     cache = CacheCatalogo(3)
     for ficha_id in "abcd":
         cache.insertar(ficha_id, {"id": ficha_id})

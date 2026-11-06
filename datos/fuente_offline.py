@@ -6,6 +6,7 @@ from datos.cliente_api import MAX_IDS_POR_SOLICITUD, CriptaAPIError
 from dto.sala import validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
+from registro import log
 
 
 class FuenteOffline(FuenteDatos):
@@ -18,6 +19,8 @@ class FuenteOffline(FuenteDatos):
 
     def __init__(self, ruta_directorio: str):
         self._ruta = Path(ruta_directorio)
+        self._contenido_cripta = None  # (cripta_id, firma del paquete) de la tabla cacheada
+        self._contenido_tabla = None
 
     def _leer_json(self, ruta: Path):
         try:
@@ -61,19 +64,46 @@ class FuenteOffline(FuenteDatos):
         self._validar_lote(sala_ids, "obtener_contenido")
         for sala_id in sala_ids:
             validar_id_sala(sala_id)
+        registros = self._tabla_contenido(cripta_id)
+        faltantes = [s for s in sala_ids if not registros.contiene(s)]
+        if faltantes:
+            raise CriptaAPIError(f"Falta contenido offline de {cripta_id} para las salas {faltantes}")
+        return {"contenido": [registros.obtener(s) for s in sala_ids]}
+
+    def _firma_contenido(self, archivos):
+        """Identidad del paquete en disco: si cambia, la tabla cacheada ya no sirve.
+
+        ponytail: nombre + mtime + tamaño; si hiciera falta detectar reescrituras del mismo
+        tamaño dentro del mismo tick del reloj, habría que comparar un hash del contenido.
+        """
+        firma = []
+        for archivo in archivos:
+            try:
+                info = archivo.stat()
+            except OSError:
+                return None  # ninguna firma coincide: se reconstruye y el error sale de _leer_json
+            firma.append((archivo.name, info.st_mtime_ns, info.st_size))
+        return tuple(firma)
+
+    def _tabla_contenido(self, cripta_id: str) -> TablaHashImpl:
+        """Todo el contenido de la cripta indexado por sala. Antes se reconstruía en cada lote,
+        O(total_salas) por las ≤10 salas devueltas; ahora solo al cambiar la cripta o el paquete."""
         carpeta = self._ruta / cripta_id
         archivos = [carpeta / "contenido.json"]
         if not archivos[0].exists():
             archivos = OrdenadorAdaptativo().ordenar(list(carpeta.glob("contenido_*.json")), lambda r: r.name)
+        firma = self._firma_contenido(archivos)
+        if firma is not None and self._contenido_cripta == (cripta_id, firma):
+            return self._contenido_tabla
         registros = TablaHashImpl()
         for archivo in archivos:
             for registro in self._leer_json(archivo).get("contenido", []):
                 validar_id_sala(registro.get("sala"))
                 registros.insertar(registro["sala"], registro)
-        faltantes = [s for s in sala_ids if not registros.contiene(s)]
-        if faltantes:
-            raise CriptaAPIError(f"Falta contenido offline de {cripta_id} para las salas {faltantes}")
-        return {"contenido": [registros.obtener(s) for s in sala_ids]}
+        if firma is not None:  # sin firma no hay con qué invalidar: no se cachea
+            self._contenido_cripta, self._contenido_tabla = (cripta_id, firma), registros
+        log.debug("Contenido offline de %s indexado en memoria desde %d archivo(s).", cripta_id, len(archivos))
+        return registros
 
     def obtener_catalogo(self, ids: list[str]) -> dict:
         self._validar_lote(ids, "obtener_catalogo")

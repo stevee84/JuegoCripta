@@ -101,6 +101,35 @@ class TestGuardadoBinario:
 
         assert gb.leer_sala(ruta, 999) is None
 
+    def test_leer_sala_devuelve_lo_mismo_que_cargar(self, tmp_path):
+        """El índice v8 trae el largo del registro: el recorte debe dar la sala completa."""
+        gb = GuardadoBinario()
+        j = Jugador("j1", "X", 10, 1, 1, 1)
+        j.sala_actual = None
+        salas = {}
+        for i in range(1, 21):  # ids desordenados respecto al orden de escritura
+            s = Sala((i * 7) % 20 + 1)
+            s.puertas.append(Puerta(f"p{i}", 1, "NORTE"))
+            s.enemigos.append(Enemigo(f"e{i}", f"Mob{i}", 20, 5, 2, 3, "patrulla"))
+            s.trampas.append(Trampa(f"t{i}", "fuego"))
+            salas[s.id_sala] = s
+        ruta = str(tmp_path / "idx.bin")
+        gb.guardar(ruta, _FakeEstado("c", 1, 0, j, salas))
+        completo = gb.cargar(ruta)["salas"]
+        for id_sala in salas:
+            assert gb.leer_sala(ruta, id_sala) == completo[id_sala]
+
+    def test_guardado_v7_se_rechaza_no_se_carga_en_silencio(self, tmp_path):
+        """Parte II §3.6: un archivo de la Parte I es incompatible, nunca se carga a medias."""
+        gb = GuardadoBinario()
+        ruta = tmp_path / "v7.bin"
+        gb.guardar(str(ruta), _hacer_estado())
+        crudo = bytearray(ruta.read_bytes())
+        struct.pack_into("<H", crudo, 4, 7)  # misma firma, versión anterior
+        ruta.write_bytes(bytes(crudo))
+        assert gb.cargar(str(ruta)) is None
+        assert gb.leer_sala(str(ruta), 1) is None
+
     def test_corrupt_magic(self, tmp_path):
         gb = GuardadoBinario()
         ruta = str(tmp_path / "bad.bin")

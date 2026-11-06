@@ -95,6 +95,7 @@ python main.py --bench               # mediciones por subsistema, sin interfaz
 | `--semilla N` | Semilla del azar de la partida (por defecto, 0). La misma semilla repite el mismo azar. |
 | `--replay RUTA` | Reproduce una bitácora de partida sin vista ni entrada del usuario. |
 | `--bench` | Ejecuta cargas sintéticas y reporta tiempos en JSON. No crea ninguna vista. |
+| `--log-nivel {DEBUG,INFO,WARNING,ERROR}` | Detalle del registro de red, caché y persistencia en stderr. Por defecto, `WARNING`: una partida normal no imprime nada. |
 
 Al iniciar con el servicio web, el juego muestra el menú de criptas publicadas y, si existe
 una partida guardada, la opción **Continuar partida guardada**.

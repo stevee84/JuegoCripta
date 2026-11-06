@@ -1,4 +1,5 @@
 from datos.cliente_api import MAX_IDS_POR_SOLICITUD
+from estructuras.tabla_hash import TablaHashImpl
 
 
 class CatalogoVivo:
@@ -29,6 +30,9 @@ class CatalogoVivo:
         faltantes = []
         for inicio in range(0, len(ids), MAX_IDS_POR_SOLICITUD):
             lote = ids[inicio:inicio + MAX_IDS_POR_SOLICITUD]
-            obtenidas = self._repositorio.resolver_lote(lote)["entidades"]
-            faltantes += [f for f in lote if not any(ficha.get("id") == f for ficha in obtenidas)]
+            obtenidas = TablaHashImpl()  # índice por id: comprobar el lote es O(n), no O(n·k)
+            for ficha in self._repositorio.resolver_lote(lote)["entidades"]:
+                if isinstance(ficha.get("id"), str):
+                    obtenidas.insertar(ficha["id"], True)
+            faltantes += [f for f in lote if not obtenidas.contiene(f)]
         return faltantes
