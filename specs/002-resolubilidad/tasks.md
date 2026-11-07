@@ -266,9 +266,9 @@ mismo resultado que al empezarla.
       las de `tests/fixtures/`: cada informe nombra al menos una llave inalcanzable o un círculo
       de llaves. Nunca se rechaza una cripta sin explicar el motivo. Es una comprobación
       transversal sobre el informe de la Historia 2, por eso va aquí y no en su fase
-- [ ] T046 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
+- [x] T046 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
       comandos de spec-kit usados en esta capacidad (§2.6)
-- [ ] T047 Escribir en `DECISIONES.md`, en la raíz, la sección §5.4 del Documento de Decisiones con el formato de §7.1 —problema,
+- [x] T047 Escribir en `DECISIONES.md`, en la raíz, la sección §5.4 del Documento de Decisiones con el formato de §7.1 —problema,
       alternativas consideradas, decisión, análisis de complejidad, evidencia empírica y límites
       conocidos—, enlazando a [spec.md](./spec.md) y [plan.md](./plan.md), indicando si la
       decisión final coincide con la del plan y, si no, qué medición la cambió. Las alternativas

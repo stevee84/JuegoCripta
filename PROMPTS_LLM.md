@@ -1961,3 +1961,50 @@ de una cripta sin solución, lo que es una excepción del propio enunciado a la 
 
 **Resultado.** 20 requisitos `FR-001`…`FR-020` sin huecos (se renumeró al retirar tres, antes de
 que existan tareas o pruebas que los citen), 7 criterios, 4 historias y ninguna marca pendiente.
+
+## Prompt 13 — `/speckit.plan`, `/speckit.tasks` y `/speckit.analyze` de 002-resolubilidad
+
+Los tres comandos sin texto propio: operan sobre `spec.md` y los artefactos ya generados.
+
+**`/speckit.plan`.** Antes de ejecutarlo se acordaron las dos decisiones que fijan el
+determinismo: el orden de obtención de llaves (por cercanía, a igual distancia menor id de sala,
+dentro de una sala por id de llave) y cuántos círculos reportar (todos, no solo el primero).
+Produjo `plan.md`, `research.md`, `contracts/consulta-llaves.md`, `contracts/cli-verificar.md` y
+`quickstart.md`.
+
+**`/speckit.tasks`.** 50 tareas por historia, cada una citando sus `FR`. Se incluyeron tareas de
+prueba porque `SC-006` y el Principio XI las exigen.
+
+**`/speckit.analyze`.** Encontró cuatro problemas, los cuatro reales: `FR-013` y `FR-014` no
+tenían ninguna tarea que llegara a la interfaz; una tarea apuntaba a un directorio de pruebas
+inexistente; seis tareas no citaban ruta de archivo; y `FR-011` y `FR-019` repetían la misma
+regla. Se corrigieron antes de escribir código. El primero resultó ser una **frontera entre
+integrantes**: el servicio entrega el informe como dato y la interfaz, que es de Joshua, lo
+pinta.
+
+## Prompt 14 — Implementación de 002-resolubilidad
+
+Ejecución de `tasks.md` por fases, escribiendo las pruebas antes del código. Lo que vale la pena
+registrar no es el código sino lo que salió al escribirlo:
+
+**Una prueba falló y el error estaba en la prueba.** Había escrito que al abrir un atajo hacia la
+sala de salida «la cripta se gana igual», lo que contradice `FR-004`: al abrir esa puerta deja de
+existir toda entrada que exija la llave de salida, así que no resoluble es la respuesta correcta.
+
+**Exigir la consulta de llaves rompió 63 pruebas.** La causa fue imponer un bloqueo duro sin dar
+a los fixtures existentes el dato que ahora se exige. Se corrigió de raíz y no caso por caso: los
+paquetes temporales de las pruebas pasan por un único fixture compartido, y una línea allí
+arregló 38 de golpe.
+
+**La verificación cuesta una solicitud más por partida.** El arranque pasó de 7 a 8 y el
+presupuesto sintético de `test_carga_gradual` ya no alcanzaba: subió de 8 a 9. La señal era
+legítima, ese test existe para proteger el presupuesto ajustado.
+
+**Probar el `quickstart` a mano encontró dos cosas que las pruebas no.** `--verificar` con una
+cripta inexistente escupía un traceback, y el propio `quickstart.md` documentaba una bandera
+`--cripta` que no existe, porque la cripta se elige desde el menú.
+
+**El enunciado pedía un solo recorrido, no dos.** La primera versión calculaba las dependencias
+entre llaves en una segunda pasada. §5.4 dice «del mismo recorrido», así que se fusionaron; el
+resultado fue más simple, no más complejo: desapareció una función de 35 líneas y una sola tabla
+sustituyó a dos.
