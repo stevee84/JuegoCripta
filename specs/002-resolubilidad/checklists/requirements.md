@@ -31,7 +31,7 @@
 
 ## Notas
 
-- La única marca `[NEEDS CLARIFICATION]` que queda (FR-016) es deliberada: el enunciado no dice qué
+- La única marca `[NEEDS CLARIFICATION]` que queda (FR-022) es deliberada: el enunciado no dice qué
   hacer si falla la consulta de ubicación de las llaves. Se cierra en `/speckit.clarify` y no
   bloquea la planificación del resto.
 - La marca que tenía FR-004 se cerró al leer el enunciado de la Parte II: §3.5 dice literalmente

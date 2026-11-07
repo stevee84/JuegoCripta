@@ -166,7 +166,8 @@ del camino, y que la cripta sigue declarada con solución.
   de la cripta, no como cripta sin solución.
 - **Ninguna puerta hacia la sala de salida exige la llave de salida**: la cripta no tiene solución,
   aunque se pueda caminar hasta esa sala (FR-004).
-- **No se puede obtener la ubicación de las llaves**: ver FR-016.
+- **No se puede obtener la ubicación de las llaves**: no se verificó, que no es lo mismo que no
+  tener solución (FR-022).
 - **Los datos de una sala de la ruta no se pueden obtener**: la advertencia describe las demás y
   dice cuántas quedaron fuera (FR-021).
 - **La ruta propuesta no tiene ningún enemigo ni trampa**: la advertencia lo dice en vez de quedar
@@ -213,10 +214,7 @@ del camino, y que la cripta sigue declarada con solución.
 - **FR-015**: La verificación DEBE dar el mismo resultado usando el servicio en línea o los datos
   guardados localmente para jugar sin conexión.
 - **FR-016**: La verificación DEBE usar los mismos datos de la cripta que la partida necesita
-  después, de modo que iniciar una partida verificada no exija volver a pedirlos. [NEEDS
-  CLARIFICATION: si no se puede obtener la ubicación de las llaves porque el servicio falla o el
-  dato no está, ¿la partida no inicia, inicia avisando que no se pudo verificar, o se trata como
-  cripta sin solución?]
+  después, de modo que iniciar una partida verificada no exija volver a pedirlos.
 - **FR-017**: El informe DEBE poder leerse sin conocer la cripta de antemano: cada llave, puerta
   y sala que mencione DEBE identificarse de forma que el jugador pueda ubicarla.
 - **FR-018**: El informe completo —la frontera bloqueada y las dependencias entre llaves— DEBE
@@ -232,6 +230,10 @@ del camino, y que la cripta sigue declarada con solución.
 - **FR-021**: Si los datos de alguna sala de la ruta no se pueden obtener, la advertencia DEBE
   describir las demás e indicar cuántas quedaron sin describir, en lugar de fallar o de quedar
   vacía.
+- **FR-022**: Cuando no se puede obtener la ubicación de las llaves, el programa DEBE distinguir
+  ese caso de una cripta sin solución: no se verificó, y eso no es lo mismo que no tener solución.
+  [NEEDS CLARIFICATION: ¿la partida no inicia, inicia avisando que no se pudo verificar, o se
+  trata como cripta sin solución?]
 
 ### Entidades principales
 
