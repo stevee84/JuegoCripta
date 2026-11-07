@@ -257,7 +257,28 @@ class RestauradorPartida:
         except (KeyError, TypeError, IndexError, AttributeError) as error:
             raise ValueError(f"Datos del guardado incompletos o inválidos: {error}") from error
 
+    def _completar_v9(self, estado, datos):
+        """El informe de resolubilidad vuelve tal cual se guardó (FR-020).
+
+        Reanudar no vuelve a verificar: el informe describe la cripta, no el avance, así que
+        no puede haber cambiado. Si el guardado no lo trae o está dañado, se queda sin informe
+        en vez de inventar un veredicto.
+        """
+        import json
+
+        from logica.verificador_resolubilidad import InformeResolubilidad
+
+        crudo = datos.get("informe_resolubilidad")
+        estado.informe_resolubilidad = None
+        if not crudo:
+            return
+        try:
+            estado.informe_resolubilidad = InformeResolubilidad.desde_dato(json.loads(crudo))
+        except (ValueError, TypeError, KeyError, IndexError):
+            estado.informe_resolubilidad = None
+
     def _completar_v5(self, estado, datos, catalogo):
+        self._completar_v9(estado, datos)
         for campo in ("version_cripta", "version_catalogo"):
             if not isinstance(datos[campo], str):
                 raise ValueError(f"{campo} debe ser texto.")

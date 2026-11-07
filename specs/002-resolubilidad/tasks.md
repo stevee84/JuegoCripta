@@ -33,15 +33,15 @@ El proyecto no usa `src/`. Las capas son `contratos/`, `datos/`, `dto/`, `logica
 **Propósito**: fijar los datos de prueba antes de tocar código, para que todo lo demás se pueda
 verificar sin red.
 
-- [ ] T001 [P] Crear `tests/fixtures/api_real/cripta-01/llaves.json` con la respuesta de §4.2 que
+- [x] T001 [P] Crear `tests/fixtures/api_real/cripta-01/llaves.json` con la respuesta de §4.2 que
       corresponde al fixture actual: `itm_llave_bronce` en la sala 3 e `itm_llave_negra` en la
       sala 4, ambas sin campo `enemigo`, porque en ese fixture están en el suelo
-- [ ] T002 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ciclo/` con una cripta
+- [x] T002 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ciclo/` con una cripta
       cuya llave de salida está detrás de la única puerta que ella misma abre, para el caso
       obligatorio del círculo de llaves
-- [ ] T003 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-enemigo/` con una llave
+- [x] T003 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-enemigo/` con una llave
       que suelta un enemigo, incluyendo el campo `enemigo` y la sala donde ese enemigo inicia
-- [ ] T004 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ordenes/` con dos llaves
+- [x] T004 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ordenes/` con dos llaves
       alcanzables a la vez desde la sala inicial, a la misma distancia, para comprobar que el
       desempate es estable
 
@@ -59,24 +59,24 @@ historia funciona.
 
 **Crítico**: ninguna historia puede empezar hasta que esta fase esté completa.
 
-- [ ] T005 Añadir el método abstracto `obtener_llaves(self, cripta_id: str) -> dict` a
+- [x] T005 Añadir el método abstracto `obtener_llaves(self, cripta_id: str) -> dict` a
       `contratos/fuente_datos.py`, siguiendo el contrato de
       [contracts/consulta-llaves.md](./contracts/consulta-llaves.md). Abstracto, sin
       implementación por defecto: una fuente que devolviera vacío en silencio haría pasar por
       verificada una cripta de la que no se sabe nada
-- [ ] T006 [P] Implementar `obtener_llaves` en `datos/cliente_api.py` como
+- [x] T006 [P] Implementar `obtener_llaves` en `datos/cliente_api.py` como
       `GET /criptas/<id>/llaves`, reutilizando `_solicitar` para que herede reintentos,
       presupuesto y registro (§4.3: la consulta cuenta en el presupuesto)
-- [ ] T007 [P] Implementar `obtener_llaves` en `datos/fuente_offline.py` leyendo `llaves.json` del
+- [x] T007 [P] Implementar `obtener_llaves` en `datos/fuente_offline.py` leyendo `llaves.json` del
       paquete de la cripta, igual que `generales.json`. Si el archivo no existe, señalarlo como
       dato ausente, no como lista vacía (`FR-019`)
-- [ ] T008 Añadir `obtener_llaves` al doble de fuente de
+- [x] T008 Añadir `obtener_llaves` al doble de fuente de
       `tests/test_service/test_inicializador_partida.py`, que dejará de instanciarse al volverse
       abstracto el método (Principio VIII: se actualizan los consumidores en el mismo cambio)
-- [ ] T009 Validar la respuesta en `datos/decodificador_datos.py`: `llaves` debe ser lista; cada
+- [x] T009 Validar la respuesta en `datos/decodificador_datos.py`: `llaves` debe ser lista; cada
       entrada, `id` textual no vacío y `sala` entera; `enemigo`, si viene, texto no vacío; sin
       `id` repetidos. Una respuesta inválida se rechaza, no se completa con valores por defecto
-- [ ] T010 [P] Escribir la prueba de contrato en `tests/test_datos/test_contrato_llaves.py` con
+- [x] T010 [P] Escribir la prueba de contrato en `tests/test_datos/test_contrato_llaves.py` con
       los casos de [contracts/consulta-llaves.md](./contracts/consulta-llaves.md): con y sin
       `enemigo`, sala inexistente, `llaves` vacío, falta `llaves`, y `llaves` que no es lista
 
@@ -95,38 +95,38 @@ primera deja empezar la partida y la segunda no.
 
 ### Pruebas de la Historia 1
 
-- [ ] T011 [P] [US1] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba de que
+- [x] T011 [P] [US1] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba de que
       `cripta-01` tiene solución y el orden de llaves coloca cada llave después de las que hacen
       falta para alcanzarla (`FR-005`)
-- [ ] T012 [P] [US1] Escribir la prueba de que dos verificaciones de la misma cripta dan un
+- [x] T012 [P] [US1] Escribir la prueba de que dos verificaciones de la misma cripta dan un
       resultado idéntico, usando `cripta_varios_ordenes.json` (`FR-006`, `SC-003`, caso
       obligatorio de §3.5)
-- [ ] T013 [P] [US1] Escribir la prueba de que una llave que suelta un enemigo se ubica en la sala
+- [x] T013 [P] [US1] Escribir la prueba de que una llave que suelta un enemigo se ubica en la sala
       donde ese enemigo inicia, usando `cripta_llave_de_enemigo.json` (`FR-003`, caso obligatorio)
-- [ ] T014 [P] [US1] Escribir la prueba de que alcanzar la sala de salida por una puerta que no
+- [x] T014 [P] [US1] Escribir la prueba de que alcanzar la sala de salida por una puerta que no
       exige la llave de salida **no** cuenta como ganar (`FR-004`)
 
 ### Implementación de la Historia 1
 
-- [ ] T015 [US1] Crear `logica/verificador_resolubilidad.py` con el recorrido en anchura que
+- [x] T015 [US1] Crear `logica/verificador_resolubilidad.py` con el recorrido en anchura que
       aparca las puertas cerradas en una `TablaHashImpl` indexada por la llave que exigen y las
       reanuda cuando esa llave aparece (`FR-001`, `FR-002`, `FR-004`, `FR-018`). Usar
       `ColaCircular` para la frontera y `MonticuloMinimo` para el desempate por id dentro de cada
       nivel, como en `service/cargador_contenido.py:53`. Prohibidos `heapq`, `set`, `collections`
       y `sorted()` (§6.2)
-- [ ] T016 [US1] Implementar en `logica/verificador_resolubilidad.py` el orden de obtención de llaves: por cercanía a
+- [x] T016 [US1] Implementar en `logica/verificador_resolubilidad.py` el orden de obtención de llaves: por cercanía a
       la sala inicial, a igual distancia por menor id de sala, y dentro de una sala por id de
       llave (`FR-005`, `FR-006`)
-- [ ] T017 [US1] Ubicar las llaves que sueltan enemigos en la sala donde el enemigo inicia, usando
+- [x] T017 [US1] Ubicar las llaves que sueltan enemigos en la sala donde el enemigo inicia, usando
       el campo `enemigo` de la consulta de §4.2 (`FR-003`)
-- [ ] T018 [US1] Llamar a la verificación desde `service/inicializador_partida.py` antes de
+- [x] T018 [US1] Llamar a la verificación desde `service/inicializador_partida.py` antes de
       construir la partida, reutilizando el esqueleto y las llaves que la partida necesita
       después, de modo que iniciar no vuelva a pedirlos (`FR-016`, `SC-004`)
-- [ ] T019 [US1] Impedir el inicio cuando la cripta no tiene solución o no se pudo verificar, en
+- [x] T019 [US1] Impedir el inicio cuando la cripta no tiene solución o no se pudo verificar, en
       `service/inicializador_partida.py`, distinguiendo los dos casos (`FR-011`, `FR-019`)
-- [ ] T020 [US1] Añadir las banderas `--verificar <cripta>` y `--forzar` a `configuracion.py`,
+- [x] T020 [US1] Añadir las banderas `--verificar <cripta>` y `--forzar` a `configuracion.py`,
       junto a las existentes
-- [ ] T021 [US1] Exponer desde `service/juego_service.py` el resultado de la verificación como
+- [x] T021 [US1] Exponer desde `service/juego_service.py` el resultado de la verificación como
       dato, con los tres estados distinguibles —con solución y cuántas llaves, sin solución, o no
       se pudo verificar—, para que la interfaz lo pinte sin interpretar texto. El formato está en
       [contracts/cli-verificar.md](./contracts/cli-verificar.md) (`FR-013`)
@@ -149,34 +149,34 @@ tres cosas.
 
 ### Pruebas de la Historia 2
 
-- [ ] T022 [P] [US2] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba de que el
+- [x] T022 [P] [US2] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba de que el
       informe de una cripta sin solución enumera las llaves inalcanzables, la frontera bloqueada
       con la llave de cada puerta y la ubicación de cada llave (`FR-007`, `FR-008`, `FR-009`)
-- [ ] T023 [P] [US2] Escribir la prueba de que el informe no se recalcula con las llaves que el
+- [x] T023 [P] [US2] Escribir la prueba de que el informe no se recalcula con las llaves que el
       jugador ya consiguió (`FR-014`)
-- [ ] T024 [P] [US2] Escribir en `tests/test_datos/test_guardado_binario.py` la prueba de que el
+- [x] T024 [P] [US2] Escribir en `tests/test_datos/test_guardado_binario.py` la prueba de que el
       informe sobrevive a guardar y reanudar con el mismo contenido, y que un archivo de la
       versión anterior se reporta como incompatible (`FR-020`)
 
 ### Implementación de la Historia 2
 
-- [ ] T025 [US2] Construir el informe en `logica/verificador_resolubilidad.py` a partir de lo que
+- [x] T025 [US2] Construir el informe en `logica/verificador_resolubilidad.py` a partir de lo que
       quedó aparcado al terminar el recorrido: llaves no obtenidas, frontera bloqueada —las
       puertas cerradas adyacentes a la región alcanzable, con su llave— y dónde está cada llave
       (`FR-007`, `FR-008`, `FR-009`, `FR-018`)
-- [ ] T026 [US2] En `logica/verificador_resolubilidad.py`, hacer que el informe se lea sin conocer la cripta: cada llave, puerta y sala que
+- [x] T026 [US2] En `logica/verificador_resolubilidad.py`, hacer que el informe se lea sin conocer la cripta: cada llave, puerta y sala que
       mencione debe quedar identificada (`FR-017`), con el formato de
       [contracts/cli-verificar.md](./contracts/cli-verificar.md)
-- [ ] T027 [US2] Exponer el informe completo desde `service/juego_service.py` para que el
+- [x] T027 [US2] Exponer el informe completo desde `service/juego_service.py` para que el
       controlador lo consulte durante la partida, devolviendo siempre el de antes de empezar, sin
       recalcular (`FR-014`)
 - [ ] T050 [US2] **Depende de Joshua** (`controller/` y `vista/` son suyos): añadir el comando de
       la partida que muestra el informe completo, en consola y en pygame, consumiendo lo que
       expone T027 (`FR-014`, `FR-017`)
-- [ ] T028 [US2] Subir `GuardadoBinario.VERSION` de 8 a 9 en `datos/guardado_binario.py` y guardar
+- [x] T028 [US2] Subir `GuardadoBinario.VERSION` de 8 a 9 en `datos/guardado_binario.py` y guardar
       el informe en el archivo de partida, de modo que siga consultable tras reanudar y que
       reanudar no vuelva a verificar (`FR-020`)
-- [ ] T029 [US2] En `datos/guardado_binario.py`, hacer que un archivo de partida de la versión 8 se reporte como incompatible en
+- [x] T029 [US2] En `datos/guardado_binario.py`, hacer que un archivo de partida de la versión 8 se reporte como incompatible en
       lugar de cargarse a medias, con el mecanismo que ya se usó al pasar de v7 a v8
 
 **Punto de control**: las Historias 1 y 2 funcionan por separado.

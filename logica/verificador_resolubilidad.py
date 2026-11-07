@@ -54,6 +54,39 @@ class InformeResolubilidad:
         """(sala, instancia de enemigo o None), o None si el servicio no la declaró."""
         return self._ubicaciones.obtener(llave_id) if self._ubicaciones.contiene(llave_id) else None
 
+    def a_dato(self):
+        """Estructura simple para guardar el informe con la partida (FR-020).
+
+        Vive aquí y no en el guardado para que quien persista no tenga que conocer los
+        campos por dentro; lo mismo servirá si se persiste en otro sitio.
+        """
+        return {
+            "verificada": self.verificada,
+            "resoluble": self.resoluble,
+            "motivo": self.motivo,
+            "orden": list(self.orden_llaves),
+            "inalcanzables": list(self.llaves_inalcanzables),
+            "frontera": [[sala, direccion, llave] for sala, direccion, llave in self.frontera_bloqueada],
+            "ciclos": [list(ciclo) for ciclo in self.ciclos],
+            "ubicaciones": [[llave, self._ubicaciones.obtener(llave)[0],
+                             self._ubicaciones.obtener(llave)[1]]
+                            for llave in self._ubicaciones.claves()],
+        }
+
+    @classmethod
+    def desde_dato(cls, dato):
+        """Reconstruye el informe guardado. None si el dato no es utilizable."""
+        if not isinstance(dato, dict) or "verificada" not in dato:
+            return None
+        ubicaciones = TablaHashImpl()
+        for entrada in dato.get("ubicaciones") or []:
+            ubicaciones.insertar(entrada[0], (entrada[1], entrada[2]))
+        return cls(dato.get("resoluble", False), list(dato.get("orden") or []),
+                   list(dato.get("inalcanzables") or []),
+                   [tuple(f) for f in dato.get("frontera") or []],
+                   [list(c) for c in dato.get("ciclos") or []],
+                   ubicaciones, dato["verificada"], dato.get("motivo"))
+
 
 def _ordenar(valores):
     """Orden ascendente sin ``sorted()``, prohibido por §6.2."""
