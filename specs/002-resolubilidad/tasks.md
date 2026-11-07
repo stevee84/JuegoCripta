@@ -108,7 +108,7 @@ primera deja empezar la partida y la segunda no.
       `ColaCircular` para la frontera y `MonticuloMinimo` para el desempate por id dentro de cada
       nivel, como en `service/cargador_contenido.py:53`. Prohibidos `heapq`, `set`, `collections`
       y `sorted()` (§6.2)
-- [ ] T016 [US1] Implementar en el mismo archivo el orden de obtención de llaves: por cercanía a
+- [ ] T016 [US1] Implementar en `logica/verificador_resolubilidad.py` el orden de obtención de llaves: por cercanía a
       la sala inicial, a igual distancia por menor id de sala, y dentro de una sala por id de
       llave (`FR-005`, `FR-006`)
 - [ ] T017 [US1] Ubicar las llaves que sueltan enemigos en la sala donde el enemigo inicia, usando
@@ -120,9 +120,14 @@ primera deja empezar la partida y la segunda no.
       `service/inicializador_partida.py`, distinguiendo los dos casos (`FR-011`, `FR-019`)
 - [ ] T020 [US1] Añadir las banderas `--verificar <cripta>` y `--forzar` a `configuracion.py`,
       junto a las existentes
-- [ ] T021 [US1] Mostrar al iniciar una línea con uno de los tres resultados distinguibles —con
-      solución y cuántas llaves, sin solución, o no se pudo verificar— según
+- [ ] T021 [US1] Exponer desde `service/juego_service.py` el resultado de la verificación como
+      dato, con los tres estados distinguibles —con solución y cuántas llaves, sin solución, o no
+      se pudo verificar—, para que la interfaz lo pinte sin interpretar texto. El formato está en
       [contracts/cli-verificar.md](./contracts/cli-verificar.md) (`FR-013`)
+- [ ] T049 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
+      `REPARTO_PARTE2.md`): mostrar esa línea al iniciar la partida en consola y en pygame.
+      §7.3 lo exige en la interfaz funcional mínima: «ver el reporte de resolubilidad al iniciar
+      una partida» (`FR-013`)
 
 **Punto de control**: la Historia 1 funciona y se puede probar sola.
 
@@ -153,16 +158,19 @@ tres cosas.
       quedó aparcado al terminar el recorrido: llaves no obtenidas, frontera bloqueada —las
       puertas cerradas adyacentes a la región alcanzable, con su llave— y dónde está cada llave
       (`FR-007`, `FR-008`, `FR-009`, `FR-018`)
-- [ ] T026 [US2] Hacer que el informe se lea sin conocer la cripta: cada llave, puerta y sala que
+- [ ] T026 [US2] En `logica/verificador_resolubilidad.py`, hacer que el informe se lea sin conocer la cripta: cada llave, puerta y sala que
       mencione debe quedar identificada (`FR-017`), con el formato de
       [contracts/cli-verificar.md](./contracts/cli-verificar.md)
-- [ ] T027 [US2] Exponer el informe desde `service/juego_service.py` para que el controlador lo
-      consulte durante la partida, devolviendo siempre el de antes de empezar, sin recalcular
-      (`FR-014`)
+- [ ] T027 [US2] Exponer el informe completo desde `service/juego_service.py` para que el
+      controlador lo consulte durante la partida, devolviendo siempre el de antes de empezar, sin
+      recalcular (`FR-014`)
+- [ ] T050 [US2] **Depende de Joshua** (`controller/` y `vista/` son suyos): añadir el comando de
+      la partida que muestra el informe completo, en consola y en pygame, consumiendo lo que
+      expone T027 (`FR-014`, `FR-017`)
 - [ ] T028 [US2] Subir `GuardadoBinario.VERSION` de 8 a 9 en `datos/guardado_binario.py` y guardar
       el informe en el archivo de partida, de modo que siga consultable tras reanudar y que
       reanudar no vuelva a verificar (`FR-020`)
-- [ ] T029 [US2] Hacer que un archivo de partida de la versión 8 se reporte como incompatible en
+- [ ] T029 [US2] En `datos/guardado_binario.py`, hacer que un archivo de partida de la versión 8 se reporte como incompatible en
       lugar de cargarse a medias, con el mecanismo que ya se usó al pasar de v7 a v8
 
 **Punto de control**: las Historias 1 y 2 funcionan por separado.
@@ -195,7 +203,7 @@ puerta que ella abre, y comprobar que el informe nombra el círculo.
       profundidad el grafo de dependencias entre llaves que el recorrido ya dejó construido, sin
       pasadas adicionales por llave (`FR-010`, `FR-018`). Usar `TablaHashImpl` para el estado de
       cada llave y una lista como pila; sin `set` ni `collections`
-- [ ] T034 [US3] Reportar todos los círculos encontrados, ordenados por la llave de menor id de
+- [ ] T034 [US3] En `logica/verificador_resolubilidad.py`, reportar todos los círculos encontrados, ordenados por la llave de menor id de
       cada uno, según lo acordado en [research.md](./research.md) (`FR-006`, `FR-010`)
 
 **Punto de control**: las tres historias funcionan por separado.
@@ -212,7 +220,7 @@ mismo resultado que al empezarla.
 
 ### Pruebas de la Historia 4
 
-- [ ] T035 [P] [US4] Escribir en `tests/test_integracion/test_verificar_cli.py` la prueba de que
+- [ ] T035 [P] [US4] Escribir en `tests/test_verificar_cli.py` la prueba de que
       `--verificar` devuelve el resultado sin instanciar la vista y con los códigos de salida 0, 1
       y 2 de [contracts/cli-verificar.md](./contracts/cli-verificar.md) (`FR-012`)
 - [ ] T036 [P] [US4] Escribir la prueba de que la verificación da el mismo resultado con la fuente
@@ -225,7 +233,7 @@ mismo resultado que al empezarla.
 - [ ] T038 [US4] Añadir en `main.py` la rama de `--verificar`: ejecuta solo la verificación,
       imprime el informe y termina con el código de salida que corresponda, sin construir la vista
       (`FR-012`)
-- [ ] T039 [US4] Comprobar que la ruta sin conexión usa el mismo camino lógico que la de red para
+- [ ] T039 [US4] En `datos/fuente_offline.py`, comprobar que la ruta sin conexión usa el mismo camino lógico que la de red para
       la ubicación de las llaves, sin deducirla del contenido de las salas (`FR-015`)
 
 **Punto de control**: las cuatro historias funcionan por separado.
@@ -254,7 +262,7 @@ mismo resultado que al empezarla.
       transversal sobre el informe de la Historia 2, por eso va aquí y no en su fase
 - [ ] T046 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
       comandos de spec-kit usados en esta capacidad (§2.6)
-- [ ] T047 Escribir la sección §5.4 del Documento de Decisiones con el formato de §7.1 —problema,
+- [ ] T047 Escribir en `DECISIONES.md`, en la raíz, la sección §5.4 del Documento de Decisiones con el formato de §7.1 —problema,
       alternativas consideradas, decisión, análisis de complejidad, evidencia empírica y límites
       conocidos—, enlazando a [spec.md](./spec.md) y [plan.md](./plan.md), indicando si la
       decisión final coincide con la del plan y, si no, qué medición la cambió. Las alternativas
@@ -327,6 +335,13 @@ T014  prueba de la puerta que no exige la llave de salida
 Esta capacidad es de un solo integrante, así que las fases van en orden. Lo que sí conviene es
 cerrar la Fase 2 pronto: toca `contratos/fuente_datos.py`, que es compartido, y cuanto antes esté
 en la rama, menos conflicto con Sofía y Joshua (Principio VIII).
+
+**Dos tareas no son de este integrante.** T049 y T050 tocan `controller/` y `vista/`, que según
+`REPARTO_PARTE2.md` son de Joshua. Están aquí porque `FR-013` y `FR-014` no se cumplen sin ellas y
+§7.3 las exige en la interfaz funcional mínima, pero el trabajo es suyo. La frontera es clara: el
+servicio entrega el resultado y el informe **como datos** (T021 y T027) y la interfaz los pinta
+(T049 y T050). Hay que avisarle en cuanto T021 esté en la rama, porque §7.3 le mete cuatro cosas
+en la interfaz y tres dependen de otros integrantes.
 
 ---
 

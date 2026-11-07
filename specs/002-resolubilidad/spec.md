@@ -213,9 +213,6 @@ el mismo resultado que se obtendría al empezarla.
   verificación. Ese informe es el de antes de empezar y NO DEBE recalcularse con las llaves que el
   jugador ya haya conseguido ni con la sala en la que esté: describe la cripta, no el avance de la
   partida.
-- **FR-020**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
-  reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
-  vuelva a verificar la cripta.
 - **FR-015**: La verificación DEBE dar el mismo resultado usando el servicio en línea o los datos
   guardados localmente para jugar sin conexión. La ubicación de las llaves DEBE obtenerse por el
   mismo camino lógico en los dos casos: sin conexión forma parte del paquete de datos guardados,
@@ -227,10 +224,13 @@ el mismo resultado que se obtendría al empezarla.
   y sala que mencione DEBE identificarse de forma que el jugador pueda ubicarla.
 - **FR-018**: El informe completo —la frontera bloqueada y las dependencias entre llaves— DEBE
   quedar disponible tras una sola verificación, sin tener que repetirla por cada llave.
-- **FR-019**: Cuando no se puede obtener la ubicación de las llaves, la cripta queda sin verificar
-  y la partida NO DEBE iniciar, salvo que se pida expresamente forzar el inicio. El programa DEBE
-  distinguir ese caso de una cripta sin solución: el aviso DEBE decir que la verificación no se
-  pudo hacer, sin afirmar que la cripta tiene ni que no tiene solución.
+- **FR-019**: Cuando no se puede obtener la ubicación de las llaves, la cripta queda **sin
+  verificar**. Ese es uno de los dos casos de FR-011, así que la partida no inicia sin forzarla, y
+  lo que este requisito añade es el aviso: DEBE decir que la verificación no se pudo hacer, sin
+  afirmar que la cripta tiene ni que no tiene solución. No haber verificado no es un veredicto.
+- **FR-020**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
+  reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
+  vuelva a verificar la cripta.
 
 ### Entidades principales
 
