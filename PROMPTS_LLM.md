@@ -1785,3 +1785,132 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** El comando hizo 4 preguntas y Joshua aceptó la opción recomendada en las cuatro: `historia` está disponible en consola y en pygame con el mismo resumen (FR-008); `--replay --hasta` imprime el mismo texto, líneas y orden que `historia` (FR-009); el mapa conocido del resumen tiene el mismo contenido que el comando de mapa conocido de la spec 003 (FR-004); y las estadísticas del resumen son vida actual y máxima, ataque, defensa y velocidad efectivos (FR-004). Las preguntas y respuestas quedaron en la sección `## Clarifications` de `spec.md`.
 
 **Qué hubo que corregir.** Nada en las respuestas. Al integrar FR-009 se agregó un valor por defecto que no se preguntó: un `--hasta` inválido, o sin `--replay`, se rechaza antes de reproducir. Se eliminó la suposición sobre el formato de `--replay --hasta`, porque la clarificación la reemplazó.
+## Prompt 30 — `/speckit.specify` de la capacidad 002-resolubilidad (Integrante 2)
+
+Primer comando de spec-kit de la Parte II. Se fijó el directorio con
+`SPECIFY_FEATURE_DIRECTORY=specs/002-resolubilidad` para conservar la numeración del
+`REPARTO_PARTE2.md` y no chocar con la capacidad 001 de Sofía.
+
+> **Prompt**
+>
+> SPECIFY_FEATURE_DIRECTORY=specs/002-resolubilidad
+>
+> Verificación de resolubilidad de una cripta.
+>
+> CONTEXTO. Cripta es un juego de mazmorras por turnos en Python. El jugador empieza en una sala y debe llegar a la sala de salida atravesando una puerta que exige una llave concreta. Las salas se conectan por salidas; una salida puede estar cerrada y exigir una llave. Al iniciar una cripta, el programa ya descarga de un servicio web el "esqueleto" completo: todas las salas con sus salidas, cuáles están cerradas y qué llave pide cada una, más la sala inicial, la sala de salida y la llave de salida. El servicio ofrece además la ubicación de cada llave: la sala donde está, y si la suelta un enemigo, la sala donde ese enemigo empieza. Esa consulta gasta presupuesto de solicitudes, que es limitado por cripta. El juego ya funciona contra el servicio y en modo offline.
+>
+> QUÉ HAY QUE LOGRAR. Antes de que empiece una partida, el programa debe determinar si esa cripta se puede ganar, y explicarlo cuando no.
+>
+> REGLAS DE LA VERIFICACIÓN. Se asume que el jugador puede atravesar cualquier salida abierta y cualquier salida cerrada cuya llave ya obtuvo; que las llaves no se consumen; que todo enemigo puede ser derrotado; que una llave que suelta un enemigo se obtiene en la sala donde ese enemigo empieza; y que ni las trampas ni los cierres automáticos bloquean, porque una puerta siempre puede volver a abrirse con la misma llave.
+>
+> Una cripta es resoluble si, partiendo de la sala inicial y bajo esos supuestos, el jugador puede obtener la llave de salida y llegar a la sala de salida atravesando una puerta que la exige.
+>
+> RESULTADO. Si es resoluble, el programa informa un orden de obtención de llaves en el que cada llave aparece después de todas las que hacen falta para alcanzarla; si hay varios órdenes válidos cualquiera sirve, pero dos ejecuciones iguales deben dar el mismo. Si no es resoluble, el informe dice: qué llaves no pueden obtenerse; qué puertas cerradas limitan la región alcanzable y qué llave pide cada una; y dónde está cada una de esas llaves. Si una llave está encerrada detrás de puertas que solo ella abre, sea directamente o por una cadena de llaves, el informe debe señalar esa cadena.
+>
+> CÓMO SE USA. Una cripta no resoluble no inicia partida, salvo que se pida forzarlo expresamente. Debe existir también una forma de ejecutar solo la verificación de una cripta, sin abrir la interfaz del juego. Al iniciar una partida, el jugador ve una línea con el resultado: que es resoluble y con cuántas llaves, o la alerta si no lo es; y un comando del juego muestra el informe completo. Todo esto funciona igual contra el servicio web y con los datos locales del modo sin conexión.
+>
+> PRESUPUESTO. La verificación usa el esqueleto y la ubicación de las llaves, que son los mismos datos que la partida necesita después: si la partida inicia, esos datos no deben volver a pedirse. Si la cripta no es resoluble y la partida no inicia, esas solicitudes ya se gastaron, y eso es aceptable.
+>
+> CASOS QUE DEBEN TENER UN RESULTADO DEFINIDO (van como escenarios de aceptación):
+> - La llave de salida está detrás de la única puerta que ella misma abre: no es resoluble y el informe señala el ciclo.
+> - Una llave la suelta un enemigo que se mueve: la verificación la ubica en la sala donde ese enemigo empieza, no donde pueda estar después.
+> - Hay varios órdenes válidos de obtención de llaves: dos ejecuciones dan el mismo orden.
+> - La cripta no es resoluble y no se pidió forzar: la partida no inicia y se muestra el informe.
+>
+> RENDIMIENTO. La verificación debe terminar en menos de 200 ms sobre la cripta publicada más grande. Obtener una llave puede volver alcanzable toda una región, y el costo total debe crecer aproximadamente de forma lineal con la cantidad de salas, salidas y llaves.
+>
+> NO incluyas en la especificación estructuras de datos, algoritmos, nombres de clases ni de módulos: eso va después en el plan.
+
+**Qué se obtuvo.** `specs/002-resolubilidad/spec.md` con cuatro historias priorizadas (P1 saber si
+se puede ganar, P2 entender por qué no, P3 detectar llaves encerradas entre sí, P3 verificar sin
+abrir el juego), 21 requisitos `FR-001`…`FR-017`, seis criterios medibles `SC-001`…`SC-006`,
+entidades, casos límite y supuestos; más la lista de calidad en
+`specs/002-resolubilidad/checklists/requirements.md`.
+
+**Por qué el texto se escribió así.** El enunciado abre §8 preguntando qué se le dio al modelo. El
+prompt da el contexto que el modelo no puede deducir (qué es el juego, las reglas exactas de §3.5,
+los cuatro casos del Apéndice B y los límites de §6.1) y le prohíbe explícitamente nombrar
+estructuras, algoritmos, clases o módulos, para respetar la separación de §2.4 y el Principio X de
+la constitución. Las decisiones de interfaz (una línea al iniciar más un comando de detalle,
+verificación aislada, igual comportamiento sin conexión) y la de presupuesto (reutilizar el
+esqueleto y las llaves que la partida necesita igual) se acordaron antes de redactar el prompt.
+
+**Qué quedó abierto.** Dos marcas `[NEEDS CLARIFICATION]` deliberadas, para `/speckit.clarify`:
+si llegar a la sala de salida por una puerta que no exige la llave de salida cuenta como ganar
+(`FR-004`), y qué hacer cuando no se puede obtener la ubicación de las llaves (`FR-016`).
+
+**Verificado.** El comando no creó ni cambió de rama (`create-new-feature.ps1` no toca git y no hay
+hook `before_specify` instalado): antes y después la rama es `Steve`. La especificación no menciona
+ninguna estructura de datos, algoritmo, clase ni módulo.
+
+### Corrección al Prompt 30, tras leer el enunciado de la Parte II
+
+El prompt anterior se redactó antes de tener el enunciado de la Parte II en el repositorio. Al
+leerlo (§3.5, §4.2, §5.4 y §6.1) se corrigió la especificación sin reescribir el prompt, para que
+quede el rastro de qué se supuso mal:
+
+- **§4.2 precisa la consulta de llaves.** `GET /criptas/<id>/llaves` devuelve
+  `{ "id": ..., "sala": ..., "enemigo": ... }`, donde `enemigo` es un **id de instancia** y, cuando
+  está presente, `sala` es donde ese enemigo inicia. La respuesta se puede persistir mientras
+  coincida la versión de la cripta. El prompt hablaba de «la ubicación de cada llave» sin ese
+  detalle, que resulta decisivo: la instancia no trae estadísticas, así que las de ese enemigo solo
+  están disponibles junto con los datos de su sala.
+- **§3.5 cierra una ambigüedad que habíamos marcado.** Dice literalmente «llegar a `sala_salida` a
+  través de una puerta que la requiere», así que `FR-004` ya no pregunta: se exige atravesar esa
+  puerta y alcanzar la sala por otra vía no cuenta como ganar. Queda una sola marca
+  `[NEEDS CLARIFICATION]`, la de `FR-016`.
+- **§5.4 define «frontera bloqueada»** como «las puertas cerradas adyacentes a la región
+  alcanzable». `FR-008` adopta el término textual del enunciado.
+- **§5.4 y §6.3 exigen una medición que faltaba**: comparar el recorrido incremental contra repetir
+  el recorrido completo por cada llave, con criptas sintéticas de muchas llaves encadenadas y
+  deterministas por semilla. Se añadió como `SC-007`.
+
+**Además, el caso de la cripta más pequeña.** Steve señaló que una cripta puede no ganarse porque el
+jugador muere con los enemigos del camino, no porque falte una llave. Se comprobó con los fixtures
+reales: en `cripta-01` el jugador (vida 30, ataque 6, defensa 2) recorre 1→2→3→4 pasando por dos
+ratas rastreadoras (velocidad 150) y una trampa de dardos, con el guardián óseo en la sala de la
+llave de salida; sin equipo esa ruta no sobrevive, pero en el camino hay una daga (+3 ataque), una
+coraza (+2 defensa) y 24 de curación en pociones. **La cripta sí tiene solución**: lo que falla es
+el orden de juego.
+
+Como §3.5 asume que todo enemigo puede ser derrotado, y `logica/motor_juego.py:369-394` confirma que
+un enemigo nunca impide atravesar una sala, el combate no puede alterar el veredicto. Se añadió en
+su lugar una **advertencia de ruta** (Historia 5, `FR-019`, `FR-020`): describe los enemigos,
+trampas, equipo y pociones de las salas de la ruta frente a la vida del jugador, se construye solo
+con los datos ya disponibles —sin gastar ninguna solicitud— y nunca convierte una cripta con
+solución en una sin solución. Se descartó simular el combate: decidir si existe alguna secuencia de
+acciones que sobreviva es una búsqueda en el espacio de estados (vida × inventario × posiciones ×
+reloj × semilla) que no cabe en los 200 ms de §6.1.
+
+## Prompt 31 — Clarificación de la resolubilidad (`/speckit-clarify`)
+
+Comando sin texto propio: `/speckit-clarify` escanea la especificación por categorías (alcance,
+dominio, interacción, atributos de calidad, integraciones, casos límite, restricciones,
+terminología y criterios de cierre) y pregunta solo donde la respuesta cambia la implementación o
+las pruebas. Se hicieron cuatro preguntas, una a la vez, y las cuatro respuestas quedaron
+integradas en `specs/002-resolubilidad/spec.md`, bajo `## Clarifications` y en los requisitos
+afectados.
+
+| Pregunta | Respuesta | Dónde quedó |
+|---|---|---|
+| ¿Qué hacer si no se puede obtener la ubicación de las llaves? | La partida inicia y se avisa que no se pudo verificar, sin necesidad de forzar | `FR-022`, `FR-013`, `FR-011` |
+| ¿De dónde sale ese dato sin conexión? | Del paquete de datos guardados, por el mismo camino lógico que con el servicio | `FR-015` |
+| ¿El informe se recalcula con las llaves ya conseguidas? | No: describe la cripta, no el avance de la partida | `FR-014` |
+| ¿Sigue consultable tras guardar, cerrar y reanudar? | Sí, con el mismo contenido, y reanudar no vuelve a verificar | `FR-023` |
+
+**Por qué estas respuestas.** La primera distingue «no se verificó» de «no tiene solución», que es
+una diferencia real: §4.3 dice que el servicio publica criptas sin solución a propósito, así que
+jugar una cripta no verificada es parte del ejercicio, y un fallo de red no es un defecto de la
+cripta que deba costar la partida. La segunda evita un segundo camino para el mismo dato: P1 §3.4
+exige que el modelo no sepa si los datos vinieron de HTTP o de archivos, y deducir la ubicación de
+las llaves desde el contenido habría podido divergir del resultado con red sin que nada lo
+delatara. La tercera mantiene la verificación dentro de lo que define §3.5, que la sitúa antes de
+iniciar la partida y supone llaves que no se gastan y enemigos siempre derrotables: recalcularla a
+media partida mezclaría ese modelo con el estado real. La cuarta se decidió ahora porque el
+guardado binario cambia de versión en esta parte, y el informe tiene que entrar en esa decisión
+antes de fijar el formato, no después.
+
+**Resultado.** Ninguna marca `[NEEDS CLARIFICATION]` pendiente; la lista de calidad pasa 16 de 16.
+Se añadieron `FR-023` y cuatro escenarios de aceptación (cripta sin verificar, partida reanudada,
+informe no recalculado) y dos casos límite. La especificación sigue sin nombrar estructuras de
+datos, algoritmos, clases ni módulos.

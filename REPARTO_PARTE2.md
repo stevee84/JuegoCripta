@@ -34,10 +34,17 @@ Por afinidad con lo que cada uno hizo en la Parte I.
 ### Steve: datos, guardado y mapa
 - **Spec `002-resolubilidad`**: verificación antes de jugar con el esqueleto y la ubicación
   de llaves; orden de obtención determinista; reporte de llaves no obtenibles, frontera
-  bloqueada y ciclos; `--verificar <cripta>` sin vista y `--forzar`.
+  bloqueada y ciclos; `--verificar <cripta>` sin vista y `--forzar`. Incluye una advertencia
+  de la ruta propuesta (enemigos, trampas, equipo y pociones frente a la vida del jugador)
+  que es informativa y nunca cambia el veredicto de §3.5.
 - **Spec `003-niebla-y-ir-a`**: salas exploradas, avistadas y desconocidas; memoria de
   puertas; antorcha; comando para ver el mapa conocido; «ir a» paso a paso con la ruta del
   conocimiento del jugador (reutiliza el algoritmo de rutas de 001).
+- **Spec `005-persistencia-de-cripta`** (después de 002 y 003): hoy solo las fichas del
+  catálogo sobreviven al cierre (`cache/catalogo/`); el esqueleto y el contenido se vuelven a
+  pedir en cada partida, así que la verificación de resolubilidad se paga entera cada vez.
+  P1 §4.4 permite persistirlos mientras coincida la versión de la cripta, y P2 §4.2 da por
+  sentado que la respuesta de llaves se guarda «con el resto de los datos de la cripta».
 - Datos nuevos del servicio: `costo` en el esqueleto, `GET /criptas/<id>/llaves` (cuenta en
   el presupuesto), fichas con `rango`, invalidación por versión de lo persistido de la Parte I.
 - Guardado binario nuevo que conserva mapa conocido y línea de tiempo; un archivo de la
