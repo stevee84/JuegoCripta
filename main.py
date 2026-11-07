@@ -92,14 +92,22 @@ def verificar_cripta(config) -> int:
     from logica.mapa_cripta import MapaCripta
     from logica.verificador_resolubilidad import InformeResolubilidad, verificar
 
+    from datos.cliente_api import CriptaAPIError
+
     cripta_id = config.verificar
     fuente, decodificador = _crear_fuente(config), DecodificadorDatos()
-    generales = fuente.obtener_generales(cripta_id)
-    mapa = MapaCripta()
-    for numero in range(1, generales["paginas"] + 1):
-        for datos in fuente.obtener_pagina(cripta_id, numero)["salas"]:
-            mapa.agregar_sala(decodificador.convertir_sala(datos))
-    mapa.vincular_salidas()
+    try:
+        generales = fuente.obtener_generales(cripta_id)
+        mapa = MapaCripta()
+        for numero in range(1, generales["paginas"] + 1):
+            for datos in fuente.obtener_pagina(cripta_id, numero)["salas"]:
+                mapa.agregar_sala(decodificador.convertir_sala(datos))
+        mapa.vincular_salidas()
+    except (CriptaAPIError, KeyError, TypeError, ValueError) as error:
+        # Sin esqueleto no hay nada que verificar. Un punto de entrada no escupe un traceback.
+        imprimir_informe(cripta_id, InformeResolubilidad.sin_verificar(
+            f"no se pudo obtener la cripta ({error})"))
+        return 2
     try:
         ubicaciones = decodificador.convertir_llaves(fuente.obtener_llaves(cripta_id))
     except Exception as error:  # falta el dato o viene mal: no se verificó (FR-019)

@@ -44,18 +44,32 @@ Sin diferencias (`SC-003`, `FR-006`).
 
 ## 4. Una cripta sin solución no inicia
 
+El juego no recibe la cripta por bandera: se elige desde el menú. Para probarlo, se copia una
+cripta sin solución al paquete local y se la elige al arrancar.
+
 ```bash
-python main.py --cripta cripta-07 --offline
+cp -r tests/fixtures/resolubilidad/cripta-ciclo datos_offline/
 ```
 
-La partida no debe empezar, y el informe debe nombrar las llaves inalcanzables, la frontera
-bloqueada con la llave de cada puerta y los círculos de llaves (`FR-007` a `FR-010`).
+```bash
+python main.py --offline --vista consola
+```
+
+Al elegir `cripta-ciclo` la partida no debe empezar, y el informe debe nombrar las llaves
+inalcanzables, la frontera bloqueada con la llave de cada puerta y los círculos de llaves
+(`FR-007` a `FR-010`).
 
 ```bash
-python main.py --cripta cripta-07 --offline --forzar
+python main.py --offline --vista consola --forzar
 ```
 
 Con `--forzar` la partida empieza después de mostrar el informe (`FR-011`).
+
+El informe suelto, sin abrir el juego, sale con `--verificar`:
+
+```bash
+python main.py --offline --verificar cripta-ciclo
+```
 
 ## 5. El informe sobrevive a guardar y reanudar
 

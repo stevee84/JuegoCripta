@@ -165,8 +165,16 @@ def test_la_sala_de_salida_es_la_inicial():
     assert verificar(mapa, ubicaciones, 1, 1, generales["llave_salida"]).resoluble
 
 
-def test_nunca_se_rechaza_una_cripta_sin_explicar_el_motivo():
-    """SC-005."""
-    informe = verificar_fixture("cripta-ciclo")
+@pytest.mark.parametrize("cripta", ["cripta-ciclo", "cripta-ciclo-doble", "cripta-dos-ciclos"])
+def test_nunca_se_rechaza_una_cripta_sin_explicar_el_motivo(cripta):
+    """SC-005: sobre todas las criptas sin solución disponibles, no solo una.
+
+    Un rechazo siempre viene con al menos una llave inalcanzable o un círculo, y con la
+    frontera que dice dónde se detuvo el avance.
+    """
+    informe = verificar_fixture(cripta)
     assert not informe.resoluble
     assert informe.llaves_inalcanzables or informe.ciclos
+    assert informe.frontera_bloqueada
+    for llave in informe.llaves_inalcanzables:
+        assert informe.ubicacion_de(llave) is not None, f"no se dice dónde está {llave}"

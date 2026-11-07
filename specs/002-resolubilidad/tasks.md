@@ -248,21 +248,21 @@ mismo resultado que al empezarla.
 
 ## Fase 7: Cierre y asuntos transversales
 
-- [ ] T040 Añadir a `benchmarks/integrante2.py` la medición del recorrido incremental frente a
+- [x] T040 Añadir a `benchmarks/integrante2.py` la medición del recorrido incremental frente a
       rehacer el recorrido completo por cada llave, con criptas sintéticas de muchas llaves
       encadenadas y deterministas por semilla (`SC-007`, §5.4, §6.3)
-- [ ] T041 Medir la verificación sobre la cripta publicada más grande y comprobar que queda por
+- [x] T041 Medir la verificación sobre la cripta publicada más grande y comprobar que queda por
       debajo de 200 ms, separando la preparación del intervalo cronometrado y con calentamiento y
       repeticiones, como exige el Principio IX (`SC-001`)
-- [ ] T042 Comprobar que `SC-002` se cumple: al duplicar la suma de salas, salidas y llaves, el
+- [x] T042 Comprobar que `SC-002` se cumple: al duplicar la suma de salas, salidas y llaves, el
       tiempo no más que se duplica, dentro del margen de medición
-- [ ] T043 Conectar la medición nueva a `--bench`, porque un benchmark que ningún punto de entrada
+- [x] T043 Conectar la medición nueva a `--bench`, porque un benchmark que ningún punto de entrada
       ejecuta no cuenta como evidencia (Principio IX)
-- [ ] T044 [P] Comprobar que `tests/test_restricciones_enunciado.py` sigue en verde sobre el
+- [x] T044 [P] Comprobar que `tests/test_restricciones_enunciado.py` sigue en verde sobre el
       código nuevo: sin `heapq`, `set`, `collections`, bibliotecas de grafos ni `sorted()` (§6.2)
-- [ ] T045 Ejecutar la validación de punta a punta de [quickstart.md](./quickstart.md), los siete
+- [x] T045 Ejecutar la validación de punta a punta de [quickstart.md](./quickstart.md), los siete
       pasos
-- [ ] T048 Comprobar el invariante de `SC-005` sobre todas las criptas sin solución disponibles,
+- [x] T048 Comprobar el invariante de `SC-005` sobre todas las criptas sin solución disponibles,
       las de `tests/fixtures/`: cada informe nombra al menos una llave inalcanzable o un círculo
       de llaves. Nunca se rechaza una cripta sin explicar el motivo. Es una comprobación
       transversal sobre el informe de la Historia 2, por eso va aquí y no en su fase
