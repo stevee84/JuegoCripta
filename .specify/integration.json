@@ -4,7 +4,8 @@
   "installed_integrations": [
     "claude",
     "gemini",
-    "codex"
+    "codex",
+    "opencode"
   ],
   "integration_settings": {
     "claude": {
@@ -18,6 +19,14 @@
     "codex": {
       "script": "ps",
       "invoke_separator": "-"
+    },
+    "opencode": {
+      "script": "ps",
+      "raw_options": "--events false",
+      "parsed_options": {
+        "events": "false"
+      },
+      "invoke_separator": "."
     }
   },
   "integration": "claude",
