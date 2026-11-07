@@ -23,16 +23,32 @@ from registro import log
 
 
 class InformeResolubilidad:
-    """Resultado de la verificación. Es un dato: quien lo muestra decide el formato."""
+    """Resultado de la verificación. Es un dato: quien lo muestra decide el formato.
+
+    Tres estados distinguibles, que es lo que pide FR-013: verificada y con solución,
+    verificada y sin solución, o no verificada. El tercero no es un veredicto.
+    """
 
     def __init__(self, resoluble, orden_llaves, llaves_inalcanzables,
-                 frontera_bloqueada, ciclos, ubicaciones):
+                 frontera_bloqueada, ciclos, ubicaciones, verificada=True, motivo=None):
         self.resoluble = resoluble
         self.orden_llaves = orden_llaves
         self.llaves_inalcanzables = llaves_inalcanzables
         self.frontera_bloqueada = frontera_bloqueada  # (id_sala, dirección, llave que exige)
         self.ciclos = ciclos
+        self.verificada = verificada
+        self.motivo = motivo
         self._ubicaciones = ubicaciones
+
+    @classmethod
+    def sin_verificar(cls, motivo):
+        """No se pudo comprobar. No afirma que la cripta tenga ni que no tenga solución."""
+        return cls(False, [], [], [], [], TablaHashImpl(), verificada=False, motivo=motivo)
+
+    @property
+    def puede_iniciar(self):
+        """FR-011 y FR-019: solo una cripta verificada y con solución arranca sin forzar."""
+        return self.verificada and self.resoluble
 
     def ubicacion_de(self, llave_id):
         """(sala, instancia de enemigo o None), o None si el servicio no la declaró."""

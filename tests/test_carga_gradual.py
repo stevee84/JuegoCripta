@@ -15,7 +15,7 @@ from service.inicializador_partida import InicializadorPartida
 from service.juego_service import JuegoService
 
 SALAS = 21
-PRESUPUESTO = 8
+PRESUPUESTO = 9  # +1 desde P2 §4.2: la consulta de llaves cuenta en el presupuesto (§4.3)
 FICHAS = {
     "itm_antorcha": {"id": "itm_antorcha", "nombre": "Antorcha", "clase": "antorcha", "peso": 1, "valor": 5, "duracion": 2000},
     "itm_llave_negra": {"id": "itm_llave_negra", "nombre": "Llave negra", "clase": "llave", "peso": 1, "valor": 0, "abre": "salida"},
@@ -57,6 +57,8 @@ def cripta_ajustada(tmp_path, monkeypatch):
         enemigos = [{"instancia": f"e-{i}", "tipo": "ent_guardian"}] if i == 15 else []
         contenido.append({"sala": i, "enemigos": enemigos, "objetos": objetos, "trampas": []})
     _escribir(raiz / "larga" / "contenido.json", {"contenido": contenido})
+    # P2 §4.2: la llave de salida está en el suelo de la sala 1.
+    _escribir(raiz / "larga" / "llaves.json", {"llaves": [{"id": "itm_llave_negra", "sala": 1}]})
     for ficha_id, ficha in FICHAS.items():
         _escribir(raiz / "catalogo" / f"{ficha_id}.json", ficha)
     _escribir(raiz / "catalogo" / "version.json", {"version": "c1"})
@@ -77,6 +79,8 @@ def cripta_ajustada(tmp_path, monkeypatch):
             cuerpo = {"id": partes[1], "version": local.obtener_version_cripta(partes[1])}
         elif partes[2] == "salas":
             cuerpo = local.obtener_pagina(partes[1], params["pagina"])
+        elif partes[2] == "llaves":
+            cuerpo = local.obtener_llaves(partes[1])
         else:
             cuerpo = local.obtener_contenido(partes[1], [int(i) for i in params["salas"].split(",")])
 
@@ -106,8 +110,8 @@ def test_arranca_aunque_el_contenido_completo_no_quepa_en_el_presupuesto(cripta_
     estado = servicio.iniciar_partida("larga")
     cargadas = [s.id_sala for s in estado.mapa.obtener_salas() if s.contenido_cargado]
     assert cargadas == list(range(1, 11))  # las 10 más cercanas a la sala inicial, en un solo lote
-    # generales + versión de catálogo + página + 1 lote de contenido + 1 de catálogo
-    assert servicio._fuente._presupuesto._intentos == 5
+    # generales + versión de catálogo + página + llaves + 1 lote de contenido + 1 de catálogo
+    assert servicio._fuente._presupuesto._intentos == 6
 
 
 def test_recorre_la_cripta_completa_y_gana_sin_pasarse_del_presupuesto(cripta_ajustada):

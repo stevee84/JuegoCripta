@@ -262,9 +262,9 @@ def test_registro_automatico_no_agrega_http_al_arranque(online):
     control.conectar_inicializador(InicializadorPartida(), 91)
     assert control.procesar_comando("criptas").exito
     ruta = iniciar(control)
-    assert len(llamadas) == control._fuente._presupuesto._intentos == 7
+    assert len(llamadas) == control._fuente._presupuesto._intentos == 8  # +1: consulta de llaves (P2 §4.2, §4.3)
     assert control.procesar_comando("esperar").exito
-    assert len(llamadas) == 7
+    assert len(llamadas) == 8  # +1: consulta de llaves (P2 §4.2, §4.3)
     assert len(leer(ruta)) == 2
 
 

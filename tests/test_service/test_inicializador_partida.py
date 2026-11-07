@@ -61,6 +61,8 @@ def paquete(tmp_path, monkeypatch):
     for pagina in paginas:
         escribir(f"c1/pagina_{pagina['pagina']}.json", pagina)
     escribir("c1/contenido.json", contenido)
+    # P2 §4.2: sin este dato la cripta queda sin verificar y no arranca (FR-019).
+    escribir("c1/llaves.json", {"llaves": [{"id": "llave", "sala": 0}]})
     for ficha in fichas:
         escribir(f"catalogo/{ficha['id']}.json", ficha)
     (datos / "c1/version.txt").write_text("v1", encoding="utf-8")

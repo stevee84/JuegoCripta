@@ -51,6 +51,7 @@ def online(paquete, monkeypatch):
         elif ruta == "/criptas/c1/version": respuesta = {"version": local.obtener_version_cripta("c1")}
         elif ruta == "/catalogo/version": respuesta = {"version": local.obtener_version_catalogo()}
         elif ruta == "/criptas/c1/salas": respuesta = local.obtener_pagina("c1", params["pagina"])
+        elif ruta == "/criptas/c1/llaves": respuesta = local.obtener_llaves("c1")
         elif ruta == "/criptas/c1/contenido":
             respuesta = local.obtener_contenido("c1", [int(i) for i in params["salas"].split(",")])
         elif ruta == "/catalogo":
@@ -74,7 +75,7 @@ def test_arranque_frio_cuenta_desde_listado_y_cabe_en_presupuesto(online):
     juego, llamadas, lotes, _, _, _ = online
     juego.listar_criptas()
     estado = juego.iniciar_partida("c1")
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 7
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 8  # +1 por la consulta de llaves de P2 §4.2, que cuenta en el presupuesto (§4.3)
     assert juego._fuente._presupuesto._limite == 9
     # Las lecturas de fichas pasan por el repositorio; a la red solo va el lote inicial y el del botín (≤10).
     pedidos_catalogo = [params for ruta, params in llamadas if ruta == "/catalogo"]
@@ -95,7 +96,7 @@ def test_fichas_de_disco_vigente_evitan_consultas_de_catalogo(online):
     juego.listar_criptas()
     juego.iniciar_partida("c1")
     assert not any(ruta == "/catalogo" for ruta, _ in llamadas)
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 5
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 6  # +1 por la consulta de llaves de P2 §4.2, que cuenta en el presupuesto (§4.3)
 
 
 def test_cache_vigente_evitar_red_y_disco(online, monkeypatch):
@@ -108,7 +109,7 @@ def test_cache_vigente_evitar_red_y_disco(online, monkeypatch):
     monkeypatch.setattr(AlmacenPersistente, "leer", no_leer)
     juego.iniciar_partida("c1")
     assert not any(ruta == "/catalogo" for ruta, _ in llamadas)
-    assert juego._fuente._presupuesto._intentos == 4
+    assert juego._fuente._presupuesto._intentos == 5  # +1 por la consulta de llaves de P2 §4.2, que cuenta en el presupuesto (§4.3)
 
 
 def test_presupuesto_agotado_conserva_partida_vigente(online):
@@ -166,7 +167,7 @@ def test_replay_http_reutiliza_preparacion_y_respeta_presupuesto(online, tmp_pat
     replay = EjecutorReplay()
     replay.conectar_servicio(juego)
     replay.reproducir(str(ruta))
-    assert len(llamadas) == juego._fuente._presupuesto._intentos == 6
+    assert len(llamadas) == juego._fuente._presupuesto._intentos == 7  # +1 por la consulta de llaves de P2 §4.2, que cuenta en el presupuesto (§4.3)
     assert juego.obtener_estado().acciones_ejecutadas == 1
     assert juego.obtener_estado().reloj == 100
     assert ruta.read_bytes() == antes
@@ -176,7 +177,7 @@ def test_registro_del_conjunto_verificado_no_gasta_otro_http(online, tmp_path):
     juego, llamadas, _, _, _, _ = online
     juego.listar_criptas()
     estado = juego.iniciar_partida("c1")
-    assert juego._fuente._presupuesto.restantes() == 2
+    assert juego._fuente._presupuesto.restantes() == 1  # +1 por la consulta de llaves de P2 §4.2, que cuenta en el presupuesto (§4.3)
     antes = len(llamadas)
     ruta = tmp_path / "partida.log"
     juego.iniciar_registro(str(ruta))
