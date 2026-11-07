@@ -1928,3 +1928,36 @@ antes de fijar el formato, no después.
 Se añadieron `FR-023` y cuatro escenarios de aceptación (cripta sin verificar, partida reanudada,
 informe no recalculado) y dos casos límite. La especificación sigue sin nombrar estructuras de
 datos, algoritmos, clases ni módulos.
+
+### Revisión del spec 002 tras la observación de Sofía
+
+Sofía contrastó la especificación con el enunciado y señaló dos puntos. Los dos eran correctos y
+los dos se corrigieron; ninguno se defendió.
+
+**1. Iniciar sin verificar.** `FR-019` (antes `FR-022`) decía que, cuando no se puede obtener la
+ubicación de las llaves, la partida inicia sin necesidad de `--forzar`. El argumento para eso era
+que un fallo de red no es un defecto de la cripta. Pero §3.5 abre diciendo que «antes de iniciar
+una partida, el programa determina si la cripta puede ganarse»: arrancar sin haber determinado
+nada, y sin que el usuario lo pida, no lo cumple. Ahora la partida no inicia salvo `--forzar`,
+igual que una cripta sin solución. Lo que sí se conserva es que el aviso distinga los dos estados:
+«no se pudo verificar» no es «no tiene solución», y el informe no debe afirmar lo que no comprobó.
+
+**2. La advertencia de ruta rompía la niebla de guerra.** Los antiguos `FR-019` a `FR-021` y la
+Historia 5 describían los enemigos, trampas, equipo y pociones de las salas del camino. §3.3 es
+explícito: «todo lo que la vista muestra […] debe derivarse exclusivamente del conocimiento del
+jugador», y ni siquiera la antorcha revela contenido, solo nombre y salidas. La advertencia
+mostraba el contenido de salas que el jugador no había pisado, así que contradecía la capacidad
+`003-niebla-y-ir-a`, que es de este mismo integrante. Se retiró entera.
+
+Conviene registrar por qué existió: la cripta más pequeña (`cripta-01`) **tiene solución** y aun
+así mata al jugador que va directo por la llave de salida, porque la ruta pasa por dos ratas
+rastreadoras y una trampa, y el equipo que la vuelve superable está repartido por esas mismas
+salas. Eso es real, pero no es resolubilidad: §3.5 supone que todo enemigo puede ser derrotado, y
+avisarlo exigía revelar lo que §3.3 oculta. El caso y el motivo del descarte van al Documento de
+Decisiones.
+
+La ubicación de las llaves sí se informa, sin conflicto: §3.5 la pide expresamente para el informe
+de una cripta sin solución, lo que es una excepción del propio enunciado a la niebla.
+
+**Resultado.** 20 requisitos `FR-001`…`FR-020` sin huecos (se renumeró al retirar tres, antes de
+que existan tareas o pruebas que los citen), 7 criterios, 4 historias y ninguna marca pendiente.
