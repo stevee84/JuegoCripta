@@ -142,9 +142,13 @@ Sean `V` salas, `E` salidas y `L` llaves.
 - Cada salida se examina al visitarla su sala y, si estaba cerrada y aparcada, una segunda vez al
   liberarse su llave: `O(E)` en total, no `O(L·E)`.
 - Cada llave se obtiene una vez y reanuda su lista de puertas una vez: `O(L + E)`.
-- Detección de círculos sobre las llaves que quedaron sin obtener: un recorrido en profundidad
-  sobre el grafo de dependencias, `O(L + E')` con `E'` las aristas entre llaves, que ya están
-  construidas.
+- Agotada la región alcanzable, **el mismo recorrido continúa** más allá de las puertas
+  aparcadas, cruzándolas aunque falte su llave y arrastrando cuál bloquea el paso. Cada sala del
+  otro lado entra también una sola vez, así que sigue siendo `O(V + E)`, y al terminar cada sala
+  lleva anotada la llave que impide llegar a ella.
+- Detección de círculos: seguir, para cada llave sin obtener, la llave que bloquea la sala donde
+  está. Esas flechas ya quedaron anotadas por el recorrido, así que es `O(L)` y no hace falta
+  construir ningún grafo aparte.
 
 Total **`O(V + E + L)`**, que es el crecimiento lineal que exige `SC-002`. La alternativa
 ingenua, rehacer el recorrido entero cada vez que se obtiene una llave, es `O(L · (V + E))`: esa
@@ -160,9 +164,10 @@ final ni usar `sorted()`.
 ### Círculos de llaves
 
 Una llave `K` depende de `K'` cuando `K` está en una sala que solo se alcanza atravesando una
-puerta que exige `K'`. Esas aristas ya quedaron registradas durante el recorrido, en la tabla de
-puertas en espera. Si al terminar quedan llaves sin obtener, se recorre ese grafo en profundidad
-buscando ciclos.
+puerta que exige `K'`. Esa dependencia no se calcula aparte: cuando el recorrido se queda sin
+región alcanzable, sigue cruzando las puertas aparcadas y marca cada sala del otro lado con la
+llave que impide llegar a ella. Al terminar, la dependencia de una llave es la marca de su sala,
+y buscar círculos es seguir esas flechas.
 
 Acordado: **se reportan todos los círculos**, no solo el primero, ordenados por la llave de menor
 id de cada uno. Encontrarlos todos cuesta lo mismo que encontrar uno, y así quien diseñó la

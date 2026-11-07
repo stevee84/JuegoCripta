@@ -5,12 +5,14 @@ llave todavía no se tiene, la **aparca** en una tabla indexada por esa llave en
 descartarla; cuando el recorrido alcanza la sala donde está esa llave, reanuda desde todas las
 puertas que la esperaban.
 
-Al terminar, lo que quedó aparcado *es* la frontera bloqueada, y qué llave bloqueaba el paso
-hacia cada llave inalcanzable *es* el grafo de dependencias: las dos cosas salen del mismo
-recorrido, sin una pasada por cada llave (§5.4).
+Cuando ya no queda nada alcanzable, el mismo recorrido **sigue** más allá de las puertas que
+quedaron aparcadas, cruzándolas aunque falte su llave y arrastrando cuál es la que bloquea el
+paso. Así, al terminar, lo aparcado *es* la frontera bloqueada y la llave que marca cada sala
+del otro lado *es* la dependencia de las llaves que hay allí: las dos cosas salen del mismo
+recorrido, no de uno por llave (§5.4).
 
-Costo O(V + E + L): cada sala entra una vez en el recorrido y cada puerta se examina a lo sumo
-dos veces, una al encontrarla cerrada y otra al liberarla su llave.
+Costo O(V + E + L): cada sala entra una vez y cada puerta se examina a lo sumo dos veces, una al
+encontrarla cerrada y otra al liberarla su llave.
 
 No conoce la red ni la vista: recibe el mapa y la ubicación de las llaves ya resueltos, para que
 ``--verificar`` corra sin instanciar la vista (§3.5) y la medición no mezcle tiempo de red.
@@ -65,35 +67,47 @@ def verificar(mapa, ubicaciones, sala_inicial, sala_salida, llave_salida):
     ``ubicaciones`` es la tabla llave → (sala, enemigo) de ``convertir_llaves``.
     """
     por_sala = _llaves_por_sala(ubicaciones)
-    visitadas, obtenidas = TablaHashImpl(), TablaHashImpl()
-    esperando = TablaHashImpl()      # llave → puertas aparcadas a la espera de ella
-    orden, frontera_bloqueada = [], []
+    # sala → llave que impide llegar a ella, o None si se alcanza de verdad.
+    bloqueada_por = TablaHashImpl()
+    obtenidas = TablaHashImpl()
+    esperando = TablaHashImpl()   # llave → puertas aparcadas a la espera de ella
+    orden = []
     gano = False
 
-    visitadas.insertar(sala_inicial, True)
-    nivel = [sala_inicial]
+    bloqueada_por.insertar(sala_inicial, None)
+    nivel, diagnosticando = [sala_inicial], False
+
     while nivel:
-        # 1. Las llaves del nivel, por sala de menor id y, dentro de una sala, por id de llave.
+        # 1. Llaves del nivel, por sala de menor id y, dentro de una sala, por id de llave.
+        #    Más allá de la frontera no se recoge nada: esas llaves no son obtenibles.
         liberadas = []
-        for sala_id in _ordenar(nivel):
-            if not por_sala.contiene(sala_id):
-                continue
-            for llave_id in _ordenar(por_sala.obtener(sala_id)):
-                if not obtenidas.contiene(llave_id):
-                    obtenidas.insertar(llave_id, True)
-                    orden.append(llave_id)
-                    liberadas.append(llave_id)
+        if not diagnosticando:
+            for sala_id in _ordenar(nivel):
+                if not por_sala.contiene(sala_id):
+                    continue
+                for llave_id in _ordenar(por_sala.obtener(sala_id)):
+                    if not obtenidas.contiene(llave_id):
+                        obtenidas.insertar(llave_id, True)
+                        orden.append(llave_id)
+                        liberadas.append(llave_id)
 
         # 2. Puertas del nivel: se cruzan, o se aparcan a la espera de su llave.
         siguiente = []
         for sala_id in nivel:
+            culpable = bloqueada_por.obtener(sala_id)
             for puerta in mapa.obtener_sala(sala_id).puertas:
-                if puerta.abierta or (puerta.llave_requerida is not None
-                                      and obtenidas.contiene(puerta.llave_requerida)):
+                abrible = puerta.abierta or (puerta.llave_requerida is not None
+                                             and obtenidas.contiene(puerta.llave_requerida))
+                if abrible and not diagnosticando:
                     if (puerta.destino_sala_id == sala_salida
                             and puerta.llave_requerida == llave_salida):
                         gano = True  # §3.5: hay que entrar por una puerta que la exige
-                    _avanzar(mapa, puerta, visitadas, siguiente)
+                    _avanzar(mapa, puerta, bloqueada_por, siguiente, None)
+                elif diagnosticando:
+                    # Del otro lado de la frontera ya no se gana nada: solo se anota quién
+                    # bloquea. Una puerta abierta conserva el culpable; otra cerradura lo cambia.
+                    _avanzar(mapa, puerta, bloqueada_por, siguiente,
+                             puerta.llave_requerida if not puerta.abierta else culpable)
                 elif puerta.llave_requerida is None:
                     continue  # cerrada y sin llave declarada: nadie puede abrirla
                 else:
@@ -108,82 +122,59 @@ def verificar(mapa, ubicaciones, sala_inicial, sala_salida, llave_salida):
             for sala_id, puerta in esperando.obtener(llave_id):
                 if puerta.destino_sala_id == sala_salida and llave_id == llave_salida:
                     gano = True
-                _avanzar(mapa, puerta, visitadas, siguiente)
-            esperando.insertar(llave_id, [])  # ya reanudadas: no vuelven a la frontera
+                _avanzar(mapa, puerta, bloqueada_por, siguiente, None)
+            esperando.insertar(llave_id, [])  # ya reanudadas: no siguen en la frontera
 
+        # 4. Agotada la región alcanzable, el recorrido continúa más allá de la frontera.
+        if not siguiente and not diagnosticando:
+            diagnosticando = True
+            siguiente = _tras_la_frontera(mapa, esperando, bloqueada_por)
         nivel = siguiente
 
-    # Lo que sigue aparcado es la frontera bloqueada: puertas cerradas al borde de lo alcanzable.
+    frontera_bloqueada = []
     for llave_id in _ordenar(list(esperando.claves())):
         for sala_id, puerta in esperando.obtener(llave_id):
             frontera_bloqueada.append((sala_id, puerta.direccion, llave_id))
 
     inalcanzables = [k for k in _ordenar(list(ubicaciones.claves())) if not obtenidas.contiene(k)]
-    ciclos = _buscar_ciclos(inalcanzables, ubicaciones, esperando, mapa, visitadas)
+    ciclos = _buscar_ciclos(inalcanzables, ubicaciones, bloqueada_por)
     log.debug("Resolubilidad: %s, %d llaves obtenidas, %d en la frontera.",
               gano, len(orden), len(frontera_bloqueada))
     return InformeResolubilidad(gano, orden, inalcanzables, frontera_bloqueada, ciclos, ubicaciones)
 
 
-def _avanzar(mapa, puerta, visitadas, siguiente):
+def _avanzar(mapa, puerta, bloqueada_por, siguiente, culpable):
     """Único punto por el que una sala entra al recorrido, así que aquí se valida una vez."""
     destino = puerta.destino_sala_id
-    if destino is None or visitadas.contiene(destino):
+    if destino is None or bloqueada_por.contiene(destino):
         return
     if mapa.obtener_sala(destino) is None:
         raise ValueError(
             f"La puerta {puerta.id_puerta} lleva a la sala {destino}, que no existe en el "
             f"esqueleto de la cripta.")
-    visitadas.insertar(destino, True)
+    bloqueada_por.insertar(destino, culpable)
     siguiente.append(destino)
 
 
-def _dependencias(inalcanzables, ubicaciones, esperando, mapa, visitadas):
-    """Qué llave bloquea el paso hacia cada llave inalcanzable.
-
-    Continúa el recorrido desde las puertas que quedaron aparcadas, cruzándolas aunque falte su
-    llave y arrastrando cuál fue. La primera que alcanza una sala es la que la bloquea. Una sola
-    pasada más sobre salas y salidas, no una por llave (§5.4).
-    """
-    bloqueada_por = TablaHashImpl()   # sala → llave que impide llegar
-    alcanzadas = TablaHashImpl()
-    cola = []
+def _tras_la_frontera(mapa, esperando, bloqueada_por):
+    """Primer nivel del otro lado: los destinos de las puertas que quedaron aparcadas."""
+    nivel = []
     for llave_id in _ordenar(list(esperando.claves())):
         for _, puerta in esperando.obtener(llave_id):
-            destino = puerta.destino_sala_id
-            if destino is not None and not visitadas.contiene(destino) and not alcanzadas.contiene(destino):
-                alcanzadas.insertar(destino, True)
-                bloqueada_por.insertar(destino, llave_id)
-                cola.append(destino)
-    inicio = 0
-    while inicio < len(cola):
-        sala_id, inicio = cola[inicio], inicio + 1
-        culpable = bloqueada_por.obtener(sala_id)
-        for puerta in mapa.obtener_sala(sala_id).puertas:
-            destino = puerta.destino_sala_id
-            if destino is None or visitadas.contiene(destino) or alcanzadas.contiene(destino):
-                continue
-            alcanzadas.insertar(destino, True)
-            # cruzar otra cerradura cambia de culpable; una puerta abierta mantiene el mismo
-            bloqueada_por.insertar(destino, puerta.llave_requerida or culpable)
-            cola.append(destino)
-
-    depende_de = TablaHashImpl()
-    for llave_id in inalcanzables:
-        sala_id = ubicaciones.obtener(llave_id)[0]
-        if bloqueada_por.contiene(sala_id):
-            depende_de.insertar(llave_id, bloqueada_por.obtener(sala_id))
-    return depende_de
+            _avanzar(mapa, puerta, bloqueada_por, nivel, llave_id)
+    return nivel
 
 
-def _buscar_ciclos(inalcanzables, ubicaciones, esperando, mapa, visitadas):
+def _buscar_ciclos(inalcanzables, ubicaciones, bloqueada_por):
     """Llaves encerradas entre sí: A está tras una puerta que exige B, y B tras una que exige A.
+
+    La dependencia de cada llave ya la dejó anotada el recorrido en ``bloqueada_por``: es la
+    llave que marca la sala donde esa llave se encuentra. Aquí solo se siguen esas flechas.
 
     Se reportan todos los círculos, cada uno empezando por su llave de menor id, y ordenados
     entre sí por esa llave. Encontrarlos todos cuesta lo mismo que encontrar el primero.
     """
-    depende_de = _dependencias(inalcanzables, ubicaciones, esperando, mapa, visitadas)
-    estado = TablaHashImpl()  # llave → "en curso" | "cerrada"
+    estado = TablaHashImpl()
     ciclos = []
     for inicio in inalcanzables:
         if estado.contiene(inicio):
@@ -196,7 +187,8 @@ def _buscar_ciclos(inalcanzables, ubicaciones, esperando, mapa, visitadas):
                 break
             posicion.insertar(actual, len(camino))
             camino.append(actual)
-            actual = depende_de.obtener(actual) if depende_de.contiene(actual) else None
+            sala_id = ubicaciones.obtener(actual)[0] if ubicaciones.contiene(actual) else None
+            actual = bloqueada_por.obtener(sala_id) if bloqueada_por.contiene(sala_id) else None
         for llave_id in camino:
             estado.insertar(llave_id, "cerrada")
     return ciclos

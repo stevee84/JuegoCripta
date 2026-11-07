@@ -88,6 +88,25 @@ def test_llave_de_salida_tras_su_propia_puerta():
     assert ["itm_llave_negra"] in informe.ciclos
 
 
+def test_circulo_de_dos_llaves():
+    """FR-010: alfa está tras la puerta de beta, y beta tras la de alfa. Nadie empieza.
+
+    Ejercita la propagación del recorrido más allá de la frontera: la dependencia de cada
+    llave es la que bloquea la sala donde está, y eso sale del mismo recorrido (§5.4).
+    """
+    informe = verificar_fixture("cripta-ciclo-doble")
+    assert not informe.resoluble
+    assert informe.ciclos == [["itm_llave_alfa", "itm_llave_beta"]]
+    # la negra está en la misma sala que beta: inalcanzable, pero no forma círculo propio
+    assert "itm_llave_negra" in informe.llaves_inalcanzables
+
+
+def test_el_circulo_se_señala_igual_en_dos_ejecuciones():
+    """FR-006: el círculo se rota siempre desde su llave de menor id."""
+    assert verificar_fixture("cripta-ciclo-doble").ciclos == \
+           verificar_fixture("cripta-ciclo-doble").ciclos
+
+
 def test_la_frontera_bloqueada_nombra_la_puerta_y_su_llave():
     """FR-008: las puertas cerradas adyacentes a la región alcanzable."""
     informe = verificar_fixture("cripta-ciclo")

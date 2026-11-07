@@ -22,6 +22,18 @@ descartarla deja las dos cosas construidas sin trabajo extra: lo que quedó apar
 | Precalcular, para cada sala, el conjunto de llaves necesarias para llegar | El conjunto crece de forma combinatoria y obliga a representar conjuntos de llaves, que es justo lo que `set` haría y §6.2 prohíbe. |
 | Tratarlo como alcanzabilidad en un grafo producto (sala × llaves poseídas) | Correcto pero exponencial en llaves: `V·2^L` estados. Inviable dentro de los 200 ms y desproporcionado para el problema. |
 
+### Una pasada o dos
+
+La primera versión calculaba las dependencias entre llaves en una **segunda** pasada, separada
+del recorrido principal. Dos pasadas lineales dan el mismo `O(V + E)` y cumplen lo que §5.4
+prohíbe, que es un recorrido *por cada llave*. Pero §5.4 dice literalmente que la frontera
+bloqueada y las dependencias deben salir «del mismo recorrido», así que se fusionaron: cuando la
+región alcanzable se agota, el mismo bucle continúa más allá de las puertas aparcadas.
+
+Fusionarlo no costó legibilidad, al contrario. Desapareció la función de dependencias y una sola
+tabla `sala → llave que la bloquea` sustituyó a la de visitadas más el grafo de dependencias,
+que antes se construía aparte. La detección de círculos pasó a ser seguir flechas ya anotadas.
+
 ## 2. Cómo fijar el orden de obtención de llaves
 
 **Decisión**: por cercanía a la sala inicial; a igual distancia, menor id de sala; dentro de una
