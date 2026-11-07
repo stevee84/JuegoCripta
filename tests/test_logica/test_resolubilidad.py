@@ -101,6 +101,18 @@ def test_circulo_de_dos_llaves():
     assert "itm_llave_negra" in informe.llaves_inalcanzables
 
 
+def test_dos_circulos_independientes_se_reportan_los_dos():
+    """Encontrar todos cuesta lo mismo que encontrar uno, y evita verificar varias veces.
+
+    alfa ↔ beta por un lado, delta ↔ gamma por otro. Cada círculo empieza por su llave de
+    menor id, y los círculos salen ordenados entre sí por esa llave (FR-006, FR-010).
+    """
+    informe = verificar_fixture("cripta-dos-ciclos")
+    assert not informe.resoluble
+    assert informe.ciclos == [["itm_llave_alfa", "itm_llave_beta"],
+                              ["itm_llave_delta", "itm_llave_gamma"]]
+
+
 def test_el_circulo_se_señala_igual_en_dos_ejecuciones():
     """FR-006: el círculo se rota siempre desde su llave de menor id."""
     assert verificar_fixture("cripta-ciclo-doble").ciclos == \

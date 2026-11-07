@@ -193,23 +193,23 @@ puerta que ella abre, y comprobar que el informe nombra el círculo.
 
 ### Pruebas de la Historia 3
 
-- [ ] T030 [P] [US3] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba del caso
+- [x] T030 [P] [US3] Escribir en `tests/test_logica/test_resolubilidad.py` la prueba del caso
       obligatorio de §3.5: la llave de salida detrás de la única puerta que ella misma abre, con
       `cripta_sin_solucion.json`; la cripta no tiene solución y el informe señala el círculo
       (`FR-010`)
-- [ ] T031 [P] [US3] Escribir la prueba de un círculo de dos llaves, A detrás de una puerta que
+- [x] T031 [P] [US3] Escribir la prueba de un círculo de dos llaves, A detrás de una puerta que
       exige B y B detrás de una que exige A, y de que dos ejecuciones señalan el mismo círculo
       (`FR-010`, `FR-006`)
-- [ ] T032 [P] [US3] Escribir la prueba de una cripta con dos círculos independientes: el informe
+- [x] T032 [P] [US3] Escribir la prueba de una cripta con dos círculos independientes: el informe
       reporta los dos, ordenados por la llave de menor id de cada uno
 
 ### Implementación de la Historia 3
 
-- [ ] T033 [US3] Detectar los círculos en `logica/verificador_resolubilidad.py` recorriendo en
+- [x] T033 [US3] Detectar los círculos en `logica/verificador_resolubilidad.py` recorriendo en
       profundidad el grafo de dependencias entre llaves que el recorrido ya dejó construido, sin
       pasadas adicionales por llave (`FR-010`, `FR-018`). Usar `TablaHashImpl` para el estado de
       cada llave y una lista como pila; sin `set` ni `collections`
-- [ ] T034 [US3] En `logica/verificador_resolubilidad.py`, reportar todos los círculos encontrados, ordenados por la llave de menor id de
+- [x] T034 [US3] En `logica/verificador_resolubilidad.py`, reportar todos los círculos encontrados, ordenados por la llave de menor id de
       cada uno, según lo acordado en [research.md](./research.md) (`FR-006`, `FR-010`)
 
 **Punto de control**: las tres historias funcionan por separado.
@@ -226,20 +226,20 @@ mismo resultado que al empezarla.
 
 ### Pruebas de la Historia 4
 
-- [ ] T035 [P] [US4] Escribir en `tests/test_verificar_cli.py` la prueba de que
+- [x] T035 [P] [US4] Escribir en `tests/test_verificar_cli.py` la prueba de que
       `--verificar` devuelve el resultado sin instanciar la vista y con los códigos de salida 0, 1
       y 2 de [contracts/cli-verificar.md](./contracts/cli-verificar.md) (`FR-012`)
-- [ ] T036 [P] [US4] Escribir la prueba de que la verificación da el mismo resultado con la fuente
+- [x] T036 [P] [US4] Escribir la prueba de que la verificación da el mismo resultado con la fuente
       de red y con la fuente sin conexión (`FR-015`)
-- [ ] T037 [P] [US4] Escribir la prueba de que una cripta sin solución no inicia partida sin
+- [x] T037 [P] [US4] Escribir la prueba de que una cripta sin solución no inicia partida sin
       `--forzar`, y sí con ella (`FR-011`, caso obligatorio de §3.5)
 
 ### Implementación de la Historia 4
 
-- [ ] T038 [US4] Añadir en `main.py` la rama de `--verificar`: ejecuta solo la verificación,
+- [x] T038 [US4] Añadir en `main.py` la rama de `--verificar`: ejecuta solo la verificación,
       imprime el informe y termina con el código de salida que corresponda, sin construir la vista
       (`FR-012`)
-- [ ] T039 [US4] En `datos/fuente_offline.py`, comprobar que la ruta sin conexión usa el mismo camino lógico que la de red para
+- [x] T039 [US4] En `datos/fuente_offline.py`, comprobar que la ruta sin conexión usa el mismo camino lógico que la de red para
       la ubicación de las llaves, sin deducirla del contenido de las salas (`FR-015`)
 
 **Punto de control**: las cuatro historias funcionan por separado.
