@@ -8,6 +8,22 @@
 
 **Entrada**: Descripción del usuario: "Verificación de resolubilidad de una cripta. Antes de que empiece una partida, el programa debe determinar si esa cripta se puede ganar, y explicarlo cuando no."
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Cuando no se puede obtener la ubicación de las llaves, ¿qué debe hacer el programa? → A: La
+  partida inicia y la línea de inicio avisa que la verificación no se pudo hacer, en lugar de
+  afirmar que la cripta tiene o no tiene solución.
+- Q: ¿De dónde saca la ubicación de las llaves el modo sin conexión? → A: Del paquete de datos
+  guardados, como un archivo más y por el mismo contrato lógico que el resto; si falta, la cripta
+  queda sin verificar (FR-022).
+- Q: Si el jugador ya consiguió parte de las llaves, ¿qué informe ve durante la partida? → A: El
+  de antes de empezar, sin recalcular: la verificación describe la cripta, no el avance de la
+  partida.
+- Q: ¿El informe sigue disponible después de guardar la partida, cerrar el programa y reanudarla?
+  → A: Sí, igual que en la sesión que lo calculó, y sin volver a verificar al reanudar.
+
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
 ### Historia 1 — Saber antes de jugar si la cripta se puede ganar (Prioridad: P1)
@@ -37,6 +53,9 @@ que la primera deja empezar la partida y la segunda no.
    todas las que hacen falta para alcanzarla.
 5. **Dado** una misma cripta con varios órdenes de obtención válidos, **cuando** se verifica dos
    veces, **entonces** las dos veces se obtiene exactamente el mismo orden.
+6. **Dado** que no se puede obtener la ubicación de las llaves, **cuando** el jugador elige una
+   cripta, **entonces** la partida empieza sin necesidad de forzarla y el jugador ve que la
+   verificación no se pudo hacer, no que la cripta tenga ni que no tenga solución.
 
 ---
 
@@ -66,6 +85,11 @@ pide cada una, y la ubicación de cada una de esas llaves.
 4. **Dado** una llave que suelta un enemigo que se desplaza por la cripta, **cuando** se verifica,
    **entonces** esa llave se ubica en la sala donde el enemigo empieza, no donde pueda estar
    después.
+5. **Dado** una partida verificada que se guardó y se cerró, **cuando** se reanuda y se consulta el
+   informe, **entonces** muestra lo mismo que en la sesión donde se calculó, y reanudar no vuelve a
+   verificar la cripta.
+6. **Dado** un jugador que ya consiguió parte de las llaves, **cuando** consulta el informe,
+   **entonces** sigue viendo el de antes de empezar, sin recalcular por su avance.
 
 ---
 
@@ -166,8 +190,10 @@ del camino, y que la cripta sigue declarada con solución.
   de la cripta, no como cripta sin solución.
 - **Ninguna puerta hacia la sala de salida exige la llave de salida**: la cripta no tiene solución,
   aunque se pueda caminar hasta esa sala (FR-004).
-- **No se puede obtener la ubicación de las llaves**: no se verificó, que no es lo mismo que no
-  tener solución (FR-022).
+- **No se puede obtener la ubicación de las llaves**: la cripta queda sin verificar y la partida
+  empieza avisándolo, sin forzar; no se verificó no es lo mismo que no tener solución (FR-022).
+- **El paquete de datos para jugar sin conexión no incluye la ubicación de las llaves**: se trata
+  igual que el caso anterior, sin deducirla por otra vía (FR-015, FR-022).
 - **Los datos de una sala de la ruta no se pueden obtener**: la advertencia describe las demás y
   dice cuántas quedaron fuera (FR-021).
 - **La ruta propuesta no tiene ningún enemigo ni trampa**: la advertencia lo dice en vez de quedar
@@ -203,16 +229,26 @@ del camino, y que la cripta sigue declarada con solución.
 - **FR-010**: Cuando una llave esté encerrada detrás de puertas que solo ella abre, de forma
   directa o mediante una cadena de llaves, el informe DEBE señalar esa cadena nombrando las
   llaves que la forman.
-- **FR-011**: Una cripta sin solución NO DEBE iniciar partida, salvo que se pida expresamente
-  forzar el inicio.
+- **FR-011**: Una cripta que se verificó y no tiene solución NO DEBE iniciar partida, salvo que se
+  pida expresamente forzar el inicio. Esto no aplica a una cripta que no se pudo verificar, que es
+  un caso distinto (FR-022).
 - **FR-012**: El programa DEBE ofrecer una forma de verificar una cripta sin abrir la interfaz
   del juego ni pedir acciones al jugador.
-- **FR-013**: Al iniciar una partida, el jugador DEBE ver una línea con el resultado: que la
-  cripta tiene solución y con cuántas llaves, o el aviso de que no la tiene.
+- **FR-013**: Al iniciar una partida, el jugador DEBE ver una línea con uno de tres resultados
+  distinguibles: que la cripta tiene solución y con cuántas llaves, que no la tiene, o que no se
+  pudo verificar (FR-022).
 - **FR-014**: Durante la partida, el jugador DEBE poder consultar el informe completo de la
-  verificación.
+  verificación. Ese informe es el de antes de empezar y NO DEBE recalcularse con las llaves que el
+  jugador ya haya conseguido ni con la sala en la que esté: describe la cripta, no el avance de la
+  partida.
+- **FR-023**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
+  reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
+  vuelva a verificar la cripta.
 - **FR-015**: La verificación DEBE dar el mismo resultado usando el servicio en línea o los datos
-  guardados localmente para jugar sin conexión.
+  guardados localmente para jugar sin conexión. La ubicación de las llaves DEBE obtenerse por el
+  mismo camino lógico en los dos casos: sin conexión forma parte del paquete de datos guardados,
+  como los datos generales de la cripta o las páginas del esqueleto, y NO DEBE deducirse por una
+  vía distinta de la que se usa con el servicio. Si ese dato falta en el paquete, se aplica FR-022.
 - **FR-016**: La verificación DEBE usar los mismos datos de la cripta que la partida necesita
   después, de modo que iniciar una partida verificada no exija volver a pedirlos.
 - **FR-017**: El informe DEBE poder leerse sin conocer la cripta de antemano: cada llave, puerta
@@ -232,8 +268,9 @@ del camino, y que la cripta sigue declarada con solución.
   vacía.
 - **FR-022**: Cuando no se puede obtener la ubicación de las llaves, el programa DEBE distinguir
   ese caso de una cripta sin solución: no se verificó, y eso no es lo mismo que no tener solución.
-  [NEEDS CLARIFICATION: ¿la partida no inicia, inicia avisando que no se pudo verificar, o se
-  trata como cripta sin solución?]
+  La partida DEBE iniciar, y la línea de inicio DEBE avisar que la verificación no se pudo hacer,
+  sin afirmar que la cripta tiene ni que no tiene solución. NO DEBE hacer falta forzar el inicio,
+  porque no haber podido verificar no es un defecto de la cripta.
 
 ### Entidades principales
 

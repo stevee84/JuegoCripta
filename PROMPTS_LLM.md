@@ -1702,3 +1702,36 @@ con los datos ya disponibles —sin gastar ninguna solicitud— y nunca conviert
 solución en una sin solución. Se descartó simular el combate: decidir si existe alguna secuencia de
 acciones que sobreviva es una búsqueda en el espacio de estados (vida × inventario × posiciones ×
 reloj × semilla) que no cabe en los 200 ms de §6.1.
+
+## Prompt 31 — Clarificación de la resolubilidad (`/speckit-clarify`)
+
+Comando sin texto propio: `/speckit-clarify` escanea la especificación por categorías (alcance,
+dominio, interacción, atributos de calidad, integraciones, casos límite, restricciones,
+terminología y criterios de cierre) y pregunta solo donde la respuesta cambia la implementación o
+las pruebas. Se hicieron cuatro preguntas, una a la vez, y las cuatro respuestas quedaron
+integradas en `specs/002-resolubilidad/spec.md`, bajo `## Clarifications` y en los requisitos
+afectados.
+
+| Pregunta | Respuesta | Dónde quedó |
+|---|---|---|
+| ¿Qué hacer si no se puede obtener la ubicación de las llaves? | La partida inicia y se avisa que no se pudo verificar, sin necesidad de forzar | `FR-022`, `FR-013`, `FR-011` |
+| ¿De dónde sale ese dato sin conexión? | Del paquete de datos guardados, por el mismo camino lógico que con el servicio | `FR-015` |
+| ¿El informe se recalcula con las llaves ya conseguidas? | No: describe la cripta, no el avance de la partida | `FR-014` |
+| ¿Sigue consultable tras guardar, cerrar y reanudar? | Sí, con el mismo contenido, y reanudar no vuelve a verificar | `FR-023` |
+
+**Por qué estas respuestas.** La primera distingue «no se verificó» de «no tiene solución», que es
+una diferencia real: §4.3 dice que el servicio publica criptas sin solución a propósito, así que
+jugar una cripta no verificada es parte del ejercicio, y un fallo de red no es un defecto de la
+cripta que deba costar la partida. La segunda evita un segundo camino para el mismo dato: P1 §3.4
+exige que el modelo no sepa si los datos vinieron de HTTP o de archivos, y deducir la ubicación de
+las llaves desde el contenido habría podido divergir del resultado con red sin que nada lo
+delatara. La tercera mantiene la verificación dentro de lo que define §3.5, que la sitúa antes de
+iniciar la partida y supone llaves que no se gastan y enemigos siempre derrotables: recalcularla a
+media partida mezclaría ese modelo con el estado real. La cuarta se decidió ahora porque el
+guardado binario cambia de versión en esta parte, y el informe tiene que entrar en esa decisión
+antes de fijar el formato, no después.
+
+**Resultado.** Ninguna marca `[NEEDS CLARIFICATION]` pendiente; la lista de calidad pasa 16 de 16.
+Se añadieron `FR-023` y cuatro escenarios de aceptación (cripta sin verificar, partida reanudada,
+informe no recalculado) y dos casos límite. La especificación sigue sin nombrar estructuras de
+datos, algoritmos, clases ni módulos.
