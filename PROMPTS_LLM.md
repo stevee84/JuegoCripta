@@ -1785,7 +1785,21 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** El comando hizo 4 preguntas y Joshua aceptó la opción recomendada en las cuatro: `historia` está disponible en consola y en pygame con el mismo resumen (FR-008); `--replay --hasta` imprime el mismo texto, líneas y orden que `historia` (FR-009); el mapa conocido del resumen tiene el mismo contenido que el comando de mapa conocido de la spec 003 (FR-004); y las estadísticas del resumen son vida actual y máxima, ataque, defensa y velocidad efectivos (FR-004). Las preguntas y respuestas quedaron en la sección `## Clarifications` de `spec.md`.
 
 **Qué hubo que corregir.** Nada en las respuestas. Al integrar FR-009 se agregó un valor por defecto que no se preguntó: un `--hasta` inválido, o sin `--replay`, se rechaza antes de reproducir. Se eliminó la suposición sobre el formato de `--replay --hasta`, porque la clarificación la reemplazó.
-## Prompt 30 — `/speckit.specify` de la capacidad 002-resolubilidad (Integrante 2)
+
+
+---
+
+# Steven Moya Porras — Parte II
+
+**Herramienta:** Claude Code (Claude Opus 5), con spec-kit 1.2.3. Capacidades a mi cargo según
+`REPARTO_PARTE2.md`: `002-resolubilidad` y `003-niebla-y-ir-a`.
+
+| # | Tema | Fecha |
+| --- | --- | --- |
+| 11 | `/speckit.specify` de la resolubilidad | 05/11/2026 |
+| 12 | `/speckit.clarify` de la resolubilidad | 07/11/2026 |
+
+## Prompt 11 — `/speckit.specify` de la capacidad 002-resolubilidad
 
 Primer comando de spec-kit de la Parte II. Se fijó el directorio con
 `SPECIFY_FEATURE_DIRECTORY=specs/002-resolubilidad` para conservar la numeración del
@@ -1843,7 +1857,7 @@ si llegar a la sala de salida por una puerta que no exige la llave de salida cue
 hook `before_specify` instalado): antes y después la rama es `Steve`. La especificación no menciona
 ninguna estructura de datos, algoritmo, clase ni módulo.
 
-### Corrección al Prompt 30, tras leer el enunciado de la Parte II
+### Corrección al Prompt 11, tras leer el enunciado de la Parte II
 
 El prompt anterior se redactó antes de tener el enunciado de la Parte II en el repositorio. Al
 leerlo (§3.5, §4.2, §5.4 y §6.1) se corrigió la especificación sin reescribir el prompt, para que
@@ -1882,7 +1896,7 @@ solución en una sin solución. Se descartó simular el combate: decidir si exis
 acciones que sobreviva es una búsqueda en el espacio de estados (vida × inventario × posiciones ×
 reloj × semilla) que no cabe en los 200 ms de §6.1.
 
-## Prompt 31 — Clarificación de la resolubilidad (`/speckit-clarify`)
+## Prompt 12 — Clarificación de la resolubilidad (`/speckit-clarify`)
 
 Comando sin texto propio: `/speckit-clarify` escanea la especificación por categorías (alcance,
 dominio, interacción, atributos de calidad, integraciones, casos límite, restricciones,
