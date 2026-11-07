@@ -442,6 +442,9 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 26 | Regresión de ratas y trampa con semilla 3 | Tema 10. Reglas del motor y avisos al jugador | 14/10/2026 |
 | 27 | Avisos automáticos y campo de curación | Tema 10. Reglas del motor y avisos al jugador | 15/10/2026 |
 | 28 | Sprite del guardián muerto | Tema 11. Presentación del guardián derrotado | 16/10/2026 |
+| 29 | `/speckit.specify` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 30 | `/speckit.clarify` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 31 | Revisión final del spec 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -889,6 +892,182 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Qué se construyó y por qué.** Aporte de presentación: sprite del guardián muerto, cargado una sola vez. Si el guardián revive al deshacer, vuelve a usarse el sprite de vivo, sin tocar el combate ni el historial.
 
 **Complejidad o costo.** Elegir el sprite O(1) según la vida; dibujarlo depende de sus píxeles, que son fijos en el juego.
+
+### Tema 12. Parte II dirigida por especificaciones
+
+## Prompt 29 — `/speckit.specify` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Crear la especificación 001-terreno-y-cazador de la Parte II
+> de JuegoCripta, correspondiente a Sofía.
+>
+> Lee primero:
+> - .specify/memory/constitution.md, sin modificarla.
+> - REPARTO_PARTE2.md.
+> - El PDF oficial de la Parte II en la ruta que ya verificaste.
+> - PROMPTS_LLM.md y las instrucciones del comando.
+>
+> Trabaja en la rama Sofia. Usa explícitamente el número 001 y
+> el directorio specs/001-terreno-y-cazador. Conserva la rama
+> existente; no crees ni cambies de rama.
+>
+> Alcance normativo:
+> Parte II §3.1, §3.2, §5.1, §5.2, la revisión de la agenda de
+> §5.6 y los requisitos aplicables de §6.1–§6.3.
+>
+> La especificación debe cubrir:
+> - Costo entero de salida >= 1, predeterminado 100 e igual
+>   en ambos sentidos.
+> - Movimiento de todos los actores con intervalo
+>   max(1, costo_salida * 100 // velocidad).
+> - Conservación de las reglas de las demás acciones y de los
+>   comportamientos anteriores.
+> - Cazador: ataque prioritario si comparte sala; de lo contrario,
+>   ruta abierta de costo mínimo hacia el jugador; espera con
+>   costo 100 si no existe ruta o supera su rango.
+> - Movimiento de un solo paso, con el costo de la salida elegida.
+> - Desempate por menor ID de la vecina que inicia una ruta mínima.
+> - Conocimiento completo del esqueleto y puertas actuales,
+>   independiente de la niebla y del contenido descargado.
+> - Equivalencia de cada decisión con calcular desde cero en ese
+>   instante, aunque se reutilicen resultados.
+> - Determinismo y compatibilidad con retroceso.
+> - Búsqueda con rango pequeño cuyo trabajo dependa de la región
+>   dentro del rango, según §5.1.
+> - Ciclos de menos de 20 ms bajo las condiciones de §6.1.
+> - Comparaciones exigidas en --bench: uno/muchos cazadores,
+>   rangos pequeños/grandes, cálculo individual/compartido,
+>   reutilización/recálculo y puertas estables/inestables.
+> - Repetición de mediciones de agenda con la carga nueva.
+>
+> Incluye explícitamente los siete casos de terreno y cazador del
+> Apéndice B. Añade escenarios para ataque prioritario, límite
+> d == rango, independencia del contenido descargado y retroceso.
+>
+> Asigna identificadores estables a requisitos funcionales y de
+> rendimiento. Enlaza escenarios con sus requisitos.
+> Describe resultados observables y criterios verificables.
+>
+> No incluyas nombres de clases, módulos, algoritmos ni estructuras
+> de datos en spec.md: esas decisiones corresponden al plan.
+> No inventes reglas para resolver ambigüedades; señálalas para
+> la fase clarify y distingue lo explícito del PDF de lo pendiente.
+>
+> Registra este prompt real y el resultado en mi apartado de
+> PROMPTS_LLM.md, indicando OpenCode y el modelo real de esta
+> sesión. No inventes el modelo ni fechas de consultas anteriores.
+>
+> Genera únicamente los artefactos de esta fase y su checklist.
+> No generes plan.md, tasks.md, pruebas ni código.
+> No ejecutes constitution ni avances a implement.
+> No hagas commit ni push.
+>
+> Al terminar, informa los archivos creados/modificados, los
+> requisitos y escenarios cubiertos y las dudas para clarify.
+
+**Qué se obtuvo.** Se creó `specs/001-terreno-y-cazador/spec.md` con 18 requisitos funcionales (FR-001–FR-018), 6 requisitos de rendimiento (PR-001–PR-006), escenarios enlazados y los siete casos del Apéndice B. También se creó su checklist de calidad y se fijó `.specify/feature.json` al directorio solicitado. La constitución se leyó y no se modificó. No se generaron plan, tareas, pruebas ni código.
+
+**Pendiente para aclarar.** La fuente oficial no define la política ante costos inválidos o contradictorios, el dominio y tratamiento de un rango inválido, ni cómo ordenar IDs heterogéneos o no numéricos. Estos puntos quedaron señalados para `/speckit.clarify`, sin inventar reglas.
+
+**Complejidad o costo.** Esta fase produce documentación y trazabilidad; no modifica el costo de ejecución del juego. Los límites y comparaciones de rendimiento quedan expresados como resultados medibles para la fase de planificación e implementación.
+
+## Prompt 30 — `/speckit.clarify` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Revisa specs/001-terreno-y-cazador/spec.md contra el PDF oficial,
+> el contrato de datos heredado y la constitución v1.0.0.
+>
+> Trabaja solo sobre la especificación 001, su checklist y mi
+> apartado de PROMPTS_LLM.md. Conserva la rama Sofia.
+>
+> Antes de formular preguntas:
+> 1. Comprueba en las fuentes heredadas que reprogramar por velocidad
+>    asigna una secuencia nueva y hazlo explícito en FR-006 y AC-B07.
+> 2. Comprueba el dominio de id_sala. Si el contrato establece enteros,
+>    elimina la duda sobre IDs heterogéneos y fija el desempate
+>    numérico, sin admitir conversiones silenciosas.
+> 3. Expresa las mediciones obligatorias mediante --bench.
+> 4. Precisa que el retroceso restaura el estado reversible respetando
+>    la excepción heredada de consumo del pergamino.
+> 5. Añade escenarios de equivalencia con cálculo desde cero tras
+>    apertura de puertas, cambios de velocidad y movimiento o muerte
+>    de otros actores. No presupongas que todos invalidan las mismas
+>    partes del cálculo.
+> 6. Detalla la cobertura de agenda pendiente: insertar, extraer,
+>    cancelar por ID, cancelar por actor, reprogramar y resolver
+>    empates, con cientos de eventos y una alternativa comparable.
+>
+> Después pregunta, de una en una, únicamente lo que las fuentes no
+> resuelvan: costos inválidos o contradictorios y rango ausente o
+> inválido. Para cada pregunta cita la sección aplicable, distingue
+> la regla explícita de la política propuesta y espera mi respuesta.
+>
+> Registra las preguntas y respuestas reales en la sección de
+> aclaraciones y el prompt real en PROMPTS_LLM.md. No inventes
+> respuestas ni decisiones del grupo.
+>
+> No edites la constitución ni archivos de compañeros.
+> No generes plan, tareas, pruebas ni código.
+> No hagas commit, push, merge ni cambio de rama.
+
+**Qué se obtuvo.** Se verificaron contra las fuentes heredadas la secuencia nueva al reprogramar por velocidad, el dominio entero de los IDs de sala y la excepción de consumo de pergaminos. La especificación explicita esas reglas, añade equivalencia con cálculo desde cero ante aperturas, velocidad y cambios de otros actores, expresa las mediciones mediante `--bench` y detalla seis operaciones de agenda con cientos de eventos y una alternativa comparable.
+
+**Aclaraciones reales.** Sofía acordó rechazar la cripta ante costos presentes inválidos o contradictorios, con un error que identifique la salida y los valores, sin conversión ni reemplazo silencioso; solo el costo ausente conserva 100. También acordó admitir rangos enteros mayores o iguales que 0 y rechazar fichas con rango ausente, negativo, booleano o no entero, sin convertir cadenas ni aplicar un valor predeterminado. Ambas decisiones se registraron como políticas del grupo y no como texto explícito del PDF.
+
+**Complejidad o costo.** Esta fase solo precisa reglas y cobertura verificable. No genera plan, tareas, pruebas ni código y no cambia el costo de ejecución del juego.
+
+## Prompt 31 — Revisión final del spec 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Realiza únicamente estos ajustes finales en el spec 001:
+>
+> 1. Ajusta SC-008 para exigir igualdad del estado reversible,
+>    respetando expresamente la excepción de pergaminos de FR-016.
+>    La continuación determinista se compara con el mismo estado
+>    posterior al retroceso y las mismas acciones posteriores.
+>
+> 2. Añade escenarios de aceptación enlazados con los FR:
+>    - costo presente inválido, incluidos booleanos: rechazo descriptivo;
+>    - costos contradictorios entre sentidos: rechazo descriptivo;
+>    - rango ausente o inválido: rechazo descriptivo;
+>    - rango 0: espera con costo 100 en otra sala y ataca cuando
+>      comparte sala con el jugador.
+>    Pueden agruparse valores inválidos en escenarios parametrizados.
+>    Conserva los identificadores existentes y agrega nuevos.
+>
+> 3. Explicita en FR-001 que un booleano no es un costo entero válido.
+>
+> Actualiza el checklist y registra esta revisión en mi apartado de
+> PROMPTS_LLM.md, sin modificar entradas anteriores ni de compañeros.
+> No generes plan, tareas, pruebas ni código.
+> No hagas commit, push ni merge.
+>
+> Devuelve solo el diff de estos ajustes y el estado de Git.
+
+**Qué se obtuvo.** SC-008 exige igualdad del estado reversible, conserva la excepción de pergaminos de FR-016 y compara continuaciones desde el mismo estado posterior al retroceso con las mismas acciones. Se añadieron AC-019–AC-023 para costos inválidos —incluidos booleanos—, costos contradictorios, rango ausente o inválido y los dos resultados de rango 0. FR-001 excluye expresamente los booleanos y el checklist registra toda la cobertura.
+
+**Complejidad o costo.** Revisión documental sin cambios en plan, tareas, pruebas, código ni ejecución del juego.
 
 ---
 
