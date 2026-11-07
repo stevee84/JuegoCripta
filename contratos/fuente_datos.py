@@ -45,6 +45,17 @@ class FuenteDatos(ABC):
         ...
 
     @abstractmethod
+    def obtener_llaves(self, cripta_id: str) -> dict:
+        """Dónde se obtiene cada llave de la cripta (P2 §4.2).
+
+        ``{"llaves": [{"id": ..., "sala": ..., "enemigo": ...}]}``. Con ``enemigo``, la
+        llave está en el ``suelta`` de esa instancia y ``sala`` es donde ese enemigo
+        inicia. Abstracto a propósito: una fuente que devolviera ``{}`` en silencio haría
+        pasar por verificada una cripta de la que no se sabe nada.
+        """
+        ...
+
+    @abstractmethod
     def obtener_version_cripta(self, cripta_id: str) -> str:
         ...
 

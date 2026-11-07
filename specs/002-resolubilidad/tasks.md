@@ -36,13 +36,19 @@ verificar sin red.
 - [ ] T001 [P] Crear `tests/fixtures/api_real/cripta-01/llaves.json` con la respuesta de §4.2 que
       corresponde al fixture actual: `itm_llave_bronce` en la sala 3 e `itm_llave_negra` en la
       sala 4, ambas sin campo `enemigo`, porque en ese fixture están en el suelo
-- [ ] T002 [P] Crear `tests/fixtures/resolubilidad/cripta_sin_solucion.json` con una cripta cuya
-      llave de salida está detrás de la única puerta que ella misma abre, para el caso obligatorio
-      del círculo de llaves
-- [ ] T003 [P] Crear `tests/fixtures/resolubilidad/cripta_llave_de_enemigo.json` con una llave que
-      suelta un enemigo errante, incluyendo el campo `enemigo` y la sala donde ese enemigo inicia
-- [ ] T004 [P] Crear `tests/fixtures/resolubilidad/cripta_varios_ordenes.json` con dos llaves
-      alcanzables a la vez desde la sala inicial, para comprobar que el desempate es estable
+- [ ] T002 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ciclo/` con una cripta
+      cuya llave de salida está detrás de la única puerta que ella misma abre, para el caso
+      obligatorio del círculo de llaves
+- [ ] T003 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-enemigo/` con una llave
+      que suelta un enemigo, incluyendo el campo `enemigo` y la sala donde ese enemigo inicia
+- [ ] T004 [P] Crear el paquete `tests/fixtures/resolubilidad/cripta-ordenes/` con dos llaves
+      alcanzables a la vez desde la sala inicial, a la misma distancia, para comprobar que el
+      desempate es estable
+
+Los tres son paquetes con la estructura que `FuenteOffline` ya sabe leer
+(`generales.json`, `pagina_1.json`, `llaves.json`, `version.txt`), así que las
+pruebas los cargan con esa clase y no hace falta ningún lector nuevo. Además ejercitan el mismo
+camino que recorre el programa de verdad.
 
 ---
 

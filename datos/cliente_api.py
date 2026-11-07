@@ -173,6 +173,11 @@ class ClienteAPI(FuenteDatos):
             params={"ids": ",".join(ids)},
         )
 
+    def obtener_llaves(self, cripta_id: str) -> dict:
+        return self._solicitar(
+            "GET", f"{self._url_base}/criptas/{cripta_id}/llaves"
+        )
+
     def obtener_version_cripta(self, cripta_id: str) -> str:
         return self._solicitar(
             "GET",

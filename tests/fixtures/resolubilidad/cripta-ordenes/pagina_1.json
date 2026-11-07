@@ -1,0 +1,38 @@
+{
+ "pagina": 1,
+ "total_paginas": 1,
+ "salas": [
+  {
+   "id": 1,
+   "nombre": "Encrucijada",
+   "salidas": {
+    "N": { "sala": 2, "costo": 100 },
+    "S": { "sala": 3, "costo": 100 },
+    "E": { "sala": 4, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" }
+   }
+  },
+  {
+   "id": 2,
+   "nombre": "Nicho del bronce",
+   "salidas": {
+    "S": { "sala": 1, "costo": 100 },
+    "N": { "sala": 5, "costo": 100, "cerrada": true, "llave": "itm_llave_bronce" }
+   }
+  },
+  {
+   "id": 3,
+   "nombre": "Nicho de la plata",
+   "salidas": { "N": { "sala": 1, "costo": 100 } }
+  },
+  {
+   "id": 4,
+   "nombre": "Salida",
+   "salidas": { "O": { "sala": 1, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } }
+  },
+  {
+   "id": 5,
+   "nombre": "Camara de la llave negra",
+   "salidas": { "S": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_bronce" } }
+  }
+ ]
+}

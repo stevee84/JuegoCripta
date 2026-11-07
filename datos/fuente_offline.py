@@ -117,6 +117,11 @@ class FuenteOffline(FuenteDatos):
                 entidades.append(ficha)
         return {"entidades": entidades}
 
+    def obtener_llaves(self, cripta_id: str) -> dict:
+        # Un archivo más del paquete: si falta, _leer_json lo dice. No se deduce del
+        # contenido de las salas, que sería un segundo camino para el mismo dato (§3.4).
+        return self._leer_json(self._ruta / cripta_id / "llaves.json")
+
     def obtener_version_cripta(self, cripta_id: str) -> str:
         return self._leer_version(self._ruta / cripta_id)
 
