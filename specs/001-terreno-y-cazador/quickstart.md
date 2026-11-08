@@ -14,13 +14,17 @@ Esta guía describe cómo validar la futura implementación. En esta fase no se 
 Desde la raíz del repositorio:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pytest -q -rs --tb=short
 .\.venv\Scripts\python.exe -m pytest tests/test_restricciones_enunciado.py
 .\.venv\Scripts\python.exe -m pytest tests/test_logica -k "terreno or cazador or velocidad or retroceso"
 .\.venv\Scripts\python.exe main.py --bench
 ```
 
 Las pruebas del servicio en línea se ejecutan y reportan aparte; aceptación funcional y benchmarks no dependen de red ni de Pygame.
+
+### Línea base posterior al merge
+
+La ejecución comunicada para `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` terminó con `1071 passed`, sin omisiones. Esta revisión no volvió a ejecutar pruebas. El resultado demuestra que el merge conserva la regresión existente; no demuestra todavía los 30 escenarios ni los requisitos de rendimiento de 001, porque costo, rango, cazador ponderado y sus proveedores aún no están implementados.
 
 ## Oráculos independientes
 
@@ -82,6 +86,12 @@ AC-B01 AC-B02 AC-B03 AC-B04 AC-B05 AC-B06 AC-B07
 Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se acepta cubrirlos solo de forma incidental.
 
 ## Diseño de `--bench`
+
+### Conexión actual comprobada
+
+`main.py --bench` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`, y pasa el resultado a `benchmarks.integrante3.ejecutar`. Ese ejecutor incorpora además las mediciones heredadas de agenda y ciclo. La integración futura de 001 añade una sola tupla de proveedores a esa concatenación, sin reemplazar ni registrar dos veces los proveedores existentes.
+
+El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` todavía necesita un adaptador para aparecer en el informe estándar. La agenda común actual reporta extracción; las otras cinco operaciones exigidas por `PR-005` siguen siendo parte del proveedor de 001.
 
 ### Rutas
 

@@ -11,6 +11,17 @@ Acordar dos fronteras:
 1. entregar al modelo costos y rangos ya validados conforme a `FR-001`, `FR-002`, `FR-009` y `FR-011` de 001;
 2. permitir que «ir a» reutilice el cálculo ponderado de 001 sin acceder al esqueleto completo ni al estado real de puertas que el jugador desconoce.
 
+## Estado del código observado tras integrar `origin/Steve`
+
+El merge aporta puntos concretos de integración, pero **no constituye aceptación** de esta propuesta y todas las casillas de la sección 7 siguen pendientes:
+
+- `DecodificadorDatos.convertir_sala()` adapta `salidas` del API y `puertas` del guardado, pero hoy no lee ni valida `costo` y `Puerta` no lo almacena.
+- `DecodificadorDatos._adaptar_contenido_externo()` resuelve la ficha antes de crear cada enemigo; hoy toma `comportamiento`, pero no valida ni materializa `rango`. `convertir_contenido()` es el camino interno usado al reconstruir.
+- `InicializadorPartida._construir()` reúne todas las páginas, rechaza IDs repetidos, vincula destinos y llama a 002 antes de cargar contenido. La simetría de costos necesita el esqueleto completo y debe ocurrir antes de que 002 o el juego lo consuman; el lugar y responsable exactos se acuerdan.
+- `GuardadoBinario.VERSION` es **9**. `_escribir_sala()` y `_leer_sala_datos()` no incluyen costo/rango y el lector exige versión exacta, por lo que añadirlos requiere acordar representación, nueva versión y compatibilidad.
+- `RestauradorPartida._reconstruir_mapa()` reutiliza el decodificador para registros internos y `_completar_v5()` vuelve a vincular fichas. Son consumidores directos del contrato de persistencia.
+- `verificador_resolubilidad.verificar()` usa destino, apertura y llaves, no pesos. Debe seguir obteniendo el mismo resultado de 002 después de incorporar costos.
+
 ## 2. Propuesta de datos entregados a 001
 
 ### Salida validada
@@ -35,7 +46,7 @@ Si `comportamiento == "cazador"`, la ficha entrega `rango` con `type(rango) is i
 | Decodificación y mensajes | Steven, como propietario de datos, valida forma y dominio. |
 | Uso en simulación | Sofía consume valores ya validados y mantiene defensas de contrato en límites públicos. |
 | Simetría | validación después de reunir el esqueleto completo y antes de iniciar. |
-| Persistencia | Steven conserva `costo`/`rango` con la versión correspondiente, sin reinterpretarlos. |
+| Persistencia | Propuesta: conservar `costo`/`rango` con la versión correspondiente, sin reinterpretarlos. El formato vigente es v9 y el cambio de esquema requiere acuerdo. |
 | Pruebas | fixtures de Steven prueban rechazo; pruebas de Sofía confirman que el motor no convierte y usa los valores. |
 
 La asignación anterior requiere aceptación explícita; hasta entonces es solo propuesta.

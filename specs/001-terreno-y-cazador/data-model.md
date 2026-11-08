@@ -30,6 +30,8 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 
 **Invariante**: los dos sentidos de una salida comparten costo. Una contradicción rechaza la cripta antes de jugar (`FR-002`).
 
+**Estado observado tras el merge**: `Puerta` y los dos caminos de `DecodificadorDatos.convertir_sala()` todavía no tienen `costo`; la tabla anterior sigue siendo el modelo objetivo de 001, no una capacidad aportada por 002.
+
 **Transiciones**:
 
 - cerrada → abierta: acción de apertura; invalida rutas dependientes de puertas;
@@ -54,6 +56,8 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 
 **Sustitución infrecuente**: si `agregar_sala` recibe un ID existente, recorre la lista O(`V`) para encontrar su posición, coloca allí la nueva referencia y actualiza la tabla. Si el mapa estaba vinculado, vuelve a resolver todas las referencias `destino_sala` desde sus IDs antes de exponerlo; esto actualiza las salidas entrantes y las de la sala nueva, con O(`V+E`) esperado y O(`V·E`) peor caso si el índice hash degenera. Durante carga inicial puede diferirse hasta el único `vincular_salidas` final.
 
+**Estado observado tras el merge**: `MapaCripta` conserva `_salas`, `_enlaces_listos` y sustitución en posición, pero aún no tiene la tabla por ID. `obtener_sala()` es lineal y `vincular_salidas()` la invoca por puerta; 001 debe introducir el índice sin cambiar el orden de la lista.
+
 ## 4. Actor
 
 **Campos relevantes**:
@@ -73,6 +77,8 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 |---|---|---|
 | `comportamiento` | `"cazador"` | ficha de enemigo |
 | `rango` | entero `>= 0` | obligatorio; booleano, cadena, fracción, negativo o ausencia rechazan la ficha |
+
+**Estado observado tras el merge**: `Enemigo` no materializa `rango`. El camino externo ya resuelve la ficha en `DecodificadorDatos._adaptar_contenido_externo()` y el camino de reanudación vuelve a vincular fichas en `RestauradorPartida._completar_v5()`; la representación final debe acordarse con Steven y conservarse a través del guardado compatible.
 
 **Estado de decisión**: no se persiste. En cada turno se produce `ATACAR`, `ESPERAR` o `MOVER` a una primera vecina con costo de acción.
 
@@ -178,3 +184,18 @@ No se habilita en producción hasta que `--bench` la justifique.
 | muerte de actor | vida/actividad/listas/eventos | lote de cazadores, no distancias por sí solas |
 | cargar contenido | contenido de sala | ninguna ruta del cazador |
 | retroceder/reconstruir | varios campos anteriores | todos los cálculos derivados |
+
+## 13. Persistencia y reconstrucción vigentes
+
+**Versión actual comprobada**: `GuardadoBinario.VERSION = 9`. El lector acepta únicamente esa versión y rechaza una cabecera distinta.
+
+| Punto actual | Datos relevantes para 001 | Impacto pendiente |
+|---|---|---|
+| `GuardadoBinario._escribir_sala()` | puerta: destino, dirección, apertura, llave y cierre; enemigo: estadísticas y comportamiento | no escribe costo de salida ni rango materializado |
+| `GuardadoBinario._leer_sala_datos()` | reconstruye los mismos registros de puerta/enemigo | debe leer los campos acordados bajo una nueva versión de formato |
+| `DecodificadorDatos.convertir_sala()` | adapta tanto API (`salidas`) como registro interno (`puertas`) | ambos caminos deben producir el mismo `costo` validado |
+| `DecodificadorDatos.convertir_contenido()` | reconstruye enemigos desde registros internos | debe conservar/materializar rango según el contrato acordado |
+| `RestauradorPartida._reconstruir_mapa()` | crea salas, comprueba destinos y vincula referencias | reconstruye costo canónico; nunca resultados de ruta |
+| `RestauradorPartida.restaurar_para_reanudar()` | publica estado nuevo, agenda reconstruida e historial vacío | futuros derivados de ruta empiezan vacíos; el aviso general de invalidación sigue pendiente con Joshua |
+
+V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones; el número, propietario y compatibilidad se acuerdan antes de implementar. Etiquetas, fronteras, distancias, métricas e instantáneas de ruta permanecen fuera del guardado.

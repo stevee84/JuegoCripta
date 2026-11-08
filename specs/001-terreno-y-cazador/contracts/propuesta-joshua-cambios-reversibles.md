@@ -6,6 +6,15 @@
 
 Permitir que retroceso y línea de tiempo restauren exactamente el estado introducido o afectado por 001, sin copiar el estado completo por acción y sin conservar cálculos de ruta obsoletos (`FR-014`, `FR-016`; spec 004 FR-022).
 
+## Estado del código observado tras integrar `origin/Steve`
+
+El guardado actual es v9. `RestauradorPartida.restaurar_para_reanudar()` reconstruye mapa, actores, agenda, azar, referencias y fichas en un `EstadoPartida` nuevo; crea un `HistorialReversible` vacío y no restaura cálculos de ruta. Esto es compatible con la separación propuesta, pero **no acepta este contrato**:
+
+- costo/rango todavía no están en los registros v9 y su incorporación debe coordinarse con el contrato de datos;
+- no existe una caché de rutas actual que invalidar ni un punto general de notificación después de `deshacer_ultimo` o carga;
+- cuando 001 introduzca derivados, sigue pendiente acordar quién invoca la invalidación después de retroceso, carga o reconstrucción histórica;
+- las casillas de la sección 8 permanecen sin marcar.
+
 ## 2. Separación propuesta
 
 ### Estado canónico que sí se registra/reconstruye

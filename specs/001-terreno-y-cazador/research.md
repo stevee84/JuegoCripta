@@ -98,6 +98,8 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Rationale**: el historial actual ya agrupa una acción y sus eventos, registra agenda, atributos, listas y azar, y revierte en orden inverso. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
+**Estado observado tras el merge**: el guardado vigente es v9. `RestauradorPartida.restaurar_para_reanudar()` reconstruye un estado nuevo con agenda y referencias reales, crea un historial vacío y no restaura cachés de ruta. Esto es compatible con la separación canónico/derivado, pero costo/rango aún no forman parte del registro de sala y no existe una notificación de invalidación; ambos puntos siguen sujetos a los contratos pendientes.
+
 **Alternatives considered**:
 
 - **Guardar mapa/estado completo por turno**: prohibido.
@@ -118,9 +120,9 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-10 — Diseño de `--bench`
 
-**Decision**: añadir un proveedor a `main.py --bench`, reutilizar el benchmark real de ciclo y medir rutas, invalidación y las seis operaciones de agenda con alternativas. El fixture común se prepara fuera; todo trabajo requerido por la operación/ciclo permanece dentro.
+**Decision**: añadir una tupla propia de proveedores de 001 a la concatenación que `main.py --bench` ya entrega a `benchmarks.integrante3.ejecutar`, conservar los proveedores actuales, conectar el benchmark real de ciclo y medir rutas, invalidación y las seis operaciones de agenda con alternativas. El fixture común se prepara fuera; todo trabajo requerido por la operación/ciclo permanece dentro.
 
-**Rationale**: la constitución exige una vía ejecutable y comparaciones; los scripts aislados no bastan. El benchmark existente ya separa carga de fuente y renderizado, pero debe incorporar cazadores y conectarse a la salida estándar.
+**Rationale**: la constitución exige una vía ejecutable y comparaciones; los scripts aislados no bastan. Actualmente `main.py` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`; `integrante3.ejecutar` añade la medición existente de agenda y un ciclo que todavía ejecuta `prueba_rendimiento_sofia.py`. `benchmark_ciclo_real_integrante1.py` existe, pero no está en esa vía. La agenda conectada solo mide extracción, no las seis operaciones de `PR-005`. Además, `integrante3.medir()` produce mediana y mínimo, de modo que p95/máximo de 001 deben calcularse en su proveedor o adaptador sin reinterpretar mediciones ajenas.
 
 **Alternatives considered**:
 
@@ -132,6 +134,6 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Decision**: documentar dos propuestas pendientes, no modificar archivos ajenos y bloquear tareas de integración hasta el acuerdo.
 
-**Rationale**: `dto/sala.py`, `datos/decodificador_datos.py`, persistencia, mapa conocido y línea de tiempo son compartidos. La Constitución VIII exige identificar consumidores y acordar cambios antes de implementarlos.
+**Rationale**: el merge concretó los consumidores sin aceptar responsabilidades: `convertir_sala()` adapta salidas del API y del guardado; `_adaptar_contenido_externo()` construye enemigos desde fichas; `InicializadorPartida._construir()` reúne/vincula el esqueleto antes de verificar 002; `GuardadoBinario` v9 escribe puertas/enemigos; y `RestauradorPartida` reconstruye ambos. `dto/sala.py`, esos caminos de datos, mapa conocido y línea de tiempo siguen siendo compartidos. La Constitución VIII exige acuerdo antes de implementar costo/rango, versión e invalidación.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.

@@ -447,6 +447,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 31 | Revisión final del spec 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 32 | `/speckit.plan` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 33 | Revisión técnica de los artefactos de planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 34 | Impacto de integrar `origin/Steve` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -1235,6 +1236,59 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Precisiones adicionales.** La sustitución de una sala conserva su posición mediante búsqueda lineal y revincula referencias entrantes, con O(V+E) esperado. Los estados constitucionales distinguen comprobaciones de diseño, acuerdos pendientes y elecciones sujetas a `--bench`. El entorno de validación queda registrado como `.venv` con Python 3.12.10 y soporte mínimo 3.11.
 
 **Complejidad o costo.** Para una consulta individual, el costo esperado completo es O(E_R + P_R log max(2, Q_R) + Q_fin) y la memoria O(D_R + Q_R); el peor caso incorpora colisiones de la tabla propia y hasta O(E_R) entradas duplicadas.
+
+## Prompt 34 — Impacto de integrar `origin/Steve` sobre la planificación 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Se integró origin/Steve en Sofia. La suite completa pasó con:
+> .venv/Scripts/python.exe -m pytest -q -rs --tb=short
+> Resultado: 1071 passed, sin omisiones.
+>
+> Revisa el impacto del merge sobre la planificación de
+> specs/001-terreno-y-cazador.
+>
+> 1. Lee el código actualizado, especialmente main.py,
+>    datos/decodificador_datos.py, datos/guardado_binario.py,
+>    service/inicializador_partida.py, service/restaurador_partida.py,
+>    logica/verificador_resolubilidad.py y la conexión actual de --bench.
+>
+> 2. Contrasta esos cambios con plan.md, research.md, data-model.md,
+>    quickstart.md y las dos propuestas de contracts/ de 001.
+>
+> 3. Actualiza únicamente los documentos de planificación de 001
+>    que hayan quedado desactualizados. Identifica la versión actual
+>    del guardado y los puntos concretos de integración, sin modificar
+>    código ni fijar unilateralmente responsabilidades de compañeros.
+>
+> 4. Comprueba si el spec 002 actualizado resolvió las observaciones
+>    sobre fallo de verificación y divulgación de información frente
+>    a la niebla. Informa lo encontrado; no lo edites.
+>
+> 5. Mantén las propuestas con Steven y Joshua como pendientes de
+>    aceptación. No presentes el merge como aprobación de contratos.
+>
+> Registra esta revisión y su resultado en mi apartado de
+> PROMPTS_LLM.md, conservando las entradas de todos.
+>
+> No regeneres el plan ni cambies las reglas de spec.md.
+> No generes tasks.md, código ni pruebas.
+> No hagas commit, push, merge ni cambio de rama.
+>
+> Devuelve los hallazgos, los archivos modificados y el diff de
+> los ajustes. Si no hace falta modificar algo, indícalo.
+
+**Qué se encontró.** El merge no implementa costo, rango ni rutas de 001. Sí concreta sus fronteras: el guardado vigente es v9 y persiste el informe de 002; el decodificador tiene caminos separados para datos externos y reconstruidos; el inicializador reúne/vincula el esqueleto y verifica 002 antes del contenido; y el restaurador publica un estado nuevo con agenda reconstruida e historial vacío. `main.py --bench` concatena proveedores de Steven y adicionales mediante `benchmarks.integrante3.ejecutar`, pero todavía no conecta el benchmark real de ciclo de 001 ni las seis operaciones de agenda.
+
+**Resultado documental.** Se actualizaron los artefactos de 001 con los puntos exactos de integración y la línea base `1071 passed`, sin presentar el merge como acuerdo. Ambas propuestas conservan sus criterios sin marcar. Se confirmó que spec 002 corrigió el fallo de verificación —bloqueo salvo `--forzar` y estado «sin verificar»— y retiró la divulgación de contenido de rutas frente a la niebla; no se editó 002. Se anotó un borde de implementación separado: el inicializador no captura el `TypeError` que el decodificador puede emitir por un ID de sala de llave con tipo inválido.
+
+**Persistencia y cuestiones pendientes.** `GuardadoBinario.VERSION = 9`; costo/rango no se serializan y su incorporación requiere acordar una nueva versión. La constante y el arranque dicen v9, aunque una línea de ayuda aún dice v8. Siguen pendientes la asignación de responsabilidades con Steven, el contrato de invalidación con Joshua y la evidencia de `--bench` para decidir la estrategia.
 
 ---
 
