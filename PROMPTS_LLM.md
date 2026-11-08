@@ -445,6 +445,8 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 29 | `/speckit.specify` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 30 | `/speckit.clarify` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 31 | Revisión final del spec 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 32 | `/speckit.plan` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 33 | Revisión técnica de los artefactos de planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -1068,6 +1070,171 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** SC-008 exige igualdad del estado reversible, conserva la excepción de pergaminos de FR-016 y compara continuaciones desde el mismo estado posterior al retroceso con las mismas acciones. Se añadieron AC-019–AC-023 para costos inválidos —incluidos booleanos—, costos contradictorios, rango ausente o inválido y los dos resultados de rango 0. FR-001 excluye expresamente los booleanos y el checklist registra toda la cobertura.
 
 **Complejidad o costo.** Revisión documental sin cambios en plan, tareas, pruebas, código ni ejecución del juego.
+
+## Prompt 32 — `/speckit.plan` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Planifica exclusivamente specs/001-terreno-y-cazador, trabajando
+> en la rama Sofia y conservando la numeración 001.
+>
+> Lee primero:
+> - La constitución v1.0.0, sin modificarla.
+> - El spec 001 y su checklist.
+> - El PDF oficial de la Parte II.
+> - REPARTO_PARTE2.md.
+> - Los specs 002 y 004 para identificar dependencias.
+> - El código actual relacionado con mapa, movimiento, enemigos,
+>   agenda, efectos de velocidad, cambios reversibles y --bench.
+>
+> Usa los scripts PowerShell existentes mediante el puente a Windows,
+> como ya verificamos. No cambies de rama ni regeneres la configuración.
+>
+> Genera plan.md y los artefactos asociados de esta fase, incluyendo
+> research.md, data-model.md y propuestas de contratos entre partes.
+>
+> El plan debe:
+>
+> 1. Enlazar cada decisión con los FR y PR que atiende. No introducir
+>    reglas nuevas. Si descubres una contradicción o ambigüedad,
+>    señálala antes de modificar la especificación.
+>
+> 2. Comparar alternativas de rutas ponderadas: búsqueda individual
+>    limitada por rango y cálculo compartido hacia el jugador.
+>    Justificar una elección provisional y definir las mediciones que
+>    podrían cambiarla. No presentar hipótesis como resultados medidos.
+>
+> 3. Garantizar el desempate por menor ID de la primera vecina,
+>    independientemente del orden de descubrimiento. Explicar por qué
+>    el procedimiento elegido siempre produce ese resultado.
+>
+> 4. Incluir el costo completo de cada consulta: preparación de
+>    estructuras auxiliares, búsquedas, limpieza e invalidación.
+>    Evitar inicializar o recorrer todo el mapa por cada cazador de
+>    rango pequeño. Analizar tiempo y memoria con variables definidas.
+>
+> 5. Examinar el índice de salas de MapaCripta y comparar conservar la
+>    búsqueda lineal con reutilizar TablaHashImpl propia. Mantener el
+>    orden determinista de recorrido y las referencias de las salas.
+>    Distinguir costos esperados, amortizados y de peor caso.
+>
+> 6. Definir qué información depende de puertas, objetivo, posición
+>    del cazador y velocidades; qué cambios la invalidan y cuáles no.
+>    Incluir apertura, cierre automático, movimiento, muerte y retroceso.
+>    Toda reutilización debe equivaler a calcular desde cero.
+>
+> 7. Integrar costos de movimiento para todos los actores, sin alterar
+>    las demás acciones. Conservar la reprogramación proporcional y
+>    la asignación de una secuencia nueva al cambiar velocidad.
+>
+> 8. Separar el estado reversible del juego de los cálculos derivados.
+>    Explicar cómo evitar resultados obsoletos después de un retroceso
+>    y cómo colaborar con la línea de tiempo de Joshua sin copiar
+>    estados completos por acción.
+>
+> 9. Proponer contratos para acordar:
+>    - Con Steven: costos y rango validados, y acceso al cálculo de
+>      rutas para «ir a», usando exclusivamente su mapa conocido.
+>    - Con Joshua: cambios reversibles y reconstrucción histórica.
+>    Identificarlos como propuestas pendientes de acuerdo, no como
+>    contratos ya aceptados. No modificar sus archivos.
+>
+> 10. Diseñar la medición desde --bench: uno/muchos cazadores,
+>     rangos pequeños/grandes, cálculo individual/compartido,
+>     reutilización/recálculo y puertas estables/inestables.
+>     Incluir el ciclo completo de menos de 20 ms bajo la referencia
+>     oficial, diferenciando escenarios sintéticos de la referencia.
+>     Incluir las seis operaciones de agenda y alternativas comparables.
+>     Aprovechar el benchmark real existente cuando corresponda.
+>     Excluir red y renderizado; no ocultar trabajo necesario del ciclo
+>     fuera del cronómetro.
+>
+> 11. Proponer pruebas para todos los escenarios del spec, con sus
+>     identificadores, incluyendo los siete casos del Apéndice B.
+>     Definir cómo contrastar resultados con una referencia independiente
+>     y cómo comprobar reversión y determinismo.
+>
+> 12. Usar estructuras propias. Respetar las prohibiciones de dict y
+>     set como índices o cachés, heapq, bisect, collections y bibliotecas
+>     de grafos/rutas en los problemas evaluados. Revisar la constitución
+>     y las pruebas de restricciones antes de proponer dependencias.
+>
+> Delimita archivos de Sofía y puntos de integración de compañeros.
+> Registra el prompt real y el resultado en mi apartado de PROMPTS_LLM.md,
+> con OpenCode y el modelo real de la sesión.
+>
+> No generes tasks.md ni implementes código o pruebas.
+> No edites la constitución ni los specs de mis compañeros.
+> No hagas commit, push, merge ni cambio de rama.
+>
+> Al finalizar informa:
+> - artefactos creados;
+> - decisiones provisionales y alternativas;
+> - contratos que debemos acordar;
+> - riesgos o cuestiones pendientes antes de generar tareas.
+
+**Qué se obtuvo.** Se generó el plan de 001 con trazabilidad a FR/PR, análisis de costo y memoria, prueba del desempate por primera vecina y límites de propiedad. La elección provisional es una búsqueda individual limitada por rango con estructuras propias y auxiliares perezosos; el cálculo inverso compartido y la reutilización quedan como alternativas que solo podrán habilitarse con evidencia de `--bench`. También se diseñaron el índice propio de salas, la invalidación de derivados, la integración de costos/velocidad/reversión, la matriz completa de mediciones y la cobertura propuesta de los 30 escenarios.
+
+**Artefactos y acuerdos.** Además de `plan.md`, se crearon `research.md`, `data-model.md`, `quickstart.md` y dos propuestas pendientes: con Steven para validar costo/rango y compartir rutas sin salir del mapa conocido, y con Joshua para cambios reversibles, reconstrucción histórica e invalidación de derivados. No se modificaron la constitución, los specs de compañeros, código ni pruebas; tampoco se creó `tasks.md`.
+
+**Complejidad o costo.** La ruta individual se diseña con costo esperado O((V_R+E_R) log V_R) y memoria O(V_R), incluyendo auxiliares de la consulta. La alternativa compartida cuesta O((V_L+E_L) log V_L) más la selección de los cazadores; la elección final y cualquier umbral adaptativo quedan pendientes de medición completa.
+
+## Prompt 33 — Revisión técnica de los artefactos de planificación 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Revisa únicamente los artefactos de planificación de 001:
+>
+> 1. Define cómo se actualizan las prioridades del montículo:
+>    una entrada por sala con actualización, o entradas duplicadas
+>    descartadas al extraer. Ajusta tiempo, memoria y peor caso al
+>    mecanismo elegido. No atribuyas operaciones al montículo actual
+>    sin comprobar que existen.
+>
+> 2. Distingue salas fijadas, descubiertas y frontera almacenada.
+>    Incluye todas en las cotas y explica cómo el límite de rango
+>    evita trabajo innecesario fuera de la región pertinente.
+>
+> 3. Corrige la estrategia del oráculo: compara decisiones y costos;
+>    el trabajo y el orden interno pueden diferir y se miden aparte.
+>
+> 4. Precisa cómo agregar_sala sustituye una sala conservando su
+>    posición y cómo se actualizan las referencias entrantes.
+>    Declara el costo real de esa operación, aunque siga siendo lineal.
+>    No es obligatorio optimizar una operación infrecuente.
+>
+> 5. Revisa las declaraciones PASS y “sin incógnitas”: distingue
+>    comprobaciones satisfechas, acuerdos pendientes y decisiones
+>    provisionales que dependen de mediciones.
+>
+> 6. Registra correctamente los entornos: la suite local previamente
+>    validada usó .venv con Python 3.12.10; el soporte mínimo es 3.11.
+>    No confundas el Python general con el entorno del proyecto.
+>
+> Conserva las reglas del spec y actualiza coherentemente plan.md,
+> research.md y data-model.md cuando corresponda. Registra esta
+> revisión en mi apartado de PROMPTS_LLM.md.
+>
+> No generes tasks.md, código ni pruebas. No hagas commit ni push.
+> Devuelve el diff de las correcciones.
+
+**Qué se obtuvo.** El plan fija entradas duplicadas e inmutables en `MonticuloMinimo`: cada mejora inserta otra entrada y las obsoletas se descartan al extraer, sin atribuir una actualización de prioridad inexistente. Las cotas distinguen salas fijadas y descubiertas, salidas examinadas, inserciones totales, frontera máxima y limpieza final. El oráculo compara solo decisión y costos observables; el trabajo se instrumenta aparte.
+
+**Precisiones adicionales.** La sustitución de una sala conserva su posición mediante búsqueda lineal y revincula referencias entrantes, con O(V+E) esperado. Los estados constitucionales distinguen comprobaciones de diseño, acuerdos pendientes y elecciones sujetas a `--bench`. El entorno de validación queda registrado como `.venv` con Python 3.12.10 y soporte mínimo 3.11.
+
+**Complejidad o costo.** Para una consulta individual, el costo esperado completo es O(E_R + P_R log max(2, Q_R) + Q_fin) y la memoria O(D_R + Q_R); el peor caso incorpora colisiones de la tabla propia y hasta O(E_R) entradas duplicadas.
 
 ---
 
