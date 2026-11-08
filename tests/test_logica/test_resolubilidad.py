@@ -178,3 +178,44 @@ def test_nunca_se_rechaza_una_cripta_sin_explicar_el_motivo(cripta):
     assert informe.frontera_bloqueada
     for llave in informe.llaves_inalcanzables:
         assert informe.ubicacion_de(llave) is not None, f"no se dice dónde está {llave}"
+
+
+# ── Acuerdo con 001: los costos no participan del veredicto ───────────────────
+
+def test_cambiar_costos_validos_no_altera_la_resolubilidad():
+    """Acordado con Sofía al integrar §3.1: la alcanzabilidad es binaria.
+
+    La verificación usa destino, apertura y llave requerida; el costo de una salida no
+    cambia si una sala se puede alcanzar o no. Esta regresión protege el acuerdo cuando
+    `costo` empiece a leerse y a almacenarse en `Puerta`.
+    """
+    for cripta in ("cripta-ordenes", "cripta-ciclo", "cripta-dos-ciclos"):
+        mapa, ubicaciones, generales = cargar(cripta)
+        antes = verificar(mapa, ubicaciones, generales["sala_inicial"],
+                          generales["sala_salida"], generales["llave_salida"])
+        # costos válidos y muy dispares, incluido el mínimo del contrato
+        for peso, sala in enumerate(mapa.obtener_salas(), start=1):
+            for indice, puerta in enumerate(sala.puertas):
+                puerta.costo = 1 if (peso + indice) % 3 == 0 else peso * 97
+        despues = verificar(mapa, ubicaciones, generales["sala_inicial"],
+                            generales["sala_salida"], generales["llave_salida"])
+        assert despues.resoluble == antes.resoluble, cripta
+        assert despues.orden_llaves == antes.orden_llaves, cripta
+        assert despues.llaves_inalcanzables == antes.llaves_inalcanzables, cripta
+        assert despues.frontera_bloqueada == antes.frontera_bloqueada, cripta
+        assert despues.ciclos == antes.ciclos, cripta
+
+
+def test_las_criptas_publicadas_no_cambian_de_veredicto_con_costos():
+    """La misma regresión sobre las cuatro criptas reales."""
+    for cripta in ("cripta-01", "cripta-02", "cripta-03", "cripta-04"):
+        mapa, ubicaciones, generales = cargar(cripta, "tests/fixtures/api_real")
+        antes = verificar(mapa, ubicaciones, generales["sala_inicial"],
+                          generales["sala_salida"], generales["llave_salida"])
+        for peso, sala in enumerate(mapa.obtener_salas(), start=1):
+            for puerta in sala.puertas:
+                puerta.costo = peso * 250
+        despues = verificar(mapa, ubicaciones, generales["sala_inicial"],
+                            generales["sala_salida"], generales["llave_salida"])
+        assert despues.resoluble == antes.resoluble == True, cripta
+        assert despues.orden_llaves == antes.orden_llaves, cripta

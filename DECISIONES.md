@@ -152,6 +152,12 @@ a pedir nada (`SC-004`).
 - **Las criptas sintéticas del `--bench` son cadenas regulares.** Validan el crecimiento, no
   cualquier topología; una cripta muy ramificada o con muchas puertas por sala podría comportarse
   distinto.
+- **Los costos de §3.1 no participan del veredicto.** La alcanzabilidad es binaria, así que la
+  verificación mira destino, apertura y llave requerida, nunca el peso de la salida. Se acordó
+  con la capacidad 001, que introduce los costos, y hay una regresión que comprueba sobre las
+  cuatro criptas publicadas y las de prueba que cambiar costos válidos no altera el veredicto,
+  el orden de llaves, la frontera ni los círculos. La consecuencia es que esta capacidad **no**
+  dice nada sobre la ruta más barata: eso es «ir a» (§3.4), en la capacidad 003.
 - Las mediciones son de un solo equipo y no caracterizan otras máquinas.
 
 **Trazabilidad**: `logica/verificador_resolubilidad.py`; `service/inicializador_partida.py`;
