@@ -6,7 +6,7 @@
 
 ## Summary
 
-La capacidad incorporará costos de salida a todos los movimientos, validará los datos de terreno y cazadores, y añadirá decisiones de cazador mediante rutas ponderadas deterministas. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; el cálculo inverso compartido hacia el jugador se conserva como alternativa medible y no se habilitará por una hipótesis no medida. El mapa mantendrá su lista ordenada de referencias y añadirá un índice propio por ID. Los cálculos de ruta serán datos derivados: no formarán parte del estado reversible y se descartarán ante cambios relevantes o reconstrucciones históricas.
+La capacidad incorporará costos de salida a todos los movimientos, validará los datos de terreno y cazadores, y añadirá decisiones de cazador mediante rutas ponderadas deterministas. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; el cálculo inverso compartido hacia el jugador se conserva como alternativa medible y no se habilitará por una hipótesis no medida. El mapa mantendrá su lista ordenada de referencias y añadirá un índice propio por ID. Los cálculos de ruta serán datos derivados fuera de `EstadoPartida` y de las transacciones: se invalidan después de un retroceso exitoso y al iniciar/cargar un estado, pero una consulta `historia` los deja intactos porque restaura exactamente el estado vivo y no ejecuta decisiones de 001.
 
 ## Technical Context
 
@@ -40,8 +40,8 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 | IV. Separación MVC | **Comprobado en la frontera actual**. `--bench` y `--verificar` salen antes de crear la vista; rutas e invalidación permanecen planificadas en lógica. |
 | V. Datos desde el servicio | **Pendiente de acuerdo con Steven**. El merge proporciona puntos concretos en decodificación, arranque y persistencia, pero no incorpora costo/rango ni acepta la propuesta. |
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
-| VII. Estado reversible | **Pendiente de acuerdo con Joshua**. La carga v9 reconstruye un estado nuevo con historial vacío; aún no existe el punto acordado de invalidación para futuros derivados de rutas. |
-| VIII. Contratos estables | **Pendiente de acuerdo**. El merge no marca ninguna casilla de las propuestas ni equivale a aceptación de responsabilidades. |
+| VII. Estado reversible | **Aceptación condicionada documentada por 004; implementación y pruebas pendientes**. Las mutaciones canónicas de 001 usan transacciones existentes. Las cachés quedan fuera del estado y de objetos alcanzables desde cambios; se invalidan tras retroceso exitoso y al iniciar/cargar, no durante `historia`. |
+| VIII. Contratos estables | **Acuerdo condicionado con Joshua; Steven pendiente**. `contracts/dependencias.md` de 004 declara suficiente FR-016 bajo sus condiciones y no pide interfaz nueva al cazador. Las extensiones de deshacer/rehacer histórico y v10 siguen propuestas, no código integrado. |
 | IX. Rendimiento medido | **Decisión provisional pendiente de medición**. La vía común de proveedores existe, pero todavía no registra mediciones de rutas/invalidez de 001 ni las seis operaciones exigidas de agenda. |
 | X. Especificación y trazabilidad | **Comprobado en los artefactos**. Los ajustes describen código existente sin cambiar reglas de `spec.md`. |
 | XI. Pruebas | **Regresión actual satisfecha; cobertura 001 pendiente**. Se reportan `1071 passed` sin omisiones; [quickstart.md](quickstart.md) conserva la cobertura futura de los 30 escenarios de 001. |
@@ -90,8 +90,8 @@ logica/
 ├── acciones.py                     # intervalo común; sin cambiar otros costos
 ├── motor_juego.py                  # costo de la salida y ejecución reversible
 ├── agenda_eventos.py               # reprogramación y agenda medida
-├── cambios.py                      # cambios canónicos pequeños
-└── historial_reversible.py         # integración pendiente con Joshua
+├── cambios.py                      # cambios canónicos; 004 ampliará consulta temporal
+└── historial_reversible.py         # interfaz real de retroceso + enlace futuro de 004
 benchmarks/
 ├── terreno_cazador_integrante1.py  # nuevo proveedor conectado a --bench
 ├── benchmark_ciclo_real_integrante1.py
@@ -134,7 +134,7 @@ main.py                             # concatena proveedores actuales; punto comp
 - `verificador_resolubilidad.verificar()` consume apertura, llave y destino, no costos. 001 no cambia esa regla de 002, pero debe entregarle un esqueleto válido.
 - Estos puntos concretan la integración; no adjudican a Steven la implementación ni consideran aceptada la propuesta.
 
-**Persistencia vigente**: `GuardadoBinario.VERSION` es 9 y el lector exige coincidencia exacta. `_escribir_sala()`/`_leer_sala_datos()` serializan puertas y enemigos, pero no costo/rango; `RestauradorPartida._reconstruir_mapa()` pasa esos registros por el decodificador y `_completar_v5()` completa referencias de la reanudación. Incorporar campos canónicos exige acordar su representación y aumentar explícitamente la versión de formato; este plan no fija unilateralmente quién realiza el cambio ni da por acordado el número siguiente. La constante y el mensaje de arranque indican v9; una línea de ayuda de `ControladorJuego` aún dice v8 y se informa como discrepancia existente, sin corregir código en esta fase.
+**Persistencia vigente**: `GuardadoBinario.VERSION` sigue siendo 9 y el lector exige coincidencia exacta. `_escribir_sala()`/`_leer_sala_datos()` serializan puertas y enemigos, pero no costo/rango; `RestauradorPartida._reconstruir_mapa()` pasa esos registros por el decodificador y `_completar_v5()` completa referencias de la reanudación. 004 propone, en `contracts/guardado-v10.md`, que Steven eleve el formato a v10 y añada bytes opacos producidos por `LineaTiempo`; no hay implementación de v10 en el merge. Costo/rango deben quedar en el estado vivo que 004 serializará junto con la línea, mientras toda caché de rutas queda fuera. La representación, coordinación de ambos cambios y compatibilidad siguen pendientes. La constante y el mensaje de arranque indican v9; una línea de ayuda de `ControladorJuego` aún dice v8 y se informa como discrepancia existente, sin corregir código en esta fase.
 
 ### 2. Índice de salas sin perder orden ni identidad
 
@@ -191,7 +191,7 @@ Variables:
 
 En `--bench`, “preparación fuera del cronómetro” significa únicamente generar/cargar el fixture común. Construcción de auxiliares, `P_R` inserciones, extracciones obsoletas, selección, validaciones, liberación de `Q_fin`, invalidación y despacho permanecen dentro. El límite evita almacenar candidatos fuera del rango y examinar salidas desde salas no fijadas dentro de él; aun así `D_R`, `P_R` y `Q_R` se cuentan separadamente de `F_R` (`PR-004`).
 
-### 5. Dependencias e invalidación
+### 5. Dependencias, ubicación e invalidación
 
 | Información | Depende de | Invalida | No invalida por sí solo |
 |---|---|---|---|
@@ -201,9 +201,15 @@ En `--bench`, “preparación fuera del cronómetro” significa únicamente gen
 | Lote de cazadores | conjunto de cazadores vivos/activos | activación, muerte, retroceso que cambie ese conjunto | movimiento de un actor que no participa |
 | Próxima acción | reloj, velocidad y evento del actor | inicio/fin de efecto de velocidad; retroceso | rutas y puertas si el evento ya fue programado |
 
-La apertura y el cierre automático cambian el grafo transitable. El movimiento del jugador cambia el objetivo. El movimiento de un cazador cambia solo su origen; una distancia inversa al mismo objetivo podría seguir sirviendo. La velocidad no forma parte del costo de ruta y no invalida distancias; sí reprograma el evento con secuencia nueva (`FR-006`). La muerte/movimiento de otros actores no bloquea salidas, por lo que no invalida distancias, aunque la muerte cambia qué cazadores participan. Después de cualquier retroceso o reconstrucción histórica se descartan todos los cálculos derivados antes de la próxima decisión; se prioriza un recálculo seguro frente a intentar invertir una caché (`FR-014`–`FR-016`).
+La apertura y el cierre automático cambian el grafo transitable. El movimiento del jugador cambia el objetivo. El movimiento de un cazador cambia solo su origen; una distancia inversa al mismo objetivo podría seguir sirviendo. La velocidad no forma parte del costo de ruta y no invalida distancias; sí reprograma el evento con secuencia nueva (`FR-006`). La muerte/movimiento de otros actores no bloquea salidas, por lo que no invalida distancias, aunque la muerte cambia qué cazadores participan.
 
-En el código actual, `RestauradorPartida.restaurar_para_reanudar()` crea un estado nuevo, reconstruye agenda y referencias e inicia un historial vacío; ninguna caché de rutas se persiste. Esa ausencia evita arrastrar derivados hoy, pero no sustituye el acuerdo sobre invalidación cuando 001 introduzca cálculos reutilizables.
+Las cachés de ruta pertenecen al motor o al servicio de rutas, nunca a `EstadoPartida`, a una entidad canónica ni a un objeto alcanzable desde una `TransaccionAccion`. Así no entran en la copia profunda de puntos de control ni en el `pickle` conjunto de estado y línea propuesto por 004. Ningún cambio nuevo guarda referencias al motor, al propietario de cachés o a las cachés.
+
+La invalidación global ocurre en dos fronteras reales: (a) inmediatamente después de que `HistorialReversible.deshacer_ultimo(estado)` devuelve `True` en el flujo `RETROCEDER`; y (b) al enlazar un estado en `MotorJuego.iniciar(estado)`, tanto nuevo como cargado. El nombre interno depende del propietario final de la caché y no se fija aquí. No se añaden observadores de atributos.
+
+`historia` **no invalida**. 004 no llama al comportamiento del cazador: deshace temporalmente sobre un paquete o sobre el estado vivo, captura inversos y rehace en `finally`. Tras la consulta, el estado canónico es idéntico y las cachés externas no fueron alcanzadas ni consultadas. El recorte de la línea después de un pergamino tampoco añade otra invalidación: el retroceso exitoso ya la realizó.
+
+En el código actual, `RestauradorPartida.restaurar_para_reanudar()` crea un estado nuevo, reconstruye agenda y referencias e inicia un historial vacío; ninguna caché de rutas se persiste. `MotorJuego.iniciar` es el punto común que recibe tanto estados nuevos como restaurados.
 
 La producción provisional recalcula cada decisión. Cualquier reutilización futura exige clave de versión/generación y comparación automática contra cálculo desde cero antes de habilitarse.
 
@@ -212,9 +218,12 @@ La producción provisional recalcula cada decisión. Cualquier reutilización fu
 - `ResultadoAccion.costo` de `MOVER` se obtiene de la salida atravesada tanto para jugador como para enemigos. `ATACAR`, `ESPERAR`, `USAR`, `EQUIPAR`, `RECOGER`, `SOLTAR` y `ABRIR` siguen usando `costo_base` heredado (`FR-003`–`FR-005`, `FR-012`).
 - `calcular_intervalo` sigue siendo la única fórmula común. El motor no modifica el costo de una acción ya no relacionada con movimiento.
 - `AgendaEventos.reprogramar` cancela y reinserta el mismo evento con tiempo nuevo y secuencia nueva; el cambio de velocidad conserva la fórmula proporcional y registra todos los cambios para poder deshacerlos (`FR-006`).
-- Movimiento de cazadores registra retiro/inserción de las listas de sala, `sala_actual`, ataques/vida, agenda, reloj y secuencias mediante cambios pequeños. Las rutas, etiquetas, montículos de consulta e instantáneas no son estado del juego y no entran en `HistorialReversible` (`FR-016`).
+- Movimiento de cazadores registra retiro/inserción de listas, `sala_actual`, ataques/vida, agenda, reloj y secuencias mediante `logica.mutaciones` (`atributo`, `agregar`, `quitar_identidad`, `registrar`) y los cambios/registro automático de agenda, siempre dentro de la transacción abierta. No se crea un observador general de atributos.
+- La interfaz real disponible es `CambioReversible.deshacer(estado)`, `TransaccionAccion.registrar/revertir` e `HistorialReversible.deshacer_ultimo(estado) -> bool`. No existe `rehacer`. 004 planifica ampliar `TransaccionAccion` con deshacer temporal condicional que devuelve inversos sin vaciar ni marcar la transacción y ampliar el historial con avisos a la línea, pero aún no define nombres o firmas; 001 consumirá esa interfaz cuando exista y no inventa otra.
+- Todo cambio nuevo de 001 debe sobrevivir a `copy.deepcopy((estado, transacciones))` conservando referencias hacia las entidades copiadas, y al `pickle` conjunto de estado vivo/línea propuesto por 004. Por ello contiene solo valores y referencias canónicas incluidas en el paquete, nunca motor, servicio de rutas, cachés, callbacks o recursos externos.
+- Las rutas, etiquetas, montículos de consulta e instantáneas no son estado del juego y no entran en `HistorialReversible` (`FR-016`).
 - Una acción rechazada se valida antes de mutar o aborta su transacción, y no deja datos derivados presentados como válidos (`FR-017`).
-- El acuerdo pendiente con Joshua define una notificación para descartar derivados después de retroceso o reconstrucción, sin copias completas y sin imponer el diseño interno de su línea de tiempo.
+- El contrato de 004 acepta condicionadamente esta frontera: FR-016 basta si todo estado observable se registra en la transacción. Implementación, compatibilidad `deepcopy`/`pickle` y pruebas conjuntas siguen pendientes.
 
 ### 7. Medición conectada a `--bench`
 
@@ -254,30 +263,30 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 ### Puntos de integración pendientes
 
 - **Steven**: adaptación estricta de `costo` y `rango`, DTO compartidos, persistencia/versión y vista del mapa conocido para «ir a». Propuesta: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md). No se considera aceptada hasta revisión conjunta.
-- **Joshua**: publicación de cambios canónicos para línea de tiempo y descarte de cálculos derivados después de retroceso/reconstrucción. Propuesta: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md). No se considera aceptada hasta revisión conjunta.
+- **Joshua**: 004 documenta una **aceptación condicionada**: las mutaciones canónicas de 001 dentro de transacciones son suficientes y la línea no llama al cazador. La propuesta actualizada delimita cachés, `historia`, retroceso e inicio/carga. Las interfaces nuevas de deshacer/rehacer histórico, v10 y las pruebas continúan pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
 - **Spec 002**: la versión integrada resolvió las dos observaciones revisadas: un fallo al obtener ubicaciones deja la cripta sin verificar y bloquea el inicio salvo `--forzar` (`FR-011`, `FR-019`), y retiró la divulgación de contenido de rutas frente a la niebla. Solo se permite identificar al enemigo que custodia una llave, excepción exigida para ubicarla. 001 no modifica ese spec ni su recorrido; el índice conserva orden e identidad y los costos no alteran la resolubilidad. Como hallazgo de implementación, `InicializadorPartida._verificar()` captura `CriptaAPIError` y `ValueError`, mientras `convertir_llaves()` puede producir `TypeError` ante un ID de sala de tipo inválido; ese borde no se corrige desde 001.
-- **Spec 004**: su FR-022 necesita reconstruir costos y cazadores como estado canónico, pero no instantáneas de ruta. No se modifica `specs/004-linea-de-tiempo`.
+- **Spec 004**: reconstruye hacia atrás desde el punto de control siguiente, deshaciendo como máximo K transacciones y rehaciendo con inversos en `finally`. Re-simular hacia adelante existe solo como alternativa de `--bench`. Su FR-022 necesita costos y cazadores canónicos, pero no cachés de ruta. No se modifica `specs/004-linea-de-tiempo`.
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas y el diseño provisional. No quedan ambigüedades normativas de 001; permanecen acuerdos de integración, el cambio de esquema v9 y decisiones condicionadas por medición.
+[research.md](research.md) fija las alternativas y el diseño provisional. No quedan ambigüedades normativas de 001; permanecen el contrato con Steven, la implementación de las condiciones de Joshua, la coordinación de v9 con el v10 propuesto y decisiones condicionadas por medición.
 
 ## Phase 1 Outputs
 
 - [data-model.md](data-model.md): entidades canónicas, derivadas, validaciones y transiciones.
 - [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md): propuesta pendiente sobre datos y reutilización de rutas con mapa conocido.
-- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): propuesta pendiente sobre cambios e invalidación histórica.
+- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): acuerdo condicionado sobre cambios, cachés, invalidación y reconstrucción histórica; implementación y pruebas pendientes.
 - [quickstart.md](quickstart.md): guía futura de validación, matriz completa de escenarios y `--bench`.
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con condiciones abiertas**. El merge mantiene una vía compatible para integrar 001 y la regresión reportada está verde, pero no implementa ni aprueba los contratos de costo/rango, persistencia, mapa conocido o invalidación. Tampoco aporta aún evidencia de `--bench` para seleccionar estrategia.
+**Puerta de diseño satisfecha con condiciones abiertas**. El merge documental de Joshua acepta condicionadamente la frontera de 001, pero no implementa la línea, deshacer/rehacer temporal, v10 ni los puntos de invalidación. Datos, persistencia y mapa conocido continúan pendientes con Steven. Tampoco existe evidencia de `--bench` para seleccionar estrategia.
 
 ## Risks and Pending Agreements Before Tasks
 
 1. **Contrato de datos con Steven**: acordar quién modifica los caminos API/guardado del decodificador, dónde se valida simetría, cómo se materializa rango y cómo se versiona el formato actual v9. El merge identifica los puntos, no acepta responsabilidades.
 2. **Contrato de «ir a» con Steven**: aprobar la vista de grafo restringida al mapa conocido para impedir que 003 filtre el esqueleto completo.
-3. **Contrato histórico con Joshua**: acordar representación de cambios de 001 y el punto de invalidación de derivados tras retroceso/reconstrucción.
+3. **Integración histórica con Joshua**: la frontera está aceptada de forma condicionada. Falta implementar y probar los inversos temporales de los cambios nuevos, `deepcopy`/`pickle`, la invalidación tras retroceso e inicio/carga y la compatibilidad con v10; `historia` no invalida.
 4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
 5. **Elección de estrategia**: individual es provisional. Compartida/adaptativa solo se seleccionará con resultados de costo completo y equivalencia.
 6. **Componentes compartidos**: el diseño no exige ampliar `MonticuloMinimo`. El registro en `main.py` debe conservar las tuplas actuales de proveedores y añadir 001 una sola vez.
