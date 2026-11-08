@@ -2034,6 +2034,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
 | 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
 | 33 | Implementación de T001: medición del riesgo R3 (`/speckit-implement`) | 07/11/2026 |
+| 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2193,6 +2194,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `benchmarks/linea_tiempo.py` (nuevo), que juega una partida real sin red sobre `cripta-04` (50 salas) y mide, para K = 10, 50 y 200, deshacer K transacciones sobre una copia conjunta del estado frente a copiar el estado completo. Resultados en research R3: con K = 10, deshacer tarda 5,6 ms de mediana; con K = 50, 30 ms; la copia completa por consulta es de 8 a 14 veces más lenta. Deshacer sobre la copia conjunta da exactamente el estado de K acciones antes.
 
 **Qué hubo que corregir.** (1) La primera ejecución falló: `copy.deepcopy` del estado real reventaba en la lista de enemigos de la sala (`dto/sala.py`, de Sofía). El plan decía que la copia ya funcionaba porque se había comprobado con un estado más simple. Sofía lo arregló en `f89b7b5` y research R2 se corrigió en un commit aparte (`d1b7dba`). (2) El jugador moría a las 45 acciones; se le dio vida muy alta solo dentro de la medición. (3) La comprobación de deshacer estaba mal escrita (comparaba contra una partida que había terminado antes) y se corrigió. (4) Con los datos, K = 50 no cabe en los 50 ms de §6.1, así que el K por defecto provisional pasó a 10 (research R7) y se agregó a T041 medir el costo de crear un punto de control frente al límite de 20 ms por ciclo. Rehacer todavía no existe: su costo es una estimación hasta T004.
+
+## Prompt 34 — Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo
+
+> **Prompt**
+>
+> ok, continuemos
+
+(Continuación de `/speckit-implement` del Prompt 33, sobre la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** T003: `tests/test_logica/test_cambios_linea.py`, con 8 pruebas que citan FR-001, FR-005 y FR-012; la principal juega 120 acciones reales en `cripta-04` (moverse, atacar, recoger, soltar, equipar, usar) y comprueba que cada transacción queda idéntica después de deshacer y rehacer. T004: en `logica/cambios.py` (archivo de Joshua), `CambioSoloLinea`, `TransaccionAccion.registrar_solo_linea`, `deshacer_mientras` (no vacía la transacción) y `rehacer`, más un inverso por cada uno de los 13 tipos de cambio. `revertir` salta los cambios «solo línea» y no cambió en lo demás. Suite: 1083 aprobadas.
+
+**Qué hubo que corregir.** (1) Los cambios de inventario se marcan como deshechos y no se pueden deshacer dos veces; el inverso guarda también el propio cambio para que la línea pueda consultar muchas veces. (2) La agenda queda con otra forma interna después de cancelar y restaurar un evento, aunque con los mismos eventos; la prueba compara la agenda por sus eventos, como ya ocurría con el pergamino. (3) En la partida de prueba no hubo turnos de enemigos, así que el inverso del azar se prueba aparte. Un tipo de cambio sin inverso hace fallar la consulta antes de tocar el estado; las specs 001 y 003 deben declararlo (contrato de dependencias).
 
 # Steven Moya Porras — Parte II
 

@@ -132,6 +132,35 @@ class TransaccionAccion:
         # El cambio más reciente queda primero.
         self._cambios.insertar(cambio)
 
+    def registrar_solo_linea(self, cambio: CambioReversible) -> None:
+        """Registra un cambio que solo deshace la línea de tiempo (spec 004, research R6).
+
+        Va en la misma lista para conservar el orden relativo; ``revertir`` lo salta.
+        """
+        self.registrar(CambioSoloLinea(cambio))
+
+    def deshacer_mientras(self, estado, condicion, inversos: list) -> None:
+        """Deshace del más reciente al más antiguo mientras ``condicion(estado)`` sea cierta.
+
+        Para la línea de tiempo (spec 004, research R3 y R4): no vacía la transacción ni la
+        marca como revertida, incluye los cambios «solo línea» y agrega a ``inversos`` lo
+        necesario para rehacer. Recibe la lista del llamador para que pueda rehacer en un
+        ``finally`` aunque algo falle a la mitad. Cuesta O(cambios deshechos).
+        """
+        nodo = self._cambios.primero
+        while nodo is not None and condicion(estado):
+            cambio = nodo.valor
+            inverso = _fotografiar(cambio, estado)
+            cambio.deshacer(estado)
+            inversos.append(inverso)
+            nodo = nodo.siguiente
+
+    @staticmethod
+    def rehacer(estado, inversos: list) -> None:
+        """Aplica los inversos en orden contrario al de deshacer y vacía la lista."""
+        while inversos:
+            inversos.pop().restaurar(estado)
+
     def get_cantidad(self) -> int:
         return self._cambios.cantidad
 
@@ -161,6 +190,9 @@ class TransaccionAccion:
         nodo = self._cambios.primero
         while nodo is not None:
             cambio = nodo.valor
+            if isinstance(cambio, CambioSoloLinea):
+                nodo = nodo.siguiente
+                continue
             if getattr(cambio, "_inventario", None) is inventario:
                 cantidad += getattr(cambio, "delta_inverso", 0)
                 if cantidad > inventario.get_capacidad():
@@ -191,18 +223,20 @@ class TransaccionAccion:
 
         # Simula primero todos los inversos. Las vistas contienen referencias,
         # no copias de entidades ni del estado completo.
+        # Los cambios «solo línea» (spec 004) no forman parte del retroceso.
         contexto = _ContextoValidacionReversion()
         nodo = self._cambios.primero
         while nodo is not None:
             validar = getattr(nodo.valor, "validar_deshacer", None)
-            if validar is not None:
+            if validar is not None and not isinstance(nodo.valor, CambioSoloLinea):
                 validar(estado, contexto)
             nodo = nodo.siguiente
 
         # Ningún registro se descarta hasta que la validación completa terminó.
         nodo = self._cambios.primero
         while nodo is not None:
-            nodo.valor.deshacer(estado)
+            if not isinstance(nodo.valor, CambioSoloLinea):
+                nodo.valor.deshacer(estado)
             nodo = nodo.siguiente
 
         while self._cambios.primero is not None:
@@ -683,3 +717,182 @@ def exportar_cambio_local(cambio):
     if hasattr(cambio, "_deshecho"):
         registro["deshecho"] = cambio._deshecho
     return registro
+
+
+# --- Línea de tiempo (spec 004) ------------------------------------------------------------
+
+
+class CambioSoloLinea(CambioReversible):
+    """Un cambio que solo deshace la línea de tiempo, nunca el pergamino (research R6).
+
+    Se usa para lo que P1 §2.11 deja fuera del retroceso (recoger, soltar y consumir
+    pergaminos), para que la línea muestre bien el inventario en el pasado.
+    """
+
+    def __init__(self, cambio: CambioReversible):
+        if not isinstance(cambio, CambioReversible):
+            raise TypeError("Solo se admiten cambios reversibles.")
+        self.cambio = cambio
+
+    def deshacer(self, estado) -> None:
+        self.cambio.deshacer(estado)
+
+    def objetos_referenciados(self):
+        obtener = getattr(self.cambio, "objetos_referenciados", None)
+        return obtener() if obtener is not None else []
+
+
+class _Inverso:
+    """Lo necesario para rehacer un cambio después de deshacerlo (research R3).
+
+    Guarda solo lo que toca ese cambio (algunos atributos, listas o el estado del azar),
+    nunca una copia del estado de la partida. Existe solo durante una consulta.
+    """
+
+    def __init__(self):
+        self._partes = []
+
+    def objeto(self, objeto):
+        """Todos los atributos de un objeto, en su orden, sin copiar sus valores."""
+        self._partes.append(("objeto", objeto, list(vars(objeto).items())))
+
+    def atributo(self, objeto, nombre):
+        self._partes.append(("atributo", objeto, nombre, getattr(objeto, nombre)))
+
+    def lista(self, lista):
+        self._partes.append(("lista", lista, list(lista)))
+
+    def entradas(self, datos):
+        """Contenido completo de un dict existente (equipo y bonos del inventario)."""
+        self._partes.append(("entradas", datos, list(datos.items())))
+
+    def clave(self, datos, clave):
+        self._partes.append(("clave", datos, clave, clave in datos, datos.get(clave)))
+
+    def azar(self, azar):
+        self._partes.append(("azar", azar, azar.getstate()))
+
+    def agenda(self, agenda, evento, insertado):
+        # Deshacer un evento insertado lo cancela; rehacer lo vuelve a poner, y al revés.
+        self._partes.append(("agenda", agenda, evento, insertado))
+
+    def restaurar(self, estado) -> None:
+        for parte in reversed(self._partes):
+            tipo = parte[0]
+            if tipo == "objeto":
+                atributos = vars(parte[1])
+                atributos.clear()
+                for nombre, valor in parte[2]:
+                    atributos[nombre] = valor
+            elif tipo == "atributo":
+                setattr(parte[1], parte[2], parte[3])
+            elif tipo == "lista":
+                parte[1][:] = parte[2]
+            elif tipo == "entradas":
+                parte[1].clear()
+                for clave, valor in parte[2]:
+                    parte[1][clave] = valor
+            elif tipo == "clave":
+                _, datos, clave, existia, valor = parte
+                if existia:
+                    datos[clave] = valor
+                else:
+                    datos.pop(clave, None)
+            elif tipo == "azar":
+                parte[1].setstate(parte[2])
+            elif tipo == "agenda":
+                _, agenda, evento, insertado = parte
+                if insertado:
+                    agenda.restaurar_evento(evento)
+                else:
+                    agenda.cancelar(evento.id_evento)
+
+
+def _fotografiar_inventario(inverso, inventario, *nodos_extra):
+    """El inventario, su lista doble y cada nodo, más nodos que puedan volver a entrar."""
+    inverso.objeto(inventario)
+    lista = inventario._lista
+    inverso.objeto(lista)
+    vistos = []
+    nodo = lista.primero
+    while nodo is not None:
+        inverso.objeto(nodo)
+        vistos.append(nodo)
+        nodo = nodo.siguiente
+    for nodo in nodos_extra:
+        if nodo is not None and not any(nodo is visto for visto in vistos):
+            inverso.objeto(nodo)
+            vistos.append(nodo)
+
+
+def _fotografiar_suelo(inverso, sala):
+    inverso.objeto(sala)
+    inverso.lista(sala.objetos)
+    for objeto in sala.objetos:
+        inverso.objeto(objeto)
+
+
+def _fotografiar(cambio, estado) -> _Inverso:
+    """Arma el inverso de un cambio antes de deshacerlo.
+
+    Usa el tipo exacto: un tipo de cambio nuevo (por ejemplo de las specs 001 o 003) debe
+    declarar su propio ``fotografiar_para_rehacer(inverso, estado)``. Si no lo hace, la
+    consulta falla antes de tocar nada, en lugar de dejar el estado distinto.
+    """
+    inverso = _Inverso()
+    propio = getattr(cambio, "fotografiar_para_rehacer", None)
+    tipo = type(cambio)
+    if propio is not None:
+        propio(inverso, estado)
+    elif tipo is CambioSoloLinea:
+        return _fotografiar(cambio.cambio, estado)
+    elif tipo is CambioAtributo:
+        inverso.atributo(cambio.objeto, cambio.nombre)
+    elif tipo is CambioVida:
+        inverso.atributo(cambio._actor, "vida")
+    elif tipo is CambioReloj:
+        inverso.atributo(estado, "reloj")
+    elif tipo is CambioPuerta:
+        inverso.atributo(cambio._puerta, "abierta")
+    elif tipo is CambioDato:
+        inverso.clave(cambio.datos, cambio.clave)
+    elif tipo is CambioLista:
+        inverso.lista(cambio.lista)
+    elif tipo is CambioAzar:
+        inverso.azar(cambio.azar)
+    elif tipo is CambioAgenda:
+        inverso.agenda(cambio.agenda, cambio.evento, cambio.insertado)
+    elif tipo is CambioRecogerObjeto:
+        inverso.objeto(cambio)
+        _fotografiar_inventario(inverso, cambio._inventario, cambio._nodo,
+                                cambio._cursor_anterior)
+        inverso.objeto(cambio._objeto)
+        _fotografiar_suelo(inverso, cambio._sala)
+    elif tipo is CambioSoltarObjeto:
+        inverso.objeto(cambio)
+        inverso.objeto(cambio._retiro)
+        _fotografiar_inventario(inverso, cambio._inventario, cambio._retiro.nodo)
+        inverso.objeto(cambio._objeto)
+        _fotografiar_suelo(inverso, cambio._sala)
+    elif tipo is CambioPosicionInventario:
+        inverso.objeto(cambio)
+        _fotografiar_inventario(inverso, cambio._inventario, cambio._nodo)
+    elif tipo is CambioConsumirObjeto:
+        inverso.objeto(cambio)
+        inverso.objeto(cambio._retiro)
+        _fotografiar_inventario(inverso, cambio._inventario, cambio._retiro.nodo)
+        inverso.objeto(cambio._objeto)
+    elif tipo is CambioEquipo:
+        servicio = cambio._servicio
+        inverso.objeto(cambio)
+        inverso.atributo(servicio._jugador, cambio._atributo)
+        inverso.entradas(servicio._equipo)
+        inverso.entradas(servicio._bonos)
+        for objeto, _ in cambio._ubicaciones:
+            inverso.objeto(objeto)
+        inverso.atributo(servicio._inventario, "_cursor")
+    else:
+        raise TypeError(
+            f"{tipo.__name__} no tiene inverso para la línea de tiempo; debe declarar "
+            "fotografiar_para_rehacer (contrato specs/004-linea-de-tiempo/contracts/dependencias.md).")
+    return inverso
