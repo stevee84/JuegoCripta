@@ -1669,6 +1669,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 27 | Correcciones a la constitución antes de confirmarla | 02/11/2026 |
 | 28 | Especificación de la línea de tiempo (`/speckit-specify`) | 06/11/2026 |
 | 29 | Clarificación de la línea de tiempo (`/speckit-clarify`) | 06/11/2026 |
+| 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -1788,6 +1789,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 
 ---
+
+## Prompt 30 — Plan de la línea de tiempo (`/speckit-plan`)
+
+> **Prompt**
+>
+> /speckit-plan Plan de specs/004-linea-de-tiempo. Elige estructuras propias (sin dict/set como índice, heapq, bisect, collections), compara con alternativas descartadas, decide reconstrucción hacia adelante o hacia atrás con evidencia prevista, propone K por defecto a confirmar con --bench, lista consumidores de componentes compartidos (motor, historial, controlador, vista, main, guardado) con cambios mínimos, define el contrato con Steven (guardado v10 y mapa conocido de la 003) y con Sofía (cambios reversibles del cazador), e incluye las tareas de interfaz T049 y T050 de la spec 002 (FR-013, FR-014). No modifiques código de Steven ni de Sofía. Todo en español.
+
+**Qué se obtuvo.** `plan.md`, `research.md`, `data-model.md`, `quickstart.md` y tres contratos en `specs/004-linea-de-tiempo/contracts/` (`cli-historia.md`, `guardado-v10.md` y `dependencias.md`). Decisión principal, provisional hasta medirla en `--bench`: reconstruir **hacia atrás** desde el punto de control siguiente. Cada punto de control copia juntos el estado y las transacciones de su ventana, porque los cambios guardan referencias a los objetos vivos. Se ubica el punto de control por aritmética y el instante t por búsqueda binaria propia. K por defecto provisional: 50, a medir con K = 10, 50 y 200 y sin puntos de control. La línea se engancha en el historial reversible, así que no se modifica el motor de Sofía. El guardado v10 queda como contrato para Steven, sin tocar su archivo.
+
+**Qué hubo que corregir.** Antes de escribir el plan se leyó el código y aparecieron tres cosas que el enunciado no dice. (1) Los cambios solo saben deshacerse y apuntan a objetos vivos: por eso se descartó re-simular hacia adelante como mecanismo principal, ya que además pediría contenido de salas al servicio. (2) Recoger, soltar y consumir un pergamino no se registran como cambios, así que se agregó un registro «solo línea de tiempo». (3) Una primera versión ubicaba el punto de control con ⌈k / K⌉; se corrigió a ⌈(k − 1) / K⌉, porque el punto de control de la acción m guarda el estado de antes de la acción m + 1. Quedaron dos desviaciones documentadas en la tabla de complejidad: la copia de trabajo temporal de cada consulta y un posible punto de control extra después de cargar; la segunda se consultará con el grupo.
 
 # Steven Moya Porras — Parte II
 
