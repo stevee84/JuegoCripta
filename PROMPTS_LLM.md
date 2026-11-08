@@ -2033,6 +2033,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
 | 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
 | 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
+| 33 | Implementación de T001: medición del riesgo R3 (`/speckit-implement`) | 07/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2182,6 +2183,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** Un informe con cobertura de 100 % (los 31 FR y los 6 SC tienen tareas; ninguna tarea sin requisito) y 9 hallazgos: 2 críticos, 4 medios y 3 bajos. Los dos críticos contradecían el principio VII de la constitución: (C1) el plan hacía una copia de trabajo del estado en cada consulta, y la constitución solo permite como copias completas los puntos de control; (C2) después de cargar una partida podía quedar un punto de control extra, contra «no más de una cada K acciones» (§3.6, FR-017).
 
 **Qué hubo que corregir.** Con la aprobación de Joshua se corrigieron el plan y sus artefactos; `spec.md` no cambió. (C1) La consulta ahora deshace en sitio, sobre el punto de control o el estado vivo, anotando el inverso de cada cambio, y rehace en un `finally` (research R3). (C2) El guardado v10 serializa juntos el estado vivo y la línea, y al cargar el estado sale de la línea (research R8 y `contracts/guardado-v10.md`; hay que acordarlo con Steven). Medios: se agregó `service/juego_service.py` a la tabla de componentes, T001 ahora mide deshacer y rehacer en sitio, y las tareas de Steven se renombraron 002-T049 y 002-T050 para no confundirlas con las propias. Bajos: se agregaron pruebas con la partida terminada, con dos pergaminos seguidos y con K mayor que la cantidad de acciones; `pickle` quedó anotado como límite conocido. Los dos errores críticos eran del diseño que propuso Claude en el Prompt 30, no del enunciado.
+
+## Prompt 33 — Implementación de T001: medición del riesgo R3 (`/speckit-implement`)
+
+> **Prompt**
+>
+> /speckit-implement Implementa únicamente T001 de specs/004-linea-de-tiempo/tasks.md (medición del riesgo R3 en benchmarks/linea_tiempo.py y anotación del resultado en research.md). No implementes otras tareas ni toques código de Steven ni de Sofía.
+
+**Qué se obtuvo.** `benchmarks/linea_tiempo.py` (nuevo), que juega una partida real sin red sobre `cripta-04` (50 salas) y mide, para K = 10, 50 y 200, deshacer K transacciones sobre una copia conjunta del estado frente a copiar el estado completo. Resultados en research R3: con K = 10, deshacer tarda 5,6 ms de mediana; con K = 50, 30 ms; la copia completa por consulta es de 8 a 14 veces más lenta. Deshacer sobre la copia conjunta da exactamente el estado de K acciones antes.
+
+**Qué hubo que corregir.** (1) La primera ejecución falló: `copy.deepcopy` del estado real reventaba en la lista de enemigos de la sala (`dto/sala.py`, de Sofía). El plan decía que la copia ya funcionaba porque se había comprobado con un estado más simple. Sofía lo arregló en `f89b7b5` y research R2 se corrigió en un commit aparte (`d1b7dba`). (2) El jugador moría a las 45 acciones; se le dio vida muy alta solo dentro de la medición. (3) La comprobación de deshacer estaba mal escrita (comparaba contra una partida que había terminado antes) y se corrigió. (4) Con los datos, K = 50 no cabe en los 50 ms de §6.1, así que el K por defecto provisional pasó a 10 (research R7) y se agregó a T041 medir el costo de crear un punto de control frente al límite de 20 ms por ciclo. Rehacer todavía no existe: su costo es una estimación hasta T004.
 
 # Steven Moya Porras — Parte II
 
