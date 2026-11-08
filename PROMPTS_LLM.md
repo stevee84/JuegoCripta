@@ -1670,6 +1670,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 28 | Especificación de la línea de tiempo (`/speckit-specify`) | 06/11/2026 |
 | 29 | Clarificación de la línea de tiempo (`/speckit-clarify`) | 06/11/2026 |
 | 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
+| 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -1799,6 +1800,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `plan.md`, `research.md`, `data-model.md`, `quickstart.md` y tres contratos en `specs/004-linea-de-tiempo/contracts/` (`cli-historia.md`, `guardado-v10.md` y `dependencias.md`). Decisión principal, provisional hasta medirla en `--bench`: reconstruir **hacia atrás** desde el punto de control siguiente. Cada punto de control copia juntos el estado y las transacciones de su ventana, porque los cambios guardan referencias a los objetos vivos. Se ubica el punto de control por aritmética y el instante t por búsqueda binaria propia. K por defecto provisional: 50, a medir con K = 10, 50 y 200 y sin puntos de control. La línea se engancha en el historial reversible, así que no se modifica el motor de Sofía. El guardado v10 queda como contrato para Steven, sin tocar su archivo.
 
 **Qué hubo que corregir.** Antes de escribir el plan se leyó el código y aparecieron tres cosas que el enunciado no dice. (1) Los cambios solo saben deshacerse y apuntan a objetos vivos: por eso se descartó re-simular hacia adelante como mecanismo principal, ya que además pediría contenido de salas al servicio. (2) Recoger, soltar y consumir un pergamino no se registran como cambios, así que se agregó un registro «solo línea de tiempo». (3) Una primera versión ubicaba el punto de control con ⌈k / K⌉; se corrigió a ⌈(k − 1) / K⌉, porque el punto de control de la acción m guarda el estado de antes de la acción m + 1. Quedaron dos desviaciones documentadas en la tabla de complejidad: la copia de trabajo temporal de cada consulta y un posible punto de control extra después de cargar; la segunda se consultará con el grupo.
+
+## Prompt 31 — Tareas de la línea de tiempo (`/speckit-tasks`)
+
+> **Prompt**
+>
+> /speckit-tasks Genera tasks.md para specs/004-linea-de-tiempo en español. Cada tarea cita los FR que atiende; cada prueba cita el FR que verifica; los 6 casos del Apéndice B tienen prueba. Primera tarea: medir el costo de copiar el estado (riesgo R3 del plan). Incluye T049 y T050 de la spec 002. Marca como dependientes las tareas que necesitan el guardado v10 de Steven o la spec 003. Bloques pequeños, sin tocar código de Steven ni de Sofía.
+
+**Qué se obtuvo.** `specs/004-linea-de-tiempo/tasks.md` con 50 tareas en 12 fases: preparación (T001 mide el riesgo R3 antes de construir), base, una fase por historia de usuario, interfaz §7.3 con T049 y T050 de la spec 002, mapa conocido, mediciones y cierre. Los 6 casos del Apéndice B tienen prueba (tabla al final del archivo). Tres tareas quedan marcadas como dependientes: T034 y T035 del guardado v10 de Steven y T040 de la spec 003.
+
+**Qué hubo que corregir.** La revisión automática de trazabilidad encontró que FR-020 (estado del azar si se re-simula) no tenía tarea; se agregó a T042, que es la única parte que re-simula.
 
 # Steven Moya Porras — Parte II
 
