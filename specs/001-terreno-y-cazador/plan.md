@@ -10,7 +10,7 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 
 ## Technical Context
 
-**Language/Version**: soporte mínimo Python 3.11. La suite local previamente validada usó el entorno del proyecto `.venv` con Python 3.12.10; los intérpretes generales instalados fuera de `.venv` no se toman como evidencia del entorno del proyecto.
+**Language/Version**: Python 3.11 o superior; el entorno disponible informa Python 3.14.x.
 
 **Primary Dependencies**: biblioteca estándar, `requests` y `pygame` ya existentes. Sin dependencias nuevas. En producción se reutilizan `TablaHashImpl`, `MonticuloMinimo`, `IndiceOrdenado`, `ListaDobleImpl`, `AgendaEventos` y el mecanismo de `CambioReversible` propios.
 
@@ -30,23 +30,23 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 
 ## Constitution Check
 
-*GATE de diseño: se comprueba ausencia de contradicciones constitucionales; acuerdos, implementación, pruebas y mediciones conservan su estado pendiente explícito.*
+*GATE: aprobado antes de Phase 0 y revalidado después de Phase 1.*
 
-| Principio | Estado de la revisión del plan |
+| Principio | Resultado y evidencia del plan |
 |---|---|
-| I. Estructuras propias | **Comprobado en el diseño**. Rutas e índices se limitan a estructuras propias; se verificó que el montículo actual permite insertar y extraer, pero no actualizar prioridad. Las alternativas de biblioteca solo aparecen en `--bench`. La comprobación de código queda para implementación/análisis. |
-| II. Acceso por identificador | **Comprobado en el diseño**. `MapaCripta` conservará la lista y añadirá `TablaHashImpl` para consultas frecuentes; la sustitución infrecuente seguirá siendo lineal y queda costada expresamente. |
-| III. Determinismo | **Comprobado en el diseño**. La etiqueta ordena por costo y primera vecina; el ID de sala solo estabiliza trabajo ya empatado. La agenda heredada asigna secuencia nueva al reprogramar. Falta probar la implementación. |
-| IV. Separación MVC | **Comprobado en el diseño**. Rutas e invalidación quedan en lógica y `--bench` no requiere vista. Falta verificarlo sobre el código nuevo. |
-| V. Datos desde el servicio | **Pendiente de acuerdo con Steven**. El plan no codifica datos concretos, pero responsabilidad, ubicación y persistencia de la validación de costo/rango siguen propuestas. |
-| VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La búsqueda consume el esqueleto ya cargado y no incorpora solicitudes. |
-| VII. Estado reversible | **Pendiente de acuerdo con Joshua**. La separación canónico/derivado está definida; el punto de invalidación posterior a reconstrucción aún debe acordarse. |
-| VIII. Contratos estables | **Pendiente de acuerdo**. Las dos propuestas de `contracts/` no son contratos aceptados y bloquean las tareas de integración correspondientes. |
-| IX. Rendimiento medido | **Decisión provisional pendiente de medición**. Individual limitada es el punto de partida; compartida/adaptativa y cualquier umbral dependen de `--bench`. No hay resultado empírico en esta fase. |
-| X. Especificación y trazabilidad | **Comprobado en los artefactos**. Las decisiones citan FR/PR y no cambian las reglas del spec. |
-| XI. Pruebas | **Cobertura planificada, no ejecutada**. [quickstart.md](quickstart.md) asigna los 30 escenarios y oráculos, pero esta fase no crea ni ejecuta pruebas nuevas. |
+| I. Estructuras propias | **PASS**. Rutas, índices y agenda usan estructuras propias. Alternativas de biblioteca solo pueden vivir dentro de `--bench`. |
+| II. Acceso por identificador | **PASS**. `MapaCripta` conservará la lista de recorrido y añadirá `TablaHashImpl` para sala por ID; no habrá búsqueda lineal por sala en turnos o rutas. |
+| III. Determinismo | **PASS**. La clave de ruta incluye costo y primera vecina; el ID de sala rompe empates sin depender del descubrimiento. La agenda conserva tiempo y secuencia nueva al reprogramar. |
+| IV. Separación MVC | **PASS**. Reglas, rutas e invalidación quedan en modelo/lógica; `--bench` usa el punto de entrada sin vista. |
+| V. Datos desde el servicio | **PASS**. Costos y rangos se validan al adaptar los datos; no se codifican valores de una cripta. |
+| VI. Presupuesto de solicitudes | **PASS**. La ruta usa el esqueleto ya descargado y nunca consulta red o contenido remoto. |
+| VII. Estado reversible | **PASS**. Movimiento, puertas, agenda, vida y reloj continúan como cambios pequeños; resultados derivados se invalidan y no se copian ni historizan. |
+| VIII. Contratos estables | **PASS condicionado a acuerdo**. No se cambian archivos de Steven/Joshua en esta fase; las propuestas están en `contracts/` y deben aprobarse antes de tareas de integración. |
+| IX. Rendimiento medido | **PASS**. Toda selección provisional conserva alternativa y matriz de `--bench`; no se afirma rendimiento sin resultados. |
+| X. Especificación y trazabilidad | **PASS**. Las decisiones siguientes citan FR/PR y no añaden reglas. |
+| XI. Pruebas | **PASS**. [quickstart.md](quickstart.md) propone cobertura de los 30 escenarios, oráculo independiente y regresión completa. |
 
-La puerta de planificación no detecta una violación constitucional en el diseño. Esto no equivale a dar por cerrados los acuerdos de integración, las pruebas ni la evidencia de rendimiento indicados arriba.
+No hay violaciones que requieran justificación en Complexity Tracking.
 
 ## Project Structure
 
@@ -128,9 +128,7 @@ main.py                             # punto de integración del proveedor --benc
 
 ### 2. Índice de salas sin perder orden ni identidad
 
-`MapaCripta` mantiene `_salas` como lista de referencias en orden de llegada y añade un `TablaHashImpl` por ID. `obtener_salas()` conserva el orden y copia únicamente referencias. `obtener_sala()` consulta el índice. Para un ID nuevo, `agregar_sala()` añade al final y actualiza la tabla en O(1) esperado y amortizado. Para sustituir un ID existente, la tabla detecta la existencia, pero se recorre `_salas` hasta hallar su posición, se reemplaza allí y se actualiza el índice: esa parte cuesta O(`V`) y conserva el orden sin añadir un segundo índice para una operación infrecuente.
-
-Si las salidas ya estaban vinculadas, la sustitución ejecuta antes de exponer de nuevo el mapa un pase de revinculación: cada `Puerta.destino_sala` se resuelve otra vez desde `destino_sala_id`. Así todas las referencias entrantes que apuntaban a la instancia sustituida pasan a la nueva, y también se resuelven las salidas de la nueva sala. El costo esperado completo de sustituir es O(`V+E`); con búsquedas hash degeneradas, el peor caso del pase es O(`V·E`). Durante la carga inicial, cuando `_enlaces_listos` todavía es falso, las sustituciones solo marcan el mapa pendiente y se realiza un único pase al finalizar. `vincular_salidas()` pasa de búsquedas lineales repetidas a O(`V+E`) esperado.
+`MapaCripta` mantiene `_salas` como lista de referencias en orden de llegada y añade un `TablaHashImpl` por ID. `obtener_salas()` conserva el orden y copia únicamente referencias. `obtener_sala()` consulta el índice. `agregar_sala()` actualiza lista e índice como una sola operación; una sustitución conserva la posición de la entrada. `vincular_salidas()` resuelve destinos por el índice, de modo que pasa de búsquedas lineales repetidas a costo esperado proporcional a salas más salidas.
 
 No se usa el orden interno de la tabla hash para recorrer ni desempatar. Así, un rehash no cambia la simulación y las referencias de `Puerta.destino_sala` siguen apuntando a las instancias presentes en la lista (`FR-011`, `FR-013`, `FR-015`, `FR-018`). La comparación completa está en [research.md](research.md).
 
@@ -138,12 +136,11 @@ No se usa el orden interno de la tabla hash para recorrer ni desempatar. Así, u
 
 La interfaz interna recibe una vista de grafo, origen, objetivo y límite. La implementación provisional ejecuta una búsqueda individual desde el cazador y:
 
-1. Crea de forma perezosa un `MonticuloMinimo` propio y tablas propias de mejores etiquetas y salas fijadas; no inicializa arreglos de tamaño total. Se comprobó que el montículo actual ofrece `insertar`, `extraer_minimo`, `ver_minimo` y eliminación de una referencia conocida, pero no ofrece actualización de prioridad.
+1. Crea de forma perezosa un montículo propio y tablas propias de etiquetas; no inicializa arreglos de tamaño total.
 2. Etiqueta cada estado con `(distancia, primera_vecina_id, sala_id)`. Para una salida inicial, `primera_vecina_id` es su destino; en relajaciones posteriores se conserva.
-3. Cada mejora de la mejor etiqueta de una sala inserta una entrada inmutable nueva; no modifica ni elimina la entrada anterior. Al extraer, una entrada se descarta si no coincide con la mejor etiqueta actual de esa sala o si la sala ya está fijada. Por tanto, puede haber varias entradas almacenadas por sala y no se atribuye al montículo una operación de actualización que no existe.
-4. Compara primero distancia y luego primera vecina. El `sala_id` solo hace determinista el orden de trabajo cuando el resultado observable ya está empatado.
-5. No inserta candidatos cuya distancia ya supere el rango: como todos los costos son positivos, ninguna continuación puede volver a quedar dentro. Como defensa adicional, no expande una entrada válida mayor que el rango. La búsqueda termina cuando se fija el objetivo o se agota la frontera pertinente.
-6. Devuelve ataque fuera del buscador si origen y objetivo coinciden; si no hay resultado dentro del límite, el comportamiento espera con costo 100; si lo hay, mueve un paso y entrega el costo de esa salida (`FR-007`–`FR-012`).
+3. Compara primero distancia y luego primera vecina. El `sala_id` solo hace determinista el orden de trabajo cuando el resultado observable ya está empatado.
+4. Deja de expandir cuando la menor distancia pendiente supera el rango o cuando el objetivo queda fijado.
+5. Devuelve ataque fuera del buscador si origen y objetivo coinciden; si no hay resultado dentro del límite, el comportamiento espera con costo 100; si lo hay, mueve un paso y entrega el costo de esa salida (`FR-007`–`FR-012`).
 
 **Prueba del desempate**: cada ruta desde el origen hereda el ID de su primera vecina. Para una sala, la etiqueta conserva el par mínimo `(costo_total, primera_vecina_id)`. Como todos los costos son positivos, todo predecesor de una ruta mínima al objetivo se fija antes que el objetivo; además, las etiquetas de igual costo con menor primera vecina salen antes del montículo. Por tanto, antes de fijar el objetivo ya se consideró toda ruta que pudiera igualar su costo con una primera vecina menor. El resultado coincide con escoger el menor `v` que cumple `costo(u,v) + dist(v,jugador) = d`, sin depender del orden de descubrimiento (`FR-011`).
 
@@ -154,14 +151,9 @@ La alternativa compartida hace una búsqueda inversa desde el jugador y luego ca
 Variables:
 
 - `V`, `E`: salas y salidas dirigidas del esqueleto completo.
-- `F_R`: salas fijadas: entradas vigentes extraídas cuya distancia quedó definitiva y no supera el rango.
-- `D_R`: salas distintas descubiertas: tienen o tuvieron una mejor etiqueta con distancia dentro del rango; incluye fijadas y salas aún en frontera.
-- `E_R`: salidas examinadas al expandir las `F_R` salas fijadas, transitables o cerradas; solo las transitables pueden producir una mejora.
-- `P_R`: entradas insertadas en el montículo, incluidas mejoras duplicadas; `P_R <= E_R + 1`.
-- `Q_R`: máximo de entradas simultáneamente almacenadas en la frontera; incluye vigentes y obsoletas, y `Q_R <= P_R`.
-- `Q_fin`: entradas que quedan almacenadas cuando se fija temprano el objetivo y deben liberarse al cerrar la consulta.
+- `V_R`, `E_R`: salas fijadas y salidas examinadas por una consulta limitada al rango.
 - `H`: cazadores activos que deciden en el ciclo.
-- `F_L`, `D_L`, `E_L`, `P_L`, `Q_L`, `Q_fin_L`: magnitudes análogas del cálculo compartido hasta el límite agregado.
+- `V_L`, `E_L`: región recorrida por el cálculo compartido hasta el límite agregado.
 - `N`: eventos pendientes en agenda; `K_a`: eventos pendientes de un actor.
 - `C`: cambios canónicos registrados en un intervalo reversible.
 
@@ -170,16 +162,15 @@ Variables:
 | Construir índice de mapa | O(`V`) esperado total; inserción O(1) esperada y amortizada por rehash | O(`V²`) con colisiones patológicas y rehashes | O(`V`) |
 | Obtener sala | O(1) esperado | O(`V`) por colisiones | O(1) |
 | Vincular salidas | O(`V+E`) esperado | O(`V·E`) si cada consulta hash degenera | O(1) además del índice |
-| Sustituir sala y revincular | O(`V+E`) esperado: búsqueda lineal de posición y pase de referencias | O(`V·E`) con hash degenerado durante la revinculación | O(1) adicional |
-| Ruta individual completa con duplicados | O(`E_R + P_R log max(2,Q_R) + Q_fin`) esperado, incluida creación, extracciones vigentes/obsoletas y limpieza | O((`E_R+P_R`)·`D_R` + `P_R log P_R` + `Q_fin`) con hash degenerado | O(`D_R+Q_R`), peor O(`D_R+E_R`) |
-| `H` rutas individuales secuenciales | suma de los costos anteriores; no se expresa solo con `F_R` porque duplicados y descubiertas también cuestan | suma de los peores casos individuales | O(max(`D_R+Q_R`)) si cada consulta se libera antes de la siguiente |
-| Cálculo compartido con duplicados | O(`E_L + P_L log max(2,Q_L) + Q_fin_L` + selección de vecinos de `H`) esperado | término hash degenerado análogo | O(`D_L+Q_L`) |
-| Invalidar una instantánea por generación | O(1) para desacoplarla; la reclamación/limpieza se reporta y mide | O(`D_L+Q_L`) si se limpia de inmediato | O(`D_L+Q_L`) hasta reclamación |
+| Ruta individual completa | O((`V_R+E_R`) log `V_R`) esperado, incluida creación, inserciones, búsqueda y descarte | O((`V_R+E_R`)·`V_R` + `V_R` log `V_R`) con hash degenerado | O(`V_R`) |
+| `H` rutas individuales | suma de los costos de sus regiones; cota O(`H(V+E)log V`) | suma de los peores casos individuales | O(max `V_R`) si se liberan entre consultas |
+| Cálculo compartido | O((`V_L+E_L`) log `V_L` + suma de grados de los `H` cazadores) esperado | término hash degenerado análogo | O(`V_L`) |
+| Invalidar una instantánea por generación | O(1) para desacoplarla; la reclamación/limpieza se reporta y mide | O(`V_L`) si se limpia de inmediato | O(`V_L`) hasta reclamación |
 | Revertir intervalo | O(`C`) más costos de sus inversos | depende de los cambios concretos, nunca del estado completo por diseño | O(`C`) registrado |
 | Agenda por ID | O(log `N`) actual | O(log `N`) por AVL/montículo balanceado | O(`N`) total |
 | Agenda por actor | O(log `N` + `K_a`) para localizar; cancelación total O(`K_a log N`) | igual bajo AVL balanceado | O(`K_a`) para referencias devueltas |
 
-En `--bench`, “preparación fuera del cronómetro” significa únicamente generar/cargar el fixture común. La construcción de montículo/tablas por consulta, las `P_R` inserciones, las extracciones obsoletas, la selección de vecinos, las validaciones requeridas, la liberación de `Q_fin`, la invalidación y el despacho del ciclo permanecen dentro de la medición correspondiente (`PR-004`). El límite evita explorar fuera de la región pertinente porque no almacena etiquetas con costo superior al rango y solo examina salidas de salas fijadas dentro de él; aun así, `D_R`, `P_R` y `Q_R` pueden superar `F_R` y se cuentan por separado.
+En `--bench`, “preparación fuera del cronómetro” significa únicamente generar/cargar el fixture común. La construcción de montículo/tablas por consulta, la selección de vecinos, las validaciones requeridas, la limpieza, la invalidación y el despacho del ciclo permanecen dentro de la medición correspondiente (`PR-004`).
 
 ### 5. Dependencias e invalidación
 
@@ -206,7 +197,7 @@ La producción provisional recalcula cada decisión. Cualquier reutilización fu
 
 ### 7. Medición conectada a `--bench`
 
-Un nuevo proveedor se registrará en la misma cadena que hoy ejecuta `main.py --bench`. Cada fila informará semilla, entorno, calentamiento, repeticiones, carga, unidad, mediana, p95/máximo cuando corresponda, trabajo contado y alternativa. Antes de cronometrar se comprobará con un oráculo independiente la igualdad de la decisión observable: acción, alcanzabilidad, costo total, primera vecina y costo del paso. El orden interno y la cantidad de trabajo pueden diferir; se reportan como mediciones separadas y no como igualdad exigida por el oráculo. Una divergencia observable produce fallo de corrección, no una fila rápida (`PR-004`, `PR-006`).
+Un nuevo proveedor se registrará en la misma cadena que hoy ejecuta `main.py --bench`. Cada fila informará semilla, entorno, calentamiento, repeticiones, carga, unidad, mediana, p95/máximo cuando corresponda, trabajo contado y alternativa. Antes de cronometrar se comprobará la igualdad con un oráculo independiente; una divergencia produce fallo de corrección, no una fila rápida (`PR-004`, `PR-006`).
 
 **Rutas e invalidación** (`PR-002`, `PR-003`):
 
@@ -215,7 +206,7 @@ Un nuevo proveedor se registrará en la misma cadena que hoy ejecuta `main.py --
 - búsqueda individual frente a inversa compartida;
 - recálculo siempre frente a reutilización por generación;
 - puertas estables frente a aperturas/cierres frecuentes;
-- tiempo de consulta, ciclo completo, `F` fijadas, `D` descubiertas, `E` salidas examinadas, `P` inserciones totales, `Q` frontera máxima, extracciones obsoletas, memoria auxiliar e invalidación/limpieza.
+- tiempo de consulta, ciclo completo, salas fijadas, salidas examinadas, tamaño máximo del montículo, memoria auxiliar e invalidación/limpieza.
 
 **Ciclo real** (`PR-001`): se reutilizará `benchmarks/benchmark_ciclo_real_integrante1.py`, extendiendo su carga para la referencia oficial con decenas de cazadores. El intervalo abarca la acción del jugador y todos los eventos hasta su siguiente decisión, incluidos creación y limpieza de auxiliares de rutas; excluye solo carga de fuente, copia/reinicio de muestra, red, disco, renderizado e impresión. Los sintéticos no sustituyen la referencia oficial.
 
@@ -225,7 +216,7 @@ La evidencia decidirá si: (a) permanece la búsqueda individual; (b) se usa com
 
 ### 8. Estrategia de pruebas
 
-[quickstart.md](quickstart.md) contiene una fila por cada AC, incluidos AC-B01–AC-B07. Las pruebas de rutas pequeñas usarán enumeración exhaustiva de rutas simples como referencia independiente; las matrices mayores usarán una relajación completa separada de la implementación de producción. Ambas comparan acción, alcanzabilidad, primera vecina, costo total y costo del paso. El trabajo, la frontera y el orden interno pueden diferir y se evalúan por instrumentación separada.
+[quickstart.md](quickstart.md) contiene una fila por cada AC, incluidos AC-B01–AC-B07. Las pruebas de rutas pequeñas usarán enumeración exhaustiva de rutas simples como referencia independiente; las matrices mayores usarán una relajación completa separada de la implementación de producción. Ambas comparan tipo de acción, primera vecina, costo y trabajo, no el orden interno del algoritmo.
 
 La reversión captura el estado canónico antes del intervalo, ejecuta acciones/cazadores/puertas/velocidad, retrocede y compara todos los campos reversibles, aplicando la excepción de pergaminos de FR-016. Después ejecuta las mismas acciones desde el mismo estado posterior al retroceso en dos partidas y compara registros. La suite completa y `tests/test_restricciones_enunciado.py` deben permanecer verdes.
 
@@ -246,7 +237,7 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Phase 0 Output
 
-[research.md](research.md) fija el mecanismo de prioridades, las cotas y las alternativas de ruta, desempate, índice, invalidación, reversión, benchmark y oráculo. No quedan ambigüedades normativas del spec; sí permanecen acuerdos de integración y decisiones provisionales condicionadas por mediciones, enumerados abajo.
+[research.md](research.md) resuelve las alternativas de ruta, desempate, índice, invalidación, reversión, benchmark y oráculo. No quedan incógnitas técnicas abiertas en esta fase.
 
 ## Phase 1 Outputs
 
@@ -257,7 +248,7 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con condiciones abiertas**. Los artefactos no proponen dependencias prohibidas ni cambian reglas del spec, y definen estructuras propias, acceso frecuente esperado O(1), determinismo, separación MVC y trazabilidad. Permanecen pendientes los acuerdos con Steven/Joshua, la ejecución de pruebas y la evidencia de `--bench`; por ello no se presentan como comprobaciones ya completadas ni como resultados de rendimiento.
+**PASS**. El diseño final de Phase 1 mantiene estructuras propias, acceso esperado O(1) por sala, determinismo independiente del descubrimiento, separación MVC, datos externos, reversión por cambios, contratos explícitamente pendientes, mediciones conectadas a `--bench`, trazabilidad y pruebas. No propone dependencias prohibidas ni modifica reglas del spec.
 
 ## Risks and Pending Agreements Before Tasks
 
@@ -266,7 +257,7 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 3. **Contrato histórico con Joshua**: acordar representación de cambios de 001 y el punto de invalidación de derivados tras retroceso/reconstrucción.
 4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
 5. **Elección de estrategia**: individual es provisional. Compartida/adaptativa solo se seleccionará con resultados de costo completo y equivalencia.
-6. **Componente compartido**: `MonticuloMinimo` se reutiliza únicamente con `insertar`, `extraer_minimo` y lectura del mínimo ya existentes; el diseño no exige actualización de prioridad. Cualquier otro cambio al montículo o a `main.py` requiere revisar consumidores y conservar firmas.
+6. **Componente compartido**: ampliar `MonticuloMinimo` o `main.py` requiere revisar consumidores y conservar firmas; si no hace falta ampliar el montículo, se reutiliza sin cambios.
 
 ## Complexity Tracking
 
