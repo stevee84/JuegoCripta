@@ -1,4 +1,6 @@
 #SOFIA
+import copy
+
 from dto.ficha_resoluble import FichaResoluble
 from estructuras.tabla_hash import TablaHashImpl
 
@@ -24,11 +26,51 @@ class _ListaEnemigosSala(list):
             self._sala._posiciones_enemigos.insertar(
                 enemigo.id_actor, posicion)
 
+    def __deepcopy__(self, memo):
+        """Copia lista, dueño y enemigos respetando sus referencias cíclicas.
+
+        Se usa ``list.append`` directamente porque la Sala copiada puede estar
+        todavía en construcción. ``Sala.__setstate__`` reconstruye los índices
+        cuando todo el grafo ya fue copiado.
+        """
+        copia_lista = type(self).__new__(type(self))
+        memo[id(self)] = copia_lista
+        copia_lista._sala = copy.deepcopy(self._sala, memo)
+        for enemigo in list.__iter__(self):
+            list.append(copia_lista, copy.deepcopy(enemigo, memo))
+        for nombre, valor in self.__dict__.items():
+            if nombre != "_sala":
+                setattr(copia_lista, nombre, copy.deepcopy(valor, memo))
+        if (getattr(copia_lista._sala, "_enemigos", None) is copia_lista
+                and hasattr(copia_lista._sala, "_enemigos_por_id")):
+            copia_lista._reconstruir()
+        return copia_lista
+
+    def __setstate__(self, estado):
+        """Restaura atributos después de que pickle repobló la lista."""
+        self.__dict__.update(estado)
+        sala = getattr(self, "_sala", None)
+        if (sala is not None and getattr(sala, "_enemigos", None) is self
+                and hasattr(sala, "_enemigos_por_id")):
+            self._reconstruir()
+
     def append(self, enemigo):
         posicion = len(self)
         list.append(self, enemigo)
-        self._sala._enemigos_por_id.insertar(enemigo.id_actor, enemigo)
-        self._sala._posiciones_enemigos.insertar(enemigo.id_actor, posicion)
+        # pickle repuebla las subclases de list antes de aplicar su estado.
+        # En ese instante aún no existe _sala; Sala.__setstate__ reconstruye
+        # ambos índices al terminar el grafo, sin barridos en operaciones normales.
+        sala = getattr(self, "_sala", None)
+        if sala is None:
+            return
+        if (not hasattr(sala, "_enemigos_por_id")
+                or not hasattr(sala, "_posiciones_enemigos")):
+            # Solo es válido mientras el dueño aún no publicó esta lista.
+            # Una Sala ya construida conserva el error en vez de ocultar índices rotos.
+            if getattr(sala, "_enemigos", None) is not self:
+                return
+        sala._enemigos_por_id.insertar(enemigo.id_actor, enemigo)
+        sala._posiciones_enemigos.insertar(enemigo.id_actor, posicion)
 
     def extend(self, enemigos):
         for enemigo in enemigos:
@@ -156,6 +198,23 @@ class Sala:
         self.ultimo_rastro = None
         # False: la sala existe (id y puertas) pero su contenido aún no llegó de la fuente.
         self.contenido_cargado = True
+
+    def __getstate__(self):
+        """Serializa estado canónico; los índices se derivan de ``enemigos``."""
+        estado = self.__dict__.copy()
+        estado.pop("_enemigos_por_id", None)
+        estado.pop("_posiciones_enemigos", None)
+        return estado
+
+    def __setstate__(self, estado):
+        """Restaura el ciclo Sala/lista y reconstruye sus índices una sola vez."""
+        self.__dict__.update(estado)
+        enemigos = getattr(self, "_enemigos", ())
+        if isinstance(enemigos, _ListaEnemigosSala):
+            enemigos._sala = self
+        else:
+            self._enemigos = _ListaEnemigosSala(self, list(enemigos))
+        self._enemigos._reconstruir()
 
     @property
     def enemigos(self):

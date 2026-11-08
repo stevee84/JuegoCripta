@@ -448,6 +448,8 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 32 | `/speckit.plan` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 33 | Revisión técnica de los artefactos de planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 34 | Impacto de integrar `origin/Steve` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 35 | Impacto de integrar `origin/joshua` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 36 | Compatibilidad de copia y serialización de salas | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -1289,6 +1291,144 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Resultado documental.** Se actualizaron los artefactos de 001 con los puntos exactos de integración y la línea base `1071 passed`, sin presentar el merge como acuerdo. Ambas propuestas conservan sus criterios sin marcar. Se confirmó que spec 002 corrigió el fallo de verificación —bloqueo salvo `--forzar` y estado «sin verificar»— y retiró la divulgación de contenido de rutas frente a la niebla; no se editó 002. Se anotó un borde de implementación separado: el inicializador no captura el `TypeError` que el decodificador puede emitir por un ID de sala de llave con tipo inválido.
 
 **Persistencia y cuestiones pendientes.** `GuardadoBinario.VERSION = 9`; costo/rango no se serializan y su incorporación requiere acordar una nueva versión. La constante y el arranque dicen v9, aunque una línea de ayuda aún dice v8. Siguen pendientes la asignación de responsabilidades con Steven, el contrato de invalidación con Joshua y la evidencia de `--bench` para decidir la estrategia.
+
+## Prompt 35 — Impacto de integrar `origin/joshua` sobre la planificación 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Acabo de integrar la rama de Joshua en Sofia. Revisa el estado
+> actual con Git de Windows. Si hay conflictos, detente e informa;
+> no los resuelvas ni descartes cambios.
+>
+> Lee la implementación, plan y contratos de 004 incorporados por
+> el merge, especialmente la interfaz de cambios reversibles,
+> la reconstrucción histórica y el contrato de guardado.
+>
+> Actualiza únicamente la planificación de 001 y su propuesta con
+> Joshua para reflejar lo que realmente quedó integrado:
+>
+> 1. Registrar las mutaciones canónicas mediante las transacciones
+>    y mecanismos acordados con Joshua.
+>
+> 2. Mantener las cachés de rutas fuera de EstadoPartida y de los
+>    objetos alcanzables desde las transacciones guardadas.
+>    Pueden pertenecer al motor o al servicio de rutas.
+>
+> 3. historia no requiere invalidación: no ejecuta decisiones de
+>    001 y debe restaurar el estado vivo sin alterar sus cachés.
+>    No introducir observadores de cambios de atributos.
+>
+> 4. Invalidar explícitamente los derivados después de un retroceso
+>    exitoso y al iniciar/cargar un estado.
+>
+> 5. Usar la interfaz real de deshacer/rehacer si ya existe.
+>    Comprobar los requisitos de deepcopy y pickle para cambios
+>    nuevos, sin referencias al motor ni a cachés.
+>    Si la interfaz todavía es propuesta, mantenerla pendiente;
+>    no inventar firmas.
+>
+> 6. Reflejar el método de reconstrucción definido por 004:
+>    hacia atrás desde el punto de control siguiente.
+>    Re-simular permanece como alternativa medida, no como regla
+>    de producción, salvo que los documentos integrados indiquen
+>    un cambio posterior; en ese caso informa la discrepancia.
+>
+> 7. Registrar la aceptación condicionada de Joshua, separándola
+>    de las pruebas y comprobaciones todavía no realizadas.
+>
+> 8. Comprobar la versión real de guardado y distinguirla de la
+>    versión propuesta en contratos. Identificar nuevos puntos
+>    de integración que afecten a 001.
+>
+> Puedes actualizar plan.md, research.md, data-model.md, quickstart.md,
+> contracts/propuesta-joshua-cambios-reversibles.md y mi apartado de
+> PROMPTS_LLM.md, únicamente cuando sea necesario.
+>
+> No cambies las reglas de spec.md ni la constitución.
+> No edites código, pruebas o documentos de mis compañeros.
+> No generes tasks.md ni hagas commit, push, merge o cambio de rama.
+>
+> Devuelve:
+> - estado de Git;
+> - acuerdos e interfaces encontrados;
+> - archivos modificados;
+> - discrepancias o pendientes;
+> - si el merge añadió código que requiere verificar con pytest.
+
+**Estado y alcance del merge.** Git de Windows informó `Sofia...origin/Sofia`, árbol limpio y ninguna ruta sin fusionar. El merge `49f8ed0` añadió únicamente artefactos de planificación de 004 y su bitácora; no añadió implementación. Por eso no se requirió ejecutar pytest solo para validar código nuevo del merge.
+
+**Interfaces encontradas.** La interfaz real continúa siendo `CambioReversible.deshacer`, `TransaccionAccion.registrar/revertir` e `HistorialReversible.deshacer_ultimo(estado) -> bool`; no existe `rehacer`. 004 propone, todavía sin nombres o firmas, un deshacer temporal que devuelve inversos sin vaciar la transacción y avisos desde el historial a la línea. La producción reconstruirá hacia atrás desde el punto de control siguiente y rehará en `finally`; re-simular queda solo en `--bench`.
+
+**Acuerdo condicionado.** El contrato de dependencias de 004 acepta FR-016 de 001 si todas las mutaciones observables se registran dentro de la transacción, permite cachés no observables fuera de ella y confirma que la línea no llama al cazador. Se separó ese acuerdo de lo aún pendiente: implementación, pruebas de `deepcopy`/`pickle`, inversos exactos, invalidación tras retroceso e inicio/carga y continuación determinista. `historia` no invalida ni usa observadores.
+
+**Guardado e integración.** La versión real permanece en v9. V10 es una propuesta de 004 a Steven para serializar juntos el estado vivo y la línea; no está implementada y debe coordinarse con costo/rango. Las cachés de ruta quedan fuera de `EstadoPartida`, puntos de control, transacciones y guardado.
+
+## Prompt 36 — Compatibilidad de copia y serialización de salas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Corrige exclusivamente la compatibilidad de copia y serialización
+> de Sala y _ListaEnemigosSala, en la rama Sofia.
+>
+> Joshua detectó al copiar una partida real con deepcopy o pickle:
+> AttributeError: 'Sala' object has no attribute '_enemigos_por_id'
+>
+> Durante la reconstrucción, append de _ListaEnemigosSala consulta
+> el índice de la Sala antes de que esté restaurado. Esto bloquea
+> los puntos de control de 004 y el futuro guardado v10.
+>
+> 1. Lee dto/sala.py y las pruebas relacionadas.
+> 2. Reproduce el fallo con un estado cargado de los fixtures reales,
+>    preferiblemente cripta-04, sin red.
+> 3. Implementa la solución mínima y robusta. Evalúa los protocolos
+>    de copia/serialización apropiados; no adoptes __reduce__ sin
+>    comprobar el orden de reconstrucción, los ciclos y el memo.
+> 4. Conserva el comportamiento y las firmas de la lista de enemigos,
+>    sus índices y las operaciones reversibles existentes.
+>
+> Añade regresiones significativas que comprueben:
+> - copy.deepcopy(estado).
+> - pickle.loads(pickle.dumps(estado)).
+> - Misma cantidad, orden e IDs de enemigos.
+> - Coherencia del índice con las instancias reconstruidas.
+> - Las referencias sala_actual de los actores apuntan a las salas
+>   reconstruidas correctas, conservando los alias internos.
+> - En deepcopy, la copia es independiente del estado original.
+> - Agregar y retirar enemigos después de reconstruir mantiene
+>   los índices correctos.
+>
+> No ocultes el problema eliminando índices del estado sin
+> reconstruirlos ni introduzcas un barrido lineal en cada operación.
+> No cambies reglas del juego, formatos de guardado ni código de 004.
+> No implementes terreno, cazador o línea de tiempo.
+>
+> Modifica únicamente dto/sala.py y sus pruebas necesarias.
+> Registra el prompt real y el resultado en mi apartado de
+> PROMPTS_LLM.md. No cambies la constitución ni los specs.
+>
+> Ejecuta las regresiones y después la suite completa con el
+> Python de .venv de Windows, que tiene las dependencias del proyecto.
+>
+> No hagas commit, push, merge ni cambio de rama.
+> Devuelve causa reproducida, solución, archivos y pruebas ejecutadas.
+
+**Causa reproducida.** Con `cripta-04` offline (50 salas y 21 enemigos), `deepcopy` restauraba la referencia `_sala` de la lista antes de que la nueva `Sala` tuviera sus índices; `pickle` repoblaba la subclase de `list` antes de restaurar incluso `_sala`. Ambos caminos fallaron en `append`/`extend` con `AttributeError`.
+
+**Solución.** No se usó `__reduce__`. `_ListaEnemigosSala.__deepcopy__` registra primero la nueva lista en `memo`, copia el dueño y los enemigos preservando ciclos y usa `list.append` durante la construcción. Para pickle, `append` tolera únicamente la fase previa a restaurar `_sala`. `Sala.__getstate__` omite los dos índices derivados y `Sala.__setstate__` restablece el ciclo con la lista y reconstruye ambos índices una sola vez al final. Las operaciones ordinarias conservan las actualizaciones O(1) esperadas y las firmas reversibles existentes.
+
+**Regresiones y resultado.** Se añadieron pruebas con la fixture real de `cripta-04` para `deepcopy` y la ida y vuelta de `pickle`: cantidad/orden/IDs, alias `sala_actual`, identidad de índices, independencia y extracción/restauración posterior. La ejecución final del archivo nuevo terminó en `2 passed`; la suite completa con `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` terminó en `1073 passed` en 100.85 s.
 
 ---
 

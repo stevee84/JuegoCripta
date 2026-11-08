@@ -7,7 +7,7 @@ Esta guía describe cómo validar la futura implementación. En esta fase no se 
 - Rama Git real: `Sofia`.
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
-- Contratos con Steven y Joshua acordados antes de ejecutar pruebas de integración cruzada.
+- Contrato de datos/guardado con Steven acordado y condiciones de Joshua implementadas antes de ejecutar pruebas de integración cruzada; la frontera de 004 está aceptada solo de forma condicionada.
 
 ## Comandos previstos
 
@@ -128,6 +128,24 @@ Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/
 4. Comparar sala/vida/reloj/agenda/secuencias/puertas/actores con el estado anterior, excepto pergaminos.
 5. Desde el mismo estado posterior al retroceso, repetir las mismas acciones posteriores en dos ejecuciones.
 6. Comparar decisiones, tiempos, secuencias y `partida.log`.
+
+### Integración con la línea de tiempo 004
+
+Además de la reversión funcional:
+
+1. Verificar que cada mutación canónica de 001 se registra dentro de la transacción mediante los cambios y helpers existentes; una acción rechazada no publica cambios.
+2. Comprobar que ninguna caché/servicio de rutas es alcanzable desde `EstadoPartida`, entidades canónicas o cambios guardados.
+3. Copiar en una sola operación `(estado, ventana_de_transacciones)` con `copy.deepcopy`; cada cambio de la copia debe apuntar a las entidades copiadas. Deshacer temporalmente y aplicar los inversos debe dejar bytes/estructura equivalentes aun si el resumen falla.
+4. Cuando exista v10, hacer ida y vuelta del `pickle` conjunto de estado vivo y línea y repetir consultas; las cachés no aparecen en los bytes.
+5. Calentar una caché y ejecutar `historia` tanto sobre un punto de control como sobre el estado vivo posterior al último punto: no cambia su identidad/generación, no ejecuta decisiones de 001 y la decisión siguiente coincide con cálculo desde cero.
+6. Calentar una caché, efectuar un `RETROCEDER` exitoso y comprobar que queda invalidada después de `deshacer_ultimo`; si el retroceso falla, no se presenta como estado restaurado.
+7. Enlazar mediante `MotorJuego.iniciar` un estado nuevo y uno cargado; en ambos casos se descarta cualquier derivado del estado anterior antes de la primera decisión.
+
+La interfaz actual solo ofrece deshacer destructivo (`deshacer_ultimo`/`revertir`). Las pruebas de deshacer temporal y rehacer usarán los métodos que implemente 004; no se supone un nombre o firma antes de que existan.
+
+### Estado de persistencia
+
+La versión ejecutable sigue siendo v9. El v10 citado por 004 es un contrato propuesto y sus pruebas de ida y vuelta permanecen bloqueadas hasta su implementación coordinada con costo/rango. La aceptación condicionada de la frontera con Joshua no equivale a que estas comprobaciones hayan pasado.
 
 ## Señales de salida
 

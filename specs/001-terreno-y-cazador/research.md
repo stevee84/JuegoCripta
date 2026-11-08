@@ -55,14 +55,16 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-05 — Reutilización e invalidación
 
-**Decision**: recalcular cada decisión en la primera versión. Las instantáneas compartidas experimentales se tratan como derivadas y se identifican por versión del esqueleto, generación de puertas y sala objetivo. Después de retroceso o reconstrucción se descartan todas (`FR-014`, `FR-016`).
+**Decision**: recalcular cada decisión en la primera versión. Las instantáneas compartidas experimentales se tratan como derivadas y se identifican por versión del esqueleto, generación de puertas y sala objetivo. Pertenecen al motor o al servicio de rutas, fuera de `EstadoPartida` y del grafo alcanzable desde las transacciones. Se descartan después de un retroceso exitoso y al iniciar/cargar un estado; `historia` no las invalida (`FR-014`, `FR-016`).
 
-**Rationale**: calcular desde cero es la referencia normativa y minimiza el riesgo inicial. Una generación permite invalidar en O(1), pero su memoria pendiente de reclamar debe contarse. No se intenta deshacer una caché porque no es estado de juego.
+**Rationale**: calcular desde cero es la referencia normativa y minimiza el riesgo inicial. Una generación permite invalidar en O(1), pero su memoria pendiente de reclamar debe contarse. No se intenta deshacer una caché porque no es estado de juego. 004 reconstruye temporalmente estado canónico y lo rehace exactamente en `finally`, sin ejecutar decisiones de 001; una caché externa no cambia y vuelve a corresponder al mismo estado vivo.
 
 **Alternatives considered**:
 
 - **Invertir cada mutación de la caché en el historial**: rechazado; mezcla estado derivado con canónico y aumenta `C` sin valor observable.
 - **No invalidar después de retroceso si las versiones coinciden**: rechazado; una versión monotónica puede no representar el estado restaurado y conservar referencias obsoletas.
+- **Invalidar al consultar `historia`**: rechazado; la consulta no decide rutas y restaura el estado vivo. Invalidar alteraría innecesariamente un derivado que 004 no alcanza.
+- **Observadores de cada atributo canónico**: rechazados; duplican el registro reversible y acoplan 004 a las cachés. La ejecución normal usa dependencias específicas y las fronteras de retroceso/inicio-carga usan invalidación explícita.
 - **Invalidación selectiva por puerta**: candidata futura; necesita índice puerta→resultados y medición de ahorro. No se justifica antes de comparar con recálculo.
 
 ## R-06 — Matriz de dependencias
@@ -94,16 +96,18 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-08 — Estado reversible y línea de tiempo
 
-**Decision**: registrar solo mutaciones canónicas con los cambios pequeños existentes; costos y rangos son datos inmutables de la versión cargada. Las decisiones/rutas se recalculan después de restaurar. Proponer a Joshua un aviso explícito de reconstrucción/retroceso para limpiar derivados.
+**Decision**: registrar solo mutaciones canónicas mediante la transacción abierta y `logica.mutaciones`/cambios de agenda existentes; costos y rangos son datos inmutables de la versión cargada. Las cachés no son alcanzables desde el estado ni las transacciones. Usar la interfaz real `HistorialReversible.deshacer_ultimo(estado) -> bool` para detectar un retroceso exitoso e invalidar después; invalidar también en `MotorJuego.iniciar(estado)`. No invalidar por `historia`.
 
-**Rationale**: el historial actual ya agrupa una acción y sus eventos, registra agenda, atributos, listas y azar, y revierte en orden inverso. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
+**Rationale**: el historial actual ya agrupa una acción y sus eventos, registra agenda, atributos, listas y azar, y revierte en orden inverso. `CambioReversible` solo exige `deshacer`; `TransaccionAccion.revertir` consume la transacción y no existe `rehacer`. 004 planifica métodos nuevos, aún sin firma, para deshacer temporalmente sin vaciar y devolver inversos, y avisos desde el historial hacia la línea. 001 no inventa esas firmas. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
-**Estado observado tras el merge**: el guardado vigente es v9. `RestauradorPartida.restaurar_para_reanudar()` reconstruye un estado nuevo con agenda y referencias reales, crea un historial vacío y no restaura cachés de ruta. Esto es compatible con la separación canónico/derivado, pero costo/rango aún no forman parte del registro de sala y no existe una notificación de invalidación; ambos puntos siguen sujetos a los contratos pendientes.
+**Estado observado tras el merge**: el merge de Joshua añadió planificación, no código. El guardado real sigue en v9; v10 es un contrato propuesto de 004. `RestauradorPartida.restaurar_para_reanudar()` reconstruye un estado nuevo con agenda y referencias reales, crea un historial vacío y no restaura cachés de ruta. `MotorJuego.iniciar` es la frontera común para un estado nuevo o cargado. Costo/rango aún no forman parte del registro de sala.
+
+**Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para v10. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
 
 **Alternatives considered**:
 
 - **Guardar mapa/estado completo por turno**: prohibido.
-- **Persistir cachés de ruta en checkpoints**: innecesario; no son observables y pueden reconstruirse.
+- **Persistir cachés de ruta en checkpoints o hacerlas alcanzables desde cambios**: innecesario; no son observables, inflarían `deepcopy`/`pickle` y pueden reconstruirse.
 - **Confiar en que una caché vieja “probablemente” sirve**: contradice FR-014.
 
 ## R-09 — Oráculos de corrección
@@ -132,8 +136,8 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-11 — Contratos entre integrantes
 
-**Decision**: documentar dos propuestas pendientes, no modificar archivos ajenos y bloquear tareas de integración hasta el acuerdo.
+**Decision**: mantener pendiente el contrato con Steven y registrar la aceptación condicionada de Joshua documentada por 004, sin presentar como implementadas las interfaces nuevas ni las pruebas.
 
-**Rationale**: el merge concretó los consumidores sin aceptar responsabilidades: `convertir_sala()` adapta salidas del API y del guardado; `_adaptar_contenido_externo()` construye enemigos desde fichas; `InicializadorPartida._construir()` reúne/vincula el esqueleto antes de verificar 002; `GuardadoBinario` v9 escribe puertas/enemigos; y `RestauradorPartida` reconstruye ambos. `dto/sala.py`, esos caminos de datos, mapa conocido y línea de tiempo siguen siendo compartidos. La Constitución VIII exige acuerdo antes de implementar costo/rango, versión e invalidación.
+**Rationale**: `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si toda mutación observable queda dentro de la transacción, que una caché no observable puede vivir fuera y que la línea no llama al cazador. Esa es la aceptación condicionada de la frontera. A la vez, las tareas de 004 muestran que deshacer temporal/rehacer, enlace con la línea, `LineaTiempo` y v10 aún no están implementados. Steven conserva pendiente costo/rango y la coordinación del formato real v9 con el v10 propuesto.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.

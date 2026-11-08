@@ -148,9 +148,13 @@ El comportamiento transforma el resultado en una acción; el resultado no modifi
 | límite agregado | rango máximo cubierto |
 | distancias | tabla propia por sala |
 
-**Invalidación**: puerta, objetivo, versión o retroceso/reconstrucción. Velocidad y movimiento/muerte de otro actor no cambian distancias; sí pueden cambiar quién consume la instantánea.
+**Invalidación**: puerta, objetivo, versión, retroceso exitoso o inicio/carga de estado. `historia` no invalida. Velocidad y movimiento/muerte de otro actor no cambian distancias; sí pueden cambiar quién consume la instantánea.
 
 No se habilita en producción hasta que `--bench` la justifique.
+
+**Ubicación**: si se habilita, pertenece al motor o al servicio de rutas. No es un campo de `EstadoPartida`, de una entidad canónica ni de ningún objeto alcanzable desde una transacción. Por eso no entra en puntos de control, `deepcopy` ni `pickle` de 004.
+
+**Fronteras globales**: se invalida después de un `deshacer_ultimo` exitoso y al pasar cualquier estado nuevo/cargado a `MotorJuego.iniciar`. Una consulta `historia` no invalida: no ejecuta decisiones y restaura el estado vivo en `finally`.
 
 ## 10. Evento de agenda
 
@@ -171,6 +175,10 @@ No se habilita en producción hasta que `--bench` la justifique.
 
 **Excluido**: montículos de ruta, etiquetas, distancias, métricas e instantáneas. Después de deshacer, esos derivados se eliminan y se reconstruyen desde el estado restaurado.
 
+**Mecanismo real**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. La interfaz actual permite deshacer de forma destructiva, pero no rehacer. Los métodos no destructivos para `historia` pertenecen a la implementación pendiente de 004; sus nombres no se anticipan aquí.
+
+**Compatibilidad con 004**: un cambio nuevo solo retiene valores y referencias canónicas incluidas en el paquete `(estado, transacciones)`. Debe conservar alias correctos al copiar ese paquete con `deepcopy` y al serializar conjuntamente estado/línea con `pickle`; no referencia motor, servicio de rutas, cachés, callbacks ni recursos externos.
+
 **Excepción heredada**: el pergamino usado queda consumido y la cantidad de pergaminos no se revierte (`FR-016`).
 
 ## 12. Dependencias entre datos
@@ -183,7 +191,9 @@ No se habilita en producción hasta que `--bench` la justifique.
 | cambiar velocidad | velocidad, tiempo/secuencia del evento | ninguna distancia; sí próxima acción |
 | muerte de actor | vida/actividad/listas/eventos | lote de cazadores, no distancias por sí solas |
 | cargar contenido | contenido de sala | ninguna ruta del cazador |
-| retroceder/reconstruir | varios campos anteriores | todos los cálculos derivados |
+| retroceder con éxito | varios campos anteriores | todos los cálculos derivados, una vez terminado `deshacer_ultimo` |
+| iniciar/cargar estado | estado vivo nuevo o reconstruido | todos los cálculos derivados anteriores |
+| consultar `historia` | mutación temporal que 004 rehace en `finally` | ninguno; no ejecuta 001 ni altera cachés externas |
 
 ## 13. Persistencia y reconstrucción vigentes
 
@@ -196,6 +206,12 @@ No se habilita en producción hasta que `--bench` la justifique.
 | `DecodificadorDatos.convertir_sala()` | adapta tanto API (`salidas`) como registro interno (`puertas`) | ambos caminos deben producir el mismo `costo` validado |
 | `DecodificadorDatos.convertir_contenido()` | reconstruye enemigos desde registros internos | debe conservar/materializar rango según el contrato acordado |
 | `RestauradorPartida._reconstruir_mapa()` | crea salas, comprueba destinos y vincula referencias | reconstruye costo canónico; nunca resultados de ruta |
-| `RestauradorPartida.restaurar_para_reanudar()` | publica estado nuevo, agenda reconstruida e historial vacío | futuros derivados de ruta empiezan vacíos; el aviso general de invalidación sigue pendiente con Joshua |
+| `RestauradorPartida.restaurar_para_reanudar()` | publica estado nuevo, agenda reconstruida e historial vacío | `MotorJuego.iniciar` invalida explícitamente cualquier caché anterior al enlazarlo |
 
-V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones; el número, propietario y compatibilidad se acuerdan antes de implementar. Etiquetas, fronteras, distancias, métricas e instantáneas de ruta permanecen fuera del guardado.
+V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones. 004 propone **v10**, aún no implementado, con una sección opaca que serializa juntos el estado vivo y la línea; costo/rango canónicos deben estar en ese estado, mientras etiquetas, fronteras, distancias, métricas e instantáneas permanecen fuera. La coordinación de ambos cambios con Steven y la compatibilidad se acuerdan antes de implementar.
+
+## 14. Reconstrucción histórica de 004
+
+La producción reconstruye **hacia atrás desde el punto de control siguiente**. El punto contiene una única copia profunda del estado canónico y las transacciones de su ventana; 004 deshace como máximo K transacciones sin vaciarlas, captura inversos y los aplica en orden contrario en `finally`. Si la consulta está después del último punto, opera temporalmente sobre el estado vivo y lo deja idéntico. Para un instante entre decisiones puede detenerse dentro de una transacción cuando el reloj ya no sea mayor que `t`.
+
+Re-simular hacia adelante no es transición del modelo de producción: permanece como alternativa de `--bench`. Ninguna reconstrucción llama al comportamiento del cazador o necesita una caché de rutas.
