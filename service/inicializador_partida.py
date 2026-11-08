@@ -173,13 +173,28 @@ class InicializadorPartida:
         return version, version_catalogo
 
     def _verificar(self, cripta_id, fuente, mapa, generales):
-        """Informe de resolubilidad, o 'no se pudo verificar' si falta el dato (FR-019)."""
+        """Informe de resolubilidad, o 'no se pudo verificar' si el dato falta o viene mal.
+
+        Los dos casos caen en FR-019 —la cripta queda sin verificar y no arranca sin
+        `--forzar`— porque para el jugador son lo mismo: no hay veredicto. El motivo los
+        distingue, para poder diagnosticar cuál de los dos fue.
+
+        Una respuesta de llaves inválida **no** aborta la partida como sí lo hace un esqueleto
+        inválido: el esqueleto hace falta para jugar, la ubicación de las llaves solo para
+        verificar. `TypeError` entra aquí porque `validar_id_sala` lo usa para un id que no es
+        entero, y eso es un dato mal formado del servicio, no un fallo del programa.
+        """
         try:
             ubicaciones = DecodificadorDatos().convertir_llaves(fuente.obtener_llaves(cripta_id))
-        except (CriptaAPIError, ValueError) as error:
+        except CriptaAPIError as error:
             log.warning("No se verificó la cripta %s: %s", cripta_id, error)
             return InformeResolubilidad.sin_verificar(
                 f"no se obtuvo la ubicación de las llaves ({error})")
+        except (ValueError, TypeError) as error:
+            log.warning("No se verificó la cripta %s: respuesta de llaves inválida (%s)",
+                        cripta_id, error)
+            return InformeResolubilidad.sin_verificar(
+                f"la respuesta de ubicación de llaves es inválida ({error})")
         return verificar(mapa, ubicaciones, generales["sala_inicial"],
                          generales["sala_salida"], generales["llave_salida"])
 
