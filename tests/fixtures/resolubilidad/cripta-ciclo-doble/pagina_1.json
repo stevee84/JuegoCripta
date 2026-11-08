@@ -1,0 +1,29 @@
+{
+ "pagina": 1,
+ "total_paginas": 1,
+ "salas": [
+  {
+   "id": 1,
+   "nombre": "Entrada",
+   "salidas": {
+    "N": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_alfa" },
+    "E": { "sala": 3, "costo": 100, "cerrada": true, "llave": "itm_llave_beta" }
+   }
+  },
+  {
+   "id": 2,
+   "nombre": "Camara alfa",
+   "salidas": { "S": { "sala": 1, "costo": 100 }, "N": { "sala": 4, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } }
+  },
+  {
+   "id": 3,
+   "nombre": "Camara beta",
+   "salidas": { "O": { "sala": 1, "costo": 100 } }
+  },
+  {
+   "id": 4,
+   "nombre": "Salida",
+   "salidas": { "S": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } }
+  }
+ ]
+}

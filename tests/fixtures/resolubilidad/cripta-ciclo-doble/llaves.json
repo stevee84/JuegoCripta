@@ -1,0 +1,7 @@
+{
+ "llaves": [
+  { "id": "itm_llave_alfa", "sala": 3 },
+  { "id": "itm_llave_beta", "sala": 2 },
+  { "id": "itm_llave_negra", "sala": 2 }
+ ]
+}

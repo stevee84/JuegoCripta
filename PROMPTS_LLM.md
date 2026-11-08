@@ -1952,7 +1952,21 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** El comando hizo 4 preguntas y Joshua aceptó la opción recomendada en las cuatro: `historia` está disponible en consola y en pygame con el mismo resumen (FR-008); `--replay --hasta` imprime el mismo texto, líneas y orden que `historia` (FR-009); el mapa conocido del resumen tiene el mismo contenido que el comando de mapa conocido de la spec 003 (FR-004); y las estadísticas del resumen son vida actual y máxima, ataque, defensa y velocidad efectivos (FR-004). Las preguntas y respuestas quedaron en la sección `## Clarifications` de `spec.md`.
 
 **Qué hubo que corregir.** Nada en las respuestas. Al integrar FR-009 se agregó un valor por defecto que no se preguntó: un `--hasta` inválido, o sin `--replay`, se rechaza antes de reproducir. Se eliminó la suposición sobre el formato de `--replay --hasta`, porque la clarificación la reemplazó.
-## Prompt 30 — `/speckit.specify` de la capacidad 002-resolubilidad (Integrante 2)
+
+
+---
+
+# Steven Moya Porras — Parte II
+
+**Herramienta:** Claude Code (Claude Opus 5), con spec-kit 1.2.3. Capacidades a mi cargo según
+`REPARTO_PARTE2.md`: `002-resolubilidad` y `003-niebla-y-ir-a`.
+
+| # | Tema | Fecha |
+| --- | --- | --- |
+| 11 | `/speckit.specify` de la resolubilidad | 05/11/2026 |
+| 12 | `/speckit.clarify` de la resolubilidad | 07/11/2026 |
+
+## Prompt 11 — `/speckit.specify` de la capacidad 002-resolubilidad
 
 Primer comando de spec-kit de la Parte II. Se fijó el directorio con
 `SPECIFY_FEATURE_DIRECTORY=specs/002-resolubilidad` para conservar la numeración del
@@ -2010,7 +2024,7 @@ si llegar a la sala de salida por una puerta que no exige la llave de salida cue
 hook `before_specify` instalado): antes y después la rama es `Steve`. La especificación no menciona
 ninguna estructura de datos, algoritmo, clase ni módulo.
 
-### Corrección al Prompt 30, tras leer el enunciado de la Parte II
+### Corrección al Prompt 11, tras leer el enunciado de la Parte II
 
 El prompt anterior se redactó antes de tener el enunciado de la Parte II en el repositorio. Al
 leerlo (§3.5, §4.2, §5.4 y §6.1) se corrigió la especificación sin reescribir el prompt, para que
@@ -2049,7 +2063,7 @@ solución en una sin solución. Se descartó simular el combate: decidir si exis
 acciones que sobreviva es una búsqueda en el espacio de estados (vida × inventario × posiciones ×
 reloj × semilla) que no cabe en los 200 ms de §6.1.
 
-## Prompt 31 — Clarificación de la resolubilidad (`/speckit-clarify`)
+## Prompt 12 — Clarificación de la resolubilidad (`/speckit-clarify`)
 
 Comando sin texto propio: `/speckit-clarify` escanea la especificación por categorías (alcance,
 dominio, interacción, atributos de calidad, integraciones, casos límite, restricciones,
@@ -2081,3 +2095,83 @@ antes de fijar el formato, no después.
 Se añadieron `FR-023` y cuatro escenarios de aceptación (cripta sin verificar, partida reanudada,
 informe no recalculado) y dos casos límite. La especificación sigue sin nombrar estructuras de
 datos, algoritmos, clases ni módulos.
+
+### Revisión del spec 002 tras la observación de Sofía
+
+Sofía contrastó la especificación con el enunciado y señaló dos puntos. Los dos eran correctos y
+los dos se corrigieron; ninguno se defendió.
+
+**1. Iniciar sin verificar.** `FR-019` (antes `FR-022`) decía que, cuando no se puede obtener la
+ubicación de las llaves, la partida inicia sin necesidad de `--forzar`. El argumento para eso era
+que un fallo de red no es un defecto de la cripta. Pero §3.5 abre diciendo que «antes de iniciar
+una partida, el programa determina si la cripta puede ganarse»: arrancar sin haber determinado
+nada, y sin que el usuario lo pida, no lo cumple. Ahora la partida no inicia salvo `--forzar`,
+igual que una cripta sin solución. Lo que sí se conserva es que el aviso distinga los dos estados:
+«no se pudo verificar» no es «no tiene solución», y el informe no debe afirmar lo que no comprobó.
+
+**2. La advertencia de ruta rompía la niebla de guerra.** Los antiguos `FR-019` a `FR-021` y la
+Historia 5 describían los enemigos, trampas, equipo y pociones de las salas del camino. §3.3 es
+explícito: «todo lo que la vista muestra […] debe derivarse exclusivamente del conocimiento del
+jugador», y ni siquiera la antorcha revela contenido, solo nombre y salidas. La advertencia
+mostraba el contenido de salas que el jugador no había pisado, así que contradecía la capacidad
+`003-niebla-y-ir-a`, que es de este mismo integrante. Se retiró entera.
+
+Conviene registrar por qué existió: la cripta más pequeña (`cripta-01`) **tiene solución** y aun
+así mata al jugador que va directo por la llave de salida, porque la ruta pasa por dos ratas
+rastreadoras y una trampa, y el equipo que la vuelve superable está repartido por esas mismas
+salas. Eso es real, pero no es resolubilidad: §3.5 supone que todo enemigo puede ser derrotado, y
+avisarlo exigía revelar lo que §3.3 oculta. El caso y el motivo del descarte van al Documento de
+Decisiones.
+
+La ubicación de las llaves sí se informa, sin conflicto: §3.5 la pide expresamente para el informe
+de una cripta sin solución, lo que es una excepción del propio enunciado a la niebla.
+
+**Resultado.** 20 requisitos `FR-001`…`FR-020` sin huecos (se renumeró al retirar tres, antes de
+que existan tareas o pruebas que los citen), 7 criterios, 4 historias y ninguna marca pendiente.
+
+## Prompt 13 — `/speckit.plan`, `/speckit.tasks` y `/speckit.analyze` de 002-resolubilidad
+
+Los tres comandos sin texto propio: operan sobre `spec.md` y los artefactos ya generados.
+
+**`/speckit.plan`.** Antes de ejecutarlo se acordaron las dos decisiones que fijan el
+determinismo: el orden de obtención de llaves (por cercanía, a igual distancia menor id de sala,
+dentro de una sala por id de llave) y cuántos círculos reportar (todos, no solo el primero).
+Produjo `plan.md`, `research.md`, `contracts/consulta-llaves.md`, `contracts/cli-verificar.md` y
+`quickstart.md`.
+
+**`/speckit.tasks`.** 50 tareas por historia, cada una citando sus `FR`. Se incluyeron tareas de
+prueba porque `SC-006` y el Principio XI las exigen.
+
+**`/speckit.analyze`.** Encontró cuatro problemas, los cuatro reales: `FR-013` y `FR-014` no
+tenían ninguna tarea que llegara a la interfaz; una tarea apuntaba a un directorio de pruebas
+inexistente; seis tareas no citaban ruta de archivo; y `FR-011` y `FR-019` repetían la misma
+regla. Se corrigieron antes de escribir código. El primero resultó ser una **frontera entre
+integrantes**: el servicio entrega el informe como dato y la interfaz, que es de Joshua, lo
+pinta.
+
+## Prompt 14 — Implementación de 002-resolubilidad
+
+Ejecución de `tasks.md` por fases, escribiendo las pruebas antes del código. Lo que vale la pena
+registrar no es el código sino lo que salió al escribirlo:
+
+**Una prueba falló y el error estaba en la prueba.** Había escrito que al abrir un atajo hacia la
+sala de salida «la cripta se gana igual», lo que contradice `FR-004`: al abrir esa puerta deja de
+existir toda entrada que exija la llave de salida, así que no resoluble es la respuesta correcta.
+
+**Exigir la consulta de llaves rompió 63 pruebas.** La causa fue imponer un bloqueo duro sin dar
+a los fixtures existentes el dato que ahora se exige. Se corrigió de raíz y no caso por caso: los
+paquetes temporales de las pruebas pasan por un único fixture compartido, y una línea allí
+arregló 38 de golpe.
+
+**La verificación cuesta una solicitud más por partida.** El arranque pasó de 7 a 8 y el
+presupuesto sintético de `test_carga_gradual` ya no alcanzaba: subió de 8 a 9. La señal era
+legítima, ese test existe para proteger el presupuesto ajustado.
+
+**Probar el `quickstart` a mano encontró dos cosas que las pruebas no.** `--verificar` con una
+cripta inexistente escupía un traceback, y el propio `quickstart.md` documentaba una bandera
+`--cripta` que no existe, porque la cripta se elige desde el menú.
+
+**El enunciado pedía un solo recorrido, no dos.** La primera versión calculaba las dependencias
+entre llaves en una segunda pasada. §5.4 dice «del mismo recorrido», así que se fusionaron; el
+resultado fue más simple, no más complejo: desapareció una función de 35 líneas y una sola tabla
+sustituyó a dos.

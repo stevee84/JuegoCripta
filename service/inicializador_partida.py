@@ -21,6 +21,7 @@ from dto.sala import validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
 from logica.inventario import Inventario
 from logica.mapa_cripta import MapaCripta
+from logica.verificador_resolubilidad import InformeResolubilidad, verificar
 from logica.ordenamiento import OrdenadorAdaptativo
 from registro import log
 
@@ -97,6 +98,21 @@ def establecer_presupuesto(fuente, generales):
     return limite
 
 
+class CriptaNoResoluble(Exception):
+    """La cripta no arranca: no tiene solución, o no se pudo verificar (§3.5).
+
+    Lleva el informe para que quien la reciba pueda mostrarlo (FR-013), en vez de
+    quedarse con un mensaje suelto.
+    """
+
+    def __init__(self, informe):
+        self.informe = informe
+        if not informe.verificada:
+            super().__init__(f"La cripta no se pudo verificar: {informe.motivo}")
+        else:
+            super().__init__("La cripta no tiene solución.")
+
+
 class InicializadorPartida:
     """Fábrica compatible con conectar_inicializador, sin simular acciones."""
 
@@ -107,6 +123,8 @@ class InicializadorPartida:
             raise ValueError("El identificador del jugador debe ser texto no vacío.")
         self._nombre, self._id_actor = nombre, id_actor
         self._preparados = None
+        # --forzar: inicia aunque no tenga solución o no se haya podido verificar (FR-011).
+        self.forzar = False
 
     @staticmethod
     def _entero(valor, campo, minimo=0):
@@ -153,6 +171,17 @@ class InicializadorPartida:
                 f"({type(error).__name__}): {error}") from error
         self._preparados = (cripta_id, fuente, generales, version, version_catalogo)
         return version, version_catalogo
+
+    def _verificar(self, cripta_id, fuente, mapa, generales):
+        """Informe de resolubilidad, o 'no se pudo verificar' si falta el dato (FR-019)."""
+        try:
+            ubicaciones = DecodificadorDatos().convertir_llaves(fuente.obtener_llaves(cripta_id))
+        except (CriptaAPIError, ValueError) as error:
+            log.warning("No se verificó la cripta %s: %s", cripta_id, error)
+            return InformeResolubilidad.sin_verificar(
+                f"no se obtuvo la ubicación de las llaves ({error})")
+        return verificar(mapa, ubicaciones, generales["sala_inicial"],
+                         generales["sala_salida"], generales["llave_salida"])
 
     def __call__(self, cripta_id, semilla, fuente, cache):
         try:
@@ -224,6 +253,13 @@ class InicializadorPartida:
                 if puerta.llave_requerida is not None:
                     self._agregar_id(ids_fichas, fichas_vistas, puerta.llave_requerida)
 
+        # §3.5: se verifica antes de cargar contenido. Lo gastado hasta aquí —el esqueleto y
+        # la consulta de llaves— es lo que la partida necesita igual (FR-016); si no arranca,
+        # al menos no se gastan además los lotes de contenido.
+        informe = self._verificar(cripta_id, fuente, mapa, generales)
+        if not informe.puede_iniciar and not self.forzar:
+            raise CriptaNoResoluble(informe)
+
         for sala in mapa.obtener_salas():
             sala.contenido_cargado = False
 
@@ -252,6 +288,7 @@ class InicializadorPartida:
         estado.jugador = Jugador(self._id_actor, self._nombre, vida, ataque, defensa, velocidad)
         estado.jugador.sala_actual = mapa.obtener_sala(inicial)
         estado.mapa, estado.inventario = mapa, Inventario(capacidad)
+        estado.informe_resolubilidad = informe
         estado.catalogo_inicial = catalogo
         estado.cache_inicial = cache
         estado.cargador_contenido = cargador

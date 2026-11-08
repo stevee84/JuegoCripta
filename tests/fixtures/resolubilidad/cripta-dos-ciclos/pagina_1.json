@@ -1,0 +1,22 @@
+{
+ "pagina": 1,
+ "total_paginas": 1,
+ "salas": [
+  {
+   "id": 1,
+   "nombre": "Encrucijada sellada",
+   "salidas": {
+    "N": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_alfa" },
+    "S": { "sala": 3, "costo": 100, "cerrada": true, "llave": "itm_llave_beta" },
+    "E": { "sala": 4, "costo": 100, "cerrada": true, "llave": "itm_llave_gamma" },
+    "O": { "sala": 5, "costo": 100, "cerrada": true, "llave": "itm_llave_delta" }
+   }
+  },
+  { "id": 2, "nombre": "Nicho beta", "salidas": { "S": { "sala": 1, "costo": 100 },
+    "N": { "sala": 6, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } } },
+  { "id": 3, "nombre": "Nicho alfa", "salidas": { "N": { "sala": 1, "costo": 100 } } },
+  { "id": 4, "nombre": "Nicho delta", "salidas": { "O": { "sala": 1, "costo": 100 } } },
+  { "id": 5, "nombre": "Nicho gamma", "salidas": { "E": { "sala": 1, "costo": 100 } } },
+  { "id": 6, "nombre": "Salida", "salidas": { "S": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } } }
+ ]
+}

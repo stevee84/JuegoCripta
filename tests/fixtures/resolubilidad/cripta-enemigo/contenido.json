@@ -1,0 +1,12 @@
+{
+ "contenido": [
+  { "sala": 1, "enemigos": [], "objetos": [], "trampas": [] },
+  {
+   "sala": 2,
+   "enemigos": [ { "instancia": "e-201", "tipo": "ent_rata_gigante", "vida": 12 } ],
+   "objetos": [],
+   "trampas": []
+  },
+  { "sala": 3, "enemigos": [], "objetos": [], "trampas": [] }
+ ]
+}

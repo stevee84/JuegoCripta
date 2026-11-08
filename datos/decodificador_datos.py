@@ -53,6 +53,33 @@ class DecodificadorDatos:
             objeto.ubicacion = "botin_preparado"
             enemigo.botin_preparado.append(objeto)
 
+    def convertir_llaves(self, datos: dict):
+        """Ubicación de cada llave (P2 §4.2) como tabla llave → (sala, enemigo o None).
+
+        Frontera de confianza: una respuesta mal formada se rechaza entera. Completarla con
+        valores por defecto haría pasar por verificada una cripta de la que falta un dato.
+        """
+        llaves = datos.get("llaves") if isinstance(datos, dict) else None
+        if not isinstance(llaves, list):
+            raise ValueError("La respuesta de llaves debe traer una lista en 'llaves'.")
+        ubicaciones = TablaHashImpl()
+        for entrada in llaves:
+            if not isinstance(entrada, dict):
+                raise ValueError("Cada llave debe ser un objeto JSON.")
+            llave_id = entrada.get("id")
+            if not isinstance(llave_id, str) or not llave_id:
+                raise ValueError(f"Una llave no tiene un ID textual: {entrada!r}.")
+            if ubicaciones.contiene(llave_id):
+                raise ValueError(f"La respuesta de llaves repite {llave_id}.")
+            sala_id = entrada.get("sala")
+            validar_id_sala(sala_id)
+            enemigo = entrada.get("enemigo")
+            if enemigo is not None and (not isinstance(enemigo, str) or not enemigo):
+                raise ValueError(
+                    f"La llave {llave_id} declara un enemigo sin ID textual: {enemigo!r}.")
+            ubicaciones.insertar(llave_id, (sala_id, enemigo))
+        return ubicaciones
+
     def convertir_sala(self, datos: dict):
         """Crea un objeto Sala a partir de un dict JSON con puertas y trampas."""
         # El API usa ``id``/``salidas``; el guardado reconstruido usa los

@@ -442,6 +442,8 @@ def api_simulada(monkeypatch):
             cuerpo = {"id": partes[1], "version": local.obtener_version_cripta(partes[1])}
         elif partes[2] == "salas":
             cuerpo = local.obtener_pagina(partes[1], params["pagina"])
+        elif partes[2] == "llaves":
+            cuerpo = local.obtener_llaves(partes[1])
         else:
             cuerpo = local.obtener_contenido(partes[1], [int(i) for i in params["salas"].split(",")])
 

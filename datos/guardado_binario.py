@@ -16,7 +16,9 @@ class GuardadoBinario:
     # v6: textos de largo variable (uint16 + UTF-8); v5 tenía campos fijos de 32 bytes.
     # v7: cada sala indica si su contenido ya se cargó (carga gradual, §4.2).
     # v8: el índice guarda el largo del registro junto al offset, para que leer_sala sea O(log n).
-    VERSION = 8
+    # v9: el informe de resolubilidad viaja con la partida, para seguir consultable tras
+    #     reanudar sin volver a verificar (P2 §3.5, FR-020).
+    VERSION = 9
     HEADER_FORMAT = "<4sHqIIII"  # firma, versión, semilla, reloj, salas, offset índice, offset jugador
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
     INDICE_ENTRADA = 40  # id de sala (32) + offset (4) + largo del registro (4)
@@ -328,6 +330,10 @@ class GuardadoBinario:
         f.write(struct.pack("<B", 1 if getattr(jugador, 'muerte_procesada', False) else 0))
         self._escribir_texto(f, getattr(jugador, 'tipo_ficha_id', None) or "")
 
+        # --- v9: informe de resolubilidad (FR-020) ---
+        informe = getattr(estado, 'informe_resolubilidad', None)
+        self._escribir_texto(f, json.dumps(informe.a_dato()) if informe is not None else "")
+
     def _leer_extras(self, data, offset):
         o = offset
         if o + 14 > len(data):
@@ -487,10 +493,15 @@ class GuardadoBinario:
         resultado["jugador_muerte_procesada"] = bool(muerte_proc_j)
         resultado["jugador_tipo_ficha_id"] = tipo_ficha_j or None
 
+        # --- v9: informe de resolubilidad (FR-020) ---
+        informe_json, o = self._leer_texto(data, o)
+        resultado["informe_resolubilidad"] = informe_json or None
+
         return resultado, o
 
     def _extras_por_defecto(self):
         return {
+            "informe_resolubilidad": None,
             "acciones_ejecutadas": 0,
             "enemigos_derrotados": 0,
             "secuencia": 0,

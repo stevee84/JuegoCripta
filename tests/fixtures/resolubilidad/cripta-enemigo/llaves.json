@@ -1,0 +1,9 @@
+{
+ "llaves": [
+  {
+   "id": "itm_llave_negra",
+   "sala": 2,
+   "enemigo": "e-201"
+  }
+ ]
+}

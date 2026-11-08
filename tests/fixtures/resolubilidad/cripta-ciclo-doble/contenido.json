@@ -1,0 +1,8 @@
+{
+ "contenido": [
+  { "sala": 1, "enemigos": [], "objetos": [], "trampas": [] },
+  { "sala": 2, "enemigos": [], "objetos": ["itm_llave_beta", "itm_llave_negra"], "trampas": [] },
+  { "sala": 3, "enemigos": [], "objetos": ["itm_llave_alfa"], "trampas": [] },
+  { "sala": 4, "enemigos": [], "objetos": [], "trampas": [] }
+ ]
+}

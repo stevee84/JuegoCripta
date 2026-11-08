@@ -751,6 +751,17 @@ class JuegoService:
     def obtener_estado(self):
         return getattr(self._motor, "estado", None)
 
+    def obtener_informe_resolubilidad(self):
+        """El informe de la verificación hecha antes de empezar (P2 §3.5, FR-014).
+
+        Siempre el mismo durante toda la partida: describe la cripta, no el avance, así que
+        no se recalcula con las llaves que el jugador ya consiguió ni con la sala en la que
+        esté. Se devuelve como dato; quien lo muestre decide el formato (FR-013). None si la
+        partida no vino de una verificación, por ejemplo un guardado anterior a la v9.
+        """
+        estado = self.obtener_estado()
+        return getattr(estado, "informe_resolubilidad", None) if estado is not None else None
+
     def listar_criptas(self):
         if self._fuente is None:
             raise ValueError("No hay una fuente de datos conectada.")

@@ -20,6 +20,10 @@ def parsear_argumentos():
     parser.add_argument("--semilla", type=int, default=None, help="Semilla para azar determinista")
     parser.add_argument("--log-nivel", choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING",
                         help="Detalle del registro de red, caché y persistencia en stderr")
+    parser.add_argument("--verificar", type=str, default=None, metavar="CRIPTA",
+                        help="Solo verifica si esa cripta se puede ganar y termina, sin abrir el juego")
+    parser.add_argument("--forzar", action="store_true",
+                        help="Inicia la partida aunque la cripta no tenga solución o no se haya podido verificar")
     args = parser.parse_args()
     if args.cache_size <= 0:
         parser.error("--cache-size debe ser un entero positivo")
@@ -40,6 +44,8 @@ class Configuracion:
         self.vista: str = getattr(args, "vista", "pygame")
         self.semilla: int | None = args.semilla
         self.log_nivel: str = getattr(args, "log_nivel", "WARNING")
+        self.verificar: str | None = getattr(args, "verificar", None)
+        self.forzar: bool = getattr(args, "forzar", False)
         self.url_api: str = URL_API
         self.ruta_datos_offline: str = RUTA_DATOS_OFFLINE
         self.ruta_guardado: str = RUTA_GUARDADO

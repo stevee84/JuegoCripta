@@ -24,6 +24,7 @@ from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from estructuras.tabla_hash import TablaHashImpl
 from logica.cache_catalogo import CacheCatalogo
 from logica.motor_juego import MotorJuego
+from logica.mapa_cripta import MapaCripta
 from service.inicializador_partida import InicializadorPartida
 from service.juego_service import JuegoService
 from service.repositorio_catalogo import RepositorioCatalogo
@@ -478,5 +479,125 @@ def medir_version_guardado(repeticiones, tamanos):
     return filas
 
 
+
+
+# ── Resolubilidad (§5.4, §6.3) ────────────────────────────────────────────────
+
+def _cripta_encadenada(llaves, semilla=0):
+    """Cadena de `llaves` tramos: cada puerta cerrada exige la llave del tramo anterior.
+
+    Determinista por semilla, como exige §6.3; la semilla decide la separación entre la
+    sala que guarda una llave y la puerta que la pide, para que el recorrido no sea trivial.
+    """
+    import random
+
+    azar = random.Random(semilla)
+    mapa, ubicaciones = MapaCripta(), TablaHashImpl()
+    decodificador = DecodificadorDatos()
+    por_tramo = 4
+    total = llaves * por_tramo + 1
+    registros = []
+    for id_sala in range(1, total + 1):
+        salidas = {}
+        if id_sala > 1:
+            salidas["S"] = {"sala": id_sala - 1}
+        if id_sala < total:
+            salidas["N"] = {"sala": id_sala + 1}
+            tramo = (id_sala - 1) // por_tramo
+            if id_sala % por_tramo == 0 and tramo < llaves:
+                salidas["N"].update({"cerrada": True, "llave": f"k{tramo:05d}"})
+        registros.append({"id": id_sala, "nombre": f"S{id_sala}", "salidas": salidas})
+    for registro in registros:
+        mapa.agregar_sala(decodificador.convertir_sala(registro))
+    mapa.vincular_salidas()
+    for tramo in range(llaves):
+        base = tramo * por_tramo + 1
+        ubicaciones.insertar(f"k{tramo:05d}", (azar.randint(base, base + por_tramo - 1), None))
+    return mapa, ubicaciones, total
+
+
+def _verificar_repitiendo_por_llave(mapa, ubicaciones, inicial, salida, llave_salida):
+    """Alternativa ingenua que §5.4 nombra: rehacer el recorrido entero por cada llave.
+
+    O(L·(V+E)) frente a O(V+E+L) del incremental. Vive solo aquí, como comparación.
+    """
+    obtenidas, orden = TablaHashImpl(), []
+    gano = False
+    while True:
+        alcanzadas, cola = TablaHashImpl(), [inicial]
+        alcanzadas.insertar(inicial, True)
+        i = 0
+        while i < len(cola):
+            sala_id, i = cola[i], i + 1
+            for puerta in mapa.obtener_sala(sala_id).puertas:
+                if not (puerta.abierta or (puerta.llave_requerida is not None
+                                           and obtenidas.contiene(puerta.llave_requerida))):
+                    continue
+                if puerta.destino_sala_id == salida and puerta.llave_requerida == llave_salida:
+                    gano = True
+                destino = puerta.destino_sala_id
+                if destino is not None and not alcanzadas.contiene(destino):
+                    alcanzadas.insertar(destino, True)
+                    cola.append(destino)
+        nueva = None
+        for llave_id in ubicaciones.claves():
+            if obtenidas.contiene(llave_id):
+                continue
+            if alcanzadas.contiene(ubicaciones.obtener(llave_id)[0]):
+                if nueva is None or llave_id < nueva:
+                    nueva = llave_id
+        if nueva is None:
+            return gano, orden
+        obtenidas.insertar(nueva, True)
+        orden.append(nueva)
+
+
+def medir_resolubilidad(repeticiones, tamanos):
+    """Recorrido incremental contra rehacerlo por cada llave (§5.4, §6.3, SC-007)."""
+    from logica.verificador_resolubilidad import verificar
+
+    filas = []
+    for n in tamanos:
+        llaves = max(2, n // 20)
+        mapa, ubicaciones, total = _cripta_encadenada(llaves)
+        salida, ultima = total, f"k{llaves - 1:05d}"
+        filas.append(medir(
+            "resolubilidad_incremental", n, repeticiones,
+            lambda m=mapa, u=ubicaciones, s=salida, k=ultima:
+                (lambda: verificar(m, u, 1, s, k)),
+            estructura="recorrido_unico_con_puertas_aparcadas", llaves=llaves, salas=total))
+        filas.append(medir(
+            "resolubilidad_repetida_por_llave_alternativa", n, repeticiones,
+            lambda m=mapa, u=ubicaciones, s=salida, k=ultima:
+                (lambda: _verificar_repitiendo_por_llave(m, u, 1, s, k)),
+            estructura="recorrido_completo_por_cada_llave", llaves=llaves, salas=total))
+    return filas
+
+
+def medir_resolubilidad_cripta_real(repeticiones, tamanos):
+    """§6.1: la verificación de la cripta publicada más grande, por debajo de 200 ms."""
+    from logica.verificador_resolubilidad import verificar
+
+    filas = []
+    decodificador = DecodificadorDatos()
+    for cripta_id in _criptas_reales():
+        fuente = FuenteOffline(str(API_REAL))
+        generales = fuente.obtener_generales(cripta_id)
+        mapa = MapaCripta()
+        for numero in range(1, generales["paginas"] + 1):
+            for datos in fuente.obtener_pagina(cripta_id, numero)["salas"]:
+                mapa.agregar_sala(decodificador.convertir_sala(datos))
+        mapa.vincular_salidas()
+        ubicaciones = decodificador.convertir_llaves(fuente.obtener_llaves(cripta_id))
+        filas.append(medir(
+            "resolubilidad_cripta_publicada", generales["salas_total"], repeticiones,
+            lambda m=mapa, u=ubicaciones, g=generales:
+                (lambda: verificar(m, u, g["sala_inicial"], g["sala_salida"], g["llave_salida"])),
+            estructura="recorrido_unico_con_puertas_aparcadas", cripta=cripta_id,
+            limite_ms=200))
+    return filas
+
+
 PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado, medir_tabla_hash,
-               medir_presupuesto_red, medir_cache_escritura, medir_catalogo, medir_version_guardado)
+               medir_presupuesto_red, medir_cache_escritura, medir_catalogo, medir_version_guardado,
+               medir_resolubilidad, medir_resolubilidad_cripta_real)

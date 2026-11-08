@@ -13,16 +13,23 @@
 ### Session 2026-11-07
 
 - Q: Cuando no se puede obtener la ubicación de las llaves, ¿qué debe hacer el programa? → A: La
-  partida inicia y la línea de inicio avisa que la verificación no se pudo hacer, en lugar de
-  afirmar que la cripta tiene o no tiene solución.
+  partida no inicia salvo que se fuerce, igual que una cripta sin solución, pero el aviso dice que
+  la verificación no se pudo hacer, sin afirmar que la cripta tiene ni que no tiene solución.
+  *(Revisado tras la observación de Sofía: la respuesta inicial dejaba iniciar sin forzar, lo que
+  contradice §3.5, que sitúa la determinación antes de iniciar la partida.)*
 - Q: ¿De dónde saca la ubicación de las llaves el modo sin conexión? → A: Del paquete de datos
   guardados, como un archivo más y por el mismo contrato lógico que el resto; si falta, la cripta
-  queda sin verificar (FR-022).
+  queda sin verificar (FR-019).
 - Q: Si el jugador ya consiguió parte de las llaves, ¿qué informe ve durante la partida? → A: El
   de antes de empezar, sin recalcular: la verificación describe la cripta, no el avance de la
   partida.
 - Q: ¿El informe sigue disponible después de guardar la partida, cerrar el programa y reanudarla?
   → A: Sí, igual que en la sesión que lo calculó, y sin volver a verificar al reanudar.
+- Q: ¿Puede el informe describir los enemigos, trampas y objetos de la ruta propuesta? → A: No. Se
+  retiró la advertencia de ruta que lo hacía. §3.3 exige que todo lo que la vista muestre derive
+  del conocimiento del jugador, y revelar el contenido de salas no exploradas lo contradice; ni
+  siquiera la antorcha revela contenido. La ubicación de las llaves sí se informa, porque §3.5 la
+  pide expresamente. *(Observación de Sofía.)*
 
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
@@ -54,8 +61,10 @@ que la primera deja empezar la partida y la segunda no.
 5. **Dado** una misma cripta con varios órdenes de obtención válidos, **cuando** se verifica dos
    veces, **entonces** las dos veces se obtiene exactamente el mismo orden.
 6. **Dado** que no se puede obtener la ubicación de las llaves, **cuando** el jugador elige una
-   cripta, **entonces** la partida empieza sin necesidad de forzarla y el jugador ve que la
+   cripta sin pedir forzarla, **entonces** la partida no empieza y el aviso dice que la
    verificación no se pudo hacer, no que la cripta tenga ni que no tenga solución.
+7. **Dado** el mismo caso, **cuando** el jugador pide expresamente forzar el inicio, **entonces**
+   la partida empieza y queda constancia de que se juega sin verificar.
 
 ---
 
@@ -141,40 +150,6 @@ el mismo resultado que se obtendría al empezarla.
 
 ---
 
----
-
-### Historia 5 — Saber qué me espera en la ruta antes de ir (Prioridad: P3)
-
-Que una cripta tenga solución no significa que el jugador sobreviva el camino. Una ruta puede
-pasar por salas con enemigos y trampas que suman más daño del que aguanta su vida si va directo,
-mientras que el equipo y las pociones repartidos por esas mismas salas la vuelven superable. El
-jugador necesita ver eso antes de salir, no descubrirlo muriendo.
-
-**Por qué esta prioridad**: no cambia el veredicto ni es obligatoria para ganar, pero es la
-diferencia entre "esta cripta tiene solución" y "esta cripta tiene solución y así es como se
-sobrevive". Se apoya en datos que ya están disponibles, sin pedir nada más.
-
-**Prueba independiente**: se verifica una cripta con solución cuya ruta mínima expone al jugador a
-más daño del que aguanta su vida, y se comprueba que el informe lo advierte, que señala el equipo
-del camino, y que la cripta sigue declarada con solución.
-
-**Escenarios de aceptación**:
-
-1. **Dado** una cripta con solución cuya ruta propuesta pasa por salas con enemigos, **cuando** se
-   consulta el informe, **entonces** aparecen esas salas con el daño por golpe de cada enemigo y la
-   vida del jugador.
-2. **Dado** la misma cripta, **cuando** se consulta el informe, **entonces** aparecen el equipo y
-   las pociones que hay en las salas de la ruta.
-3. **Dado** una cripta con solución cuya ruta suma más daño del que aguanta la vida del jugador,
-   **cuando** se verifica, **entonces** la cripta sigue declarada **con solución** y la partida
-   empieza: la advertencia no altera el veredicto.
-4. **Dado** una cripta con solución, **cuando** se construye la advertencia y después empieza la
-   partida, **entonces** recorrer las salas de esa ruta no vuelve a pedir sus datos: los que la
-   advertencia necesitó quedaron disponibles para la partida.
-5. **Dado** una ruta en la que los datos de algunas salas no se pueden obtener, **cuando** se
-   consulta la advertencia, **entonces** describe las demás e indica cuántas quedaron sin
-   describir.
-
 ### Casos límite
 
 - **La cripta no tiene ninguna puerta cerrada ni ninguna llave**: tiene solución si se puede
@@ -191,13 +166,10 @@ del camino, y que la cripta sigue declarada con solución.
 - **Ninguna puerta hacia la sala de salida exige la llave de salida**: la cripta no tiene solución,
   aunque se pueda caminar hasta esa sala (FR-004).
 - **No se puede obtener la ubicación de las llaves**: la cripta queda sin verificar y la partida
-  empieza avisándolo, sin forzar; no se verificó no es lo mismo que no tener solución (FR-022).
+  no empieza salvo que se fuerce, pero el aviso no dice que no tenga solución, porque eso no se
+  comprobó (FR-019).
 - **El paquete de datos para jugar sin conexión no incluye la ubicación de las llaves**: se trata
-  igual que el caso anterior, sin deducirla por otra vía (FR-015, FR-022).
-- **Los datos de una sala de la ruta no se pueden obtener**: la advertencia describe las demás y
-  dice cuántas quedaron fuera (FR-021).
-- **La ruta propuesta no tiene ningún enemigo ni trampa**: la advertencia lo dice en vez de quedar
-  en blanco.
+  igual que el caso anterior, sin deducirla por otra vía (FR-015, FR-019).
 
 ## Requisitos *(obligatorio)*
 
@@ -229,48 +201,36 @@ del camino, y que la cripta sigue declarada con solución.
 - **FR-010**: Cuando una llave esté encerrada detrás de puertas que solo ella abre, de forma
   directa o mediante una cadena de llaves, el informe DEBE señalar esa cadena nombrando las
   llaves que la forman.
-- **FR-011**: Una cripta que se verificó y no tiene solución NO DEBE iniciar partida, salvo que se
-  pida expresamente forzar el inicio. Esto no aplica a una cripta que no se pudo verificar, que es
-  un caso distinto (FR-022).
+- **FR-011**: Una cripta que no se puede empezar a jugar con garantías NO DEBE iniciar partida,
+  salvo que se pida expresamente forzar el inicio. Son dos casos y el aviso DEBE distinguirlos:
+  la cripta se verificó y no tiene solución, o no se pudo verificar (FR-019).
 - **FR-012**: El programa DEBE ofrecer una forma de verificar una cripta sin abrir la interfaz
   del juego ni pedir acciones al jugador.
 - **FR-013**: Al iniciar una partida, el jugador DEBE ver una línea con uno de tres resultados
   distinguibles: que la cripta tiene solución y con cuántas llaves, que no la tiene, o que no se
-  pudo verificar (FR-022).
+  pudo verificar (FR-019).
 - **FR-014**: Durante la partida, el jugador DEBE poder consultar el informe completo de la
   verificación. Ese informe es el de antes de empezar y NO DEBE recalcularse con las llaves que el
   jugador ya haya conseguido ni con la sala en la que esté: describe la cripta, no el avance de la
   partida.
-- **FR-023**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
-  reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
-  vuelva a verificar la cripta.
 - **FR-015**: La verificación DEBE dar el mismo resultado usando el servicio en línea o los datos
   guardados localmente para jugar sin conexión. La ubicación de las llaves DEBE obtenerse por el
   mismo camino lógico en los dos casos: sin conexión forma parte del paquete de datos guardados,
   como los datos generales de la cripta o las páginas del esqueleto, y NO DEBE deducirse por una
-  vía distinta de la que se usa con el servicio. Si ese dato falta en el paquete, se aplica FR-022.
+  vía distinta de la que se usa con el servicio. Si ese dato falta en el paquete, se aplica FR-019.
 - **FR-016**: La verificación DEBE usar los mismos datos de la cripta que la partida necesita
   después, de modo que iniciar una partida verificada no exija volver a pedirlos.
 - **FR-017**: El informe DEBE poder leerse sin conocer la cripta de antemano: cada llave, puerta
   y sala que mencione DEBE identificarse de forma que el jugador pueda ubicarla.
 - **FR-018**: El informe completo —la frontera bloqueada y las dependencias entre llaves— DEBE
   quedar disponible tras una sola verificación, sin tener que repetirla por cada llave.
-- **FR-019**: Cuando la cripta tiene solución, el informe DEBE añadir una advertencia de la ruta
-  propuesta, que indique las salas de esa ruta con enemigos o trampas, el daño por golpe de cada
-  enemigo y el daño de cada trampa frente a la vida del jugador, y el equipo y las pociones que
-  hay en esas salas. Esta advertencia es informativa: NO DEBE cambiar el resultado de la
-  verificación ni impedir que la partida empiece.
-- **FR-020**: La advertencia de ruta DEBE construirse con los datos de las salas de esa ruta.
-  Obtenerlos no añade costo al total de la partida, porque son los mismos datos que el jugador
-  necesitará al recorrerla y quedan disponibles para el resto de la partida: solo se adelantan.
-- **FR-021**: Si los datos de alguna sala de la ruta no se pueden obtener, la advertencia DEBE
-  describir las demás e indicar cuántas quedaron sin describir, en lugar de fallar o de quedar
-  vacía.
-- **FR-022**: Cuando no se puede obtener la ubicación de las llaves, el programa DEBE distinguir
-  ese caso de una cripta sin solución: no se verificó, y eso no es lo mismo que no tener solución.
-  La partida DEBE iniciar, y la línea de inicio DEBE avisar que la verificación no se pudo hacer,
-  sin afirmar que la cripta tiene ni que no tiene solución. NO DEBE hacer falta forzar el inicio,
-  porque no haber podido verificar no es un defecto de la cripta.
+- **FR-019**: Cuando no se puede obtener la ubicación de las llaves, la cripta queda **sin
+  verificar**. Ese es uno de los dos casos de FR-011, así que la partida no inicia sin forzarla, y
+  lo que este requisito añade es el aviso: DEBE decir que la verificación no se pudo hacer, sin
+  afirmar que la cripta tiene ni que no tiene solución. No haber verificado no es un veredicto.
+- **FR-020**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
+  reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
+  vuelva a verificar la cripta.
 
 ### Entidades principales
 
@@ -288,9 +248,6 @@ del camino, y que la cripta sigue declarada con solución.
 - **Informe de verificación**: resultado legible de la verificación. Si la cripta no tiene
   solución, reúne las llaves inalcanzables, la frontera bloqueada con la llave de cada puerta, la
   ubicación de esas llaves y las cadenas de llaves encerradas entre sí.
-- **Advertencia de ruta**: parte del informe que acompaña a una cripta con solución. Describe lo
-  que el jugador encontrará en las salas de la ruta propuesta —enemigos, trampas, equipo y
-  pociones— frente a su vida inicial. No participa del veredicto.
 
 ## Criterios de éxito *(obligatorio)*
 
@@ -327,17 +284,17 @@ del camino, y que la cripta sigue declarada con solución.
   inicia. Esa respuesta se puede guardar localmente y sigue siendo válida mientras coincida la
   versión de la cripta.
 - La consulta de llaves identifica al enemigo que guarda una llave por su instancia concreta, no
-  por su tipo. Las estadísticas de ese enemigo solo están disponibles junto con los datos de su
-  sala, así que la advertencia de ruta depende de tener esos datos (FR-020, FR-021).
+  por su tipo. La verificación no necesita sus estadísticas: basta con la sala donde ese enemigo
+  inicia, porque todo enemigo se supone derrotable (FR-002).
 - Los datos de una sala, una vez obtenidos, quedan disponibles durante el resto de la partida: lo
   que la verificación trae no se vuelve a pedir al recorrerla. Hoy esa reutilización dura lo que
   dura la partida; el esqueleto y el contenido no sobreviven al cierre del programa, solo las
   fichas del catálogo.
-- La vida, el ataque y la defensa iniciales del jugador vienen en los datos generales de la cripta,
-  así que la advertencia de ruta puede compararlos sin pedir nada más.
 - Un enemigo no impide atravesar una sala ni salir de ella: puede herir al jugador, pero nunca
-  bloquea el paso. Por eso los enemigos no afectan al resultado de la verificación, solo a la
-  advertencia de ruta.
+  bloquea el paso. Por eso los enemigos no afectan al resultado de la verificación.
+- La verificación no informa nada del contenido de las salas —enemigos, trampas ni objetos—
+  porque §3.3 exige que todo lo que la vista muestre derive del conocimiento del jugador. La
+  ubicación de las llaves sí se informa: §3.5 la pide expresamente para el informe.
 - La verificación no simula el combate, el tiempo ni el azar: solo responde si existe alguna
   manera de ganar bajo los supuestos de FR-002.
 - Si una cripta sin solución se fuerza, el jugador asume que puede no poder terminarla; el
