@@ -79,6 +79,29 @@ inmediatos; los de listas, agenda e inventario necesitan uno propio. **La primer
 implementación mide el costo y comprueba que la restauración es exacta** (tarea de spike en
 `tasks.md`).
 
+**Resultado de T001** (2026-11-07, `python -m benchmarks.linea_tiempo`, `cripta-04` de 50 salas,
+partida de 600 acciones reales, semilla 7, 3 de calentamiento y 15 repeticiones). Para que la partida
+durara se le dio al jugador vida muy alta **solo en la medición**; es un peor caso, porque se activan
+los enemigos de casi toda la cripta (unos 100 cambios por acción).
+
+| K | Cambios deshechos | Deshacer: mediana / máximo | Deshacer + rehacer (estimado) | Copia completa por consulta |
+|---|---|---|---|---|
+| 10 | 1 060 | 5,6 / 36,3 ms | ≈ 11 ms típico, ≈ 73 ms peor | 86,6 / 135,2 ms |
+| 50 | 5 228 | 30,1 / 93,0 ms | ≈ 60 ms típico | 314,2 / 384,5 ms |
+| 200 | 20 825 | 109,4 / 145,7 ms | ≈ 219 ms típico | 1 511 / 1 760 ms |
+
+- Deshacer 20 transacciones sobre una copia conjunta del estado da exactamente el estado de 20
+  acciones antes, y la partida original no cambia: confirma R2.
+- Rehacer todavía no existe (T004); se estima con el mismo costo que deshacer. La comprobación
+  exacta queda en T003.
+- La copia completa por consulta es de 8 a 14 veces más lenta: confirma descartarla.
+- Copiar solo el estado (lo que hace un punto de control al crearse) cuesta 28,8 ms de mediana, y el
+  estado serializado ocupa unos 422 KB. **Riesgo nuevo**: la acción que crea un punto de control suma
+  ese costo y puede pasar el límite de 20 ms por ciclo de §6.1. Se mide en T041 y se documenta.
+
+**Conclusión**: el mecanismo de R3 se mantiene; **K = 50 no cabe** en los 50 ms de §6.1 con esta carga.
+Ver R7.
+
 **Alternativa descartada**: copia de trabajo temporal por consulta (choca con el principio VII).
 Solo se mide en `--bench` como alternativa, que es donde la constitución permite las alternativas.
 
@@ -130,9 +153,12 @@ Archivos: `logica/cambios.py`, `logica/historial_reversible.py`, `logica/servici
 
 ## R7. K por defecto
 
-**Decisión (provisional)**: **K = 50**. Con 5 000 acciones son 100 puntos de control, y una consulta
-deshace como máximo 50 transacciones. Valores medidos en `--bench`: **10, 50 y 200**, más la
-alternativa sin puntos de control (FR-024). El valor final es el menor K que cumpla los 50 ms con
+**Decisión (provisional, corregida con T001)**: **K = 10**. La primera versión decía K = 50, pero T001
+mostró que con K = 50 deshacer y rehacer tarda unos 60 ms típicos, por encima de los 50 ms de §6.1.
+Con K = 10 son unos 11 ms típicos. Costo: con 5 000 acciones son 500 puntos de control, unos 210 MB si
+cada uno pesara lo que el estado serializado (422 KB); hay que medirlo con `tracemalloc`, porque en
+memoria puede ser distinto. Valores medidos en `--bench`: **10, 50 y 200** (y 20 si la memoria de 10
+resulta excesiva), más la alternativa sin puntos de control (FR-024). El valor final es el menor K que cumpla los 50 ms con
 margen y el menor uso de memoria; se justifica con la tabla de `--bench` en `DECISIONES.md` §5.5.
 
 **Cómo se mide la memoria**: `tracemalloc` (biblioteca estándar, solo en `--bench`), midiendo los
