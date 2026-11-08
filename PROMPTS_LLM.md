@@ -1890,6 +1890,9 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 27 | Correcciones a la constitución antes de confirmarla | 02/11/2026 |
 | 28 | Especificación de la línea de tiempo (`/speckit-specify`) | 06/11/2026 |
 | 29 | Clarificación de la línea de tiempo (`/speckit-clarify`) | 06/11/2026 |
+| 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
+| 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
+| 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2009,6 +2012,36 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 
 ---
+
+## Prompt 30 — Plan de la línea de tiempo (`/speckit-plan`)
+
+> **Prompt**
+>
+> /speckit-plan Plan de specs/004-linea-de-tiempo. Elige estructuras propias (sin dict/set como índice, heapq, bisect, collections), compara con alternativas descartadas, decide reconstrucción hacia adelante o hacia atrás con evidencia prevista, propone K por defecto a confirmar con --bench, lista consumidores de componentes compartidos (motor, historial, controlador, vista, main, guardado) con cambios mínimos, define el contrato con Steven (guardado v10 y mapa conocido de la 003) y con Sofía (cambios reversibles del cazador), e incluye las tareas de interfaz T049 y T050 de la spec 002 (FR-013, FR-014). No modifiques código de Steven ni de Sofía. Todo en español.
+
+**Qué se obtuvo.** `plan.md`, `research.md`, `data-model.md`, `quickstart.md` y tres contratos en `specs/004-linea-de-tiempo/contracts/` (`cli-historia.md`, `guardado-v10.md` y `dependencias.md`). Decisión principal, provisional hasta medirla en `--bench`: reconstruir **hacia atrás** desde el punto de control siguiente. Cada punto de control copia juntos el estado y las transacciones de su ventana, porque los cambios guardan referencias a los objetos vivos. Se ubica el punto de control por aritmética y el instante t por búsqueda binaria propia. K por defecto provisional: 50, a medir con K = 10, 50 y 200 y sin puntos de control. La línea se engancha en el historial reversible, así que no se modifica el motor de Sofía. El guardado v10 queda como contrato para Steven, sin tocar su archivo.
+
+**Qué hubo que corregir.** Antes de escribir el plan se leyó el código y aparecieron tres cosas que el enunciado no dice. (1) Los cambios solo saben deshacerse y apuntan a objetos vivos: por eso se descartó re-simular hacia adelante como mecanismo principal, ya que además pediría contenido de salas al servicio. (2) Recoger, soltar y consumir un pergamino no se registran como cambios, así que se agregó un registro «solo línea de tiempo». (3) Una primera versión ubicaba el punto de control con ⌈k / K⌉; se corrigió a ⌈(k − 1) / K⌉, porque el punto de control de la acción m guarda el estado de antes de la acción m + 1. Quedaron dos desviaciones documentadas en la tabla de complejidad: la copia de trabajo temporal de cada consulta y un posible punto de control extra después de cargar; la segunda se consultará con el grupo.
+
+## Prompt 31 — Tareas de la línea de tiempo (`/speckit-tasks`)
+
+> **Prompt**
+>
+> /speckit-tasks Genera tasks.md para specs/004-linea-de-tiempo en español. Cada tarea cita los FR que atiende; cada prueba cita el FR que verifica; los 6 casos del Apéndice B tienen prueba. Primera tarea: medir el costo de copiar el estado (riesgo R3 del plan). Incluye T049 y T050 de la spec 002. Marca como dependientes las tareas que necesitan el guardado v10 de Steven o la spec 003. Bloques pequeños, sin tocar código de Steven ni de Sofía.
+
+**Qué se obtuvo.** `specs/004-linea-de-tiempo/tasks.md` con 50 tareas en 12 fases: preparación (T001 mide el riesgo R3 antes de construir), base, una fase por historia de usuario, interfaz §7.3 con T049 y T050 de la spec 002, mapa conocido, mediciones y cierre. Los 6 casos del Apéndice B tienen prueba (tabla al final del archivo). Tres tareas quedan marcadas como dependientes: T034 y T035 del guardado v10 de Steven y T040 de la spec 003.
+
+**Qué hubo que corregir.** La revisión automática de trazabilidad encontró que FR-020 (estado del azar si se re-simula) no tenía tarea; se agregó a T042, que es la única parte que re-simula.
+
+## Prompt 32 — Análisis de la línea de tiempo y correcciones (`/speckit-analyze`)
+
+> **Prompt**
+>
+> /speckit-analyze Analiza la consistencia de specs/004-linea-de-tiempo (spec.md, plan.md, tasks.md, research.md, data-model.md, contracts/) entre sí, con la constitución v1.0.0 y con el enunciado de la Parte II (§3.6, §5.5, §6.1, §7.3, Apéndice B). Informe en español.
+
+**Qué se obtuvo.** Un informe con cobertura de 100 % (los 31 FR y los 6 SC tienen tareas; ninguna tarea sin requisito) y 9 hallazgos: 2 críticos, 4 medios y 3 bajos. Los dos críticos contradecían el principio VII de la constitución: (C1) el plan hacía una copia de trabajo del estado en cada consulta, y la constitución solo permite como copias completas los puntos de control; (C2) después de cargar una partida podía quedar un punto de control extra, contra «no más de una cada K acciones» (§3.6, FR-017).
+
+**Qué hubo que corregir.** Con la aprobación de Joshua se corrigieron el plan y sus artefactos; `spec.md` no cambió. (C1) La consulta ahora deshace en sitio, sobre el punto de control o el estado vivo, anotando el inverso de cada cambio, y rehace en un `finally` (research R3). (C2) El guardado v10 serializa juntos el estado vivo y la línea, y al cargar el estado sale de la línea (research R8 y `contracts/guardado-v10.md`; hay que acordarlo con Steven). Medios: se agregó `service/juego_service.py` a la tabla de componentes, T001 ahora mide deshacer y rehacer en sitio, y las tareas de Steven se renombraron 002-T049 y 002-T050 para no confundirlas con las propias. Bajos: se agregaron pruebas con la partida terminada, con dos pergaminos seguidos y con K mayor que la cantidad de acciones; `pickle` quedó anotado como límite conocido. Los dos errores críticos eran del diseño que propuso Claude en el Prompt 30, no del enunciado.
 
 # Steven Moya Porras — Parte II
 
