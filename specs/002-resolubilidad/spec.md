@@ -224,10 +224,14 @@ el mismo resultado que se obtendría al empezarla.
   y sala que mencione DEBE identificarse de forma que el jugador pueda ubicarla.
 - **FR-018**: El informe completo —la frontera bloqueada y las dependencias entre llaves— DEBE
   quedar disponible tras una sola verificación, sin tener que repetirla por cada llave.
-- **FR-019**: Cuando no se puede obtener la ubicación de las llaves, la cripta queda **sin
-  verificar**. Ese es uno de los dos casos de FR-011, así que la partida no inicia sin forzarla, y
-  lo que este requisito añade es el aviso: DEBE decir que la verificación no se pudo hacer, sin
-  afirmar que la cripta tiene ni que no tiene solución. No haber verificado no es un veredicto.
+- **FR-019**: Cuando no se puede obtener la ubicación de las llaves, **o cuando esa respuesta
+  viene mal formada**, la cripta queda **sin verificar**. Ese es uno de los dos casos de FR-011,
+  así que la partida no inicia sin forzarla, y lo que este requisito añade es el aviso: DEBE decir
+  que la verificación no se pudo hacer, sin afirmar que la cripta tiene ni que no tiene solución.
+  No haber verificado no es un veredicto. El aviso DEBE distinguir si el dato no se obtuvo o si
+  llegó inválido, para poder diagnosticar cuál de los dos fue. Un dato de llaves inválido NO DEBE
+  abortar el programa: el esqueleto hace falta para jugar, la ubicación de las llaves solo para
+  verificar.
 - **FR-020**: El informe DEBE seguir consultable en una partida que se guardó, se cerró y se
   reanudó, con el mismo contenido que tenía en la sesión donde se calculó, y sin que reanudar
   vuelva a verificar la cripta.

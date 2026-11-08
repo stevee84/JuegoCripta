@@ -91,3 +91,38 @@ def test_una_cripta_que_no_inicia_no_gasta_el_contenido():
     with pytest.raises(CriptaNoResoluble):
         inicializador("cripta-ciclo", 0, fuente, CacheCatalogo(25))
     assert fuente.lotes_de_contenido == 0
+
+
+def test_una_respuesta_de_llaves_invalida_deja_la_cripta_sin_verificar():
+    """FR-019: un id de sala que no es entero no debe reventar el programa.
+
+    `validar_id_sala` señala eso con TypeError, no con ValueError, así que capturar solo
+    ValueError dejaba escapar la excepción. El motivo distingue este caso de «no se obtuvo»,
+    para poder diagnosticar cuál de los dos ocurrió.
+    """
+    class LlavesCorruptas(FuenteOffline):
+        def obtener_llaves(self, cripta_id):
+            return {"llaves": [{"id": "itm_llave_negra", "sala": "tres"}]}
+
+    inicializador = InicializadorPartida()
+    fuente = LlavesCorruptas(REALES)
+    inicializador.preparar("cripta-01", fuente)
+    with pytest.raises(CriptaNoResoluble) as excepcion:
+        inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    informe = excepcion.value.informe
+    assert not informe.verificada
+    assert "inválida" in informe.motivo
+    assert informe.llaves_inalcanzables == []   # no se comprobó nada
+
+
+def test_una_respuesta_de_llaves_invalida_se_puede_forzar():
+    class LlavesCorruptas(FuenteOffline):
+        def obtener_llaves(self, cripta_id):
+            return {"llaves": [{"id": 17, "sala": 1}]}
+
+    inicializador = InicializadorPartida()
+    inicializador.forzar = True
+    fuente = LlavesCorruptas(REALES)
+    inicializador.preparar("cripta-01", fuente)
+    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    assert not estado.informe_resolubilidad.verificada
