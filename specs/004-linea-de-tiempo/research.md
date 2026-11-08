@@ -17,7 +17,7 @@ cambian con las mediciones de `--bench` (FR-024) y el cambio, si lo hay, se docu
 | El reloj cambia solo con un cambio registrado, uno por evento con tiempo distinto. | `logica/motor_juego.py:686`, `logica/mutaciones.py` (`atributo`) | Se puede detener el deshacer dentro de una transacción justo cuando el reloj vuelve a ser ≤ t (R4). |
 | El historial del pergamino guarda solo 5 transacciones y descarta las antiguas. | `logica/historial_reversible.py` | La línea de tiempo necesita su propio registro; no puede leer del historial. |
 | Recoger o soltar un pergamino y consumir el pergamino al retroceder **no** se registran como cambio reversible (excepción de P1 §2.11). | `logica/motor_juego.py:507-528`, `logica/servicio_inventario.py:152-167` | Sin un registro adicional, la línea mostraría mal los pergaminos en el pasado (R6). |
-| `copy.deepcopy` ya funciona sobre el estado de la partida. | `benchmarks/benchmark_ciclo_real_integrante1.py:60` | Los puntos de control pueden ser una copia profunda del estado. Su costo está sin medir (R3). |
+| `copy.deepcopy` ya funciona sobre el estado de la partida. | `benchmarks/benchmark_ciclo_real_integrante1.py:60` | Los puntos de control pueden ser una copia profunda del estado, tomada una vez cada K acciones. Las consultas no copian (R3). |
 | El guardado binario ya está en v9 (Steven, spec 002). Al cargar, el historial del pergamino empieza vacío. | `datos/guardado_binario.py:21`, `controller/controlador_juego.py:129` | La línea de tiempo necesita la v10 (R8). El archivo es de Steven. |
 
 ## R1. ¿Reconstruir hacia adelante o hacia atrás?
@@ -39,7 +39,7 @@ Como los puntos de control están cada K acciones, se deshacen m − k + 1 ≤ K
 | Alternativa | Por qué se descarta (o se deja solo en `--bench`) |
 |---|---|
 | **Hacia adelante re-simulando** desde el punto de control anterior: restaurar la copia y volver a ejecutar las acciones con el motor. | Una sala cuyo contenido se descargó después del punto de control figura sin cargar en la copia, y el motor rechaza entrar (`logica/motor_juego.py:376-378`). Para re-simular habría que volver a cargar contenido: solicitudes HTTP o cambios en la capa de datos de Steven. Además ejecuta todas las reglas (combate, efectos, cazadores) en cada consulta. **Se implementa solo dentro de `--bench`**, sobre criptas sintéticas con todo el contenido cargado, para la comparación que pide §5.5 y FR-024. |
-| **Hacia adelante rehaciendo cambios**: guardar también el valor nuevo de cada cambio. | Hay que escribir un «rehacer» para cada tipo de cambio (listas, agenda, inventario), y eso duplica la lógica más delicada de la Parte I. Queda como plan B de R3 si copiar el punto de control resulta caro. |
+| **Hacia adelante rehaciendo cambios**: guardar también el valor nuevo de cada cambio. | Hay que escribir un «rehacer» para cada tipo de cambio (listas, agenda, inventario), y eso duplica la lógica más delicada de la Parte I. R3 solo necesita un inverso temporal durante la consulta, que se captura al deshacer y no se guarda. |
 | **Hacia atrás desde el estado actual**, sin puntos de control. | Consultar el inicio de una partida de 5 000 acciones obligaría a deshacer 5 000 transacciones: viola FR-018. Es la alternativa «sin puntos de control» que mide `--bench`. |
 | **Una copia completa por acción** (K = 1 forzado). | Memoria = acciones × tamaño del estado: viola FR-021. Se mide como K = 1. |
 
@@ -61,18 +61,26 @@ cambios (no se podría deshacer sobre ellas).
 
 ## R3. ¿Cómo se consulta sin destruir el punto de control?
 
-**Decisión (provisional)**: cada consulta hace **una copia de trabajo** del paquete, deshace sobre
-ella como máximo K transacciones, arma el resumen y descarta la copia. La copia es temporal: dura lo
-que dura la consulta y nunca se guarda, así que no es un punto de control adicional.
+**Decisión (corregida tras `/speckit-analyze`, hallazgo C1)**: **deshacer y rehacer en sitio**.
+La consulta deshace directamente sobre el paquete del punto de control (o sobre el estado vivo, si la
+acción pedida está después del último punto de control). Antes de deshacer cada cambio, anota su
+**inverso**: un cambio que captura el valor actual (para un cambio de atributo, el valor que tiene
+antes de deshacer). Arma el resumen y aplica los inversos en orden contrario, dentro de un bloque
+`try/finally`, para que el paquete o el estado vivo queden exactamente como estaban aunque la consulta
+falle. Las transacciones no se vacían ni se marcan como revertidas.
 
-**Riesgo**: el costo de copiar el estado completo no está medido. Con la cripta de referencia y
-5 000 acciones puede comerse parte importante de los 50 ms. **La primera tarea de implementación es
-medirlo** (tarea de spike en `tasks.md`).
+**Por qué**: el principio VII prohíbe las copias completas en memoria usadas como mecanismo de la
+línea de tiempo, salvo los puntos de control. Una copia de trabajo por consulta, que era la primera
+versión de este plan, es justamente eso. Deshacer y rehacer en sitio no copia nada: cuesta
+O(cambios de ≤ K acciones) dos veces.
 
-**Plan B (si la copia no cabe en el presupuesto)**: deshacer **sobre el paquete mismo**, guardando
-mientras se deshace un cambio inverso de cada cambio (para un cambio de atributo, el valor que tenía
-antes de deshacer), y al terminar la consulta aplicar esos inversos para dejar el paquete como
-estaba. Evita la copia, pero exige un inverso exacto por tipo de cambio.
+**Riesgo**: cada tipo de cambio necesita un inverso exacto. Los de atributo, dato y azar son
+inmediatos; los de listas, agenda e inventario necesitan uno propio. **La primera tarea de
+implementación mide el costo y comprueba que la restauración es exacta** (tarea de spike en
+`tasks.md`).
+
+**Alternativa descartada**: copia de trabajo temporal por consulta (choca con el principio VII).
+Solo se mide en `--bench` como alternativa, que es donde la constitución permite las alternativas.
 
 ## R4. ¿Cómo se responde un instante t que cae entre dos decisiones?
 
@@ -134,14 +142,20 @@ bytes retenidos por la línea de tiempo después de 5 000 acciones, separado del
 
 **Decisión**: el archivo de partida sube a **v10** y gana una sección de bytes opaca, con su
 longitud, que **produce y consume la línea de tiempo**. El guardado de Steven solo la escribe y la lee
-tal cual: no necesita entender su contenido. La sección contiene: K, los arreglos de números de
-acción e instantes de decisión, los paquetes de puntos de control y la cola viva copiada junto con el
-estado actual. La serialización usa `pickle` (biblioteca estándar, permitida).
+tal cual: no necesita entender su contenido.
 
-Al cargar, la cola guardada se convierte en el punto de control de la acción en la que se guardó.
-**Desviación conocida**: tras una carga puede haber, en una sola ventana de K acciones, un punto de
-control más de los permitidos. Queda en la tabla de complejidad del plan y se consulta con el grupo.
-La alternativa sin desviación (re-simular la cola al cargar) tiene el problema de contenido de R1.
+**Corregido tras `/speckit-analyze` (hallazgo C2)**: la sección serializa **en una sola operación**
+el estado vivo y la línea completa (K, instantes, puntos de control y cola). Como la cola apunta a
+objetos del estado vivo, serializarlos juntos conserva esas referencias. **Al cargar, el estado vivo
+de la partida es el que devuelve la línea de tiempo**; el resto del archivo de Steven se sigue usando
+para validar cabecera, versión y compatibilidad. Así, después de cargar no queda ninguna copia
+completa además de los puntos de control, y los puntos de control siguen en múltiplos de K.
+
+La primera versión de este plan convertía la cola guardada en un punto de control extra, lo que
+violaba «como máximo uno cada K» (§3.6, FR-017, principio VII). Re-simular la cola al cargar también
+se descartó, por el problema de contenido de R1. La serialización usa `pickle` (biblioteca estándar).
+**Límite conocido**: `pickle` puede ejecutar código al cargar un archivo malicioso; se acepta porque
+el archivo de partida es local y lo produce el propio juego. Se documenta en `DECISIONES.md` §5.5.
 
 Un archivo v8 o anterior (Parte I y comienzos de la Parte II) se sigue reportando como incompatible
 con el mecanismo que ya usó Steven de v8 a v9 (FR-031). Un v9 se reporta incompatible también: no
@@ -155,7 +169,7 @@ tiene línea de tiempo.
 - **Spec 003 (Steven, aún sin spec)**: se le pide (1) que los cambios del mapa conocido sean
   reversibles con el mismo mecanismo; (2) una función de solo lectura que, dado un estado, devuelva el
   mapa conocido como datos (exploradas con salidas, costos y puertas recordadas, y avistadas), para que
-  `historia` la llame sobre la copia reconstruida. Mientras no exista, el resumen muestra «mapa
+  `historia` la llame sobre el estado reconstruido. Mientras no exista, el resumen muestra «mapa
   conocido: no disponible» y la prueba correspondiente queda marcada como dependiente.
 - **Spec 002 (Steven)**: T049 y T050 se hacen en esta spec, consumiendo
   `JuegoService.obtener_informe_resolubilidad()` con el formato de

@@ -25,9 +25,10 @@ métodos nuevos, sin cambiar firmas existentes (constitución VIII).
 
 ## Fase 1: Preparación (riesgo R3 primero)
 
-**Meta**: saber, antes de construir, si copiar el estado en cada consulta cabe en los 50 ms.
+**Meta**: saber, antes de construir, si deshacer y rehacer en sitio cabe en los 50 ms y deja el
+estado exacto.
 
-- [ ] T001 Medir en `benchmarks/linea_tiempo.py` (archivo nuevo) el costo de `copy.deepcopy` del estado de partida junto con las transacciones de K acciones, para K = 10, 50 y 200, y el costo de deshacer esas K transacciones sobre la copia; con calentamiento y repeticiones, sobre un estado de la cripta offline más grande disponible. Anotar el resultado en `specs/004-linea-de-tiempo/research.md` (R3) y decidir: copia de trabajo (plan A) o deshacer y rehacer en sitio (plan B). Si es plan B, se corrige primero el plan en un commit separado (§2.6) (FR-018, SC-001)
+- [ ] T001 Medir en `benchmarks/linea_tiempo.py` (archivo nuevo), para K = 10, 50 y 200, el costo de deshacer K transacciones reales anotando inversos y de rehacerlas, sobre el estado de la cripta offline más grande disponible, con calentamiento y repeticiones; medir también, como alternativa descartada, `copy.deepcopy` del estado con esas transacciones. Comprobar que después de rehacer el estado es idéntico al de antes. Anotar el resultado en `specs/004-linea-de-tiempo/research.md` (R3). Si no cabe en el presupuesto, se corrige primero el plan en un commit separado (§2.6) (FR-005, FR-018, SC-001)
 - [ ] T002 Crear en `benchmarks/linea_tiempo.py` un generador de partidas largas determinista por semilla: cripta sintética con todo el contenido cargado y una secuencia de N acciones válidas (mover, esperar, atacar) ejecutadas con el motor existente, sin red. Lo usan las pruebas y `--bench` (FR-024, constitución IX)
 
 ---
@@ -37,8 +38,8 @@ métodos nuevos, sin cambiar firmas existentes (constitución VIII).
 **Meta**: la línea registra cada acción cerrada y arma puntos de control, sin cambiar en nada el
 comportamiento del pergamino ni de las 1071 pruebas actuales.
 
-- [ ] T003 [P] Escribir `tests/test_logica/test_cambios_linea.py`: (a) un cambio registrado con la marca «solo línea» no lo deshace `TransaccionAccion.revertir`; (b) el deshacer condicional deshace del más reciente al más antiguo, incluidos los marcados, y se detiene cuando la condición deja de cumplirse (FR-012, FR-001)
-- [ ] T004 Implementar en `logica/cambios.py`, en `TransaccionAccion`, el registro de cambios con la marca «solo línea» en la misma lista de cambios (para conservar el orden) y el método de deshacer mientras se cumpla una condición. `revertir` y `validar_capacidad` saltan los marcados; ninguna firma existente cambia (FR-012, FR-001)
+- [ ] T003 [P] Escribir `tests/test_logica/test_cambios_linea.py`: (a) un cambio registrado con la marca «solo línea» no lo deshace `TransaccionAccion.revertir`; (b) el deshacer condicional deshace del más reciente al más antiguo, incluidos los marcados, se detiene cuando la condición deja de cumplirse y no vacía la transacción; (c) para cada tipo de cambio de `logica/cambios.py`, deshacer y aplicar el inverso deja el estado idéntico, también si la consulta lanza una excepción a la mitad (FR-001, FR-005, FR-012)
+- [ ] T004 Implementar en `logica/cambios.py`, en `TransaccionAccion`, el registro de cambios con la marca «solo línea» en la misma lista de cambios (para conservar el orden), el método de deshacer mientras se cumpla una condición que devuelve los inversos sin vaciar la transacción, y el inverso de cada tipo de cambio. `revertir` y `validar_capacidad` saltan los marcados; ninguna firma existente cambia (FR-001, FR-005, FR-012)
 - [ ] T005 [P] Escribir `tests/test_logica/test_historial_linea.py`: con una línea vinculada, `cerrar_intervalo` le entrega la transacción y el reloj; `deshacer_ultimo` le avisa el recorte; sin línea vinculada el historial se comporta exactamente igual que hoy, y `LIMITE` sigue en 5 (FR-013, FR-014)
 - [ ] T006 Implementar en `logica/historial_reversible.py` un método para vincular la línea de tiempo y los avisos al cerrar y al deshacer, con el estado vinculado (research R5). Sin cambios en las firmas existentes (FR-013, FR-014)
 - [ ] T007 [P] Escribir `tests/test_logica/test_linea_tiempo.py` con pruebas de la estructura: «`instantes` no decreciente», «`puntos[0]` es el estado inicial (m = 0)», «nunca más de uno cada K acciones», la cola guarda referencias (no copias) de como máximo las últimas 2K acciones, y una acción rechazada no agrega nada (FR-017, FR-021)
@@ -61,7 +62,7 @@ estado observado al jugar en ese instante.
 - [ ] T012 [P] [US1] Escribir en `tests/test_logica/test_linea_tiempo.py`: el estado en t es el de después de todos los eventos con tiempo ≤ t; si a t le corresponde una decisión, el de justo antes de tomarla; `historia 0` es el estado inicial (US1-2, US1-4, US1-5; **Apéndice B: varios eventos en el mismo t**) (FR-001, FR-002)
 - [ ] T013 [P] [US1] Escribir en `tests/test_controller/test_historia.py`: t mayor que el reloj se rechaza con el mensaje de [cli-historia.md](./contracts/cli-historia.md) y sin efectos; un t no entero o negativo se rechaza; sin partida se rechaza (US1-1, US1-6; **Apéndice B: historia con t futuro**) (FR-006, FR-007)
 - [ ] T014 [P] [US1] Escribir en `tests/test_controller/test_historia.py`: tras varias consultas, el reloj no cambió, `partida.log` no tiene líneas nuevas, el historial del pergamino es el mismo, el estado del azar es el mismo y la acción siguiente da el mismo resultado que sin consultas (US1-3, SC-003; **Apéndice B: historia no consume tiempo ni se registra**) (FR-005)
-- [ ] T015 [US1] Implementar en `logica/linea_tiempo.py` la consulta por instante: búsqueda de la acción, copia de trabajo del paquete y deshacer completo hasta «antes de #(k+1)» y después parcial de la transacción k mientras el reloj sea > t (research R3 y R4). Nunca más de K transacciones (FR-001, FR-002, FR-006, FR-018)
+- [ ] T015 [US1] Implementar en `logica/linea_tiempo.py` la consulta por instante, sin copiar el estado: búsqueda de la acción; deshacer en sitio, sobre el paquete o sobre el estado vivo, hasta «antes de #(k+1)» y después la transacción k mientras el reloj sea > t; armar el resumen y rehacer con los inversos en un `finally` (research R3 y R4). Nunca más de K transacciones (FR-001, FR-002, FR-005, FR-006, FR-018)
 - [ ] T016 [US1] Agregar en `controller/controlador_juego.py` el comando `historia <t>`: no pasa por el motor ni por el registro de partida; valida t y devuelve las líneas de `controller/resumen_historia.py` (FR-005, FR-006, FR-007, FR-008)
 - [ ] T017 [US1] Mostrar el resumen en `vista/vista_consola.py` con el método de mensajes que ya existe, y agregar `historia` a la ayuda de comandos (FR-008)
 
@@ -76,8 +77,8 @@ estado observado al jugar en ese instante.
 **Prueba independiente**: secuencia de acciones conocida; `#1`, una intermedia y `#(n+1)` coinciden
 con los estados observados.
 
-- [ ] T018 [P] [US2] Escribir en `tests/test_logica/test_linea_tiempo.py`: `#1` es el estado inicial; `#(n+1)` es el estado actual; `#0` y `#(n+2)` se rechazan con el rango válido; en una partida de miles de acciones cada `#k` coincide con el estado guardado al jugar (US2-1 a US2-4) (FR-003, FR-007, SC-002)
-- [ ] T019 [US2] Implementar en `logica/linea_tiempo.py` la consulta por acción según [data-model.md](./data-model.md): j = ⌈(k − 1) / K⌉; paquete `puntos[j]` si existe, o estado actual y cola si k está después del último punto; deshacer las transacciones hasta k (FR-003, FR-018)
+- [ ] T018 [P] [US2] Escribir en `tests/test_logica/test_linea_tiempo.py`: `#1` es el estado inicial; `#(n+1)` es el estado actual; `#0` y `#(n+2)` se rechazan con el rango válido; en una partida de miles de acciones cada `#k` coincide con el estado guardado al jugar; con la partida terminada (victoria o muerte) las consultas siguen funcionando (US2-1 a US2-4, Assumptions) (FR-003, FR-007, SC-002)
+- [ ] T019 [US2] Implementar en `logica/linea_tiempo.py` la consulta por acción según [data-model.md](./data-model.md): j = ⌈(k − 1) / K⌉; deshacer en sitio sobre el paquete `puntos[j]` si existe, o sobre el estado vivo si k está después del último punto, hasta k; rehacer en un `finally` (FR-003, FR-005, FR-018)
 - [ ] T020 [US2] Aceptar `historia #k` en `controller/controlador_juego.py` (distinguir `#k` de `t` al leer el argumento) con los mensajes de [cli-historia.md](./contracts/cli-historia.md) (FR-003, FR-007, FR-008)
 
 ---
@@ -88,7 +89,7 @@ con los estados observados.
 
 **Prueba independiente**: acciones, pergamino, y ninguna consulta muestra lo revertido.
 
-- [ ] T021 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py`: después de un pergamino ninguna consulta muestra el estado de la acción revertida; `historia` con un t entre el reloj nuevo y el anterior se rechaza; `historia #n` es el estado actual con el pergamino consumido y `#(n+1)` se rechaza; las consultas anteriores muestran el pergamino en el inventario (US3-1 a US3-3; **Apéndice B: historia después de usar un pergamino**) (FR-012, FR-014)
+- [ ] T021 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py`: después de un pergamino ninguna consulta muestra el estado de la acción revertida; `historia` con un t entre el reloj nuevo y el anterior se rechaza; `historia #n` es el estado actual con el pergamino consumido y `#(n+1)` se rechaza; las consultas anteriores muestran el pergamino en el inventario; dos pergaminos seguidos recortan dos veces (US3-1 a US3-3, casos borde; **Apéndice B: historia después de usar un pergamino**) (FR-012, FR-014)
 - [ ] T022 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py` la prueba de costo del recorte: en partidas de 1 000 y de 5 000 acciones el recorte toca la misma cantidad de elementos (US3-4) (FR-013)
 - [ ] T023 [US3] Implementar el recorte en `logica/linea_tiempo.py` (quitar del final de `instantes` y `cola`, descartar los puntos con m > n) llamado desde el aviso de `deshacer_ultimo` de T006 (FR-012, FR-013)
 - [ ] T024 [US3] En `logica/servicio_inventario.py`, registrar con la marca «solo línea» recoger y soltar un pergamino y, al retroceder, el consumo del pergamino en la última transacción que sigue en la línea (research R6). El pergamino de retroceso no cambia su comportamiento (FR-012, FR-014)
@@ -115,7 +116,7 @@ partida original.
 
 **Prueba independiente**: la misma partida con varios K da los mismos resúmenes.
 
-- [ ] T029 [P] [US6] Escribir en `tests/test_logica/test_linea_tiempo.py`: con K = 1, K = 7 y K = 50 todas las consultas de la misma partida son idénticas; ninguna consulta deshace más de K transacciones (contar en la prueba) (US6-1, US6-3) (FR-018, FR-023)
+- [ ] T029 [P] [US6] Escribir en `tests/test_logica/test_linea_tiempo.py`: con K = 1, K = 7, K = 50 y un K mayor que la cantidad de acciones, todas las consultas de la misma partida son idénticas; ninguna consulta deshace más de K transacciones (contar en la prueba) (US6-1, US6-3, casos borde) (FR-018, FR-023)
 - [ ] T030 [US6] Agregar la bandera `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros: error al arrancar), con prueba en `tests/test_configuracion.py` (US6-2) (FR-015)
 - [ ] T031 [US6] Pasar K desde `main.py` a la partida interactiva, al replay y a `--bench` (FR-015, FR-016)
 
@@ -125,8 +126,8 @@ partida original.
 
 **Meta**: la línea sobrevive a guardar y reanudar.
 
-- [ ] T032 [P] [US5] Escribir en `tests/test_logica/test_linea_tiempo.py`: `exportar_bytes` e `importar_bytes` conservan K, instantes, puntos y cola; tras importar, todas las consultas dan lo mismo que antes; al importar con otro K pedido se conserva el guardado y se informa (US5-1, US5-2) (FR-028, FR-029, FR-030)
-- [ ] T033 [US5] Implementar `exportar_bytes(estado)` e `importar_bytes(datos, estado)` en `logica/linea_tiempo.py` según [guardado-v10.md](./contracts/guardado-v10.md), con `pickle` (FR-028, FR-029, FR-030)
+- [ ] T032 [P] [US5] Escribir en `tests/test_logica/test_linea_tiempo.py`: `exportar_bytes` e `importar_bytes` conservan el estado vivo, K, instantes, puntos y cola; tras importar, todas las consultas dan lo mismo que antes, la cantidad de puntos de control es la misma (ninguno extra) y todos siguen en múltiplos de K; al importar con otro K pedido se conserva el guardado y se informa (US5-1, US5-2) (FR-017, FR-028, FR-029, FR-030)
+- [ ] T033 [US5] Implementar `exportar_bytes(estado)` e `importar_bytes(datos) -> (estado, linea)` en `logica/linea_tiempo.py` según [guardado-v10.md](./contracts/guardado-v10.md), serializando el estado vivo y la línea en una sola operación con `pickle` (FR-017, FR-028, FR-029, FR-030)
 - [ ] T034 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` la prueba de punta a punta: guardar con el guardado v10, cargar y repetir consultas; usar el aviso de K de FR-030 en `controller/controlador_juego.py` al cargar (US5-1, US5-2) (FR-028, FR-030)
 - [ ] T035 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` que un archivo v9, uno v8 y uno de la Parte I se reportan como incompatibles y nunca se cargan en silencio (US5-3; **Apéndice B: archivo de la Parte I**) (FR-031)
 
@@ -137,15 +138,15 @@ partida original.
 **Meta**: las partes de §7.3 que no dependen de la 003.
 
 - [ ] T036 [P] Escribir en `tests/test_controller/test_resolubilidad_interfaz.py`: al iniciar se muestra una de las tres líneas de [cli-verificar.md](../002-resolubilidad/contracts/cli-verificar.md) según el informe (con solución, sin solución, no verificada); el comando `resolubilidad` muestra el informe completo y es el mismo antes y después de conseguir llaves (FR-013 y FR-014 de la spec 002)
-- [ ] T037 **T049 de la spec 002**: mostrar la línea de resolubilidad al iniciar la partida desde `controller/controlador_juego.py`, en `vista/vista_consola.py` y en `vista/vista_pygame.py`, a partir de `JuegoService.obtener_informe_resolubilidad()` (FR-013 de la 002)
-- [ ] T038 **T050 de la spec 002**: comando `resolubilidad` en `controller/controlador_juego.py` que muestra el informe completo en consola y en pygame (FR-014 y FR-017 de la 002)
+- [ ] T037 Tarea **002-T049** (de la spec 002): mostrar la línea de resolubilidad al iniciar la partida desde `controller/controlador_juego.py`, en `vista/vista_consola.py` y en `vista/vista_pygame.py`, a partir de `JuegoService.obtener_informe_resolubilidad()` (FR-013 de la 002)
+- [ ] T038 Tarea **002-T050** (de la spec 002): comando `resolubilidad` en `controller/controlador_juego.py` que muestra el informe completo en consola y en pygame (FR-014 y FR-017 de la 002)
 - [ ] T039 Agregar en `vista/vista_pygame.py`, en métodos nuevos, un botón «Historia» que pide t o #k y muestra las líneas del resumen en un panel; la lógica sigue en el controlador (FR-008)
 
 ---
 
 ## Fase 10: Mapa conocido en el resumen (depende de la spec 003)
 
-- [ ] T040 [US1] **[DEPENDE 003]** Usar en `controller/resumen_historia.py` la consulta de solo lectura del mapa conocido de la 003 sobre la copia reconstruida, y escribir en `tests/test_controller/test_resumen_historia.py` que el mapa de `historia <t>` coincide con el que mostraba el comando de mapa en ese instante, incluido después de un pergamino que revierte una exploración con antorcha (FR-004, FR-022)
+- [ ] T040 [US1] **[DEPENDE 003]** Usar en `controller/resumen_historia.py` la consulta de solo lectura del mapa conocido de la 003 sobre el estado reconstruido, y escribir en `tests/test_controller/test_resumen_historia.py` que el mapa de `historia <t>` coincide con el que mostraba el comando de mapa en ese instante, incluido después de un pergamino que revierte una exploración con antorcha (FR-004, FR-022)
 
 ---
 
@@ -171,7 +172,7 @@ partida original.
 
 ## Dependencias y orden
 
-- **Fase 1** → **Fase 2** → historias. T001 puede cambiar el plan (plan A o B) antes de la Fase 2.
+- **Fase 1** → **Fase 2** → historias. T001 puede obligar a corregir el plan (R3) antes de la Fase 2.
 - **US1** (Fase 3) es el MVP. **US2** necesita la consulta de US1 (comparte el mecanismo).
 - **US3**, **US4** y **US6** dependen solo de la Fase 2 y de US1; se pueden hacer en cualquier orden.
 - **US5**: T032-T033 dependen de la Fase 2; T034-T035 esperan el guardado v10 de Steven.

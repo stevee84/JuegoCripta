@@ -6,7 +6,7 @@
 |---|---|---|
 | `historia <t>` | Resumen del estado en el instante t | FR-001, FR-002, FR-004 a FR-007 |
 | `historia #k` | Resumen del estado justo antes de la acción k | FR-003 a FR-007 |
-| `resolubilidad` | Informe completo de la verificación hecha antes de empezar (T050 de la spec 002) | FR-014 de la 002 |
+| `resolubilidad` | Informe completo de la verificación hecha antes de empezar (002-T050) | FR-014 de la 002 |
 
 Ninguno es una acción: no avanza el reloj, no se escribe en `partida.log` y no toca el historial del
 pergamino.
@@ -52,7 +52,7 @@ exista, la sección del mapa dice `Mapa conocido: no disponible`.
   `La partida terminó en t=3000, antes del instante pedido (5000).` (FR-010).
 - Sin `--hasta`, igual que la Parte I (FR-011).
 
-## Al iniciar una partida (T049 de la spec 002)
+## Al iniciar una partida (002-T049)
 
 Una línea con el resultado de la verificación, con el texto de
 [cli-verificar.md](../../002-resolubilidad/contracts/cli-verificar.md), en consola y en pygame.

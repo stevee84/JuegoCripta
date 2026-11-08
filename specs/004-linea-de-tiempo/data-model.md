@@ -28,7 +28,7 @@ Una por partida. Vive junto al estado y se guarda en el archivo de partida (FR-0
 
 | Campo | Contenido |
 |---|---|
-| `accion` | m, múltiplo de K (o la acción en que se guardó, tras cargar; ver plan) |
+| `accion` | m, siempre múltiplo de K, también después de cargar (research R8) |
 | `paquete` | Una sola copia profunda de: el estado antes de #(m+1) y las transacciones m − K + 1 … m |
 
 Las transacciones del paquete apuntan a los objetos del estado copiado, no a los vivos (research R2).
@@ -40,9 +40,18 @@ Las transacciones del paquete apuntan a los objetos del estado copiado, no a los
 | `_cambios` (existente) | Cambios en orden de llegada (el más reciente primero) |
 | marca «solo línea» (nuevo, por cambio) | Los cambios que **solo** deshace la línea: recoger y soltar un pergamino, consumo del pergamino (research R6). Van en la misma lista para conservar el orden relativo. |
 
-Operaciones nuevas: registrar un cambio con la marca «solo línea», y deshacer del más reciente al
-más antiguo **mientras se cumpla una condición** (para R4: mientras el reloj sea > t), incluyendo los
-marcados. `revertir`, que usa el pergamino, salta los marcados y por lo demás no cambia.
+Operaciones nuevas:
+- registrar un cambio con la marca «solo línea»;
+- **deshacer mientras se cumpla una condición** (para R4: mientras el reloj sea > t), del más
+  reciente al más antiguo e incluyendo los marcados, **sin vaciar la transacción ni marcarla como
+  revertida**, y devolviendo los inversos de lo deshecho;
+- aplicar esos inversos en orden contrario para rehacer (research R3).
+
+`revertir`, que usa el pergamino, salta los marcados y por lo demás no cambia.
+
+**Inverso de un cambio**: un cambio que, antes de deshacer, captura el valor actual del mismo dato
+(atributo, dato de ficha, estado del azar, posición en una lista, evento de la agenda, objeto del
+inventario). Aplicarlo deja el dato como estaba antes de deshacer. Solo existe durante la consulta.
 
 ## Consulta
 
@@ -51,11 +60,13 @@ marcados. `revertir`, que usa el pergamino, salta los marcados y por lo demás n
 | `tipo` | `instante` o `accion` | — |
 | `valor` | t o k | t entero ≥ 0 y ≤ reloj actual (FR-006, FR-007); k entero en 1 … n + 1 (FR-007) |
 
-**Resolución de una consulta por acción k**:
-1. Si k = n + 1: copiar estado actual y cola juntos; no deshacer nada.
-2. Si no: j = ⌈(k − 1) / K⌉; si `puntos[j]` existe, copiar su paquete y deshacer las transacciones
-   j·K … k (j·K − k + 1 ≤ K). Si `puntos[j]` todavía no existe (k está en la cola), copiar estado
-   actual y cola, y deshacer n … k (n − k + 1 < K por construcción).
+**Resolución de una consulta por acción k** (sin copiar el estado; research R3):
+1. Si k = n + 1: el resumen se arma sobre el estado vivo; no se deshace nada.
+2. Si no: j = ⌈(k − 1) / K⌉. Si `puntos[j]` existe, se deshacen **sobre su paquete** las
+   transacciones j·K … k (j·K − k + 1 ≤ K). Si todavía no existe (k está en la cola), se deshacen
+   **sobre el estado vivo** las transacciones n … k (n − k + 1 < K por construcción).
+3. Se arma el resumen y, en un `finally`, se aplican los inversos en orden contrario. Después de la
+   consulta, el paquete o el estado vivo son idénticos a como estaban (FR-005).
 
 **Resolución de una consulta por instante t**: búsqueda binaria en `instantes` de la mayor posición
 i con `instantes[i]` ≤ t; k = i + 1. Si `instantes[i]` = t, responder «antes de #k». Si no,

@@ -13,9 +13,10 @@ sin modificar la partida y sin guardar una copia por acción.
 
 El enfoque es **reconstruir hacia atrás desde el punto de control siguiente**. Cada K acciones, la
 línea copia en un solo paquete el estado de la partida y las transacciones de las K acciones que
-terminan ahí. Para consultar la acción k se toma el primer paquete con m ≥ k, se hace una copia de
-trabajo y se deshacen sobre ella las transacciones m … k con el mecanismo de deshacer que ya usa el
-pergamino. Nunca se deshacen más de K acciones. El instante de cada decisión se guarda en un arreglo
+terminan ahí. Para consultar «antes de la acción k» se toma el primer paquete con m ≥ k − 1, se
+deshacen **sobre el paquete mismo** las transacciones m … k anotando el inverso de cada cambio, se
+arma el resumen y se aplican los inversos para dejarlo como estaba. Nunca se deshacen más de K
+acciones y la consulta no copia el estado (principio VII). El instante de cada decisión se guarda en un arreglo
 contiguo, y una búsqueda binaria propia traduce t a la acción que le corresponde.
 
 La línea se engancha en el historial reversible (archivo de Joshua), no en el motor (archivo de
@@ -49,8 +50,8 @@ revertidas) ≤ 5 (FR-013).
 **Escala**: partidas de hasta 5 000 o más acciones del jugador; criptas publicadas y sintéticas
 deterministas por semilla en `--bench`.
 
-**Incógnitas**: el costo de copiar el estado completo en cada consulta (R3). No bloquea el diseño:
-la primera tarea lo mide y el plan B ya está definido.
+**Incógnitas**: el costo de deshacer y rehacer en sitio con la carga real, y que cada tipo de cambio
+tenga un inverso exacto (R3). La primera tarea lo mide y lo comprueba.
 
 ## Verificación contra la constitución
 
@@ -60,18 +61,19 @@ la primera tarea lo mide y el plan B ya está definido.
 |---|---|
 | I. Estructuras propias | Los arreglos de la línea son `list` usadas como almacenamiento contiguo (permitido). La búsqueda del instante es una búsqueda binaria propia, sin `bisect`. No se usa `dict` ni `set` como índice. `copy`, `pickle` y `tracemalloc` no son estructuras de los problemas evaluados. |
 | II. Acceso por id en O(1) | La línea no busca por id: ubica puntos de control por número de acción (aritmética sobre un arreglo) e instantes por búsqueda binaria. |
-| III. Determinismo | Consultar no toca el azar vivo: se deshace sobre una copia (FR-005). El resultado no depende de K (FR-023, probado con varios K). |
+| III. Determinismo | Consultar deja el azar y todo el estado exactamente como estaban: lo deshecho se rehace en un `try/finally` (FR-005). El resultado no depende de K (FR-023, probado con varios K). |
 | IV. Separación MVC | El resumen se arma en el controlador como líneas de texto; `--replay --hasta` lo imprime sin instanciar la vista. |
 | V. Datos desde el servicio | La consulta no ejecuta reglas ni pide contenido: no hace solicitudes. Un archivo v8 o anterior se reporta incompatible (FR-031). |
 | VI. Presupuesto de solicitudes | Ninguna operación de la línea hace solicitudes HTTP. |
-| VII. Estado reversible sin copias completas | Las únicas copias guardadas son los puntos de control, uno cada K acciones. La copia de trabajo de cada consulta es temporal y se descarta (ver tabla de complejidad). Las acciones rechazadas no llegan a la línea. Las consultas no modifican el estado ni el historial del pergamino. |
+| VII. Estado reversible sin copias completas | Las únicas copias completas en memoria son los puntos de control, uno cada K acciones, también después de cargar (R8). Las consultas no copian: deshacen y rehacen en sitio (R3). Las acciones rechazadas no llegan a la línea. Las consultas dejan el estado y el historial del pergamino como estaban. |
 | VIII. Contratos estables y cambios mínimos | No se toca `logica/motor_juego.py` (Sofía) ni `datos/guardado_binario.py` (Steven): el cambio de v10 lo hace Steven con el contrato de [guardado-v10.md](./contracts/guardado-v10.md). En archivos compartidos (`main.py`, `configuracion.py`, `controller/controlador_juego.py`, `vista/vista_pygame.py`) solo se agregan ramas o banderas. |
 | IX. Rendimiento medido | `--bench` mide K = 10, 50 y 200, sin puntos de control, hacia adelante frente a hacia atrás, y repite las mediciones de P1 de punta a punta (FR-024 a FR-027). Todo se conecta en `main.py --bench`. |
 | X. Especificación primero | spec.md confirmado en `b589c27` y `024e943`. Cada tarea citará sus FR. |
 | XI. Pruebas | Las 1071 pruebas actuales deben seguir pasando. Las nuevas distinguen las que dependen de la spec 003. |
 
-**Resultado**: pasa, con una desviación justificada (copia de trabajo temporal) y una desviación por
-confirmar con el grupo (punto de control extra tras cargar), ambas en la tabla de complejidad.
+**Resultado**: pasa, sin desviaciones. La primera versión tenía dos (una copia de trabajo por
+consulta y un punto de control extra tras cargar); `/speckit-analyze` las marcó como críticas contra
+el principio VII y se corrigieron en R3 y R8.
 
 ## Estructuras de datos elegidas
 
@@ -80,7 +82,7 @@ confirmar con el grupo (punto de control extra tras cargar), ambas en la tabla d
 | Ubicar el punto de control de la acción k | Arreglo contiguo de puntos de control en orden de acción; índice = ⌈(k − 1) / K⌉ (ver [data-model.md](./data-model.md)) | O(1) | Recorrer la lista de puntos de control, O(n / K) (viola FR-019) |
 | Traducir el instante t a una acción | Arreglo contiguo no decreciente de instantes de decisión + búsqueda binaria propia | O(log n) | Recorrido lineal O(n); árbol de búsqueda (más memoria, sin ventaja, porque solo se agrega al final) |
 | Guardar los cambios entre puntos de control | Las transacciones existentes (lista doble de cambios), una por acción, dentro del paquete | Registrar O(1), deshacer O(cambios) | Guardar el estado completo por acción (viola FR-021) |
-| Reconstruir | Copia de trabajo del paquete + deshacer ≤ K transacciones | O(tamaño del estado + cambios de ≤ K acciones) | Re-simular hacia adelante (R1); deshacer desde el estado actual, O(n) |
+| Reconstruir | Deshacer ≤ K transacciones sobre el paquete, anotando inversos, y rehacer al terminar | O(cambios de ≤ K acciones) | Copia de trabajo por consulta (principio VII); re-simular hacia adelante (R1); deshacer desde el estado actual, O(n) |
 | Recortar al usar el pergamino | Quitar del final de los arreglos, descartar paquetes con m > n | O(acciones revertidas) ≤ 5 | Reconstruir la línea desde el principio |
 
 ## Componentes afectados y sus consumidores
@@ -89,8 +91,9 @@ confirmar con el grupo (punto de control extra tras cargar), ambas en la tabla d
 |---|---|---|---|
 | `logica/linea_tiempo.py` (nuevo) | Joshua | La línea: registrar, recortar, puntos de control, consultar | Historial, controlador, replay, `--bench` |
 | `logica/historial_reversible.py` | Joshua | Método para vincular la línea; avisar al cerrar y al deshacer. Sin cambiar firmas existentes. | Motor, controlador, servicio, pruebas del historial |
-| `logica/cambios.py` | Joshua | `TransaccionAccion`: registro aparte solo para la línea (R6) y deshacer parcial mientras se cumpla una condición (R4). Métodos nuevos; `revertir` no cambia. | Historial, servicio de inventario |
+| `logica/cambios.py` | Joshua | `TransaccionAccion`: cambios marcados «solo línea» (R6), deshacer mientras se cumpla una condición sin vaciar la transacción (R4) y el inverso de cada tipo de cambio para rehacer (R3). Métodos nuevos; `revertir` no cambia. | Historial, servicio de inventario |
 | `logica/servicio_inventario.py` | Joshua | Anotar en el registro de la línea recoger/soltar un pergamino y su consumo al retroceder (R6) | Motor, controlador |
+| `service/juego_service.py` | Steven y Joshua | Crear y vincular la línea al iniciar una partida, en el mismo punto donde hoy se vincula el historial (T010). Solo un método o rama nueva. | Controlador, replay, `--bench`, pruebas del servicio |
 | `controller/resumen_historia.py` (nuevo) | Joshua | Arma las líneas del resumen (FR-004) a partir de un estado | Controlador, replay |
 | `controller/controlador_juego.py` | Steven y Joshua | Comandos `historia <t>`, `historia #k` y el del informe de resolubilidad (T050); línea de resolubilidad al iniciar (T049) | Vistas, pruebas del controlador |
 | `controller/ejecutor_replay.py` | Joshua | Parámetro `hasta` en `reproducir` | `main.py`, pruebas del replay |
@@ -120,7 +123,7 @@ confirmar con el grupo (punto de control extra tras cargar), ambas en la tabla d
 | Tiempo de `historia` (peor caso y promedio) con 5 000 acciones | SC-001, FR-024 | K = 10, 50, 200; sin puntos de control |
 | Memoria retenida por la línea | FR-021, SC-005 | Mismos K; 2 500 frente a 5 000 acciones |
 | Hacia atrás frente a hacia adelante | FR-024, §5.5 | Cripta sintética con todo el contenido cargado |
-| Copia de trabajo frente a deshacer y rehacer en sitio | R3 | Solo si la copia supera la mitad del presupuesto |
+| Deshacer y rehacer en sitio frente a copia de trabajo por consulta | R3 | La copia solo como alternativa descartada |
 | Retroceso con pergamino de punta a punta frente a copia completa | FR-025 | Carga de la Parte II |
 | Replay completo y rechazo por versión | FR-026 | — |
 | Vista ordenada del inventario y rechazo por capacidad | FR-027 | Peso, valor y nombre |
@@ -178,13 +181,18 @@ lo existente solo gana métodos o ramas de comando.
 
 ## Seguimiento de complejidad
 
-| Desviación | Por qué hace falta | Alternativa más simple descartada |
+Sin desviaciones de la constitución.
+
+Las dos que tenía la primera versión del plan se corrigieron después de `/speckit-analyze`:
+
+| Desviación original | Por qué violaba la constitución | Corrección |
 |---|---|---|
-| Copia de trabajo temporal del punto de control en cada consulta | Deshacer es destructivo y el punto de control debe seguir intacto para la siguiente consulta. La copia dura lo que la consulta y nunca se guarda: no es un punto de control más (§3.6 limita los que se **guardan**). | Deshacer sobre el punto de control y rehacer (plan B de R3, más código delicado); re-simular (R1). |
-| Tras cargar una partida puede haber un punto de control extra dentro de una misma ventana de K acciones | La cola de acciones posteriores al último punto de control se guarda junto con su estado para no perderla (FR-028). | Re-simular la cola al cargar, con el problema de contenido de R1. **Se consulta con el grupo** antes de implementar. |
+| Copia de trabajo temporal del punto de control en cada consulta | Principio VII: las únicas copias completas en memoria son los puntos de control | Deshacer y rehacer en sitio (R3) |
+| Punto de control extra tras cargar una partida | §3.6, FR-017 y principio VII: como máximo uno cada K | Serializar juntos el estado vivo y la línea; al cargar, el estado vivo sale de la línea (R8) |
 
 ## Revisión de la constitución después del diseño
 
 Se revisó de nuevo con `data-model.md` y los contratos: no aparecen dependencias prohibidas, el
-motor de Sofía y el guardado de Steven no se modifican, y cada requisito de rendimiento tiene su
-medición en `--bench`. Las dos desviaciones siguen siendo las de la tabla anterior.
+motor de Sofía y el guardado de Steven no se modifican (el cambio de v10 lo hace Steven con el
+contrato), las consultas no copian el estado y cada requisito de rendimiento tiene su medición en
+`--bench`.

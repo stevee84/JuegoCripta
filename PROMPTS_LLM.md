@@ -1671,6 +1671,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 29 | Clarificación de la línea de tiempo (`/speckit-clarify`) | 06/11/2026 |
 | 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
 | 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
+| 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -1810,6 +1811,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `specs/004-linea-de-tiempo/tasks.md` con 50 tareas en 12 fases: preparación (T001 mide el riesgo R3 antes de construir), base, una fase por historia de usuario, interfaz §7.3 con T049 y T050 de la spec 002, mapa conocido, mediciones y cierre. Los 6 casos del Apéndice B tienen prueba (tabla al final del archivo). Tres tareas quedan marcadas como dependientes: T034 y T035 del guardado v10 de Steven y T040 de la spec 003.
 
 **Qué hubo que corregir.** La revisión automática de trazabilidad encontró que FR-020 (estado del azar si se re-simula) no tenía tarea; se agregó a T042, que es la única parte que re-simula.
+
+## Prompt 32 — Análisis de la línea de tiempo y correcciones (`/speckit-analyze`)
+
+> **Prompt**
+>
+> /speckit-analyze Analiza la consistencia de specs/004-linea-de-tiempo (spec.md, plan.md, tasks.md, research.md, data-model.md, contracts/) entre sí, con la constitución v1.0.0 y con el enunciado de la Parte II (§3.6, §5.5, §6.1, §7.3, Apéndice B). Informe en español.
+
+**Qué se obtuvo.** Un informe con cobertura de 100 % (los 31 FR y los 6 SC tienen tareas; ninguna tarea sin requisito) y 9 hallazgos: 2 críticos, 4 medios y 3 bajos. Los dos críticos contradecían el principio VII de la constitución: (C1) el plan hacía una copia de trabajo del estado en cada consulta, y la constitución solo permite como copias completas los puntos de control; (C2) después de cargar una partida podía quedar un punto de control extra, contra «no más de una cada K acciones» (§3.6, FR-017).
+
+**Qué hubo que corregir.** Con la aprobación de Joshua se corrigieron el plan y sus artefactos; `spec.md` no cambió. (C1) La consulta ahora deshace en sitio, sobre el punto de control o el estado vivo, anotando el inverso de cada cambio, y rehace en un `finally` (research R3). (C2) El guardado v10 serializa juntos el estado vivo y la línea, y al cargar el estado sale de la línea (research R8 y `contracts/guardado-v10.md`; hay que acordarlo con Steven). Medios: se agregó `service/juego_service.py` a la tabla de componentes, T001 ahora mide deshacer y rehacer en sitio, y las tareas de Steven se renombraron 002-T049 y 002-T050 para no confundirlas con las propias. Bajos: se agregaron pruebas con la partida terminada, con dos pergaminos seguidos y con K mayor que la cantidad de acciones; `pickle` quedó anotado como límite conocido. Los dos errores críticos eran del diseño que propuso Claude en el Prompt 30, no del enunciado.
 
 # Steven Moya Porras — Parte II
 
