@@ -2034,6 +2034,32 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 51 — Bloque preparatorio desbloqueado de US2 (T018–T023)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, preparar en un único bloque las pruebas desbloqueadas T018–T023. Reutilizar oráculos de T042 y cobertura existente para rutas/cazadores, respetar G1/G2, no inventar firmas/campos/sustitutos ni usar skips, distinguir oráculo de cazador productivo, ejecutar foco/regresiones, marcar solo criterios cumplidos y entregar tareas completadas/preparadas/bloqueadas.
+
+**Precondiciones y clasificación.** La ejecución inició limpia y alineada en `Sofia@8eab2213f2d24f4b436107c33d532ffd5091666f`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron los seis criterios, Phase 4, plan y contratos. El checkout aún no contiene `rango` en `Enemigo`, costo en `Puerta`, `logica/rutas_ponderadas.py` ni firmas acordadas. Por ello T018 depende de G2; T020 de G2/T027; T021 de costo, resultado y T027–T028; T022 explícitamente de G1/T002. T019 puede cerrarse con el oráculo sintético; de T023 solo está desbloqueada la regresión de conductas anteriores.
+
+**T019 completada sin producción.** Se creó `tests/test_logica/test_rutas_ponderadas.py`, que importa los auxiliares locales de T042 desde `tests.test_bench_terreno_cazador` y declara expresamente que no prueba al cazador. Los casos verifican: una ruta de tres pasos/costo 9 frente a una directa/costo 20; dos rutas de costo 5 con primeras vecinas 2 y 10, eligiendo 2 al cambiar el orden; ciclos con salida final cerrada y destino inaccesible; límite exacto 9; límites 8 y 0 fuera de rango. Cada caso comprueba estado, alcance/rango, costo total, primera vecina y costo del primer paso cuando corresponde. No se fijó firma productiva ni se importó un algoritmo futuro.
+
+**T023 preparada y abierta.** Se amplió `tests/test_logica/test_comportamiento_enemigos.py` usando clases actuales: un guardián separado conserva `ESPERAR`, un errante con única salida abierta conserva `MOVER`, y un rastreador con rastros empatados en salas 2/10 conserva `SEGUIR_RASTRO` hacia ID 2. Esto protege comportamientos existentes, pero no se marca T023 porque `cazador` aún no existe para comprobar que permanezca separado. No se usó el retorno del oráculo como decisión de enemigo.
+
+**Bloqueos concretos.** T018 espera validación estricta/identificación de ficha para `rango` de Steven. T020 espera rango 0 materializado y el comportamiento T027 para probar prioridad de ataque sin sustituirlo con la rama genérica actual. T021 espera T027–T028 y costos de salida para comprobar un solo paso, no atacar en el mismo evento e independencia real de contenido descargado/conocimiento del jugador. T022 espera la representación y firma acordadas en T002 para origen=destino, sin ruta, límite e inmutabilidad; no se creó un contrato imaginario.
+
+**Resultados.** Base relacionada antes de editar (`T042`, comportamientos y rastro): **49 passed in 0.12s**. Foco T019/T042/comportamientos: **27 passed in 0.10s**. Regresiones relacionadas de rutas auxiliares, comportamiento, rastro, integración, motor y movimientos rechazados: **106 passed in 0.23s**. Sin skips, xfails ni suite completa. T019 quedó marcada; T018/T020/T021/T022/T023 permanecen abiertas.
+
+**Cierre.** Solo cambiaron `tests/test_logica/test_rutas_ponderadas.py`, `tests/test_logica/test_comportamiento_enemigos.py`, evidencia en `tasks.md` y este registro. No se modificaron producción, clases de compañeros, DTO, cazadores, terreno, guardado, benchmarks o `main.py`; sin commit, push, merge o cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

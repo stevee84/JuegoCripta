@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, T042 completó el oráculo independiente de rutas para benchmark y T073–T075 completaron el proveedor aislado de medición; las 66 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
+**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, T019 completó los casos sintéticos desbloqueados de rutas de US2, T042 completó el oráculo independiente de rutas para benchmark y T073–T075 completaron el proveedor aislado de medición; las 65 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T042/T073–T075 marcadas y 66 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T019/T042/T073–T075 marcadas y 65 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -104,11 +104,13 @@ description: "Tareas ejecutables para Terreno y cazador"
 ### Tests for User Story 2
 
 - [ ] T018 [P] [US2] Sofía — ampliar `tests/test_datos/test_terreno_cazador_datos.py` con AC-021: `rango` cumple literalmente “entero mayor o igual que 0”; ausencia, negativo, booleano, texto o fracción rechazan la ficha identificándola y sin default (FR-009, FR-017, FR-018).
-- [ ] T019 [P] [US2] Sofía — crear `tests/test_logica/test_rutas_ponderadas.py` con oráculo de rutas simples para AC-B01, AC-B02, AC-005, AC-B03, AC-B04 y AC-022, permutando el orden incidental de salidas y verificando mínimo `(costo_total, primera_vecina_id)` (FR-008–FR-011, FR-013, FR-015).
+- [x] T019 [P] [US2] Sofía — crear `tests/test_logica/test_rutas_ponderadas.py` con oráculo de rutas simples para AC-B01, AC-B02, AC-005, AC-B03, AC-B04 y AC-022, permutando el orden incidental de salidas y verificando mínimo `(costo_total, primera_vecina_id)` (FR-008–FR-011, FR-013, FR-015).
 - [ ] T020 [P] [US2] Sofía — crear `tests/test_logica/test_cazador_ponderado.py` con AC-004 y AC-023 para probar que compartir sala produce `ATACAR` antes del buscador incluso con rango 0 y salidas abiertas (FR-007, FR-009, FR-018).
 - [ ] T021 [P] [US2] Sofía — crear `tests/test_logica/test_cazador_integracion.py` con AC-006 y AC-007: mueve solo la primera salida, cobra esa salida y decide igual con contenidos remotos descargados distintos (FR-010, FR-012, FR-013, FR-018).
 - [ ] T022 [P] [US2] Sofía — crear `tests/test_logica/test_contrato_rutas_ponderadas.py` después de T002 para probar las firmas acordadas, IDs enteros estrictos, origen=destino, ausencia de ruta, límite inclusivo y ausencia de mutaciones/descargas (FR-008–FR-011, FR-013, FR-017).
 - [ ] T023 [P] [US2] Sofía — ampliar `tests/test_logica/test_comportamiento_enemigos.py` para asegurar que guardianes, errantes y rastreadores conservan decisiones anteriores mientras el nuevo comportamiento `cazador` permanece separado (FR-004, FR-005, FR-018).
+
+**Evidencia preparatoria T018–T023 (2026-11-09)**: T019 reutiliza `ConexionPrueba`, `ResultadoRutaPrueba` y `oraculo_rutas_simples` de T042 sin importar producción. Sus grafos deterministas cubren camino más largo con menor costo, empate entre vecinas 2/10, orden de conexiones permutado, puertas cerradas, destino inaccesible, ciclos, rango exacto, fuera de rango y rango cero; verifica costo total, primera vecina y costo del paso. T023 queda preparada pero abierta: una regresión adicional confirma las decisiones heredadas `ESPERAR`, `MOVER` y `SEGUIR_RASTRO` de guardián/errante/rastreador, incluido empate numérico del rastro, pero todavía no existe `cazador` productivo cuya separación probar. T018 sigue bloqueada por el `rango` validado de G2; T020 por rango/cazador de G2 y T027; T021 por costos/paso e integración T027–T028, necesarios para probar un único movimiento e independencia de contenido/conocimiento; T022 está explícitamente bloqueada por la firma de G1/T002. No se crearon sustitutos, campos o skips. Foco: `27 passed in 0.10s`; regresiones relacionadas: `106 passed in 0.23s`. Las pruebas de oráculo no se presentan como evidencia del cazador futuro.
 
 ### Implementation for User Story 2
 
