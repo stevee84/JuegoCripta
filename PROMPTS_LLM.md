@@ -1934,6 +1934,58 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 47 — T072–T075: benchmark aislado del índice de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en T072–T075. Comparar construcción de lista/índice, consultas por ID frente a búsqueda lineal y vinculación indexada frente a resolución lineal, con varias cargas deterministas y alternativas lineales exclusivas del benchmark. Separar operaciones, incluir todo su trabajo medido, excluir fixtures/red/render/impresión, informar entorno y estadísticas, conectar por el mecanismo de `--bench` sin editar unilateralmente `main.py`, probar esquema/equivalencia/conexión, no tocar producción ni T076 y marcar solo criterios cumplidos.
+
+**Precondiciones.** La ejecución inició limpia en `Sofia@7ec8d84f1e0c2a519d7383e798d4cd1ce623a1da`, alineada con `origin/Sofia`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25. No existía `.specify/extensions.yml`. Se leyeron T072–T075 y `plan.md` §7 antes de editar. El plan y T049 reservan a una integración conjunta el registro en `main.py`, por lo que no se modificó ese archivo.
+
+**Fase roja y proveedor.** `tests/test_bench_mapa_cripta.py` inició con **4 failed, 1 skipped** por ausencia de `benchmarks.mapa_cripta_integrante1`. El nuevo proveedor usa semilla 1729 y densidades 1/4. Genera salas, puertas, consultas y mapas equivalentes fuera del cronómetro; mide con `perf_counter_ns`, un calentamiento descartado y repeticiones configurables. Cada fila informa carga, semilla, Python/plataforma/procesador/reloj, calentamiento, repeticiones, `ns_por_lote`, mediana, p95, máximo, mínimo, muestras y trabajo. Construcción añade memoria superficial separada para lista e índice, excluyendo instancias compartidas.
+
+**Equivalencia previa.** La construcción indexada y la alternativa lineal benchmark-local reciben las mismas instancias en el mismo orden. Las consultas repiten aciertos al inicio/medio/final y dos ausencias, comprobando la identidad o `None` de toda la secuencia antes de medir. La vinculación construye grafos equivalentes para varios `V/E`, compara orden de salas y puertas, IDs y destinos, y verifica que cada `Puerta.destino_sala` sea la instancia canónica. Construcción, consultas y vinculación se cronometran en filas independientes; no se incluyeron red, renderizado, impresión ni generación de fixtures.
+
+**Conexión y pruebas.** `PROVEEDORES = (medir_mapa_cripta,)` cumple la interfaz de `benchmarks.integrante3.ejecutar`. El contrato aislado terminó en **4 passed, 1 skipped**; benchmark común + proveedor previo en **17 passed, 1 skipped**; pruebas relevantes de benchmark/mapa/copia/restricciones en **84 passed, 1 skipped, 2 subtests in 2.24s**; suite completa final con `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short` en **1113 passed, 1 skipped, 2 subtests in 99.41s**. La única omisión es la prueba que exige filas del mapa en el `main.py --bench` real y declara su dependencia de T049.
+
+**Medición ejecutada.** Se invocó `benchmarks.integrante3.ejecutar(repeticiones=9, tamanos=(32, 128, 512), proveedores=PROVEEDORES)` y se obtuvieron 30 filas en Windows 11, Python 3.12.10, Intel64 Family 6 Model 154, reloj `perf_counter_ns`; cada fila descartó un calentamiento y usó semilla 1729. En la ejecución final, para 512 salas: búsqueda indexada mediana **486100 ns** frente a lineal **13630700 ns**; vinculación con 2048 salidas mediana **376700 ns** frente a lineal **9146900 ns**; construcción con 512 salidas mediana **675400 ns** para lista+índice frente a **3887900 ns** lineal. La memoria superficial de contenedores para 512 salas fue lista **4216 B** + índice **114888 B**, frente a lista **4216 B** sin índice; incluye contenedores, buckets y tuplas de entradas, pero excluye las instancias/IDs compartidos. El resultado temporal completo quedó fuera del repositorio en `%TEMP%\mapa_cripta_t072_t075.json`; el primer intento de escribir `/tmp/opencode` falló únicamente por traducción de ruta del Python de Windows y se repitió correctamente.
+
+**Cierre y pendientes.** T073–T075 cumplieron y quedaron marcadas. T072 permanece abierta: esquema, equivalencia y conexión por la interfaz estándar pasan, pero `main.py --bench` aún no registra el proveedor; completarlo corresponde a T049 con el propietario. T076 no se modificó. No se editaron producción de mapa, rutas, cazadores, guardado, estructuras compartidas ni proveedores ajenos. Los tiempos son evidencia sintética complementaria y **no** demuestran cumplimiento del ciclo de 20 ms. Sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 48 — Revisión de cierre del benchmark de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Revisar únicamente el cierre del benchmark de `MapaCripta`: inspeccionar las muestras de construcción de 512 salas y el cálculo de p95, comprobar equivalencia y que memoria quede fuera del tiempo, repetir con 5 calentamientos/30 repeticiones sin eliminar extremos, guardar ambos resultados en `benchmarks/resultados/`, revisar el skip de T072 e identificar —sin implementar— la integración necesaria en `main.py`. Mantener T072/T076 abiertas, no repetir la suite completa y no hacer commit/push/merge.
+
+**Auditoría del resultado original.** Se preservó byte por byte el JSON temporal previo como `benchmarks/resultados/mapa_cripta_original_c1_r9_32-128-512.json` (36190 bytes, SHA-256 `c81ecc5a6514b529e844a3d996f155e442b4c33001df88a32c0301c9f7c98af9`). Para construcción con 512 salas/512 salidas, las nueve muestras indexadas fueron `[647100, 655200, 33018900, 661100, 675400, 692500, 645600, 1168900, 932200]` ns y las lineales `[4211300, 3684000, 3818400, 3887900, 3948400, 3742000, 3612900, 3961800, 4040000]` ns. `_percentil_95` usa nearest-rank: `ceil(0.95 × 9) = 9`, así que con nueve repeticiones p95 siempre es la novena muestra ordenada, es decir, el máximo. Por eso el p95 indexado original es `33018900 ns`; no se descartó esa muestra.
+
+**Equivalencia y frontera temporal comprobadas.** Para cada repetición, `fixtures_construccion` entrega exactamente el mismo objeto lista y las mismas 512 instancias, en el mismo orden, a `_construir_indexado` y `_construir_lineal`; ambas ejecutan 512 altas y la validación previa confirma la misma huella de IDs e identidad. La equivalencia es lógica, no de operaciones internas: una alternativa mantiene lista+tabla hash y la otra busca duplicados linealmente. Ambas usan la misma envoltura `_operacion_construccion`, incluida su comprobación final de longitud. Las funciones `_memoria_indice`/`_memoria_lineal` se evalúan al preparar los argumentos de `_fila`, antes de que `_medir_operaciones` abra cada ventana `perf_counter_ns`; la inspección de memoria es distinta por estructura, pero no entra en los tiempos de ninguna alternativa.
+
+**Repetición ampliada.** Se estableció `benchmarks.mapa_cripta_integrante1.CALENTAMIENTO = 5` y se ejecutó `medir_mapa_cripta(repeticiones=30, tamanos=(512,))`, conservando todas las muestras en `benchmarks/resultados/mapa_cripta_repeticion_c5_r30_512.json`. Entorno: Python 3.12.10, Windows 11 `10.0.26200`, Intel64 Family 6 Model 154, `perf_counter_ns`, semilla 1729. Para lista+índice: mínimo `597400`, mediana `639950`, p95 `685600`, máximo `718600` ns. Para lista lineal: mínimo `4039600`, mediana `4484950`, p95 `4737100`, máximo `4995200` ns. Con 30 muestras, nearest-rank selecciona `ceil(28.5) = 29`, la penúltima muestra ordenada; el máximo permanece informado aparte. El archivo declara cinco calentamientos, 30 repeticiones, método de percentil y política de no eliminar extremos.
+
+**Observaciones frente a causas.** Está observado que la corrida original contiene una muestra indexada de `33018900 ns`, muy por encima de sus otras ocho, y que la repetición ampliada no reproduce un extremo comparable. Está comprobado que ese extremo se conservó y que, por nearest-rank con nueve muestras, determina el p95 original. No se instrumentaron pausas del sistema, recolector, cambios de frecuencia ni otros eventos externos, por lo que la causa de esa muestra no está establecida y no se atribuye a GC, planificación del sistema o hardware. También está comprobado que la memoria no fue medida dentro del cronómetro; no se afirma que el orden secuencial de las alternativas elimine todo posible efecto ambiental.
+
+**T072 y conexión pendiente.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short tests/test_bench_mapa_cripta.py` produjo **4 passed, 1 skipped in 0.18s**. El único skip es `test_main_bench_incluye_filas_del_mapa`, con razón explícita T049; esquema, equivalencia y conexión por la interfaz estándar pasan. `main.py` actualmente concatena solo `benchmarks.integrante2.PROVEEDORES + benchmarks.bench_ampliado.PROVEEDORES`. El cambio pendiente es importar `benchmarks.mapa_cripta_integrante1.PROVEEDORES` con alias y concatenarlo exactamente una vez en la tupla entregada a `benchmarks.integrante3.ejecutar`, conservando los proveedores actuales; después se habilita la prueba omitida. T049 exige coordinación de Sofía con el propietario de `main.py`; el historial del archivo y de su integración `--bench` identifica a Steven Moya Porras como mantenedor actual. No se modificó `main.py`.
+
+**Cierre.** Solo se añadieron los dos JSON de resultados y este registro. T072 y T076 siguen abiertas. No se modificaron producción, proveedor, pruebas, `tasks.md` ni `main.py`; no se repitió la suite completa y no hubo commit, push o merge.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

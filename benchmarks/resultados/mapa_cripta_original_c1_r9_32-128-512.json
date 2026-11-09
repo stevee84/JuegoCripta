@@ -1,0 +1,1338 @@
+{
+  "entorno_ejecutor": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "reloj": "perf_counter_ns",
+    "calentamiento": 1,
+    "semilla_inputs": 123
+  },
+  "tamanos": [
+    32,
+    128,
+    512
+  ],
+  "repeticiones": 9,
+  "mediciones": [
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 32800,
+      "p95": 35400,
+      "maximo": 35400,
+      "minimo": 32600,
+      "muestras": [
+        35400,
+        33200,
+        32800,
+        32600,
+        32800,
+        32800,
+        32900,
+        32600,
+        34000
+      ],
+      "trabajo": {
+        "altas": 32
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 312,
+        "indice_bytes": 7336
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 22100,
+      "p95": 23600,
+      "maximo": 23600,
+      "minimo": 20200,
+      "muestras": [
+        23100,
+        22100,
+        22300,
+        23600,
+        22000,
+        21700,
+        22200,
+        21100,
+        20200
+      ],
+      "trabajo": {
+        "altas": 32
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 312,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true,
+        "huella_enlaces": "1887e32e8687d5d493bdab7b63b39c6cd849f594b2367a53bf78ba6a13cb71e9",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 7100,
+      "p95": 11100,
+      "maximo": 11100,
+      "minimo": 6200,
+      "muestras": [
+        11100,
+        10300,
+        7900,
+        6700,
+        7100,
+        7100,
+        6900,
+        6400,
+        6200
+      ],
+      "trabajo": {
+        "salidas": 32
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true,
+        "huella_enlaces": "1887e32e8687d5d493bdab7b63b39c6cd849f594b2367a53bf78ba6a13cb71e9",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 15700,
+      "p95": 19200,
+      "maximo": 19200,
+      "minimo": 12500,
+      "muestras": [
+        14700,
+        15000,
+        14400,
+        16700,
+        17900,
+        19200,
+        18900,
+        15700,
+        12500
+      ],
+      "trabajo": {
+        "salidas": 32
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 128,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 37900,
+      "p95": 40100,
+      "maximo": 40100,
+      "minimo": 37000,
+      "muestras": [
+        40100,
+        39000,
+        38700,
+        39000,
+        37900,
+        37100,
+        37000,
+        37600,
+        37600
+      ],
+      "trabajo": {
+        "altas": 32
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 312,
+        "indice_bytes": 7336
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 128,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 17900,
+      "p95": 18700,
+      "maximo": 18700,
+      "minimo": 17500,
+      "muestras": [
+        18700,
+        18600,
+        17900,
+        17700,
+        17900,
+        18300,
+        18000,
+        17600,
+        17500
+      ],
+      "trabajo": {
+        "altas": 32
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 312,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 128,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true,
+        "huella_enlaces": "6a4c95c8195ecc474a879fb23a3a2f4348893a878d48bf165f88f931ddaefac7",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 21300,
+      "p95": 21800,
+      "maximo": 21800,
+      "minimo": 20000,
+      "muestras": [
+        21500,
+        21100,
+        21700,
+        21800,
+        21400,
+        21000,
+        21300,
+        20000,
+        20000
+      ],
+      "trabajo": {
+        "salidas": 128
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 128,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "ecf55780aee5d177c2e11d60749fcd6ddd2d433ebe6f03d1505cf3f46bdff174",
+        "identidad_instancias": true,
+        "huella_enlaces": "6a4c95c8195ecc474a879fb23a3a2f4348893a878d48bf165f88f931ddaefac7",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 42800,
+      "p95": 45000,
+      "maximo": 45000,
+      "minimo": 42500,
+      "muestras": [
+        44000,
+        42500,
+        45000,
+        44300,
+        42800,
+        42600,
+        42600,
+        43100,
+        42800
+      ],
+      "trabajo": {
+        "salidas": 128
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "tabla_hash_propia",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "consultas": 160,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "65c88fdc15649859f3e2a18aae944a71f32a2be7e189c9c4c76bcd64249447ec"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 25500,
+      "p95": 26700,
+      "maximo": 26700,
+      "minimo": 25000,
+      "muestras": [
+        26700,
+        25300,
+        25000,
+        25800,
+        25500,
+        26000,
+        25100,
+        25300,
+        25800
+      ],
+      "trabajo": {
+        "consultas": 160
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "recorrido_lineal_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "salidas_por_sala": 1,
+        "consultas": 160,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "65c88fdc15649859f3e2a18aae944a71f32a2be7e189c9c4c76bcd64249447ec"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 64100,
+      "p95": 66500,
+      "maximo": 66500,
+      "minimo": 63000,
+      "muestras": [
+        66500,
+        64100,
+        63600,
+        65800,
+        63000,
+        64200,
+        65600,
+        63100,
+        63800
+      ],
+      "trabajo": {
+        "consultas": 160
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 236500,
+      "p95": 322500,
+      "maximo": 322500,
+      "minimo": 171900,
+      "muestras": [
+        177400,
+        218800,
+        171900,
+        236500,
+        248100,
+        290400,
+        187400,
+        261100,
+        322500
+      ],
+      "trabajo": {
+        "altas": 128
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 1080,
+        "indice_bytes": 29064
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 255900,
+      "p95": 309700,
+      "maximo": 309700,
+      "minimo": 231500,
+      "muestras": [
+        309700,
+        277100,
+        306000,
+        265000,
+        255900,
+        240200,
+        246800,
+        234800,
+        231500
+      ],
+      "trabajo": {
+        "altas": 128
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 1080,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true,
+        "huella_enlaces": "db9554416c472c227b652038b0a23cb0b7a034623c6a92c0f0411893e8959ed3",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 29100,
+      "p95": 37900,
+      "maximo": 37900,
+      "minimo": 28000,
+      "muestras": [
+        28800,
+        32200,
+        28600,
+        29100,
+        28000,
+        35100,
+        37900,
+        35700,
+        28000
+      ],
+      "trabajo": {
+        "salidas": 128
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true,
+        "huella_enlaces": "db9554416c472c227b652038b0a23cb0b7a034623c6a92c0f0411893e8959ed3",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 181500,
+      "p95": 193000,
+      "maximo": 193000,
+      "minimo": 179000,
+      "muestras": [
+        188500,
+        187100,
+        193000,
+        189600,
+        181500,
+        180500,
+        179100,
+        179000,
+        180700
+      ],
+      "trabajo": {
+        "salidas": 128
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 512,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 150200,
+      "p95": 169100,
+      "maximo": 169100,
+      "minimo": 147900,
+      "muestras": [
+        153500,
+        150400,
+        148300,
+        169100,
+        164900,
+        150200,
+        148100,
+        147900,
+        148100
+      ],
+      "trabajo": {
+        "altas": 128
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 1080,
+        "indice_bytes": 29064
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 512,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 238100,
+      "p95": 258500,
+      "maximo": 258500,
+      "minimo": 226800,
+      "muestras": [
+        255900,
+        255000,
+        238100,
+        243600,
+        236300,
+        226800,
+        231800,
+        233600,
+        258500
+      ],
+      "trabajo": {
+        "altas": 128
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 1080,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 512,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true,
+        "huella_enlaces": "6e5db78bf88e3893df4f908690c7478c8776e3e0c5d42134f85e0ac22e423800",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 117400,
+      "p95": 322100,
+      "maximo": 322100,
+      "minimo": 114000,
+      "muestras": [
+        322100,
+        125100,
+        116200,
+        116300,
+        117400,
+        122700,
+        116900,
+        114000,
+        138600
+      ],
+      "trabajo": {
+        "salidas": 512
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 512,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "bcfc579bbc2b5b7688adcf3712c419da37851d497db429a55be2d1930e8df02a",
+        "identidad_instancias": true,
+        "huella_enlaces": "6e5db78bf88e3893df4f908690c7478c8776e3e0c5d42134f85e0ac22e423800",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 656300,
+      "p95": 979900,
+      "maximo": 979900,
+      "minimo": 631300,
+      "muestras": [
+        631300,
+        651500,
+        642300,
+        646400,
+        700900,
+        656300,
+        922400,
+        979900,
+        831800
+      ],
+      "trabajo": {
+        "salidas": 512
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "tabla_hash_propia",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "consultas": 640,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "ff786e5c5bfefcd67dcacdfcde6843852168349648f3b0a0fe6f0ca2e8d7b00b"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 100100,
+      "p95": 102600,
+      "maximo": 102600,
+      "minimo": 99100,
+      "muestras": [
+        102600,
+        100900,
+        100200,
+        99200,
+        99100,
+        99300,
+        99800,
+        100900,
+        100100
+      ],
+      "trabajo": {
+        "consultas": 640
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "recorrido_lineal_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "salidas_por_sala": 1,
+        "consultas": 640,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "ff786e5c5bfefcd67dcacdfcde6843852168349648f3b0a0fe6f0ca2e8d7b00b"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1026600,
+      "p95": 1184500,
+      "maximo": 1184500,
+      "minimo": 983500,
+      "muestras": [
+        1184500,
+        1041400,
+        1071400,
+        1026600,
+        1019800,
+        983500,
+        1080900,
+        1014800,
+        1026000
+      ],
+      "trabajo": {
+        "consultas": 640
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 675400,
+      "p95": 33018900,
+      "maximo": 33018900,
+      "minimo": 645600,
+      "muestras": [
+        647100,
+        655200,
+        33018900,
+        661100,
+        675400,
+        692500,
+        645600,
+        1168900,
+        932200
+      ],
+      "trabajo": {
+        "altas": 512
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 4216,
+        "indice_bytes": 114888
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3887900,
+      "p95": 4211300,
+      "maximo": 4211300,
+      "minimo": 3612900,
+      "muestras": [
+        4211300,
+        3684000,
+        3818400,
+        3887900,
+        3948400,
+        3742000,
+        3612900,
+        3961800,
+        4040000
+      ],
+      "trabajo": {
+        "altas": 512
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 4216,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true,
+        "huella_enlaces": "d2f7d9e1f98529b778d7bfe4d4d257dc53abf51f0e5ba935d9847d61a8a2ea9e",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 151100,
+      "p95": 211500,
+      "maximo": 211500,
+      "minimo": 129900,
+      "muestras": [
+        205200,
+        211500,
+        151100,
+        151100,
+        139000,
+        129900,
+        134000,
+        180200,
+        155200
+      ],
+      "trabajo": {
+        "salidas": 512
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true,
+        "huella_enlaces": "d2f7d9e1f98529b778d7bfe4d4d257dc53abf51f0e5ba935d9847d61a8a2ea9e",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2541000,
+      "p95": 3081200,
+      "maximo": 3081200,
+      "minimo": 2425700,
+      "muestras": [
+        2574100,
+        2861400,
+        3081200,
+        2541000,
+        2484400,
+        2440400,
+        2477000,
+        2690000,
+        2425700
+      ],
+      "trabajo": {
+        "salidas": 512
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 2048,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 602900,
+      "p95": 629200,
+      "maximo": 629200,
+      "minimo": 595600,
+      "muestras": [
+        629200,
+        610400,
+        614700,
+        614700,
+        597100,
+        600800,
+        602900,
+        595600,
+        600000
+      ],
+      "trabajo": {
+        "altas": 512
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 4216,
+        "indice_bytes": 114888
+      }
+    },
+    {
+      "medicion": "mapa_construccion_lista_lineal_alternativa",
+      "alternativa": "lista_lineal_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 2048,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3613600,
+      "p95": 4164000,
+      "maximo": 4164000,
+      "minimo": 3500900,
+      "muestras": [
+        4134600,
+        4164000,
+        3613600,
+        3910500,
+        3602000,
+        3562700,
+        3500900,
+        3608500,
+        3775800
+      ],
+      "trabajo": {
+        "altas": 512
+      },
+      "fixture_fuera": true,
+      "memoria": {
+        "alcance": "contenedores_sin_instancias_compartidas",
+        "lista_bytes": 4216,
+        "indice_bytes": 0
+      }
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "vinculacion_indexada",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 2048,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true,
+        "huella_enlaces": "dfd4bc54bf1e8a6099b7e587b7690e8ac8f4e47b4cabc3efaa71f5133de05534",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 376700,
+      "p95": 433800,
+      "maximo": 433800,
+      "minimo": 352200,
+      "muestras": [
+        433800,
+        430700,
+        391300,
+        376700,
+        353300,
+        352200,
+        357000,
+        408400,
+        373300
+      ],
+      "trabajo": {
+        "salidas": 2048
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_vinculacion_salidas",
+      "alternativa": "resolucion_lineal_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 2048,
+        "salidas_por_sala": 4,
+        "huella_orden_ids": "0ca32d95bac651ff40ad00589a0cd26af1ac7250a79008a150453c95def1ef84",
+        "identidad_instancias": true,
+        "huella_enlaces": "dfd4bc54bf1e8a6099b7e587b7690e8ac8f4e47b4cabc3efaa71f5133de05534",
+        "identidad_canonica": true
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 9146900,
+      "p95": 10785800,
+      "maximo": 10785800,
+      "minimo": 8634100,
+      "muestras": [
+        8756900,
+        9123500,
+        9961300,
+        8774900,
+        10785800,
+        9201700,
+        9146900,
+        10004700,
+        8634100
+      ],
+      "trabajo": {
+        "salidas": 2048
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "tabla_hash_propia",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "consultas": 2560,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "307ef6efa01e630a28bfba51171be96241d07f1decb11a9fb9d4258dd0d5715c"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 486100,
+      "p95": 536700,
+      "maximo": 536700,
+      "minimo": 389500,
+      "muestras": [
+        536700,
+        499900,
+        519100,
+        389500,
+        422500,
+        396700,
+        486100,
+        502700,
+        399100
+      ],
+      "trabajo": {
+        "consultas": 2560
+      },
+      "fixture_fuera": true
+    },
+    {
+      "medicion": "mapa_busqueda_id",
+      "alternativa": "recorrido_lineal_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "salidas_por_sala": 1,
+        "consultas": 2560,
+        "patron": "inicio_medio_final_dos_ausencias",
+        "huella_resultados": "307ef6efa01e630a28bfba51171be96241d07f1decb11a9fb9d4258dd0d5715c"
+      },
+      "semilla": 1729,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 13630700,
+      "p95": 13821400,
+      "maximo": 13821400,
+      "minimo": 12813000,
+      "muestras": [
+        13384300,
+        13686800,
+        13710600,
+        13645900,
+        12813000,
+        13821400,
+        13563000,
+        13465700,
+        13630700
+      ],
+      "trabajo": {
+        "consultas": 2560
+      },
+      "fixture_fuera": true
+    }
+  ]
+}
