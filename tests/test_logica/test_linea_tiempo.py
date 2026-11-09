@@ -105,6 +105,41 @@ class TestEstructura(unittest.TestCase):
         self.assertEqual(len(linea.instantes), antes + 1)
 
 
+class TestServicioCreaLaLinea(unittest.TestCase):
+    """T010: la línea se crea y se vincula al iniciar una partida nueva (FR-015, FR-016)."""
+
+    def _servicio(self):
+        from service.juego_service import JuegoService
+        servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline(RUTA_FIXTURES),
+                                cache=CacheCatalogo(64))
+        servicio.conectar_inicializador(InicializadorPartida())
+        return servicio
+
+    def test_fr016_k_por_defecto_y_n_mas_1_instantes(self):
+        servicio = self._servicio()
+        estado = servicio.iniciar_partida("cripta-01")
+        linea = servicio.obtener_linea_tiempo()
+        self.assertEqual(linea.k, LineaTiempo.K_POR_DEFECTO)
+        self.assertIs(estado.historial._linea, linea)
+        hechas = 0
+        for _ in range(6):
+            if servicio.ejecutar_accion(servicio.resolver_accion("ESPERAR")).exito:
+                hechas += 1
+            if not estado.partida_activa:
+                break
+        self.assertGreater(hechas, 0)
+        self.assertEqual(linea.cantidad_acciones(), hechas)
+        self.assertEqual(len(linea.instantes), hechas + 1)
+
+    def test_fr015_k_configurado(self):
+        servicio = self._servicio()
+        servicio.configurar_checkpoint_cada(3)
+        servicio.iniciar_partida("cripta-01")
+        self.assertEqual(servicio.obtener_linea_tiempo().k, 3)
+        with self.assertRaises(ValueError):
+            servicio.configurar_checkpoint_cada(0)
+
+
 class TestBusquedaBinaria(unittest.TestCase):
     """T009: la mayor posición con valor ≤ t, en O(log n) (FR-019)."""
 

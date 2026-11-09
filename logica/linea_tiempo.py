@@ -51,9 +51,17 @@ class PuntoControl:
 class LineaTiempo:
     """Registro de la partida que permite consultar cualquier instante pasado."""
 
-    def __init__(self, estado, k: int):
+    # Provisional hasta medirlo en --bench (research R7, T001 y T047).
+    K_POR_DEFECTO = 10
+
+    @staticmethod
+    def validar_k(k) -> int:
         if type(k) is not int or k < 1:
             raise ValueError("K debe ser un entero mayor o igual que 1.")
+        return k
+
+    def __init__(self, estado, k: int = K_POR_DEFECTO):
+        self.validar_k(k)
         self._estado = estado
         self.k = k
         # Referencias vivas de al menos L acciones: un pergamino puede revertir 5 (research R5).

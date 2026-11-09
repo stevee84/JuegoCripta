@@ -2038,6 +2038,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
 | 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
 | 37 | Implementación de T007 a T009: estructura de la línea de tiempo | 09/11/2026 |
+| 38 | Implementación de T010 y T011: la línea en el servicio y el resumen | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2245,6 +2246,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `logica/linea_tiempo.py` (nuevo): `LineaTiempo` con los instantes de decisión en un arreglo no decreciente, un punto de control cada K acciones (una sola copia profunda del estado y de las transacciones de su ventana) y la cola de referencias vivas; `buscar_ultimo_menor_o_igual`, búsqueda binaria propia sin `bisect`. Pruebas en `tests/test_logica/test_linea_tiempo.py` (10, citan FR-001, FR-015, FR-017, FR-019 y FR-021), sobre partidas reales en `cripta-04`. Suite: 1112 aprobadas. También quedó escrito `recortar`, que es T023; no se marca como hecha hasta tener sus pruebas (T021 y T022).
 
 **Qué hubo que corregir.** El plan decía que la cola conserva las últimas 2K acciones; con K chico eso no alcanza para recortar después de un pergamino que revierte 5 acciones (con K = 1 serían 2). Se corrigió a max(2K, K + 5) en research, data-model y tasks, en un commit anterior al código (`169d211`).
+
+## Prompt 38 — Implementación de T010 y T011: la línea en el servicio y el resumen
+
+> **Prompt**
+>
+> Sí, sigue
+
+(Continuación de `/speckit-implement`, cierre de la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** T010: `service/juego_service.py` crea la línea de tiempo al final de `iniciar_partida` (partida nueva) y la vincula al historial; `configurar_checkpoint_cada(k)` y `obtener_linea_tiempo()`; K = 10 por omisión (`LineaTiempo.K_POR_DEFECTO`). T011: `controller/resumen_historia.py` (nuevo), `lineas_resumen(estado, titulo)` con el orden fijo del data-model, usando los ayudantes de texto de `vista/presentacion_juego.py`. Pruebas: 2 en `tests/test_logica/test_linea_tiempo.py` y 4 en `tests/test_controller/test_resumen_historia.py` (citan FR-004, FR-005, FR-015 y FR-016). Suite: 1119 aprobadas.
+
+**Qué hubo que corregir.** (1) Las salas no tienen nombre en el modelo actual; el resumen muestra el id y el nombre solo si existe (lo agregaría la spec 003, §3.3). (2) Al cargar una partida o usar un estado externo, la línea de la partida anterior quedaba en el servicio; ahora se limpia. (3) La línea no se crea para estados externos (demo y pruebas), porque esa ruta no es una partida jugada desde el inicio; queda anotado para revisarlo con T034. `service/juego_service.py` es compartido con Steven: solo se agregaron métodos y dos líneas de limpieza.
 
 # Steven Moya Porras — Parte II
 
