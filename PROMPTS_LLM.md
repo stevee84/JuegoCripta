@@ -1986,6 +1986,30 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 49 — Pruebas preparatorias desbloqueadas de US1 (T010–T015)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en las pruebas preparatorias T010–T015 de US1. Leer criterios/dependencias, ejecutar solo tareas desbloqueadas, no sustituir la entrega de Steven, cubrir costos de movimiento, fórmula temporal, costos no MOVER, rechazos atómicos y reversión cuando las interfaces actuales lo permitan; clasificar aprobadas, fallos esperados y bloqueos. No modificar producción, compañeros, benchmarks o guardado; no usar skips, no ejecutar suite completa, actualizar evidencia real y no avanzar a T016.
+
+**Precondiciones y dependencia.** La ejecución inició limpia y alineada en `Sofia@dad27eddde8fd6dc913146e0a3075913c95980d6`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron Phase 3, sus dependencias, `plan.md`, `spec.md` y ambos contratos. G2 continúa abierta: ni `dto/sala.py` ni `datos/decodificador_datos.py` contienen costo, y el contrato de Steven conserva sin asignar la representación/archivos compartidos. T010 y T014 dependen directamente de esa entrega; T011 y T015 necesitan obtener `ResultadoAccion.costo` desde una salida ponderada real. Escribirlas ahora habría exigido inventar campo, constructor o adaptador, por lo que permanecen abiertas sin pruebas falsas ni skips.
+
+**T012 — compatibilidad y rechazo.** Se creó `tests/test_logica/test_terreno_compatibilidad.py`. Una matriz verifica que ATACAR/ESPERAR=100, USAR/EQUIPAR/ABRIR=50 y RECOGER/SOLTAR=25 siguen produciendo, mediante las interfaces existentes `costo_base` y `calcular_intervalo`, `max(1, costo*100//velocidad)` para velocidades 50/100/250. Tres escenarios públicos de `MotorJuego.ejecutar_accion` rechazan salida inexistente, puerta cerrada y destino inexistente; antes/después comparan reloj, secuencia, contadores, identidad/estado del jugador, puerta y destino canónico, agenda y su contador, historial abierto/cerrado, cantidad de intervalos y azar. Cada rechazo conserva todo, devuelve costo 0 y cambios vacíos. Las regresiones existentes de inventario, equipo, consumibles, combate y puertas se reutilizaron en la ejecución relevante en vez de duplicar sus montajes.
+
+**T013 — AC-B07 sin inventar DTO.** `tests/test_logica/test_velocidad.py` conserva su caso previo y añade subpruebas para jugador y enemigo. Cada escenario prepara con interfaces actuales un evento posterior a una salida sintética válida de costo 350 usando `calcular_intervalo`; no pretende probar de dónde viene el costo, responsabilidad de T011/G2. Al cambiar velocidad 100→250 verifica reloj inalterado, tiempo restante `max(1, restante*100//250)`, mismo objeto `Evento`, secuencia estrictamente mayor y una sola entrada en agenda. `HistorialReversible.deshacer_ultimo` restaura velocidad, reloj, tiempo/secuencia del evento, secuencia estatal, identidad y agenda exactas.
+
+**Resultados clasificados.** Base relevante antes de editar (`test_velocidad`, integración Sofía/Joshua y efectos): **85 passed in 0.34s**. Foco T012/T013: **26 passed, 2 subtests in 0.10s**. Regresiones relevantes finales —incluidos movimiento rechazado/pendiente, rastro, inventario, apertura/cierre de puertas, combate y velocidad—: **170 passed, 2 subtests in 1.17s**. Aprobadas: T012 y T013. Fallos esperados por implementación pendiente ejecutados: **0**, porque no se materializaron contratos inexistentes. Bloqueos externos: T010/T011/T014/T015 por G2. No se añadieron skips ni se debilitó ninguna expectativa; no se ejecutó la suite completa.
+
+**Cierre.** Solo cambiaron `tests/test_logica/test_terreno_compatibilidad.py`, `tests/test_logica/test_velocidad.py`, la evidencia de `tasks.md` y este registro. T012/T013 quedaron marcadas; T010/T011/T014/T015 y T016 permanecen abiertas. No se modificaron producción, clases de compañeros, benchmarks, guardado, commit, push, merge o rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

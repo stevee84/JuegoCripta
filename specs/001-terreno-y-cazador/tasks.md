@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta` y T073–T075 completaron su proveedor aislado de medición; las 69 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
+**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, y T073–T075 completaron el proveedor aislado de medición; las 67 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T073–T075 marcadas y 69 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T073–T075 marcadas y 67 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -76,10 +76,12 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 - [ ] T010 [P] [US1] Sofía — crear `tests/test_datos/test_terreno_cazador_datos.py` para verificar la futura entrega de Steven: AC-001 usa 100 solo si `costo` falta, AC-019 rechaza valores presentes inválidos y AC-020 identifica por origen/destino costos contradictorios y multiplicidad ambigua; no afirmar rechazo de una salida sin inversa hasta aclararlo (FR-001, FR-002, FR-017, FR-018).
 - [ ] T011 [P] [US1] Sofía — crear `tests/test_logica/test_terreno_movimiento.py` con AC-002 y AC-B06 para jugador, errante y rastreador: el movimiento cobra la salida atravesada y programa `max(1, costo_salida*100//velocidad)` (FR-003, FR-005, FR-018).
-- [ ] T012 [P] [US1] Sofía — crear `tests/test_logica/test_terreno_compatibilidad.py` con AC-003 y rechazos de movimiento: atacar/esperar/usar/equipar/recoger/soltar/abrir conservan costo, y un rechazo deja reloj, actor, puertas, agenda e historial idénticos (FR-004, FR-005, FR-017, FR-018).
-- [ ] T013 [P] [US1] Sofía — ampliar `tests/test_logica/test_velocidad.py` con AC-B07 para una salida costosa y ambos tipos de actor, verificando tiempo restante proporcional, identidad del evento, secuencia estrictamente nueva y reversión exacta (FR-003, FR-006, FR-016, FR-018).
+- [x] T012 [P] [US1] Sofía — crear `tests/test_logica/test_terreno_compatibilidad.py` con AC-003 y rechazos de movimiento: atacar/esperar/usar/equipar/recoger/soltar/abrir conservan costo, y un rechazo deja reloj, actor, puertas, agenda e historial idénticos (FR-004, FR-005, FR-017, FR-018).
+- [x] T013 [P] [US1] Sofía — ampliar `tests/test_logica/test_velocidad.py` con AC-B07 para una salida costosa y ambos tipos de actor, verificando tiempo restante proporcional, identidad del evento, secuencia estrictamente nueva y reversión exacta (FR-003, FR-006, FR-016, FR-018).
 - [ ] T014 [P] [US1] Sofía — ampliar `tests/test_contrato_api_real.py` con una carga offline de al menos dos criptas que compruebe que los costos provienen de fixtures/servicio, no de constantes de una cripta, y que resolubilidad no cambia al variar solo pesos válidos (FR-001–FR-003, FR-018).
 - [ ] T015 [P] [US1] Sofía — ampliar `tests/test_integracion_sofia.py` para comparar dos ejecuciones del mismo movimiento ponderado y exigir el mismo `ResultadoAccion.costo`, reloj, evento y registro observable (FR-003, FR-015, FR-018).
+
+**Evidencia preparatoria T010–T015 (2026-11-09)**: G2 continúa abierta en el checkout: `Puerta` y `DecodificadorDatos` no publican costo. Por ello T010, T011, T014 y T015 siguen sin marcar; probar validación/simetría, movimiento ponderado desde una puerta, fixtures reales o dos ejecuciones ponderadas exigiría inventar la representación pendiente de Steven. T012 verifica los siete costos heredados con `costo_base`/`calcular_intervalo` y que movimientos rechazados por salida ausente, cerrada o destino inexistente conservan reloj, actor, puerta, agenda, historial, azar y contadores. T013 construye, sin campo nuevo, el estado válido posterior a una salida sintética de costo 350: para jugador y enemigo reprograma el mismo evento con `max(1, restante*velocidad_anterior//velocidad_nueva)`, exige secuencia nueva y deshace velocidad, reloj, tiempo, secuencia, identidad y agenda exactamente. Base previa relevante: `85 passed`; foco T012/T013: `26 passed, 2 subtests`; regresiones relevantes finales: `170 passed, 2 subtests in 1.17s`. No hubo fallos inesperados ni fallos esperados ejecutados: los cuatro casos bloqueados se clasificaron como bloqueos externos y no se ocultaron con skips. T016 no se inició.
 
 ### Implementation for User Story 1
 
