@@ -14,6 +14,7 @@ from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
 from dto.accion import ResultadoAccion
+from controller.resumen_historia import consultar_historia
 from controller.resumen_resolubilidad import linea_inicio, lineas_informe
 from logica.bitacora_pantalla import BitacoraPantalla
 from service.inicializador_partida import CriptaNoResoluble
@@ -305,6 +306,8 @@ class ControladorJuego:
                 raise ValueError("Este comando no recibe argumentos.")
             if operacion == "inventario" and len(partes) not in (1, 2):
                 raise ValueError("inventario acepta opcionalmente peso, valor o nombre.")
+            if operacion == "historia" and len(partes) != 2:
+                raise ValueError("historia requiere un instante (historia 400) o una acción (historia #12).")
             if operacion in ("guardar", "cargar") and len(partes) not in (1, 2):
                 raise ValueError(f"{operacion} acepta opcionalmente una ruta; sin ella usa {self._ruta_partida}.")
             if operacion == "estado":
@@ -349,6 +352,15 @@ class ControladorJuego:
                 if self._vista is not None:
                     self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
                 resultado = ResultadoAccion(True, "Bitácora mostrada.")
+            elif operacion == "historia":
+                # Spec 004 (FR-005): una consulta; no pasa por el motor ni por partida.log.
+                linea = self._servicio.obtener_linea_tiempo()
+                if self._servicio.obtener_estado() is None or linea is None:
+                    raise ValueError("historia: no hay una partida iniciada.")
+                lineas = consultar_historia(linea, partes[1])
+                if self._vista is not None:
+                    self._vista.mostrar_mensaje("\n".join(lineas))
+                resultado = ResultadoAccion(True, "Historia mostrada.")
             elif operacion == "resolubilidad":
                 # 002-T050 (FR-014 de la 002): el informe de antes de empezar, sin recalcular.
                 estado = self._servicio.obtener_estado()
@@ -367,7 +379,8 @@ class ControladorJuego:
                     "Los nombres deben ser inequívocos (con o sin comillas).\n"
                     "Inventario: siguiente, anterior, seleccionar ID (o nombre), inventario [peso|valor|nombre]. "
                     "usar [ID|NOMBRE] usa el seleccionado sin argumentos; equipar; soltar; retroceder [ID] sin tiempo.\n"
-                    "Partidas: criptas; cripta ID; resolubilidad; guardar [RUTA]; cargar [RUTA]; salir. "
+                    "Partidas: criptas; cripta ID; resolubilidad; historia T o historia #K (consulta el pasado "
+                    "sin consumir tiempo); guardar [RUTA]; cargar [RUTA]; salir. "
                     "Guardado v8: cargar inicia un historial vacío.\n"
                     "Técnicos: bitacora; puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final] ascendente; "
                     "registro RUTA antes de la primera acción; exportar_parcial RUTA sin validar reanudación."

@@ -38,3 +38,31 @@ def lineas_resumen(estado, titulo=None) -> list:
     # El mapa conocido llega con la spec 003 (contracts/dependencias.md, T040).
     lineas.append(MAPA_NO_DISPONIBLE)
     return lineas
+
+
+def consultar_historia(linea, argumento: str) -> list:
+    """``historia <t>`` o ``historia #k``: título más el resumen (FR-001 a FR-007).
+
+    Los mensajes de rechazo son los de specs/004-linea-de-tiempo/contracts/cli-historia.md.
+    """
+    texto = argumento.strip()
+    if texto.startswith("#"):
+        try:
+            k = int(texto[1:])
+        except ValueError:
+            raise ValueError("historia: después de # va el número de una acción.") from None
+
+        def construir(estado):
+            return lineas_resumen(estado, f"Historia antes de la acción #{k} (t={estado.reloj})")
+        return linea.consultar_accion(k, construir)
+    try:
+        t = int(texto)
+    except ValueError:
+        raise ValueError("historia: el instante debe ser un entero mayor o igual que 0.") from None
+    linea.validar_instante(t)
+    accion = linea.accion_de_instante(t)
+    if accion > linea.cantidad_acciones() and not linea.partida_activa():
+        titulo = f"Historia en t={t} (final de la partida)"
+    else:
+        titulo = f"Historia en t={t} (antes de la acción #{accion})"
+    return linea.consultar_instante(t, lambda estado: lineas_resumen(estado, titulo))

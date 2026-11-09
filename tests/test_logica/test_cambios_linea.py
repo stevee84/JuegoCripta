@@ -99,7 +99,7 @@ class TestCambiosSoloLinea(unittest.TestCase):
         transaccion = TransaccionAccion()
         transaccion.registrar_solo_linea(CambioAtributo(caja, "valor"))
         caja.valor = 2
-        transaccion.deshacer_mientras(object(), lambda estado: True, [])
+        transaccion.deshacer_mientras(object(), lambda estado, cambio: True, [])
         self.assertEqual(caja.valor, 1)
         self.assertIsInstance(transaccion._cambios.primero.valor, CambioSoloLinea)
 
@@ -114,7 +114,7 @@ class TestDeshacerMientras(unittest.TestCase):
             transaccion.registrar(CambioAtributo(caja, "valor"))
             caja.valor = valor
         inversos = []
-        transaccion.deshacer_mientras(object(), lambda estado: caja.valor > 2, inversos)
+        transaccion.deshacer_mientras(object(), lambda estado, cambio: caja.valor > 2, inversos)
         self.assertEqual(caja.valor, 2)
         self.assertEqual(len(inversos), 2)
         self.assertEqual(transaccion.get_cantidad(), 4)
@@ -127,7 +127,7 @@ class TestDeshacerMientras(unittest.TestCase):
         caja.valor = 5
         for _ in range(3):
             inversos = []
-            transaccion.deshacer_mientras(object(), lambda estado: True, inversos)
+            transaccion.deshacer_mientras(object(), lambda estado, cambio: True, inversos)
             self.assertEqual(caja.valor, 0)
             TransaccionAccion.rehacer(object(), inversos)
             self.assertEqual(caja.valor, 5)
@@ -141,7 +141,7 @@ class TestDeshacerMientras(unittest.TestCase):
         transaccion.registrar(_SinInverso(caja, "valor"))
         caja.valor = 5
         with self.assertRaises(TypeError):
-            transaccion.deshacer_mientras(object(), lambda estado: True, [])
+            transaccion.deshacer_mientras(object(), lambda estado, cambio: True, [])
         self.assertEqual(caja.valor, 5)
 
 
@@ -165,12 +165,12 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
                 nodo = nodo.siguiente
             antes = huella(estado)
             inversos = []
-            transaccion.deshacer_mientras(estado, lambda e: True, inversos)
+            transaccion.deshacer_mientras(estado, lambda e, c: True, inversos)
             self.assertNotEqual(huella(estado), antes)
             TransaccionAccion.rehacer(estado, inversos)
             self.assertEqual(huella(estado), antes)
             # Deja la partida en el final de la transacción anterior para seguir.
-            transaccion.deshacer_mientras(estado, lambda e: True, [])
+            transaccion.deshacer_mientras(estado, lambda e, c: True, [])
         for esperado in ("CambioAtributo", "CambioLista", "CambioAgenda", "CambioRecogerObjeto",
                          "CambioSoltarObjeto", "CambioEquipo", "CambioConsumirObjeto"):
             self.assertIn(esperado, tipos)
@@ -183,7 +183,7 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
         azar.random()
         despues = azar.getstate()
         inversos = []
-        transaccion.deshacer_mientras(object(), lambda e: True, inversos)
+        transaccion.deshacer_mientras(object(), lambda e, c: True, inversos)
         self.assertNotEqual(azar.getstate(), despues)
         TransaccionAccion.rehacer(object(), inversos)
         self.assertEqual(azar.getstate(), despues)
@@ -193,7 +193,7 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
         antes = huella(estado)
         cuenta = [0]
 
-        def condicion(e):
+        def condicion(e, c):
             cuenta[0] += 1
             if cuenta[0] > 7:
                 raise RuntimeError("falla simulada a la mitad de la consulta")

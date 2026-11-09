@@ -2039,6 +2039,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
 | 37 | Implementación de T007 a T009: estructura de la línea de tiempo | 09/11/2026 |
 | 38 | Implementación de T010 y T011: la línea en el servicio y el resumen | 09/11/2026 |
+| 39 | Implementación de la Fase 3 (T012 a T017): historia <t> en la consola | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2258,6 +2259,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** T010: `service/juego_service.py` crea la línea de tiempo al final de `iniciar_partida` (partida nueva) y la vincula al historial; `configurar_checkpoint_cada(k)` y `obtener_linea_tiempo()`; K = 10 por omisión (`LineaTiempo.K_POR_DEFECTO`). T011: `controller/resumen_historia.py` (nuevo), `lineas_resumen(estado, titulo)` con el orden fijo del data-model, usando los ayudantes de texto de `vista/presentacion_juego.py`. Pruebas: 2 en `tests/test_logica/test_linea_tiempo.py` y 4 en `tests/test_controller/test_resumen_historia.py` (citan FR-004, FR-005, FR-015 y FR-016). Suite: 1119 aprobadas.
 
 **Qué hubo que corregir.** (1) Las salas no tienen nombre en el modelo actual; el resumen muestra el id y el nombre solo si existe (lo agregaría la spec 003, §3.3). (2) Al cargar una partida o usar un estado externo, la línea de la partida anterior quedaba en el servicio; ahora se limpia. (3) La línea no se crea para estados externos (demo y pruebas), porque esa ruta no es una partida jugada desde el inicio; queda anotado para revisarlo con T034. `service/juego_service.py` es compartido con Steven: solo se agregaron métodos y dos líneas de limpieza.
+
+## Prompt 39 — Implementación de la Fase 3 (T012 a T017): historia <t> en la consola
+
+> **Prompt**
+>
+> revisa que todo quedara subido y si si, sigue
+
+(Continuación de `/speckit-implement`, Fase 3 de `specs/004-linea-de-tiempo/tasks.md`, el MVP.)
+
+**Qué se obtuvo.** En `logica/linea_tiempo.py`: `consultar_instante` y `consultar_accion`, que eligen el punto de control, deshacen en sitio como máximo K transacciones (parcialmente la última cuando t cae entre dos decisiones), arman el resumen y rehacen en un `finally`. En `controller/resumen_historia.py`, `consultar_historia` con los títulos y los mensajes de rechazo del contrato. En `controller/controlador_juego.py`, el comando `historia <t>` (también acepta `#k`) y su línea en `ayuda`. Pruebas: T012 compara cada instante de una partida real de 60 acciones en `cripta-01` (con turnos de enemigos y varios eventos en el mismo instante, caso del Apéndice B) contra el estado grabado al jugar; T013 los rechazos (t futuro, Apéndice B); T014 dos partidas iguales, una con consultas entre acción y acción: mismo estado final, mismo `partida.log`, mismo reloj, azar e historial del pergamino (Apéndice B). Suite: 1129 aprobadas.
+
+**Qué hubo que corregir.** (1) La primera grabación de la prueba tomaba el estado de después de la acción en el instante de la decisión; §3.6 dice «justo antes de tomarla» y la acción no es un evento. Se corrigió la prueba, no la línea. (2) Fallaban los instantes justo después de una decisión: el motor saca un evento de la agenda antes de adelantar el reloj, así que deshacer «mientras el reloj sea > t» dejaba ese evento fuera. La condición de `deshacer_mientras` ahora también recibe el cambio y sigue deshaciendo extracciones de eventos posteriores a t; research R4 y el data-model se corrigieron en un commit anterior al código. (3) La comparación de estados reportaba diferencias que no lo son: rehacer reconstruye el índice por id de las salas y la agenda guarda en cada evento su posición en el montículo; la prueba compara esos dos por contenido, como ya se hacía con la agenda.
 
 # Steven Moya Porras — Parte II
 

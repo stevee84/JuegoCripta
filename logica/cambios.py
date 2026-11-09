@@ -140,7 +140,10 @@ class TransaccionAccion:
         self.registrar(CambioSoloLinea(cambio))
 
     def deshacer_mientras(self, estado, condicion, inversos: list) -> None:
-        """Deshace del más reciente al más antiguo mientras ``condicion(estado)`` sea cierta.
+        """Deshace del más reciente al más antiguo mientras ``condicion(estado, cambio)`` sea cierta.
+
+        ``cambio`` es el próximo a deshacer: la línea lo usa para seguir deshaciendo la extracción
+        de un evento posterior al instante pedido, que el motor registra antes de adelantar el reloj.
 
         Para la línea de tiempo (spec 004, research R3 y R4): no vacía la transacción ni la
         marca como revertida, incluye los cambios «solo línea» y agrega a ``inversos`` lo
@@ -148,7 +151,7 @@ class TransaccionAccion:
         ``finally`` aunque algo falle a la mitad. Cuesta O(cambios deshechos).
         """
         nodo = self._cambios.primero
-        while nodo is not None and condicion(estado):
+        while nodo is not None and condicion(estado, nodo.valor):
             cambio = nodo.valor
             inverso = _fotografiar(cambio, estado)
             cambio.deshacer(estado)

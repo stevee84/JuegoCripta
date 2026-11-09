@@ -36,6 +36,26 @@ def buscar_ultimo_menor_o_igual(valores, objetivo, pasos=None) -> int:
     return encontrado
 
 
+def _siempre(estado, cambio) -> bool:
+    return True
+
+
+def _hasta(instante):
+    """Condición para dejar aplicados solo los eventos con tiempo ≤ instante (research R4).
+
+    El motor extrae un evento de la agenda y después adelanta el reloj, así que al volver el
+    reloj a ≤ instante todavía falta devolver a la agenda los eventos posteriores extraídos.
+    """
+    from logica.cambios import CambioAgenda
+
+    def condicion(estado, cambio) -> bool:
+        if estado.reloj > instante:
+            return True
+        return (type(cambio) is CambioAgenda and not cambio.insertado
+                and cambio.evento.tiempo > instante)
+    return condicion
+
+
 class PuntoControl:
     """Copia completa del estado justo antes de la acción ``accion + 1`` (data-model)."""
 
@@ -75,6 +95,12 @@ class LineaTiempo:
     def cantidad_acciones(self) -> int:
         return self._n
 
+    def partida_activa(self) -> bool:
+        return bool(self._estado.partida_activa)
+
+    def validar_instante(self, t) -> None:
+        self._validar_instante(t)
+
     def _punto_control(self, accion, ventana) -> PuntoControl:
         # Una sola copia para estado y ventana: así conservan las referencias entre sí (R2).
         estado, transacciones = copy.deepcopy((self._estado, ventana))
@@ -107,3 +133,77 @@ class LineaTiempo:
             self.cola.pop()
         while self.puntos[-1].accion > self._n:
             self.puntos.pop()
+
+    # --- Consultas (FR-001 a FR-007, research R3 y R4) --------------------------------------
+
+    def _validar_instante(self, t) -> None:
+        if type(t) is not int or t < 0:
+            raise ValueError("historia: el instante debe ser un entero mayor o igual que 0.")
+        if t > self._estado.reloj:
+            raise ValueError(f"historia: el instante {t} es posterior al reloj actual "
+                             f"({self._estado.reloj}).")
+
+    def _validar_accion(self, k) -> None:
+        if type(k) is not int or not 1 <= k <= self._n + 1:
+            raise ValueError(f"historia: la acción #{k} no existe; las válidas son "
+                             f"#1 a #{self._n + 1}.")
+
+    def _transaccion_y_base(self, a):
+        """Base para «antes de la acción a» y cómo encontrar cada transacción a deshacer.
+
+        Si existe el punto de control j = ⌈(a − 1) / K⌉ se usa su paquete; si no, a está
+        después del último punto y se usa el estado vivo con la cola (data-model).
+        """
+        j = (a - 1 + self.k - 1) // self.k
+        if j < len(self.puntos):
+            punto = self.puntos[j]
+            primera = punto.accion - len(punto.transacciones) + 1
+            return punto.estado, punto.accion, (lambda x: punto.transacciones[x - primera])
+        return self._estado, self._n, (lambda x: self.cola[x - self._inicio_cola])
+
+    def _reconstruir(self, a, construir, hasta_instante=None):
+        """Deshace en sitio hasta «antes de la acción a», llama a construir y rehace.
+
+        Si ``hasta_instante`` no es None, además deshace la transacción a − 1 mientras el
+        reloj sea mayor que ese instante (eventos entre dos decisiones, research R4). Nunca
+        toca más de K transacciones (FR-018). El ``finally`` deja todo como estaba (FR-005).
+        """
+        from logica.cambios import TransaccionAccion
+
+        base, ultima, transaccion = self._transaccion_y_base(a)
+        inversos = []
+        self.ultimas_transacciones_tocadas = 0
+        try:
+            for x in range(ultima, a - 1, -1):
+                transaccion(x).deshacer_mientras(base, _siempre, inversos)
+                self.ultimas_transacciones_tocadas += 1
+            if hasta_instante is not None:
+                transaccion(a - 1).deshacer_mientras(
+                    base, _hasta(hasta_instante), inversos)
+                self.ultimas_transacciones_tocadas += 1
+            return construir(base)
+        finally:
+            TransaccionAccion.rehacer(base, inversos)
+
+    def consultar_accion(self, k, construir):
+        """``historia #k``: el estado justo antes de la acción k (FR-003)."""
+        self._validar_accion(k)
+        return self._reconstruir(k, construir)
+
+    def consultar_instante(self, t, construir):
+        """``historia <t>``: el estado después de todos los eventos con tiempo ≤ t (FR-001).
+
+        Si a t le corresponde una decisión, es el estado justo antes de tomarla; si t es el
+        reloj actual, es el estado actual (casos borde de la spec).
+        """
+        self._validar_instante(t)
+        i = buscar_ultimo_menor_o_igual(self.instantes, t)
+        accion = i + 1
+        if self.instantes[i] == t:
+            return self._reconstruir(accion, construir)
+        return self._reconstruir(accion + 1, construir, hasta_instante=t)
+
+    def accion_de_instante(self, t) -> int:
+        """Número de la próxima decisión después del instante t, para el título."""
+        i = buscar_ultimo_menor_o_igual(self.instantes, t)
+        return i + 1 if self.instantes[i] == t else i + 2
