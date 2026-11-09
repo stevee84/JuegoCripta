@@ -2041,6 +2041,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 38 | Implementación de T010 y T011: la línea en el servicio y el resumen | 09/11/2026 |
 | 39 | Implementación de la Fase 3 (T012 a T017): historia <t> en la consola | 09/11/2026 |
 | 40 | Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino | 09/11/2026 |
+| 41 | `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d) | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2284,6 +2285,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** Fase 4: pruebas de `historia #k` sobre una partida real de 1 000 acciones en `cripta-01` (cada #k coincide con el estado de antes de esa acción, nunca se tocan más de K transacciones), rango válido y partida terminada; prueba del comando en la consola. Fase 5: al recoger o soltar un pergamino, el inventario anota el cambio como «solo línea» en el historial (la lista de cambios devuelta sigue vacía, como en la Parte I); al consumirlo, el historial le pasa el consumo a la línea después del recorte, sin tocar el motor de Sofía; «antes de #(n+1)» siempre sale del estado vivo. Pruebas: lo revertido deja de existir con K = 1, 3, 4 y 10 (Apéndice B), el pergamino aparece antes y consumido después, dos pergaminos seguidos, límite de 5, y el recorte cuesta lo mismo con 1 000 que con 5 000 acciones. Suite: 1139 aprobadas.
 
 **Qué hubo que corregir.** (1) La primera versión devolvía el cambio del pergamino en la lista de cambios de recoger y soltar; rompía 21 pruebas de la Parte I (algunas compartidas con Steven y Sofía) que exigen esa lista vacía. Se cambió para que el inventario lo anote directamente en el historial mediante el enlace `historial_linea`, que no entra en las copias ni en el archivo (`Inventario.__getstate__`). (2) Si n coincidía con un punto de control, «antes de #(n+1)» salía del punto de control, que es de antes de consumir el pergamino; ahora sale siempre del estado vivo. (3) Errores de la prueba: el segundo pergamino copiado perdía su catálogo de fichas, y en la partida terminada la vida se cambiaba después de crear la línea. (4) Deshacer una recogida no baja el contador interno `_orden_frente` del inventario (también pasa con el pergamino de la Parte I); no cambia el orden visible y la línea nunca sigue jugando desde un estado reconstruido, así que la prueba lo excluye de la comparación y se documenta aquí. Se tocó también `logica/inventario.py` (de Joshua), que no estaba en la tabla de componentes del plan.
+
+## Prompt 41 — `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d)
+
+> **Prompt**
+>
+> /speckit-analyze Analyze cruzado de specs/001-terreno-y-cazador de Sofía en el commit e89574d (spec.md, plan.md, tasks.md, data-model.md, research.md y contratos), extraídos en solo lectura a una carpeta temporal. Contra la constitución v1.0.0 y el enunciado de la Parte II (§3.1, §3.2, §5.1, §5.2, §5.6, §6, Apéndice B, terreno y cazador) y contra los contratos de la spec 004. No modificar ningún archivo. Informe en español con gravedad y el hash revisado.
+
+(Sofía pidió el analyze cruzado que exige el reparto: cada spec la revisa otro integrante.)
+
+**Qué se obtuvo.** Informe sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`, sin modificar archivos de Sofía ni hacer merge de su rama (los archivos se leyeron con `git show`). Resultado: 0 críticos, 2 altos, 3 medios y 2 bajos. Cobertura: los 18 FR y 6 PR tienen tareas, y los 7 casos de terreno y cazador del Apéndice B (AC-B01 a AC-B07) son escenarios con tareas y pruebas previstas. No se encontraron dependencias prohibidas ni nombres de estructuras en `spec.md`. Los altos: (1) no está definido qué pasa si una salida declara `costo` en un sentido y lo omite en el otro (FR-002 lo trata como contradicción y rechazaría la cripta), y los fixtures actuales no traen costos para comprobarlo; (2) la condición de `deshacer_mientras` ahora recibe `(estado, cambio)` desde `5b67c08`, y el contrato de 001 la describe con la semántica anterior.
+
+**Qué hubo que corregir.** El script `check-prerequisites.ps1` apunta a la spec activa de Joshua (004), así que el análisis se hizo sobre la copia extraída de la 001 en lugar de usar las rutas del script; queda anotado para que el hallazgo no se confunda con un análisis de la 004.
 
 # Steven Moya Porras — Parte II
 
