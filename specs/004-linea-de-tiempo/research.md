@@ -133,8 +133,10 @@ motor (archivo de Sofía):
   cantidad de acciones. Cuesta O(acciones revertidas), como máximo 5 (FR-013).
 
 Para que el recorte pueda volver a armar la cola viva cuando descarta un punto de control, la línea
-conserva las referencias vivas de las transacciones de las **últimas 2K acciones**. Es memoria de
-cambios (no de copias) acotada por 2K, compatible con FR-021.
+conserva las referencias vivas de las transacciones de las **últimas L = max(2K, K + 5) acciones**
+(K + 5 porque un pergamino puede revertir hasta 5 acciones y después hay que seguir teniendo la cola
+que va desde el punto de control anterior; con K = 1, 2K no alcanzaría). Es memoria de cambios (no de
+copias) acotada por L + K, compatible con FR-021.
 
 **Alternativas**: engancharse en `MotorJuego.ejecutar_accion` (archivo de Sofía, zona de choque
 según el reparto); leer el log y re-ejecutar (es R1 hacia adelante).

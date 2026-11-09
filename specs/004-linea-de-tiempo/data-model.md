@@ -14,7 +14,7 @@ Una por partida. Vive junto al estado y se guarda en el archivo de partida (FR-0
 | `k` | Entero ≥ 1 | Fijo durante toda la partida; al cargar se conserva el guardado (FR-030). |
 | `instantes` | Arreglo contiguo; `instantes[i]` = reloj al decidir la acción i + 1 | No decreciente. Se agrega al final al cerrar cada acción. `instantes[0] = 0` en una partida nueva. Longitud n + 1: el último es el instante de la decisión pendiente. |
 | `puntos` | Arreglo contiguo de puntos de control; `puntos[j]` es el de la acción j·K | `puntos[0]` es el estado inicial (m = 0). Nunca más de uno cada K acciones (FR-017). |
-| `cola` | Referencias vivas a las transacciones de las últimas 2K acciones como máximo | No son copias. Sirven para armar el siguiente punto de control y para recortar (research R5). |
+| `cola` | Referencias vivas a las transacciones de las últimas L acciones, con L = max(2K, K + 5), más las posteriores al último punto de control (menos de K) | No son copias. Sirven para armar el siguiente punto de control y para recortar (research R5). |
 
 **Transiciones**:
 - *Acción cerrada* → agregar su transacción a `cola` e `instantes`; si n es múltiplo de K, crear
