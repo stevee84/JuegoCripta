@@ -1,4 +1,4 @@
-from dto.sala import Sala, Puerta, Trampa, validar_id_sala
+from dto.sala import COSTO_POR_DEFECTO, Sala, Puerta, Trampa, validar_id_sala
 from dto.actor import Enemigo
 from dto.objeto_instancia import ObjetoInstancia
 from estructuras.tabla_hash import TablaHashImpl
@@ -80,6 +80,46 @@ class DecodificadorDatos:
             ubicaciones.insertar(llave_id, (sala_id, enemigo))
         return ubicaciones
 
+    @staticmethod
+    def _validar_costo(salida, id_sala, direccion):
+        """P2 §3.1. Ausente → 100; cualquier otro valor inválido se rechaza, no se sustituye.
+
+        `bool` se excluye a propósito: es subclase de `int` en Python, pero `True` no es un
+        costo. Acordado con 001 en `contracts/propuesta-steven-rutas-datos.md`.
+        """
+        if "costo" not in salida:
+            return COSTO_POR_DEFECTO
+        costo = salida["costo"]
+        if type(costo) is not int:
+            raise TypeError(
+                f"El costo de la salida {direccion} de la sala {id_sala} debe ser un entero; "
+                f"llegó {costo!r}.")
+        if costo < 1:
+            raise ValueError(
+                f"El costo de la salida {direccion} de la sala {id_sala} debe ser mayor o "
+                f"igual a 1; llegó {costo}.")
+        return costo
+
+    @staticmethod
+    def _validar_rango(ficha, ficha_id):
+        """P2 §4.1: un cazador declara `rango` entero >= 0. Sin valor por defecto.
+
+        Los demás comportamientos no lo necesitan y devuelven None. Acordado con 001 en
+        `contracts/propuesta-steven-rutas-datos.md`.
+        """
+        if ficha.get("comportamiento") != "cazador":
+            return None
+        if "rango" not in ficha:
+            raise ValueError(f"La ficha {ficha_id} es de un cazador y no declara rango.")
+        rango = ficha["rango"]
+        if type(rango) is not int:
+            raise TypeError(
+                f"El rango de la ficha {ficha_id} debe ser un entero; llegó {rango!r}.")
+        if rango < 0:
+            raise ValueError(
+                f"El rango de la ficha {ficha_id} no puede ser negativo; llegó {rango}.")
+        return rango
+
     def convertir_sala(self, datos: dict):
         """Crea un objeto Sala a partir de un dict JSON con puertas y trampas."""
         # El API usa ``id``/``salidas``; el guardado reconstruido usa los
@@ -100,6 +140,7 @@ class DecodificadorDatos:
                     "abierta": not salida.get("cerrada", False),
                     "llave_requerida": salida.get("llave"),
                     "cierre_automatico": salida.get("cierre_automatico"),
+                    "costo": self._validar_costo(salida, id_sala, dir_larga),
                 })
 
         for p in puertas:
@@ -110,6 +151,8 @@ class DecodificadorDatos:
                 puerta.abierta = p["abierta"]
             if "cierre_automatico" in p:
                 puerta.cierre_automatico = p["cierre_automatico"]
+            if "costo" in p:
+                puerta.costo = self._validar_costo({"costo": p["costo"]}, id_sala, p["direccion"])
             sala.puertas.append(puerta)
 
         for t in datos.get("trampas", []):
@@ -164,6 +207,7 @@ class DecodificadorDatos:
                     vida, ataque, defensa, velocidad,
                     ficha.get("comportamiento", "guardian"))
                 enemigo.vida_max = vida_max
+                enemigo.rango = self._validar_rango(ficha, ficha_id)
                 self._vincular_ficha(enemigo, ficha, fichas)
                 enemigo.tipo_ficha_id = ficha_id
                 self._preparar_botin(enemigo, fichas)
@@ -228,6 +272,7 @@ class DecodificadorDatos:
                     comportamiento=e.get("comportamiento", "guardian"),
                 )
                 entrada["enemigos"].append(enemigo)
+                enemigo.rango = e.get("rango")
                 enemigo.ficha = e.get("ficha")
                 enemigo.vida_max = e.get("vida_max", enemigo.vida_max)
                 enemigo.activo = e.get("activo", False)

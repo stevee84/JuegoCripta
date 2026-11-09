@@ -112,7 +112,21 @@ def test_proveedor_se_conecta_por_la_interfaz_estandar(monkeypatch):
     } <= nombres
 
 
-@pytest.mark.skip(reason="T049 requiere acuerdo para registrar el proveedor en main.py")
 def test_main_bench_incluye_filas_del_mapa():
-    """Se habilita al completar la integración conjunta T049."""
-    raise AssertionError("main.py --bench todavía no registra el proveedor de 001")
+    """T049 completada: `main.py --bench` registra el proveedor del mapa de 001.
+
+    Un benchmark que ningún punto de entrada ejecuta no cuenta como evidencia
+    (Principio IX), así que la medición del índice tiene que salir por `--bench`.
+    """
+    from benchmarks.integrante3 import ejecutar
+    from benchmarks.bench_ampliado import PROVEEDORES as ADICIONALES
+    from benchmarks.integrante2 import PROVEEDORES as DATOS
+    from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as MAPA
+
+    registrados = DATOS + ADICIONALES + MAPA
+    for proveedor in MAPA:
+        assert proveedor in registrados
+
+    filas = ejecutar(repeticiones=1, tamanos=(8,), proveedores=registrados)["mediciones"]
+    nombres = {f["medicion"] for f in filas}
+    assert any(n.startswith("mapa_") for n in nombres), "--bench no mide el mapa"

@@ -4,6 +4,10 @@ import copy
 from dto.ficha_resoluble import FichaResoluble
 from estructuras.tabla_hash import TablaHashImpl
 
+# P2 §3.1: costo por defecto de una salida. Es el ÚNICO valor que se asume, y solo
+# cuando el campo falta; cualquier otro valor inválido se rechaza (acordado con 001).
+COSTO_POR_DEFECTO = 100
+
 
 class _ListaEnemigosSala(list):
     """Lista compatible que mantiene los índices de pertenencia de una sala.
@@ -305,6 +309,8 @@ class Puerta:
         self.llave_requerida = None
 
         self.cierre_automatico = None
+        # P2 §3.1: lo que cuesta atravesarla. Mismo valor en los dos sentidos.
+        self.costo = COSTO_POR_DEFECTO
         self.evento_cierre_id = None
         self.evento_cierre = None
 
