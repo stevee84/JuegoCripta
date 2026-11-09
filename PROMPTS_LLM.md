@@ -2040,6 +2040,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 37 | Implementación de T007 a T009: estructura de la línea de tiempo | 09/11/2026 |
 | 38 | Implementación de T010 y T011: la línea en el servicio y el resumen | 09/11/2026 |
 | 39 | Implementación de la Fase 3 (T012 a T017): historia <t> en la consola | 09/11/2026 |
+| 40 | Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2271,6 +2272,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** En `logica/linea_tiempo.py`: `consultar_instante` y `consultar_accion`, que eligen el punto de control, deshacen en sitio como máximo K transacciones (parcialmente la última cuando t cae entre dos decisiones), arman el resumen y rehacen en un `finally`. En `controller/resumen_historia.py`, `consultar_historia` con los títulos y los mensajes de rechazo del contrato. En `controller/controlador_juego.py`, el comando `historia <t>` (también acepta `#k`) y su línea en `ayuda`. Pruebas: T012 compara cada instante de una partida real de 60 acciones en `cripta-01` (con turnos de enemigos y varios eventos en el mismo instante, caso del Apéndice B) contra el estado grabado al jugar; T013 los rechazos (t futuro, Apéndice B); T014 dos partidas iguales, una con consultas entre acción y acción: mismo estado final, mismo `partida.log`, mismo reloj, azar e historial del pergamino (Apéndice B). Suite: 1129 aprobadas.
 
 **Qué hubo que corregir.** (1) La primera grabación de la prueba tomaba el estado de después de la acción en el instante de la decisión; §3.6 dice «justo antes de tomarla» y la acción no es un evento. Se corrigió la prueba, no la línea. (2) Fallaban los instantes justo después de una decisión: el motor saca un evento de la agenda antes de adelantar el reloj, así que deshacer «mientras el reloj sea > t» dejaba ese evento fuera. La condición de `deshacer_mientras` ahora también recibe el cambio y sigue deshaciendo extracciones de eventos posteriores a t; research R4 y el data-model se corrigieron en un commit anterior al código. (3) La comparación de estados reportaba diferencias que no lo son: rehacer reconstruye el índice por id de las salas y la agenda guarda en cada evento su posición en el montículo; la prueba compara esos dos por contenido, como ya se hacía con la agenda.
+
+## Prompt 40 — Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino
+
+> **Prompt**
+>
+> Sí, sigue
+
+(Continuación de `/speckit-implement`, Fases 4 y 5 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** Fase 4: pruebas de `historia #k` sobre una partida real de 1 000 acciones en `cripta-01` (cada #k coincide con el estado de antes de esa acción, nunca se tocan más de K transacciones), rango válido y partida terminada; prueba del comando en la consola. Fase 5: al recoger o soltar un pergamino, el inventario anota el cambio como «solo línea» en el historial (la lista de cambios devuelta sigue vacía, como en la Parte I); al consumirlo, el historial le pasa el consumo a la línea después del recorte, sin tocar el motor de Sofía; «antes de #(n+1)» siempre sale del estado vivo. Pruebas: lo revertido deja de existir con K = 1, 3, 4 y 10 (Apéndice B), el pergamino aparece antes y consumido después, dos pergaminos seguidos, límite de 5, y el recorte cuesta lo mismo con 1 000 que con 5 000 acciones. Suite: 1139 aprobadas.
+
+**Qué hubo que corregir.** (1) La primera versión devolvía el cambio del pergamino en la lista de cambios de recoger y soltar; rompía 21 pruebas de la Parte I (algunas compartidas con Steven y Sofía) que exigen esa lista vacía. Se cambió para que el inventario lo anote directamente en el historial mediante el enlace `historial_linea`, que no entra en las copias ni en el archivo (`Inventario.__getstate__`). (2) Si n coincidía con un punto de control, «antes de #(n+1)» salía del punto de control, que es de antes de consumir el pergamino; ahora sale siempre del estado vivo. (3) Errores de la prueba: el segundo pergamino copiado perdía su catálogo de fichas, y en la partida terminada la vida se cambiaba después de crear la línea. (4) Deshacer una recogida no baja el contador interno `_orden_frente` del inventario (también pasa con el pergamino de la Parte I); no cambia el orden visible y la línea nunca sigue jugando desde un estado reconstruido, así que la prueba lo excluye de la comparación y se documenta aquí. Se tocó también `logica/inventario.py` (de Joshua), que no estaba en la tabla de componentes del plan.
 
 # Steven Moya Porras — Parte II
 

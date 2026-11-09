@@ -77,9 +77,9 @@ estado observado al jugar en ese instante.
 **Prueba independiente**: secuencia de acciones conocida; `#1`, una intermedia y `#(n+1)` coinciden
 con los estados observados.
 
-- [ ] T018 [P] [US2] Escribir en `tests/test_logica/test_linea_tiempo.py`: `#1` es el estado inicial; `#(n+1)` es el estado actual; `#0` y `#(n+2)` se rechazan con el rango válido; en una partida de miles de acciones cada `#k` coincide con el estado guardado al jugar; con la partida terminada (victoria o muerte) las consultas siguen funcionando (US2-1 a US2-4, Assumptions) (FR-003, FR-007, SC-002)
-- [ ] T019 [US2] Implementar en `logica/linea_tiempo.py` la consulta por acción según [data-model.md](./data-model.md): j = ⌈(k − 1) / K⌉; deshacer en sitio sobre el paquete `puntos[j]` si existe, o sobre el estado vivo si k está después del último punto, hasta k; rehacer en un `finally` (FR-003, FR-005, FR-018)
-- [ ] T020 [US2] Aceptar `historia #k` en `controller/controlador_juego.py` (distinguir `#k` de `t` al leer el argumento) con los mensajes de [cli-historia.md](./contracts/cli-historia.md) (FR-003, FR-007, FR-008)
+- [X] T018 [P] [US2] Escribir en `tests/test_logica/test_linea_tiempo.py`: `#1` es el estado inicial; `#(n+1)` es el estado actual; `#0` y `#(n+2)` se rechazan con el rango válido; en una partida de miles de acciones cada `#k` coincide con el estado guardado al jugar; con la partida terminada (victoria o muerte) las consultas siguen funcionando (US2-1 a US2-4, Assumptions) (FR-003, FR-007, SC-002)
+- [X] T019 [US2] Implementar en `logica/linea_tiempo.py` la consulta por acción según [data-model.md](./data-model.md): j = ⌈(k − 1) / K⌉; deshacer en sitio sobre el paquete `puntos[j]` si existe, o sobre el estado vivo si k está después del último punto, hasta k; rehacer en un `finally` (FR-003, FR-005, FR-018)
+- [X] T020 [US2] Aceptar `historia #k` en `controller/controlador_juego.py` (distinguir `#k` de `t` al leer el argumento) con los mensajes de [cli-historia.md](./contracts/cli-historia.md) (FR-003, FR-007, FR-008)
 
 ---
 
@@ -89,10 +89,10 @@ con los estados observados.
 
 **Prueba independiente**: acciones, pergamino, y ninguna consulta muestra lo revertido.
 
-- [ ] T021 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py`: después de un pergamino ninguna consulta muestra el estado de la acción revertida; `historia` con un t entre el reloj nuevo y el anterior se rechaza; `historia #n` es el estado actual con el pergamino consumido y `#(n+1)` se rechaza; las consultas anteriores muestran el pergamino en el inventario; dos pergaminos seguidos recortan dos veces (US3-1 a US3-3, casos borde; **Apéndice B: historia después de usar un pergamino**) (FR-012, FR-014)
-- [ ] T022 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py` la prueba de costo del recorte: en partidas de 1 000 y de 5 000 acciones el recorte toca la misma cantidad de elementos (US3-4) (FR-013)
-- [ ] T023 [US3] Implementar el recorte en `logica/linea_tiempo.py` (quitar del final de `instantes` y `cola`, descartar los puntos con m > n) llamado desde el aviso de `deshacer_ultimo` de T006 (FR-012, FR-013)
-- [ ] T024 [US3] En `logica/servicio_inventario.py`, registrar con la marca «solo línea» recoger y soltar un pergamino y, al retroceder, el consumo del pergamino en la última transacción que sigue en la línea (research R6). El pergamino de retroceso no cambia su comportamiento (FR-012, FR-014)
+- [X] T021 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py`: después de un pergamino ninguna consulta muestra el estado de la acción revertida; `historia` con un t entre el reloj nuevo y el anterior se rechaza; `historia #n` es el estado actual con el pergamino consumido y `#(n+1)` se rechaza; las consultas anteriores muestran el pergamino en el inventario; dos pergaminos seguidos recortan dos veces (US3-1 a US3-3, casos borde; **Apéndice B: historia después de usar un pergamino**) (FR-012, FR-014)
+- [X] T022 [P] [US3] Escribir en `tests/test_logica/test_linea_tiempo.py` la prueba de costo del recorte: en partidas de 1 000 y de 5 000 acciones el recorte toca la misma cantidad de elementos (US3-4) (FR-013)
+- [X] T023 [US3] Implementar el recorte en `logica/linea_tiempo.py` (quitar del final de `instantes` y `cola`, descartar los puntos con m > n) llamado desde el aviso de `deshacer_ultimo` de T006 (FR-012, FR-013)
+- [X] T024 [US3] En `logica/servicio_inventario.py`, registrar con la marca «solo línea» recoger y soltar un pergamino y, al retroceder, el consumo del pergamino en la última transacción que sigue en la línea (research R6). El pergamino de retroceso no cambia su comportamiento (FR-012, FR-014)
 
 ---
 

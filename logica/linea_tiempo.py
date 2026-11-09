@@ -87,6 +87,9 @@ class LineaTiempo:
         # Referencias vivas de al menos L acciones: un pergamino puede revertir 5 (research R5).
         self._conservar = max(2 * k, k + 5)
         self._n = 0
+        if estado.inventario is not None:
+            # Para que el inventario anote en la línea los movimientos de pergaminos (R6).
+            estado.inventario.historial_linea = estado.historial
         self.instantes = [estado.reloj]
         self.cola = []
         self._inicio_cola = 1  # número de la acción que ocupa cola[0]
@@ -120,19 +123,31 @@ class LineaTiempo:
                 self.cola = self.cola[sobran:]
                 self._inicio_cola += sobran
 
+    def anotar_solo_linea(self, cambio) -> None:
+        """Agrega a la última acción que sigue en la línea un cambio que el pergamino no deshace.
+
+        Se usa para el consumo del pergamino al retroceder (research R6): las consultas de
+        antes de ese momento lo muestran en el inventario y las de después, consumido.
+        """
+        if self._n > 0:
+            self.cola[-1].registrar_solo_linea(cambio)
+
     def recortar(self, cantidad: int) -> None:
         """Las acciones revertidas con un pergamino dejan de existir (FR-012, FR-013).
 
         Cuesta O(cantidad): quita del final y descarta los puntos de control posteriores.
         """
+        self.ultimo_recorte_pasos = 0
         for _ in range(cantidad):
             if self._n == 0:
                 raise ValueError("No hay acciones para recortar.")
             self._n -= 1
             self.instantes.pop()
             self.cola.pop()
+            self.ultimo_recorte_pasos += 1
         while self.puntos[-1].accion > self._n:
             self.puntos.pop()
+            self.ultimo_recorte_pasos += 1
 
     # --- Consultas (FR-001 a FR-007, research R3 y R4) --------------------------------------
 
@@ -155,7 +170,9 @@ class LineaTiempo:
         después del último punto y se usa el estado vivo con la cola (data-model).
         """
         j = (a - 1 + self.k - 1) // self.k
-        if j < len(self.puntos):
+        # «Antes de n + 1» es el estado vivo: si n coincide con un punto de control, ese punto es
+        # de antes del consumo del pergamino que acaba de recortar la línea (R6).
+        if a <= self._n and j < len(self.puntos):
             punto = self.puntos[j]
             primera = punto.accion - len(punto.transacciones) + 1
             return punto.estado, punto.accion, (lambda x: punto.transacciones[x - primera])

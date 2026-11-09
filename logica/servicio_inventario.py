@@ -157,7 +157,14 @@ class ServicioInventario:
             self._historial.validar_deshacer(self._inventario, espacios=1)
         objeto = self._inventario.obtener_actual()
         retiro = self._inventario.retirar_actual_con_registro()
+        # Spec 004 (research R6): el consumo no se revierte con el pergamino, pero la línea de
+        # tiempo debe mostrar el pergamino en el inventario en los instantes anteriores.
+        consumo_linea = CambioConsumirObjeto(retiro, objeto)
         objeto.ubicacion = "consumido"
+        historial = self._historial or getattr(self._inventario, "historial_linea", None)
+        anotar = getattr(historial, "anotar_para_linea", None)
+        if anotar is not None:
+            anotar(consumo_linea)
         # El retiro se devuelve solo para recuperar ante un fallo inesperado;
         # nunca se incorpora al historial reversible.
         resultado = ResultadoAccion(
@@ -167,6 +174,18 @@ class ServicioInventario:
         resultado.retiro_irreversible = retiro
         resultado.objeto_consumido = objeto
         return resultado
+
+    def _solo_linea(self, cambios) -> list:
+        """Un pergamino no entra al retroceso (P1 §2.11), pero sí a la línea de tiempo (R6).
+
+        Se anota directamente en el historial vinculado al inventario y se devuelve la lista
+        vacía de siempre, para que el contrato de la Parte I no cambie.
+        """
+        historial = getattr(self._inventario, "historial_linea", None)
+        if historial is not None and historial.hay_intervalo_abierto():
+            for cambio in cambios:
+                historial.registrar_solo_linea(cambio)
+        return []
 
     def recoger(self, objeto, sala, reversible=True) -> ResultadoAccion:
         if sala is None:
@@ -218,7 +237,7 @@ class ServicioInventario:
         return ResultadoAccion(
             exito=True,
             mensaje="Objeto recogido.",
-            cambios=[cambio] if reversible else [],
+            cambios=[cambio] if reversible else self._solo_linea([cambio]),
             costo=COSTO_RECOGER
         )
 
@@ -262,7 +281,7 @@ class ServicioInventario:
         return ResultadoAccion(
             exito=True,
             mensaje="Objeto soltado.",
-            cambios=cambios if reversible else [],
+            cambios=cambios if reversible else self._solo_linea(cambios),
             costo=COSTO_SOLTAR
         )
 

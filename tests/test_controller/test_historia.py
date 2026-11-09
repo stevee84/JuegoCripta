@@ -103,3 +103,20 @@ def test_fr005_historia_no_consume_tiempo_ni_se_registra(tmp_path, monkeypatch):
         assert _log(con) == log
     assert huella(con._servicio.obtener_estado()) == huella(sin._servicio.obtener_estado())
     assert _log(con).split("\n")[1:] == _log(sin).split("\n")[1:]
+
+
+def test_fr003_fr007_historia_por_numero_de_accion(tmp_path, monkeypatch, capsys):
+    """T020: historia #k desde la consola, con el rango válido en el rechazo."""
+    controlador = _controlador(tmp_path, monkeypatch)
+    controlador.procesar_comando("esperar")
+    controlador.procesar_comando("esperar")
+    capsys.readouterr()
+    resultado = controlador.procesar_comando("historia #1")
+    assert resultado.exito
+    assert "Historia antes de la acción #1 (t=0)" in capsys.readouterr().out
+    for texto, esperado in (("historia #0", "las válidas son #1 a #3"),
+                            ("historia #4", "las válidas son #1 a #3"),
+                            ("historia #x", "después de # va el número")):
+        resultado = controlador.procesar_comando(texto)
+        assert not resultado.exito
+        assert esperado in resultado.mensaje
