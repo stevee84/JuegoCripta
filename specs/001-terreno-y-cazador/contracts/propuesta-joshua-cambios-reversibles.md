@@ -1,21 +1,29 @@
 # Acuerdo condicionado con Joshua: cambios reversibles y reconstrucción
 
-**Estado**: ACEPTACIÓN CONDICIONADA DOCUMENTADA POR 004. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción, y que la línea no llama al cazador. Las interfaces nuevas, v10 y las pruebas siguen pendientes; este documento no modifica archivos de Joshua ni de Steven.
+**Estado**: ACEPTACIÓN CONDICIONADA; INTERFAZ BASE PUBLICADA, AÚN NO INTEGRADA LOCALMENTE. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. Joshua publicó deshacer temporal/rehacer y el gancho para cambios nuevos, pero el checkout `Sofia` todavía no los contiene; la línea completa, el guardado coordinado y las pruebas conjuntas de 001 siguen pendientes. Este documento no modifica archivos de Joshua ni de Steven.
 
 ## 1. Objetivo
 
 Permitir que retroceso y línea de tiempo restauren exactamente el estado introducido o afectado por 001, sin copiar el estado completo por acción y sin conservar cálculos de ruta obsoletos (`FR-014`, `FR-016`; spec 004 FR-022).
 
-## Estado comprobado tras integrar `origin/joshua`
+## Estado comprobado local y remoto
 
-El merge incorporó plan, investigación, modelo, contratos y tareas de 004, pero no código de línea de tiempo. La interfaz real sigue siendo:
+**Checkout local consultado**: `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Su interfaz disponible sigue siendo:
 
 - `CambioReversible.deshacer(estado)`;
 - `TransaccionAccion.registrar(cambio)` y `revertir(estado)`; `revertir` vacía y marca la transacción;
 - `HistorialReversible.deshacer_ultimo(estado) -> bool`; elimina la transacción después de revertirla;
-- no existe una operación de rehacer ni una interfaz implementada de consulta histórica.
+- no existe localmente una operación de rehacer ni una interfaz implementada de consulta histórica.
 
-004 propone ampliar `TransaccionAccion` para deshacer temporalmente mientras se cumpla una condición, devolver inversos, no vaciar la transacción y rehacer en `finally`; también propone vincular la línea al historial. Los documentos no fijan nombres ni firmas para esos métodos y las tareas están sin marcar. 001 los consumirá cuando existan, sin inventar otra interfaz.
+**Publicación remota consultada sin checkout/merge**: `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889`; la implementación fue introducida en `972af5421d628171a4464709858275b100151c1e`. Publica en `logica/cambios.py`:
+
+- `TransaccionAccion.registrar_solo_linea(cambio)`;
+- `TransaccionAccion.deshacer_mientras(estado, condicion, inversos: list) -> None`, sin vaciar ni marcar la transacción;
+- `TransaccionAccion.rehacer(estado, inversos: list) -> None`;
+- extensión para cualquier cambio nuevo mediante `fotografiar_para_rehacer(inverso, estado)`; si falta, falla antes de deshacer;
+- pruebas en `tests/test_logica/test_cambios_linea.py`.
+
+Que esté publicado en otra rama no lo vuelve disponible en el checkout local. 001 no copia ni reedita ese código: lo consumirá y verificará cuando se integre por el flujo acordado. En el hash consultado aún no está publicada una clase `LineaTiempo` ni un enlace nuevo de `HistorialReversible`.
 
 El guardado real es **v9** (`GuardadoBinario.VERSION = 9`). El **v10** de `specs/004-linea-de-tiempo/contracts/guardado-v10.md` es una propuesta para Steven: serializar en una sola operación el estado vivo y la línea como bytes opacos. No está implementado y debe coordinarse con la incorporación de costo/rango.
 
@@ -61,9 +69,9 @@ Una acción rechazada aborta sus cambios y no se publica a la línea de tiempo.
 
 No se introducen observadores de cambios de atributos. Cada mutación canónica se registra en el punto que ya conoce la operación y antes de modificarla.
 
-## 4. Invalidación acordada para 001
+## 4. Derivados y posible invalidación
 
-001 invalida explícitamente sus derivados:
+La producción inicial de 001 recalcula desde cero y no retiene resultados de ruta; en ese caso **no existe caché que invalidar**. Solo si una decisión posterior a `--bench` adopta reutilización, 001 deberá invalidar explícitamente esos derivados:
 
 - después de que `HistorialReversible.deshacer_ultimo(estado)` devuelve `True` en `RETROCEDER`;
 - al enlazar cualquier estado nuevo o cargado mediante `MotorJuego.iniciar(estado)`.
@@ -72,7 +80,7 @@ El propietario puede ser el motor o el servicio de rutas. El nombre interno no s
 
 `historia` **no requiere invalidación**: no pasa por el motor, no ejecuta decisiones de 001 y deshace/rehace temporalmente en `try/finally`, dejando idéntico el estado vivo. Como las cachés están fuera del estado y de las transacciones, 004 no las alcanza. El recorte de la línea tras un pergamino tampoco necesita un segundo aviso: el retroceso exitoso ya invalidó.
 
-La invalidación puede ser O(1) por cambio de generación, pero la memoria pendiente de liberar se mide. No se usan observadores generales ni se registran mutaciones de caché como cambios reversibles.
+Una invalidación condicional puede ser O(1) por cambio de generación, pero la memoria pendiente de liberar se mide. No se implementan ganchos, observadores ni generaciones productivas mientras la estrategia siga siendo recálculo sin estado retenido.
 
 ## 5. Pergaminos
 
@@ -124,8 +132,10 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 - [x] 004 confirma que la línea no llama al cazador ni necesita una interfaz nueva de 001.
 - [x] Se acuerda que las cachés no observables viven fuera del estado/transacciones y no forman parte de puntos de control o guardado.
 - [x] Se delimita que `historia` no invalida y que 001 invalida tras retroceso exitoso e inicio/carga.
-- [ ] 004 implementa y publica las interfaces nuevas de deshacer temporal/rehacer y enlace del historial, sin cambiar firmas existentes.
-- [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados y los dos puntos de invalidación.
+- [x] 004 publica deshacer temporal/rehacer y `fotografiar_para_rehacer(inverso, estado)` en `972af5421d628171a4464709858275b100151c1e`, visible en la punta remota consultada `112cd78ab85a5b0f9a580353e5824f4aeb517889`.
+- [ ] Esas interfaces se integran en `Sofia` y se verifican allí; su publicación remota no cierra esta dependencia local.
+- [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados; cada tipo nuevo declara `fotografiar_para_rehacer` si lo exige la interfaz integrada.
+- [ ] Si la evidencia adopta reutilización productiva, se planifican y prueban entonces sus puntos de invalidación; con recálculo sin estado retenido no se añaden.
 - [ ] Los cambios nuevos pasan pruebas de `deepcopy`, `pickle`, deshacer/rehacer exacto y ausencia de referencias a motor/cachés.
 - [ ] Se prueba la excepción de pergaminos, la continuación determinista y que `historia` no altera cachés.
-- [ ] Steven implementa/acuerda v10 coordinado con costo/rango; hasta entonces el formato real continúa en v9.
+- [ ] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real; hasta entonces el formato ejecutable consultado continúa en v9.

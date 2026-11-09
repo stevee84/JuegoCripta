@@ -7,7 +7,8 @@ Esta guía describe cómo validar la futura implementación. En esta fase no se 
 - Rama Git real: `Sofia`.
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
-- Contrato de datos/guardado con Steven acordado y condiciones de Joshua implementadas antes de ejecutar pruebas de integración cruzada; la frontera de 004 está aceptada solo de forma condicionada.
+- Acuerdo parcial con Steven reflejado: validación, identificación de sentidos, ambigüedad, vista conocida, recálculo por paso y casos terminales confirmados; firmas Python y archivos compartidos siguen abiertos. Steven asume persistencia coordinada con Joshua, sin versión publicada comprobada.
+- Estado local: `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Publicaciones consultadas sin integrar: `Steve@757d747b461cdb755705ca5cdd90391090112782` y `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889` (interfaz 004 introducida en `972af5421d628171a4464709858275b100151c1e`).
 
 ## Comandos previstos
 
@@ -66,6 +67,18 @@ Una diferencia en esos resultados observables falla antes de medir tiempos. El o
 | AC-017 | cambiar velocidad entre turnos | agenda cambia conforme FR-006; ruta solo si datos relevantes cambian; FR-014 |
 | AC-018 | mover/matar otro actor | comparar desde cero sin asumir invalidación idéntica; FR-014 |
 
+### Verificaciones cruzadas futuras con Steven/003
+
+Estos criterios están planificados; no se han implementado ni ejecutado en esta actualización:
+
+1. **Default estricto**: omitir `costo` produce 100; presentar `True`, `False`, texto, fracción, cero o negativo rechaza el dato sin sustituirlo.
+2. **Simetría después del enlace**: identificar sentidos por origen/destino, rechazar costos distintos y detectar múltiples salidas ambiguas. La ausencia de inversa se conserva como pregunta pendiente: no se añade un rechazo que PDF/spec/acuerdo no definieron.
+3. **Resolubilidad independiente del peso**: variar costos válidos sin cambiar puertas/llaves conserva el resultado de alcanzabilidad de 002.
+4. **Mapa conocido independiente**: dos estados reales distintos con las mismas salas exploradas y puertas recordadas abiertas producen el mismo siguiente paso.
+5. **Conocimiento vigente**: después de cada paso de «ir a», cambiar origen o conocimiento obliga a decidir otra vez y nunca continúa una secuencia precalculada.
+6. **Casos terminales aceptados**: origen=destino produce costo 0 sin paso; sin ruta produce un estado explícito distinto. La prueba de integración queda bloqueada por la representación/firma y la entrega de 003, no por la semántica.
+7. **Separación de comportamiento**: el buscador no devuelve `ATACAR` ni `ESPERAR`; esas acciones se deciden fuera con el resultado geométrico.
+
 ## Matriz de rendimiento
 
 | Escenario | Medición `--bench` | Criterio |
@@ -74,6 +87,7 @@ Una diferencia en esos resultados observables falla antes de medir tiempos. El o
 | AC-013 | ciclo real de referencia con decenas de cazadores | cada muestra válida `<20 ms`, sin red/render; PR-001 |
 | AC-014 | matriz individual/compartida, uno/muchos, pequeño/grande, reutilizar/cero, puertas estables/inestables | equivalencia primero; reporte de tiempo, trabajo y memoria; PR-003/PR-004/PR-006 |
 | AC-015 | seis operaciones de agenda con cientos de eventos | comparación por operación y ciclo mixto; PR-005 |
+| Integración 003 (pendiente) | una decisión de «ir a» desde cero y alternativas reutilizadas | equivalencia primero; costo completo frente a 5 ms, sin afirmar cumplimiento antes de medir |
 
 ## Casos del Apéndice B
 
@@ -89,7 +103,7 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`, y pasa el resultado a `benchmarks.integrante3.ejecutar`. Ese ejecutor incorpora además las mediciones heredadas de agenda y ciclo. La integración futura de 001 añade una sola tupla de proveedores a esa concatenación, sin reemplazar ni registrar dos veces los proveedores existentes.
+`main.py --bench` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`, y pasa el resultado a `benchmarks.integrante3.ejecutar`. Ese ejecutor incorpora además las mediciones heredadas de agenda y ciclo. La integración futura de 001 requiere acuerdo con el propietario del punto compartido para añadir una sola tupla, sin reemplazar ni registrar dos veces proveedores existentes.
 
 El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` todavía necesita un adaptador para aparecer en el informe estándar. La agenda común actual reporta extracción; las otras cinco operaciones exigidas por `PR-005` siguen siendo parte del proveedor de 001.
 
@@ -102,10 +116,12 @@ El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchm
 - recálculo frente a reutilización;
 - puertas casi estables y cambios frecuentes;
 - conteos separados de salas fijadas y descubiertas, salidas examinadas, entradas insertadas, frontera máxima/final, extracciones obsoletas, limpieza y memoria auxiliar.
+- para «ir a», una consulta por paso con origen/destino/conocimiento vigentes; comparación desde cero antes de cualquier reutilización;
+- medición conjunta con 003 frente a 5 ms, incluyendo construcción de auxiliares y, si aplica, invalidación y limpieza.
 
 ### Ciclo real
 
-Se adapta `benchmarks/benchmark_ciclo_real_integrante1.py`. La carga e inicialización común se hacen antes; el cronómetro incluye la acción, agenda, decisiones de cazadores, auxiliares de ruta, invalidación y limpieza hasta la próxima decisión del jugador. Sintéticos y referencia oficial se etiquetan por separado.
+Se adapta `benchmarks/benchmark_ciclo_real_integrante1.py`. La carga e inicialización común se hacen antes; el cronómetro incluye acción, agenda, decisiones de cazadores y auxiliares de ruta hasta la próxima decisión. Invalidación/limpieza se incluye solo para variantes experimentales con estado retenido. Sintéticos y referencia oficial se etiquetan por separado.
 
 ### Agenda
 
@@ -136,16 +152,15 @@ Además de la reversión funcional:
 1. Verificar que cada mutación canónica de 001 se registra dentro de la transacción mediante los cambios y helpers existentes; una acción rechazada no publica cambios.
 2. Comprobar que ninguna caché/servicio de rutas es alcanzable desde `EstadoPartida`, entidades canónicas o cambios guardados.
 3. Copiar en una sola operación `(estado, ventana_de_transacciones)` con `copy.deepcopy`; cada cambio de la copia debe apuntar a las entidades copiadas. Deshacer temporalmente y aplicar los inversos debe dejar bytes/estructura equivalentes aun si el resumen falla.
-4. Cuando exista v10, hacer ida y vuelta del `pickle` conjunto de estado vivo y línea y repetir consultas; las cachés no aparecen en los bytes.
-5. Calentar una caché y ejecutar `historia` tanto sobre un punto de control como sobre el estado vivo posterior al último punto: no cambia su identidad/generación, no ejecuta decisiones de 001 y la decisión siguiente coincide con cálculo desde cero.
-6. Calentar una caché, efectuar un `RETROCEDER` exitoso y comprobar que queda invalidada después de `deshacer_ultimo`; si el retroceso falla, no se presenta como estado restaurado.
-7. Enlazar mediante `MotorJuego.iniciar` un estado nuevo y uno cargado; en ambos casos se descarta cualquier derivado del estado anterior antes de la primera decisión.
+4. Cuando exista el formato conjunto acordado por Steven y Joshua, hacer ida y vuelta del `pickle` de estado vivo y línea y repetir consultas; las cachés no aparecen en los bytes.
+5. Con la producción inicial de recálculo, comprobar que no se conserva caché/instantánea entre decisiones y que `historia`, `RETROCEDER` e `iniciar` no requieren ganchos de invalidación.
+6. Si una decisión posterior adopta reutilización, ejecutar entonces las pruebas planificadas de `historia`, retroceso e inicio/carga sobre la caché externa; no anticiparlas como requisito de la vía sin estado retenido.
 
-La interfaz actual solo ofrece deshacer destructivo (`deshacer_ultimo`/`revertir`). Las pruebas de deshacer temporal y rehacer usarán los métodos que implemente 004; no se supone un nombre o firma antes de que existan.
+El checkout local solo ofrece deshacer destructivo (`deshacer_ultimo`/`revertir`). La rama remota de Joshua publica `deshacer_mientras`, `rehacer` y `fotografiar_para_rehacer(inverso, estado)`, pero las pruebas conjuntas no pueden ejecutarse satisfactoriamente en `Sofia` hasta integrar esa entrega. Escribir una prueba antes de la integración no equivale a que pueda pasar.
 
 ### Estado de persistencia
 
-La versión ejecutable sigue siendo v9. El v10 citado por 004 es un contrato propuesto y sus pruebas de ida y vuelta permanecen bloqueadas hasta su implementación coordinada con costo/rango. La aceptación condicionada de la frontera con Joshua no equivale a que estas comprobaciones hayan pasado.
+La versión ejecutable sigue siendo v9. El v10 citado por 004 es solo una propuesta no implementada y no queda reservado por 001. Las pruebas de ida y vuelta permanecen bloqueadas hasta que Steven y Joshua acuerden conjuntamente campos, responsables, compatibilidad y versión final. La aceptación condicionada de la frontera con Joshua no equivale a que estas comprobaciones hayan pasado.
 
 ## Señales de salida
 

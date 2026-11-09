@@ -4,7 +4,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-01 — Estrategia provisional de rutas
 
-**Decision**: usar una búsqueda ponderada individual, desde cada cazador y limitada por su rango, como estrategia de producción inicial (`FR-007`–`FR-010`, `PR-002`). Implementar la alternativa inversa compartida como comparación de `--bench`, no como optimización asumida.
+**Decision**: usar una búsqueda ponderada individual, desde cada cazador y limitada por su rango, como estrategia de producción inicial (`FR-007`–`FR-010`, `PR-002`). Para la integración propuesta con «ir a», calcular también cada siguiente paso de forma individual con origen, destino y conocimiento vigentes. Implementar la alternativa inversa compartida como comparación de `--bench`, no como optimización asumida.
 
 **Rationale**: la búsqueda individual no inserta candidatos cuyo costo ya supere el rango y solo expande salas fijadas dentro de él. Como los costos son positivos, una ruta que ya excedió el rango no puede volver a entrar. Esto evita recorrer o inicializar el exterior, aunque dentro de la región pertinente deben contarse por separado salas fijadas, salas descubiertas y todas las entradas almacenadas en frontera. También reduce el riesgo de invalidación y ofrece una referencia de producción simple frente a la cual validar reutilización.
 
@@ -14,7 +14,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 - **Búsqueda inversa limitada al rango máximo activo**: puede compartir trabajo, pero un solo rango grande amplía la región para todos y requiere gestionar cazadores fuera de la región.
 - **Estrategia adaptativa**: prometedora, pero el umbral depende de cantidad/distribución de cazadores, rangos y estabilidad de puertas. No se fija sin datos.
 
-**Measurement that may change the decision**: costo completo por ciclo para uno/decenas de cazadores, rangos pequeños/grandes y puertas estables/inestables. Si la compartida reduce consistentemente el ciclo completo, mantiene `PR-002`, pasa equivalencia y cumple `<20 ms`, puede habilitarse para el segmento medido.
+**Measurement that may change the decision**: costo completo por ciclo para uno/decenas de cazadores, rangos pequeños/grandes y puertas estables/inestables. Si la compartida reduce consistentemente el ciclo completo, mantiene `PR-002`, pasa equivalencia y cumple `<20 ms`, puede habilitarse para el segmento medido. En colaboración con 003, una reutilización para «ir a» solo se considera si equivale al cálculo individual y su costo completo de construcción, consulta, invalidación y limpieza cumple el límite de 5 ms; aún no hay mediciones.
 
 ## R-02 — Desempate independiente del descubrimiento
 
@@ -55,14 +55,15 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-05 — Reutilización e invalidación
 
-**Decision**: recalcular cada decisión en la primera versión. Las instantáneas compartidas experimentales se tratan como derivadas y se identifican por versión del esqueleto, generación de puertas y sala objetivo. Pertenecen al motor o al servicio de rutas, fuera de `EstadoPartida` y del grafo alcanzable desde las transacciones. Se descartan después de un retroceso exitoso y al iniciar/cargar un estado; `historia` no las invalida (`FR-014`, `FR-016`).
+**Decision**: recalcular cada decisión en la primera versión y liberar sus auxiliares al terminar. En «ir a», cada paso vuelve a consultar con origen, destino y mapa conocido vigentes, semántica aceptada por Steven. No hay caché, generación o instantánea productiva que invalidar. Las instantáneas compartidas y la reutilización viven únicamente en `benchmarks/` hasta que una decisión posterior a las mediciones justifique planificar su adopción (`FR-014`, `FR-016`).
 
-**Rationale**: calcular desde cero es la referencia normativa y minimiza el riesgo inicial. Una generación permite invalidar en O(1), pero su memoria pendiente de reclamar debe contarse. No se intenta deshacer una caché porque no es estado de juego. 004 reconstruye temporalmente estado canónico y lo rehace exactamente en `finally`, sin ejecutar decisiones de 001; una caché externa no cambia y vuelve a corresponder al mismo estado vivo.
+**Rationale**: calcular desde cero es la referencia normativa y minimiza el riesgo inicial. Exigir ahora generaciones e invalidación convertiría una alternativa no seleccionada en complejidad de producción. En el benchmark, una generación permite medir invalidación O(1) y memoria pendiente de reclamar. Si se adopta después, la caché deberá permanecer fuera del estado y 004 la dejará intacta durante `historia` porque restaura exactamente el estado vivo.
 
 **Alternatives considered**:
 
 - **Invertir cada mutación de la caché en el historial**: rechazado; mezcla estado derivado con canónico y aumenta `C` sin valor observable.
-- **No invalidar después de retroceso si las versiones coinciden**: rechazado; una versión monotónica puede no representar el estado restaurado y conservar referencias obsoletas.
+- **Añadir invalidación sin adoptar reutilización**: rechazado; no hay estado retenido que descartar.
+- **No invalidar después de retroceso si una reutilización futura se adopta**: rechazado; una versión monotónica puede no representar el estado restaurado y conservar referencias obsoletas.
 - **Invalidar al consultar `historia`**: rechazado; la consulta no decide rutas y restaura el estado vivo. Invalidar alteraría innecesariamente un derivado que 004 no alcanza.
 - **Observadores de cada atributo canónico**: rechazados; duplican el registro reversible y acoplan 004 a las cachés. La ejecución normal usa dependencias específicas y las fronteras de retroceso/inicio-carga usan invalidación explícita.
 - **Invalidación selectiva por puerta**: candidata futura; necesita índice puerta→resultados y medición de ahorro. No se justifica antes de comparar con recálculo.
@@ -80,7 +81,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Rationale**: separa invalidación de rutas de reprogramación temporal y evita invalidar todo ante cambios irrelevantes, sin asumir que todas las mutaciones tienen el mismo efecto.
 
-**Alternatives considered**: una generación global para cualquier cambio es correcta pero puede eliminar toda reutilización. Se conservará como fallback seguro para retroceso; durante ejecución normal se usarán dependencias específicas solo si la reutilización es habilitada por medición.
+**Alternatives considered**: una generación global para cualquier cambio es correcta pero puede eliminar toda reutilización. Solo se planificará como fallback si la reutilización es habilitada por medición; no forma parte de la producción de recálculo.
 
 ## R-07 — Integración del costo de movimiento
 
@@ -96,13 +97,13 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-08 — Estado reversible y línea de tiempo
 
-**Decision**: registrar solo mutaciones canónicas mediante la transacción abierta y `logica.mutaciones`/cambios de agenda existentes; costos y rangos son datos inmutables de la versión cargada. Las cachés no son alcanzables desde el estado ni las transacciones. Usar la interfaz real `HistorialReversible.deshacer_ultimo(estado) -> bool` para detectar un retroceso exitoso e invalidar después; invalidar también en `MotorJuego.iniciar(estado)`. No invalidar por `historia`.
+**Decision**: registrar solo mutaciones canónicas mediante la transacción abierta y `logica.mutaciones`/cambios de agenda existentes; costos y rangos son datos inmutables de la versión cargada. La producción inicial no conserva cachés. Cada cambio nuevo debe ser compatible con el gancho remoto publicado `fotografiar_para_rehacer(inverso, estado)` cuando la interfaz de Joshua se integre localmente. Si una decisión futura adopta reutilización, sus puntos de invalidación se planificarán entonces; no invalidar por `historia`.
 
-**Rationale**: el historial actual ya agrupa una acción y sus eventos, registra agenda, atributos, listas y azar, y revierte en orden inverso. `CambioReversible` solo exige `deshacer`; `TransaccionAccion.revertir` consume la transacción y no existe `rehacer`. 004 planifica métodos nuevos, aún sin firma, para deshacer temporalmente sin vaciar y devolver inversos, y avisos desde el historial hacia la línea. 001 no inventa esas firmas. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
+**Rationale**: el checkout `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e` solo ofrece deshacer destructivo. Joshua publicó en `972af5421d628171a4464709858275b100151c1e` —visible en `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889`— `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y el gancho `fotografiar_para_rehacer`. Publicado no significa integrado: 001 no copia ni modifica su clase. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
-**Estado observado tras el merge**: el merge de Joshua añadió planificación, no código. El guardado real sigue en v9; v10 es un contrato propuesto de 004. `RestauradorPartida.restaurar_para_reanudar()` reconstruye un estado nuevo con agenda y referencias reales, crea un historial vacío y no restaura cachés de ruta. `MotorJuego.iniciar` es la frontera común para un estado nuevo o cargado. Costo/rango aún no forman parte del registro de sala.
+**Estado observado**: localmente no está el código nuevo de Joshua. Remotamente sí está la interfaz base, pero aún no la línea completa ni un enlace nuevo del historial. El guardado consultado sigue en v9 tanto localmente como en `Steve@757d747b461cdb755705ca5cdd90391090112782`; costo/rango aún no forman parte del registro de sala.
 
-**Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para v10. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
+**Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para el formato que finalmente acuerden Steven y Joshua. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
 
 **Alternatives considered**:
 
@@ -124,7 +125,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-10 — Diseño de `--bench`
 
-**Decision**: añadir una tupla propia de proveedores de 001 a la concatenación que `main.py --bench` ya entrega a `benchmarks.integrante3.ejecutar`, conservar los proveedores actuales, conectar el benchmark real de ciclo y medir rutas, invalidación y las seis operaciones de agenda con alternativas. El fixture común se prepara fuera; todo trabajo requerido por la operación/ciclo permanece dentro.
+**Decision**: preparar una tupla propia de proveedores de 001 y coordinar con el propietario de `main.py` su registro único en la concatenación entregada a `benchmarks.integrante3.ejecutar`; conservar los proveedores actuales, conectar el ciclo real y medir rutas, reutilización experimental y las seis operaciones de agenda. El fixture común se prepara fuera; todo trabajo requerido por la operación/ciclo permanece dentro.
 
 **Rationale**: la constitución exige una vía ejecutable y comparaciones; los scripts aislados no bastan. Actualmente `main.py` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`; `integrante3.ejecutar` añade la medición existente de agenda y un ciclo que todavía ejecuta `prueba_rendimiento_sofia.py`. `benchmark_ciclo_real_integrante1.py` existe, pero no está en esa vía. La agenda conectada solo mide extracción, no las seis operaciones de `PR-005`. Además, `integrante3.medir()` produce mediana y mínimo, de modo que p95/máximo de 001 deben calcularse en su proveedor o adaptador sin reinterpretar mediciones ajenas.
 
@@ -136,8 +137,22 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 ## R-11 — Contratos entre integrantes
 
-**Decision**: mantener pendiente el contrato con Steven y registrar la aceptación condicionada de Joshua documentada por 004, sin presentar como implementadas las interfaces nuevas ni las pruebas.
+**Decision**: distinguir siempre checkout local, publicación remota y acuerdo comunicado. Registrar el acuerdo parcial con Steven y la aceptación condicionada de Joshua sin presentar otra rama como integrada ni un acuerdo como implementación.
 
-**Rationale**: `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si toda mutación observable queda dentro de la transacción, que una caché no observable puede vivir fuera y que la línea no llama al cazador. Esa es la aceptación condicionada de la frontera. A la vez, las tareas de 004 muestran que deshacer temporal/rehacer, enlace con la línea, `LineaTiempo` y v10 aún no están implementados. Steven conserva pendiente costo/rango y la coordinación del formato real v9 con el v10 propuesto.
+**Rationale**: Steven confirmó validación estricta, identificación por origen/destino y ambigüedad entre salidas múltiples, vista de exploradas, recálculo por paso y casos terminales; asume persistencia coordinada con Joshua. Su punta `757d747…` todavía no publica esas entregas, y firmas/archivos siguen abiertos. El PDF §3.1 y `spec.md` no definen expresamente el rechazo de toda salida sin inversa, por lo que se mantiene como pregunta. Joshua sí publicó la interfaz temporal en su rama, pero no está integrada en `Sofia`; `LineaTiempo` y guardado coordinado siguen pendientes. El formato comprobado continúa en v9 y ninguna versión posterior está reservada por 001.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.
+
+## R-12 — Frontera de «ir a» y resultado del buscador
+
+**Decision semántica aceptada por Steven**: el buscador devuelve un único siguiente paso, no una secuencia completa, y «ir a» recalcula antes de cada paso. `ATACAR` y `ESPERAR` son decisiones del comportamiento y quedan fuera. Origen igual a destino produce costo total 0 sin paso; ausencia de ruta es un resultado explícito distinto. Los nombres, firmas Python y representación exacta no se fijan todavía.
+
+**Rationale**: decidir un paso por vez permite aplicar §3.4 con origen, destino y conocimiento actuales, y evita que una ruta calculada con puertas recordadas antiguas se trate como compromiso futuro. Separar el resultado geométrico de la acción impide introducir reglas de combate o espera en un servicio reutilizado por 003.
+
+**Vista confirmada por Steven**: solo contiene salas exploradas y solo enumera, desde ellas, puertas recordadas abiertas hacia otras salas exploradas. Steven construirá la vista y una prueba futura donde estados reales distintos con el mismo mapa conocido producen el mismo resultado. La capacidad `contiene_sala`/`salidas_transitables` está aceptada, pero no sus firmas definitivas ni los archivos compartidos que cada integrante editará.
+
+**Alternatives considered**:
+
+- **Devolver la ruta completa**: rechazada como propuesta de Sofía porque puede quedar obsoleta antes del siguiente paso y ensancha el contrato.
+- **Usar el mapa real y filtrar después**: rechazada; puede filtrar información oculta aun si la presentación final la omite.
+- **Confundir origen=destino con sin ruta**: rechazada; son estados semánticamente distintos para 003.

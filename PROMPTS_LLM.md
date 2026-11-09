@@ -450,6 +450,10 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 34 | Impacto de integrar `origin/Steve` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 35 | Impacto de integrar `origin/joshua` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 36 | Compatibilidad de copia y serialización de salas | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 37 | Respuesta de Steven al contrato de rutas y datos 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 38 | `/speckit.tasks` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 39 | `/speckit.analyze` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
+| 40 | Remediación de la planificación 001 con ramas remotas | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -1429,6 +1433,287 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Solución.** No se usó `__reduce__`. `_ListaEnemigosSala.__deepcopy__` registra primero la nueva lista en `memo`, copia el dueño y los enemigos preservando ciclos y usa `list.append` durante la construcción. Para pickle, `append` tolera únicamente la fase previa a restaurar `_sala`. `Sala.__getstate__` omite los dos índices derivados y `Sala.__setstate__` restablece el ciclo con la lista y reconstruye ambos índices una sola vez al final. Las operaciones ordinarias conservan las actualizaciones O(1) esperadas y las firmas reversibles existentes.
 
 **Regresiones y resultado.** Se añadieron pruebas con la fixture real de `cripta-04` para `deepcopy` y la ida y vuelta de `pickle`: cantidad/orden/IDs, alias `sala_actual`, identidad de índices, independencia y extracción/restauración posterior. La ejecución final del archivo nuevo terminó en `2 passed`; la suite completa con `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` terminó en `1073 passed` en 100.85 s.
+
+## Prompt 37 — Respuesta de Steven al contrato de rutas y datos 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Actualiza la planificación de 001 con la respuesta de Steven,
+> sin generar todavía tasks.md ni implementar código.
+>
+> Steven confirmó:
+> - Él implementará la validación estricta de costo y rango.
+> - El único default de costo es 100 cuando el campo está ausente;
+>   los valores presentes inválidos se rechazan.
+> - Propone validar simetría en el recorrido existente posterior a
+>   vincular_salidas(), comparando (origen, destino) con su inverso.
+> - Acepta contiene_sala y salidas_transitables.
+> - Él construirá la vista de «ir a» desde el mapa conocido y su
+>   prueba de independencia frente al estado real oculto.
+> - Esa vista solo enumera salidas desde salas exploradas y permite
+>   rutas únicamente entre salas exploradas mediante puertas
+>   recordadas abiertas.
+> - Los costos no cambian la alcanzabilidad de resolubilidad.
+>
+> Todavía NO están confirmados por ambos:
+> - Firmas Python y representación exacta del resultado del buscador.
+> - Resultado para origen igual a destino y ausencia de ruta.
+> - Mecanismo de reutilización de cálculos para «ir a».
+> - Quién integra todos los campos de persistencia y qué versión
+>   final acuerdan Steven y Joshua.
+>
+> Incorpora como propuesta de Sofía, pendiente de respuesta:
+> - proximo_paso devuelve solo el siguiente paso.
+> - Cada paso de «ir a» se decide de nuevo según §3.4, con origen,
+>   destino y conocimiento vigentes.
+> - Se empieza con cálculo individual y se mide el límite de 5 ms
+>   en colaboración con 003. La reutilización es una alternativa
+>   condicionada a demostrar equivalencia y medir su costo completo.
+> - Origen igual a destino: costo total 0, sin paso.
+> - Sin ruta: resultado explícito y distinto del anterior.
+> - Atacar o esperar corresponde al comportamiento, no al buscador.
+> - Steven coordinaría con Joshua una actualización conjunta del
+>   guardado; no reservar unilateralmente v10 ni otra versión.
+>
+> Revisa el código y los contratos locales actuales antes de editar.
+> No supongas que existen campos, interfaces o versiones futuras.
+>
+> Actualiza coherentemente:
+> - contracts/propuesta-steven-rutas-datos.md
+> - plan.md, research.md, data-model.md y quickstart.md, si procede.
+> - Mi apartado de PROMPTS_LLM.md con este prompt y el resultado.
+>
+> Separa acuerdos confirmados, propuestas y verificaciones futuras.
+> No marques pruebas como realizadas ni acuerdos como aceptados
+> por falta de respuesta.
+>
+> No cambies spec.md, la constitución, documentos de compañeros,
+> código ni pruebas. No hagas commit, push, merge o cambio de rama.
+>
+> Devuelve los archivos modificados y una lista breve de las
+> dependencias que deberán bloquear tareas de integración.
+
+**Código y contratos revisados.** `Puerta` todavía no almacena costo; `DecodificadorDatos` no valida costo/rango; `MapaCripta.obtener_sala()` y `vincular_salidas()` siguen recorriendo la lista; el inicializador ya dispone de un recorrido posterior al enlace antes de 002; y `GuardadoBinario.VERSION` continúa en 9 sin esos campos. No se supuso ninguna interfaz o versión futura.
+
+**Acuerdos registrados.** Steven asume la validación estricta —default 100 solo por ausencia—, la simetría posterior a `vincular_salidas()`, las capacidades `contiene_sala`/`salidas_transitables`, la vista restringida al mapa conocido y su prueba futura de independencia. También se registró que los costos no alteran la alcanzabilidad de 002. Estas responsabilidades no se presentaron como implementadas.
+
+**Propuesta y bloqueos.** Quedó como propuesta de Sofía devolver un solo paso, recalcular en cada paso, separar buscador de comportamiento, distinguir destino alcanzado de ausencia de ruta, comenzar con cálculo individual y medir con 003 el costo completo frente a 5 ms. Firmas/resultado exacto, casos terminales, reutilización y persistencia/versionado conjunto Steven–Joshua siguen pendientes. V9 es la única versión real; v10 no se reservó. Se actualizaron únicamente los cinco artefactos permitidos de 001 y esta entrada; no se creó `tasks.md`, no se modificó código/pruebas y no se ejecutaron pruebas por tratarse de documentación.
+
+## Prompt 38 — `/speckit.tasks` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Genera exclusivamente tasks.md para specs/001-terreno-y-cazador,
+> en la rama Sofia, usando el spec aclarado y el plan actualizado.
+>
+> Lee la constitución, spec.md, plan.md, research.md, data-model.md,
+> quickstart.md y ambos contratos de 001. Revisa el código actual
+> para no crear tareas que dupliquen funcionalidades existentes.
+>
+> Requisitos de las tareas:
+> 1. Cada tarea tiene ID estable, archivo concreto, resultado
+>    verificable y referencias a los FR/PR que atiende.
+> 2. Organiza por dependencias e historias de usuario. Marca como
+>    paralelas solo tareas que realmente puedan ejecutarse sin
+>    conflictos de archivos o dependencias.
+> 3. Incluye pruebas para los 30 escenarios del spec y una matriz
+>    que permita recorrer AC → FR/PR → tareas → pruebas previstas.
+> 4. Separa:
+>    - tareas propias de Sofía;
+>    - entregas de Steven/Joshua que se verifican como dependencias;
+>    - tareas conjuntas que requieren coordinación.
+>    No asignes a Sofía cambios de compañeros sin acuerdo.
+> 5. Identifica con precisión las tareas bloqueadas por firmas del
+>    buscador, semántica de resultados, datos validados, persistencia
+>    o interfaces históricas pendientes.
+> 6. No conviertas la reutilización de rutas en condición obligatoria:
+>    «ir a» puede recalcular en cada paso si cumple §3.4 y los 5 ms.
+>    La reutilización es una alternativa que se compara y adopta
+>    únicamente si las mediciones la justifican.
+> 7. Incluye comparación individual/compartida, puertas estables/
+>    inestables, costo completo y las seis operaciones de agenda.
+>    Conecta la evidencia a --bench.
+> 8. Distingue mediciones sintéticas de la validación final con la
+>    referencia oficial. Su publicación pendiente bloquea esa
+>    validación final, no todas las tareas de desarrollo.
+> 9. Incluye verificaciones de deepcopy/pickle y alias de cambios
+>    nuevos, coherencia de índices, retroceso e invalidación explícita.
+>    Reutiliza las regresiones existentes cuando cubran el caso.
+> 10. Incluye documentación final de decisiones con resultados reales,
+>     revisión de restricciones y suite completa.
+> 11. Deja todas las tareas de implementación sin marcar. No presentes
+>     cobertura planificada como pruebas ejecutadas.
+>
+> Si detectas una contradicción que impide descomponer el plan,
+> infórmala; no inventes reglas ni aceptaciones de contratos.
+>
+> Registra el prompt y resultado en mi apartado de PROMPTS_LLM.md.
+> No implementes tareas, no generes código ni pruebas.
+> No cambies la constitución ni documentos de compañeros.
+> No hagas commit, push, merge o cambio de rama.
+>
+> Devuelve número de tareas, fases, dependencias bloqueantes,
+> cobertura de requisitos y archivos modificados.
+
+**Resultado.** Se generó `specs/001-terreno-y-cazador/tasks.md` con 63 tareas sin marcar en ocho fases: 8 para US1, 12 para US2, 12 para US3, 10 para US4 y 21 de preparación, fundamento, coordinación y cierre. Las 23 oportunidades `[P]` usan archivos distintos y no dependen de trabajo incompleto de la misma fase.
+
+**Trazabilidad y fronteras.** La matriz contiene exactamente los 30 AC, incluidos AC-B01–AC-B07, y enlaza FR/PR, tareas y pruebas previstas. Se separaron tareas de Sofía, dependencias verificables de Steven/Joshua y tareas conjuntas. Las puertas G1–G6 delimitan firma/resultado, datos validados, vista conocida, interfaces históricas, persistencia y referencia oficial; esta última bloquea solo la validación final de PR-001.
+
+**Reutilización y código existente.** El cálculo individual por paso permanece suficiente si cumple §3.4 y 5 ms; compartir/reutilizar es una alternativa medida con costo completo. Se reutilizan `calcular_intervalo`, agenda/reprogramación, transacciones, `MonticuloMinimo`, `TablaHashImpl`, los benchmarks existentes y las regresiones de copia/serialización de `Sala`. No se detectó una contradicción normativa que impidiera descomponer el plan. No se implementó código ni pruebas y no se ejecutó la suite.
+
+## Prompt 39 — `/speckit.analyze` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Analiza la consistencia de specs/001-terreno-y-cazador antes de
+> implementar. Esta ejecución es de análisis, no de corrección.
+>
+> Lee la constitución, PDF oficial, spec, plan, research, data-model,
+> quickstart, tasks y contratos actuales. Contrasta también las
+> interfaces existentes y dependencias documentadas de 002/004.
+>
+> Comprueba especialmente:
+> - T042/T043 comparten archivo pese a sus marcas de paralelismo.
+> - T031 depende de una alternativa experimental desarrollada después,
+>   en T046, y puede existir una dependencia circular entre fases.
+> - T037 parece situar experimentos en producción, aunque el plan
+>   reserva alternativas para --bench hasta decidir con evidencia.
+> - Faltan tareas explícitas de DECISIONES.md para §5.1, §5.2 y la
+>   parte de agenda de §5.6, e instrucciones de aceptación en README.
+> - T003 no debe ampliar unilateralmente el acuerdo de Steven a
+>   archivos compartidos cuya responsabilidad no está confirmada.
+> - Diferenciar escribir pruebas antes de implementar de poder
+>   ejecutarlas satisfactoriamente.
+> - Dependencias transitivas, bloqueos excesivos, duplicaciones,
+>   requisitos sin prueba concreta y firmas todavía no acordadas.
+> - Que las alternativas medidas y los trabajos de compañeros no
+>   autoricen al agente a editar sus clases.
+>
+> Devuelve hallazgos con identificador, gravedad, ubicación,
+> requisito afectado y corrección propuesta. Distingue dependencias
+> externas conocidas de contradicciones reales.
+>
+> No cambies spec, plan, tasks, contratos, código ni pruebas.
+> Únicamente registra esta invocación real y un resumen fiel de su
+> resultado en mi apartado de PROMPTS_LLM.md, sin alterar entradas
+> anteriores. No marques tareas de implementación como completadas.
+>
+> No hagas commit, push, merge ni cambio de rama.
+> No ejecutes speckit.implement.
+
+**Resultado del análisis.** Se identificaron 16 hallazgos: 2 críticos, 5 altos, 8 medios y 1 bajo. Los críticos son fronteras de propiedad/contrato: T003 atribuye a Steven cambios en DTO e inicialización más allá de la responsabilidad confirmada en su frontera de datos, y T049 asigna unilateralmente a Sofía la edición del punto compartido `main.py` pese a que el plan exige coordinación. Ambos contradicen el principio VIII y deben corregirse antes de implementar.
+
+**Orden, experimentos y pruebas.** Se confirmó que T042/T043 no son paralelas porque comparten archivo; T031 depende de la alternativa que T046 crea en una fase posterior; y T036–T038 convierten infraestructura de reutilización experimental en trabajo de producción antes de que `--bench` justifique adoptarla. T001 mezcla el análisis de solo lectura con su corrección. También se debe separar «prueba escrita» de «prueba que ya puede pasar», aclarar los solapamientos T040/T056 y T041/T055, y añadir una comprobación automatizada explícita para AC-013/PR-001 y otra para la ausencia del sentido inverso en la simetría confirmada.
+
+**Documentación y dependencias.** Faltan tareas concretas para `DECISIONES.md` §5.1, §5.2 y la revisión de agenda de §5.6, además de instrucciones de aceptación en `README.md`. T057 bloquea conjuntamente dos decisiones separables —estrategia del cazador e integración de «ir a»— y T047 no identifica la alternativa de agenda con suficiente precisión. Las firmas del buscador, la vista de 003, las interfaces de 004, el guardado coordinado y la referencia oficial siguen siendo dependencias externas conocidas, no contradicciones. La cobertura nominal enlaza los 24 FR/PR y los 8 SC con tareas, pero esos enlaces no eliminan los huecos de prueba/documentación anteriores.
+
+**Alcance y fuentes.** Se revisaron los dos PDF presentes (`distribucion_cripta.pdf` y el documento de decisiones de Parte I), `docs/enunciado.md`, los artefactos de 001, contratos/dependencias de 002/004 y las interfaces reales. El repositorio no contiene un PDF normativo de Parte II con las secciones §5.1, §5.2 y §5.6 citadas por 001; esa ausencia limita la comprobación textual directa y se reporta como dependencia documental externa, no como contradicción inventada. No se corrigió ningún artefacto, no se ejecutaron pruebas ni benchmarks y ninguna tarea fue marcada.
+
+## Prompt 40 — Remediación de la planificación 001 con ramas remotas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Todavía no he integrado los últimos commits de Steven y Joshua.
+> Consulta sus archivos remotos en modo lectura y registra el hash
+> de cada versión consultada.
+>
+> Distingue expresamente:
+> - lo que está disponible en mi checkout local;
+> - lo publicado por mis compañeros, pendiente de integrar;
+> - los acuerdos comunicados, pendientes de implementación.
+>
+> No marques una dependencia como disponible localmente solo porque
+> exista en otra rama. No hagas merge ni descartes mis cambios.
+>
+> Corrige la planificación de 001 a partir del informe de analyze
+> del Prompt 39. No implementes código.
+>
+> Antes de editar:
+> - Lee el PDF oficial de Parte II en la ruta externa ya utilizada.
+>   Si no está accesible, informa la limitación sin sustituirlo por
+>   el reparto interno.
+> - Consulta en modo lectura el código publicado por Joshua que
+>   incorpora fotografiar_para_rehacer(inverso, estado).
+>   No hagas merge ni cambies de rama.
+>
+> Actualiza los acuerdos con evidencia:
+> - Steven acepta validación estricta de costo/rango y simetría,
+>   identificación de sentidos por origen/destino y detección de
+>   ambigüedad entre salidas múltiples.
+> - Acepta vista conocida solo de salas exploradas, recálculo por
+>   paso, origen=destino con costo 0 y sin paso, y sin ruta distinguible.
+> - Steven toma persistencia de costo/rango/mapa conocido coordinada
+>   con Joshua. No fijar versión implementada sin comprobarla.
+> - Las firmas Python y los archivos compartidos todavía requieren
+>   asignación concreta.
+> - No está confirmado que deba rechazarse toda salida sin inversa:
+>   contrasta las fuentes y deja la pregunta pendiente si no lo definen.
+>
+> Remedia los hallazgos:
+> 1. K001/K002: separar entregas de compañeros de tareas propias;
+>    main.py requiere integración conjunta acordada.
+> 2. I001: quitar paralelismo entre T042/T043 y revisar todas las
+>    marcas [P], dependencias y ejemplos.
+> 3. I002: eliminar el ciclo entre US3 y la alternativa de US4.
+> 4. I003: mantener experimentos en benchmarks. Cachés productivas
+>    e invalidación solo son necesarias si se adopta reutilización;
+>    no exigirlas para una búsqueda sin estado retenido.
+> 5. C001/C002: añadir tareas de DECISIONES.md para §5.1, §5.2 y
+>    agenda de §5.6, y README con aceptación y mediciones.
+> 6. I004: separar el análisis ya realizado de su remediación y de
+>    la revisión posterior. No marcar implementación como completada.
+> 7. I005/D001/D002: distinguir escribir pruebas de ejecutarlas,
+>    cerrar cada historia y eliminar duplicaciones de integraciones.
+> 8. C003: añadir prueba del esquema/salida del ciclo real;
+>    la ejecución con referencia oficial sigue pendiente.
+> 9. I006: separar decisiones de estrategia del cazador y de «ir a».
+> 10. A001: concretar la alternativa lineal de agenda, local al benchmark.
+> 11. I007: actualizar la descripción documental del plan.
+>
+> Conserva los IDs existentes cuando sea posible, agrega nuevos sin
+> reutilizarlos y actualiza matrices, dependencias y recuentos.
+> No rebajes requisitos para eliminar hallazgos.
+>
+> Modifica solo los documentos de 001 necesarios y mi apartado de
+> PROMPTS_LLM.md. No cambies spec.md sin señalar primero cualquier
+> cambio normativo necesario. No edites documentos de compañeros,
+> constitución, código o pruebas.
+>
+> Devuelve una tabla de los 16 hallazgos: corregido, desactualizado,
+> no confirmado o pendiente, con evidencia y archivos afectados.
+> No hagas commit, push, merge ni ejecutes implement.
+
+**Fuentes y estado de ramas.** Se leyó el PDF oficial accesible en `C:\Users\sophie\OneDrive - Universidad Nacional de Costa Rica\Estruc. Datos\Cripta - Parte II.pdf`; confirma §§3.1–3.4, 5.1, 5.2, 5.6, 6.1–6.3 y 7.1–7.2. El checkout local permaneció en `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Se consultaron sin checkout ni merge `Steve@757d747b461cdb755705ca5cdd90391090112782` y `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889`. Joshua publica la interfaz en `972af5421d628171a4464709858275b100151c1e`: `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y `fotografiar_para_rehacer(inverso, estado)`; todavía no está disponible localmente. La punta de Steve conserva `GuardadoBinario.VERSION = 9` y no publica aún costo/rango/003/persistencia.
+
+**Acuerdos frente a implementación.** Se registró como acuerdo comunicado —no código disponible— la validación estricta de Steven, identificación de sentidos por origen/destino, detección de ambigüedad, vista solo de exploradas, recálculo por paso, casos terminales y persistencia coordinada con Joshua. Firmas y archivos compartidos siguen abiertos. El PDF y `spec.md` no exigen expresamente rechazar toda salida sin inversa; la pregunta quedó pendiente y no se cambió `spec.md`.
+
+**Remediación.** `tasks.md` pasó a 71 tareas T001–T071, 21 `[P]` reales y cero marcadas; US1=9, US2=12, US3=12 y US4=12. T042→T043 quedó secuencial; AC-009 pasó a T046/T065 sin ciclo; reutilización e invalidación quedaron solo en benchmarks hasta decisión posterior; T040/T041 escriben pruebas y T055/T056 las ejecutan; se añadieron cierres de historias, prueba de esquema AC-013, decisiones separadas para cazador/«ir a», tareas de `DECISIONES.md` §§5.1/5.2/5.6 y README. T003/T049 ya no asignan unilateralmente archivos de compañeros. La matriz conserva los 30 AC y todos los FR/PR.
+
+**Resultado de los 16 hallazgos.** Quince quedaron corregidos en la planificación. C004 quedó **no confirmado**: la ausencia de sentido inverso no tiene política definida en las fuentes consultadas y no se convirtió en requisito. La ejecución oficial de AC-013 permanece externamente pendiente, aunque su prueba de esquema/salida ya está planificada. No se implementó código, no se editaron pruebas, no se ejecutó la suite y no se hizo commit, push, merge ni cambio de rama.
 
 ---
 

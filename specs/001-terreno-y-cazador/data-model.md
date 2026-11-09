@@ -28,9 +28,9 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 | `abierta` | booleano | estado actual | canónico reversible |
 | cierre/llave/evento | contrato heredado | validación existente | canónico reversible |
 
-**Invariante**: los dos sentidos de una salida comparten costo. Una contradicción rechaza la cripta antes de jugar (`FR-002`).
+**Invariante**: cuando se identifican los dos sentidos de una salida, comparten costo. Se identifican por origen/destino y una multiplicidad entre el mismo par debe detectarse como ambigua; una contradicción rechaza la cripta antes de jugar (`FR-002`). Las fuentes consultadas no definen si toda salida sin inversa se rechaza, por lo que esa política permanece pendiente.
 
-**Estado observado tras el merge**: `Puerta` y los dos caminos de `DecodificadorDatos.convertir_sala()` todavía no tienen `costo`; la tabla anterior sigue siendo el modelo objetivo de 001, no una capacidad aportada por 002.
+**Estado observado**: `Puerta` y los dos caminos de `DecodificadorDatos.convertir_sala()` todavía no tienen `costo`; la tabla anterior sigue siendo el modelo objetivo de 001. Steven confirmó que implementará la validación, con 100 solo por ausencia y rechazo de todo valor presente inválido.
 
 **Transiciones**:
 
@@ -53,6 +53,7 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 - el índice y la lista apuntan a la misma instancia;
 - ninguna decisión usa el orden de iteración de la tabla hash;
 - vincular destinos no cambia el orden de salas ni puertas.
+- el recorrido posterior a `vincular_salidas()` identifica sentidos por `(origen_id, destino_id)`, detecta pares múltiples ambiguos y rechaza costos asimétricos antes de ejecutar 002; no inventa todavía una política para la ausencia de inversa.
 
 **Sustitución infrecuente**: si `agregar_sala` recibe un ID existente, recorre la lista O(`V`) para encontrar su posición, coloca allí la nueva referencia y actualiza la tabla. Si el mapa estaba vinculado, vuelve a resolver todas las referencias `destino_sala` desde sus IDs antes de exponerlo; esto actualiza las salidas entrantes y las de la sala nueva, con O(`V+E`) esperado y O(`V·E`) peor caso si el índice hash degenera. Durante carga inicial puede diferirse hasta el único `vincular_salidas` final.
 
@@ -78,7 +79,7 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 | `comportamiento` | `"cazador"` | ficha de enemigo |
 | `rango` | entero `>= 0` | obligatorio; booleano, cadena, fracción, negativo o ausencia rechazan la ficha |
 
-**Estado observado tras el merge**: `Enemigo` no materializa `rango`. El camino externo ya resuelve la ficha en `DecodificadorDatos._adaptar_contenido_externo()` y el camino de reanudación vuelve a vincular fichas en `RestauradorPartida._completar_v5()`; la representación final debe acordarse con Steven y conservarse a través del guardado compatible.
+**Estado observado**: `Enemigo` no materializa `rango`. El camino externo ya resuelve la ficha en `DecodificadorDatos._adaptar_contenido_externo()` y el camino de reanudación vuelve a vincular fichas en `RestauradorPartida._completar_v5()`. Steven confirmó que implementará su validación estricta; la representación materializada y su persistencia compatible siguen pendientes.
 
 **Estado de decisión**: no se persiste. En cada turno se produce `ATACAR`, `ESPERAR` o `MOVER` a una primera vecina con costo de acción.
 
@@ -95,16 +96,16 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 
 Operaciones conceptuales:
 
-- comprobar que un ID pertenece a la vista;
-- enumerar salidas transitables desde una sala como `(destino_id, costo)`;
+- `contiene_sala`: comprobar que un ID pertenece a la vista;
+- `salidas_transitables`: enumerar desde una sala pares conceptuales `(destino_id, costo)`;
 - obtener una sala por ID sin búsqueda lineal.
 
 Implementaciones previstas:
 
 - vista real del cazador: esqueleto completo + estado actual de puertas;
-- vista del mapa conocido de «ir a»: solo salas exploradas y puertas recordadas abiertas, pendiente de acuerdo con Steven.
+- vista del mapa conocido de «ir a», construida por Steven: solo contiene salas exploradas y solo enumera, desde ellas, puertas recordadas abiertas hacia otras salas exploradas.
 
-La vista no expone contenido de salas, red, niebla ajena ni mutaciones.
+Steven aceptó estas dos capacidades conceptuales y construirá una prueba futura de independencia frente al estado real oculto. También aceptó recalcular por paso. Las firmas Python, el protocolo/clase, el tipo exacto de cada retorno y la asignación de archivos compartidos continúan abiertos. La vista no expone contenido de salas, red, niebla ajena ni mutaciones.
 
 ## 7. EtiquetaRuta y frontera (derivadas)
 
@@ -126,19 +127,31 @@ La tabla de mejores etiquetas contiene como máximo una etiqueta vigente por sal
 
 No se insertan etiquetas con distancia superior al rango. Con costos positivos, descartarlas no puede ocultar una ruta que regrese dentro del límite. Al terminar se liberan mejores etiquetas, fijadas y todas las entradas restantes. Nada de esto es reversible ni persistente.
 
-## 8. ResultadoRuta (derivado)
+## 8. ResultadoRuta (derivado; representación abierta)
+
+El modelo interno necesita distinguir conceptualmente estos resultados; los nombres no son una API acordada:
+
+| Estado conceptual | Paso | Costo total |
+|---|---|---|
+| paso disponible | solo la primera vecina | entero positivo dentro del límite aplicable |
+| origen igual a destino | ninguno | 0 |
+| sin ruta | ninguno | ausencia explícita, distinta del caso anterior |
+
+Steven acepta que la operación conceptual de próximo paso nunca entregue una secuencia comprometida: cada paso de «ir a» se consulta de nuevo con origen, destino y conocimiento vigentes. El nombre `proximo_paso` no constituye una firma acordada.
+
+Para la lógica y la instrumentación de 001 pueden ser necesarios los siguientes datos conceptuales, sin fijar campos ni tipo de retorno entre integrantes:
 
 | Campo | Valor |
 |---|---|
-| `alcanzable` | verdadero/falso dentro del límite |
+| estado/alcanzabilidad | distingue paso, destino alcanzado y ausencia de ruta |
 | `costo_total` | entero o ausencia |
 | `primera_vecina_id` | entero o ausencia |
 | `costo_primera_salida` | entero o ausencia |
 | métricas | fijadas `F`, descubiertas `D`, salidas examinadas `E`, entradas insertadas `P`, frontera máxima `Q`, obsoletas extraídas y frontera final limpiada; solo instrumentación/bench |
 
-El comportamiento transforma el resultado en una acción; el resultado no modifica estado.
+El comportamiento transforma el resultado en una acción; `ATACAR` y `ESPERAR` no pertenecen al buscador. El resultado no modifica estado. La firma Python y la representación exacta continúan pendientes de acuerdo.
 
-## 9. InstantáneaRutaCompartida (derivada y experimental)
+## 9. InstantáneaRutaCompartida (solo benchmark; no producción)
 
 | Campo | Dependencia |
 |---|---|
@@ -148,13 +161,15 @@ El comportamiento transforma el resultado en una acción; el resultado no modifi
 | límite agregado | rango máximo cubierto |
 | distancias | tabla propia por sala |
 
-**Invalidación**: puerta, objetivo, versión, retroceso exitoso o inicio/carga de estado. `historia` no invalida. Velocidad y movimiento/muerte de otro actor no cambian distancias; sí pueden cambiar quién consume la instantánea.
+**Invalidación experimental medida**: puerta, objetivo, versión, retroceso exitoso o inicio/carga de estado. `historia` no invalida. Velocidad y movimiento/muerte de otro actor no cambian distancias; sí pueden cambiar quién consume la instantánea.
 
-No se habilita en producción hasta que `--bench` la justifique.
+No se implementa ni habilita en producción hasta que `--bench` la justifique y una actualización posterior de plan/tareas asigne propietario, claves y archivos.
 
-**Ubicación**: si se habilita, pertenece al motor o al servicio de rutas. No es un campo de `EstadoPartida`, de una entidad canónica ni de ningún objeto alcanzable desde una transacción. Por eso no entra en puntos de control, `deepcopy` ni `pickle` de 004.
+Para «ir a», el mecanismo de reutilización, sus claves y su propietario siguen sin acuerdo. La primera propuesta calcula cada paso individualmente y solo permite reutilización tras demostrar equivalencia con origen/destino/conocimiento vigentes y medir construcción, consulta, invalidación y limpieza frente al límite de 5 ms de 003.
 
-**Fronteras globales**: se invalida después de un `deshacer_ultimo` exitoso y al pasar cualquier estado nuevo/cargado a `MotorJuego.iniciar`. Una consulta `historia` no invalida: no ejecuta decisiones y restaura el estado vivo en `finally`.
+**Ubicación actual**: `benchmarks/`, como alternativa local al benchmark. Si se habilitara después, pertenecería al motor o al servicio de rutas, nunca a `EstadoPartida`, entidades canónicas o cambios.
+
+**Producción actual planificada**: recálculo sin estado retenido; no existen fronteras de invalidación. Las fronteras anteriores solo son escenarios que debe medir la alternativa experimental.
 
 ## 10. Evento de agenda
 
@@ -175,7 +190,7 @@ No se habilita en producción hasta que `--bench` la justifique.
 
 **Excluido**: montículos de ruta, etiquetas, distancias, métricas e instantáneas. Después de deshacer, esos derivados se eliminan y se reconstruyen desde el estado restaurado.
 
-**Mecanismo real**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. La interfaz actual permite deshacer de forma destructiva, pero no rehacer. Los métodos no destructivos para `historia` pertenecen a la implementación pendiente de 004; sus nombres no se anticipan aquí.
+**Mecanismo real local**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. En `Sofia@f89b7b5…` solo hay deshacer destructivo. Joshua publicó remotamente `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y la extensión `fotografiar_para_rehacer(inverso, estado)` (`972af542…`, consultada en `joshua@112cd78…`), pero aún no están disponibles en el checkout local.
 
 **Compatibilidad con 004**: un cambio nuevo solo retiene valores y referencias canónicas incluidas en el paquete `(estado, transacciones)`. Debe conservar alias correctos al copiar ese paquete con `deepcopy` y al serializar conjuntamente estado/línea con `pickle`; no referencia motor, servicio de rutas, cachés, callbacks ni recursos externos.
 
@@ -191,8 +206,8 @@ No se habilita en producción hasta que `--bench` la justifique.
 | cambiar velocidad | velocidad, tiempo/secuencia del evento | ninguna distancia; sí próxima acción |
 | muerte de actor | vida/actividad/listas/eventos | lote de cazadores, no distancias por sí solas |
 | cargar contenido | contenido de sala | ninguna ruta del cazador |
-| retroceder con éxito | varios campos anteriores | todos los cálculos derivados, una vez terminado `deshacer_ultimo` |
-| iniciar/cargar estado | estado vivo nuevo o reconstruido | todos los cálculos derivados anteriores |
+| retroceder con éxito | varios campos anteriores | ninguno entre decisiones con recálculo; invalidación solo si una estrategia futura retiene derivados |
+| iniciar/cargar estado | estado vivo nuevo o reconstruido | ninguno entre decisiones con recálculo; invalidación solo si una estrategia futura retiene derivados |
 | consultar `historia` | mutación temporal que 004 rehace en `finally` | ninguno; no ejecuta 001 ni altera cachés externas |
 
 ## 13. Persistencia y reconstrucción vigentes
@@ -208,7 +223,7 @@ No se habilita en producción hasta que `--bench` la justifique.
 | `RestauradorPartida._reconstruir_mapa()` | crea salas, comprueba destinos y vincula referencias | reconstruye costo canónico; nunca resultados de ruta |
 | `RestauradorPartida.restaurar_para_reanudar()` | publica estado nuevo, agenda reconstruida e historial vacío | `MotorJuego.iniciar` invalida explícitamente cualquier caché anterior al enlazarlo |
 
-V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones. 004 propone **v10**, aún no implementado, con una sección opaca que serializa juntos el estado vivo y la línea; costo/rango canónicos deben estar en ese estado, mientras etiquetas, fronteras, distancias, métricas e instantáneas permanecen fuera. La coordinación de ambos cambios con Steven y la compatibilidad se acuerdan antes de implementar.
+V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones. Steven asume persistir costo/rango/mapa conocido coordinado con Joshua, pero `Steve@757d747…` sigue en v9 y no publica esa entrega. 001 no reserva v10 ni otra versión: campos, representación, compatibilidad, archivos y versión final deben comprobarse en el hash que finalmente se integre. Etiquetas, fronteras, distancias, métricas e instantáneas permanecerán fuera del guardado.
 
 ## 14. Reconstrucción histórica de 004
 
