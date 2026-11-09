@@ -180,3 +180,150 @@ a pedir nada (`SC-004`).
 `datos/decodificador_datos.py` (`convertir_llaves`); `main.py` (`--verificar`);
 `benchmarks/integrante2.py` (`medir_resolubilidad`, `medir_resolubilidad_cripta_real`);
 `tests/test_logica/test_resolubilidad.py`; `tests/test_datos/test_contrato_llaves.py`.
+
+---
+
+## 5.6 Revisión de decisiones con la carga nueva
+
+La revisión de agenda correspondiente a §5.6 se completará por separado en T069. La evidencia
+complementaria del mapa se documenta en [Índice por ID de MapaCripta (evidencia complementaria
+de 001)](#índice-por-id-de-mapacripta-evidencia-complementaria-de-001). Esta referencia no cambia
+la decisión de Resolubilidad de §5.4 ni atribuye a 001 el componente de 002.
+
+### Índice por ID de MapaCripta (evidencia complementaria de 001)
+
+**Especificación**: [specs/001-terreno-y-cazador/spec.md](specs/001-terreno-y-cazador/spec.md) ·
+**Plan**: [specs/001-terreno-y-cazador/plan.md](specs/001-terreno-y-cazador/plan.md) ·
+**Diseño medido**: [benchmarks/mapa_cripta_integrante1.py](benchmarks/mapa_cripta_integrante1.py)
+
+#### 1. Problema y consumidores
+
+`MapaCripta` necesita conservar el orden de llegada de las salas, pero una lista sola obliga a
+recorrer hasta `V` referencias para resolver cada ID. Esa búsqueda aparece en operaciones
+frecuentes y, al vincular `E` salidas, puede repetirse una vez por puerta. El costo lineal no es
+solo del verificador de Resolubilidad: también afecta, entre otros, inicialización y restauración
+(`datos/decodificador_datos.py`, `service/inicializador_partida.py`,
+`service/restaurador_partida.py`), simulación (`logica/motor_juego.py`,
+`logica/registro_rastro.py`, `logica/gestor_efectos.py`), carga gradual, servicios, vista y pruebas
+de identidad/serialización. El cambio debía preservar las firmas y la instancia canónica que esos
+consumidores ya observaban.
+
+#### 2. Decisión y alternativa
+
+Se conserva `_salas` como lista de referencias para mantener orden estable, recorrido, guardado y
+la sustitución de una sala en su misma posición. En paralelo, `_salas_por_id` usa la
+`TablaHashImpl` propia para `obtener_sala` y `contiene_sala`. Altas y sustituciones actualizan las
+dos representaciones; `vincular_salidas` consulta el índice y deja cada `Puerta.destino_sala`
+apuntando a la instancia canónica. El orden de buckets de la tabla nunca define el orden del mapa.
+
+La comparación usa `_MapaLinealBenchmark`, limitada a
+`benchmarks/mapa_cripta_integrante1.py`: conserva únicamente una lista, busca y sustituye por
+recorrido y resuelve cada destino de cada puerta con otra búsqueda lineal. Antes de cronometrar se
+comprobaron los mismos IDs y orden, aciertos y ausencias idénticos, orden de puertas, destinos y
+alias canónicos. La generación de salas/puertas quedó fuera; construcción, consultas y
+vinculación tuvieron intervalos separados.
+
+#### 3. Complejidad
+
+Con `V` salas y `E` salidas dirigidas:
+
+| Operación | Lista + `TablaHashImpl` | Peor caso hash | Alternativa lineal medida |
+|---|---|---|---|
+| Construir | `O(V)` esperado total; inserción `O(1)` esperada/amortizada | `O(V²)` por colisiones patológicas y rehashes | `O(V²)`, porque cada alta comprueba el ID por recorrido |
+| Consultar/contener por ID | `O(1)` esperado | `O(V)` | `O(V)` |
+| Sustituir una sala | `O(V)` para conservar exactamente la posición; índice esperado `O(1)` | `O(V)` | `O(V)` |
+| Vincular todas las salidas | `O(V+E)` esperado | `O(V·E)` si cada consulta degenera | `O(V·E)` |
+| Sustituir y revincular | `O(V+E)` esperado | `O(V·E)` | `O(V·E)` |
+
+El índice añade `O(V)` memoria. `obtener_salas()` sigue copiando solo la lista de referencias y no
+expone ni ordena la tabla.
+
+#### 4. Entorno, cargas y resultados originales
+
+La ejecución original se conserva en
+[`benchmarks/resultados/mapa_cripta_original_c1_r9_32-128-512.json`](benchmarks/resultados/mapa_cripta_original_c1_r9_32-128-512.json).
+Usó Python 3.12.10 sobre Windows 11 (`Intel64 Family 6 Model 154 Stepping 3`),
+`perf_counter_ns`, semilla de fixture 1729, un calentamiento y nueve repeticiones. La unidad es
+**ns por lote** y todas las muestras permanecen en el JSON. Con nueve muestras, p95 por
+*nearest-rank* ocupa el rango 9 y coincide con el máximo.
+
+**Construcción** — cada lote añade `V` salas; la densidad indica las puertas ya presentes en el
+fixture, cuya generación no forma parte del intervalo:
+
+| V | Salidas/sala | Índice mediana | Índice p95=máx. | Lineal mediana | Lineal p95=máx. |
+|---:|---:|---:|---:|---:|---:|
+| 32 | 1 | 32 800 | 35 400 | 22 100 | 23 600 |
+| 32 | 4 | 37 900 | 40 100 | 17 900 | 18 700 |
+| 128 | 1 | 236 500 | 322 500 | 255 900 | 309 700 |
+| 128 | 4 | 150 200 | 169 100 | 238 100 | 258 500 |
+| 512 | 1 | 675 400 | **33 018 900** | 3 887 900 | 4 211 300 |
+| 512 | 4 | 602 900 | 629 200 | 3 613 600 | 4 164 000 |
+
+**Consultas por ID** — cada patrón contiene aciertos al inicio, medio y final y dos ausencias, y se
+repite `V` veces:
+
+| V | Consultas/lote | Índice mediana | Índice p95=máx. | Lineal mediana | Lineal p95=máx. |
+|---:|---:|---:|---:|---:|---:|
+| 32 | 160 | 25 500 | 26 700 | 64 100 | 66 500 |
+| 128 | 640 | 100 100 | 102 600 | 1 026 600 | 1 184 500 |
+| 512 | 2 560 | 486 100 | 536 700 | 13 630 700 | 13 821 400 |
+
+**Vinculación** — cada lote resuelve todas las salidas del grafo:
+
+| V | Salidas/sala | E | Índice mediana | Índice p95=máx. | Lineal mediana | Lineal p95=máx. |
+|---:|---:|---:|---:|---:|---:|---:|
+| 32 | 1 | 32 | 7 100 | 11 100 | 15 700 | 19 200 |
+| 32 | 4 | 128 | 21 300 | 21 800 | 42 800 | 45 000 |
+| 128 | 1 | 128 | 29 100 | 37 900 | 181 500 | 193 000 |
+| 128 | 4 | 512 | 117 400 | 322 100 | 656 300 | 979 900 |
+| 512 | 1 | 512 | 151 100 | 211 500 | 2 541 000 | 3 081 200 |
+| 512 | 4 | 2 048 | 376 700 | 433 800 | 9 146 900 | 10 785 800 |
+
+La consulta indexada conserva un costo aproximadamente constante por consulta mientras el lote
+crece; la lineal aumenta también con `V`. La vinculación muestra el mismo contraste entre resolver
+`E` destinos por hash y hacer `E` recorridos. La construcción paga la estructura adicional y en
+32 salas puede ser más lenta; desde 128/512 salas sus medianas son menores que las de la
+alternativa lineal medida. Esto matiza la hipótesis histórica de §5.4: confirma el cuello de
+botella en las primitivas de consulta/vinculación, pero no vuelve a medir ni atribuye a este
+benchmark el cambio de 18,85 ms a 7,34 ms del verificador completo de 002.
+
+#### 5. Muestra extrema y repetición conservada
+
+La construcción indexada de 512 salas y una salida por sala tuvo en la corrida original una
+muestra de **33 018 900 ns**, que por el tamaño de nueve muestras fue a la vez p95 y máximo; la
+mediana del mismo lote fue 675 400 ns. La muestra se conserva y no se descarta ni se le asigna una
+causa no comprobada.
+
+La repetición posterior está en
+[`benchmarks/resultados/mapa_cripta_repeticion_c5_r30_512.json`](benchmarks/resultados/mapa_cripta_repeticion_c5_r30_512.json).
+Usó el mismo entorno, semilla 1729, tamaño 512 y densidades 1/4, con cinco calentamientos, treinta
+repeticiones, todas las muestras conservadas y p95 *nearest-rank* en el rango 29:
+
+| Operación (512 salas) | Densidad | Índice mediana/p95/máx. | Lineal mediana/p95/máx. |
+|---|---:|---:|---:|
+| Construcción | 1 | 639 950 / 685 600 / 718 600 | 4 484 950 / 4 737 100 / 4 995 200 |
+| Construcción | 4 | 652 000 / 897 800 / 1 252 100 | 3 914 450 / 4 462 900 / 4 476 700 |
+| Vinculación (`E=512`) | 1 | 218 200 / 1 093 100 / 1 636 300 | 2 394 800 / 2 738 700 / 2 827 800 |
+| Vinculación (`E=2 048`) | 4 | 467 850 / 1 449 200 / 1 985 500 | 9 563 400 / 10 065 200 / 10 077 100 |
+| Consulta (2 560) | — | 407 000 / 485 200 / 601 000 | 14 014 750 / 14 866 900 / 16 212 400 |
+
+La muestra extrema original no se repitió en esas treinta mediciones de construcción; esta
+observación no demuestra por qué apareció y no autoriza a borrar el dato original.
+
+#### 6. Límites y estado de integración
+
+- El proveedor publica `PROVEEDORES` y funciona mediante la interfaz de
+  `benchmarks.integrante3.ejecutar`, pero todavía no está registrado en `main.py --bench`; esa
+  integración conjunta corresponde a T049. Por eso estos números son evidencia aislada
+  complementaria y no una medición final conectada de §5.6.
+- Las mediciones validan construcción, consulta e identidad de vinculación; no miden un ciclo de
+  juego completo, rutas de cazadores, agenda ni red/renderizado. No demuestran el presupuesto de
+  20 ms de PR-001.
+- Solo caracterizan el equipo y las cargas indicadas. El peor caso de la tabla hash sigue siendo
+  lineal por colisiones, aunque no se observó esa degeneración en estos fixtures.
+- T076 permanece abierta hasta que T049/T050/T071 conecten, ejecuten y validen las filas por
+  `main.py --bench`; documentar la evidencia aislada no sustituye esas dependencias.
+
+**Trazabilidad**: `logica/mapa_cripta.py`; `estructuras/tabla_hash.py`;
+`benchmarks/mapa_cripta_integrante1.py`; `tests/test_bench_mapa_cripta.py`;
+`specs/001-terreno-y-cazador/tasks.md` (T007–T009, T049–T050, T071–T076).

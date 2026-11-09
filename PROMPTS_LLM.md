@@ -2084,6 +2084,28 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 53 — T076: decisión documental del índice de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, realizar únicamente T076: documentar en `DECISIONES.md` la subsección «Índice por ID de MapaCripta (evidencia complementaria de 001)», enlazarla desde §5.6, preservar §5.4 y decisiones ajenas, usar solo resultados existentes —incluida la muestra extrema y su repetición sin causa inventada—, no ejecutar mediciones/código/pruebas y dejar T076 abierta si depende de la conexión pendiente.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@2882b85cb68d1b0e2a48655a02172342ba63cd04`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se leyeron T076, plan, implementación/benchmark del mapa, §5.4 y los dos JSON ya conservados. No se ejecutaron benchmarks, código ni pruebas y no se modificaron producción o pruebas.
+
+**Documento.** Se añadió §5.6 con el enlace explícito requerido, sin completar la revisión de agenda reservada a T069, y una subsección independiente titulada exactamente **«Índice por ID de MapaCripta (evidencia complementaria de 001)»**. §5.4 quedó byte por byte sin edición. La subsección identifica consumidores de carga, restauración, simulación, resolubilidad, servicios y vista; justifica conservar `_salas` para orden/sustitución y añadir `_salas_por_id: TablaHashImpl`; describe `_MapaLinealBenchmark`; y registra complejidad esperada/peor caso para construcción, consulta, sustitución, vinculación y sustitución más revinculación.
+
+**Evidencia existente.** Se transcribieron cargas, entorno y medianas/p95 de construcción, 160/640/2 560 consultas y vinculación con densidades 1/4 para 32/128/512 salas desde `mapa_cripta_original_c1_r9_32-128-512.json`. También se enlazó y resumió `mapa_cripta_repeticion_c5_r30_512.json` (cinco calentamientos, treinta repeticiones). La muestra original de **33 018 900 ns** se conserva como p95/máximo de construcción indexada de 512 salas/densidad 1; la repetición correspondiente registró mediana 639 950, p95 685 600 y máximo 718 600 ns. Solo se afirma que el extremo no reapareció en esas treinta muestras, sin atribuir causa ni eliminarlo.
+
+**Estado.** T076 permanece abierta: T049/T050/T071 aún deben conectar el proveedor una sola vez a `main.py --bench`, ejecutar las filas conectadas y validar el cierre. La subsección dice expresamente que los datos aislados no demuestran el ciclo completo de 20 ms ni vuelven a medir la decisión de Resolubilidad de 002. Se añadió evidencia preparatoria a `tasks.md`; sin commit, push, merge o cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
