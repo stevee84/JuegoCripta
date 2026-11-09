@@ -2010,6 +2010,30 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 50 — T042: oráculo independiente para comparaciones de rutas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en T042. Preparar un oráculo independiente y esquema de resultados para rutas con grafos sintéticos deterministas: enumeración exhaustiva de rutas simples en pequeños, distancia/primera vecina/costo del paso, casos terminales, rango, ciclos, cerradas e invariancia al orden. Separar observables de trabajo interno, mantener auxiliares aislados si G1 sigue abierta, no implementar producción ni avanzar T043; ejecutar pruebas focalizadas y registrar evidencia.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@73ee345f49d6ba4c361e92d0ef6ce7db44fa7c4a`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron T042, las puertas y Phase 6: G1 no bloquea oráculos sintéticos, G2 permite su escritura desacoplada y G6 bloquea solo la referencia oficial. T043 sigue secuencialmente después y quedó fuera.
+
+**Auxiliares aislados.** Se creó `tests/test_bench_terreno_cazador.py` sin importar DTO, `logica/rutas_ponderadas.py`, cazadores, terreno, proveedores ni `main.py`. `ConexionPrueba`, `ResultadoRutaPrueba` y `TrabajoOraculo` son clases locales explícitamente documentadas como no API. El esquema observable separa `estado`, `accion_ruta`, `alcanzable`, `dentro_rango`, `costo_total`, `primera_vecina_id` y `costo_primer_paso`; los contadores de rutas completas, expansiones, salidas examinadas, relajaciones y pases viven en otro objeto y nunca se comparan como requisito de equivalencia. Esto no fija ni cierra G1.
+
+**Oráculos y casos.** `oraculo_rutas_simples` enumera recursivamente todas las rutas simples y elige por `(costo_total, primera_vecina_id)`, sin reutilizar relajación ni un futuro algoritmo productivo. `oraculo_relajacion_completa` realiza hasta `|V|-1` pases sobre todas las conexiones abiertas como referencia independiente para un grafo mayor de 20 salas; no es Dijkstra ni producción. Las pruebas cubren origen=destino con costo 0, destino inaccesible, conexión cerrada, límite exacto, ruta fuera de rango, ciclos, empate entre vecinas 2 y 10 resuelto numéricamente, costo del primer paso e invariancia para las 24 permutaciones de cuatro conexiones. En un grafo pequeño ambos oráculos coinciden en observables aunque sus contadores difieren.
+
+**Validación previa al tiempo.** `validar_equivalencia_antes_de_cronometrar` compara exclusivamente los siete campos observables y produce un fallo descriptivo antes de cualquier cronómetro. Una matriz parametrizada altera por separado estado/acción, alcance, rango, costo total, primera vecina y costo del paso y confirma que cada divergencia falla. No se añadió medición temporal ni se exigió igualdad de orden interno o trabajo.
+
+**Resultado y cierre.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short tests/test_bench_terreno_cazador.py` terminó en **17 passed in 0.05s**; `py_compile` también pasó. T042 quedó marcada. T043, G1 y todas las implementaciones posteriores permanecen abiertas. No se modificaron producción, clases de compañeros, benchmarks, `main.py`, terreno, cazadores o Dijkstra; sin commit, push, merge o cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

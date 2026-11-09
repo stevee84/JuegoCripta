@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, y T073–T075 completaron el proveedor aislado de medición; las 67 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
+**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, T042 completó el oráculo independiente de rutas para benchmark y T073–T075 completaron el proveedor aislado de medición; las 66 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T073–T075 marcadas y 67 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T042/T073–T075 marcadas y 66 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -163,8 +163,10 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 ### Tests for User Story 4
 
-- [ ] T042 [US4] Sofía — crear `tests/test_bench_terreno_cazador.py` con un oráculo exhaustivo para grafos pequeños y relajación completa independiente para matrices mayores, fallando antes de cronometrar ante divergencias de acción, alcance/rango, costo total, primera vecina o costo del paso (PR-002–PR-004, PR-006).
+- [x] T042 [US4] Sofía — crear `tests/test_bench_terreno_cazador.py` con un oráculo exhaustivo para grafos pequeños y relajación completa independiente para matrices mayores, fallando antes de cronometrar ante divergencias de acción, alcance/rango, costo total, primera vecina o costo del paso (PR-002–PR-004, PR-006).
 - [ ] T043 [US4] Sofía — después de T042, ampliar el mismo `tests/test_bench_terreno_cazador.py` para exigir filas de AC-012, AC-014 y AC-015 y el **esquema/salida de AC-013** —identificador de ciclo real, origen sintético/oficial, carga, unidad y muestras— sin exigir aún resultados oficiales; incluir seis operaciones de agenda y costo completo (PR-001–PR-006).
+
+**Evidencia T042 (2026-11-09)**: `tests/test_bench_terreno_cazador.py` define únicamente auxiliares locales de prueba, sin DTO ni firma productiva: enumeración exhaustiva de rutas simples para grafos pequeños y relajación completa de hasta `|V|-1` pases para una carga mayor. El esquema observable aislado distingue estado, acción de ruta, alcanzabilidad, rango, costo total, primera vecina y costo del primer paso; `TrabajoOraculo` mantiene rutas/expansiones/salidas/relajaciones/pases aparte y la equivalencia no exige contadores ni orden interno iguales. Se verificaron origen=destino, inaccesible, límite exacto, fuera de rango, ciclos, conexión cerrada, empate por ID numérico y todas las permutaciones de cuatro conexiones; cualquier divergencia observable falla antes del cronómetro. Ejecución focalizada: `17 passed in 0.05s`. G1 sigue abierta y T043 no se inició: no se declararon firma de producción, filas, percentiles, ciclo real, agenda ni integración.
 
 ### Implementation for User Story 4
 
