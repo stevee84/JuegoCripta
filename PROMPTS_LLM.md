@@ -2036,6 +2036,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 33 | Implementación de T001: medición del riesgo R3 (`/speckit-implement`) | 07/11/2026 |
 | 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
 | 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
+| 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2219,6 +2220,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `controller/resumen_resolubilidad.py` (nuevo) con `linea_inicio` (las tres líneas distinguibles de FR-013 de la 002) y `lineas_informe` (el informe completo). En `controller/controlador_juego.py`: al iniciar una partida se muestra la línea de resolubilidad; si la cripta no tiene solución o no se pudo verificar, la partida no inicia y se muestra el informe; y el comando nuevo `resolubilidad` muestra el informe de antes de empezar. En `vista/vista_pygame.py`, un botón «Resolubilidad». Pruebas en `tests/test_controller/test_resolubilidad_interfaz.py` (9, citan FR-013 y FR-014 de la 002). Suite: 1095 aprobadas.
 
 **Qué hubo que corregir.** (1) El comando `cripta` no atrapaba `CriptaNoResoluble`: con una cripta sin solución la consola se cerraba con un error en lugar de mostrar el informe. (2) `main.imprimir_informe` (de Steven) imprime en lugar de devolver texto; para no modificar su archivo se reescribió el formato en `lineas_informe` y una prueba compara las dos salidas línea por línea para que no se separen. El botón de pygame no se revisó en pantalla; solo se comprobó que cabe en el panel.
+
+## Prompt 36 — Implementación de T005 y T006: el historial avisa a la línea de tiempo
+
+> **Prompt**
+>
+> Sí, sigue
+
+(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** En `logica/historial_reversible.py` (archivo de Joshua): `vincular_linea`; al cerrar una acción el historial le entrega la transacción a la línea y al retroceder le avisa el recorte. Sin línea vinculada se comporta igual que antes y el límite de 5 del pergamino no cambia. Pruebas en `tests/test_logica/test_historial_linea.py` (6, citan FR-013, FR-014 y FR-021). Suite: 1101 aprobadas.
+
+**Qué hubo que corregir.** Antes de implementar se vio que, si el historial guarda la línea, copiar el estado para un punto de control copiaría también la línea con todos sus puntos de control, y la copia crecería sin fin. El historial excluye la línea al copiarse o serializarse (`__getstate__`), y hay una prueba para eso.
 
 # Steven Moya Porras — Parte II
 

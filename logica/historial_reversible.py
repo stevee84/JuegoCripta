@@ -33,6 +33,24 @@ class HistorialReversible:
         # Transacción que está recibiendo cambios actualmente.
         self._actual = None
 
+        # Línea de tiempo (spec 004) a la que se avisa cada acción cerrada y cada retroceso.
+        self._linea = None
+
+    def vincular_linea(self, linea) -> None:
+        """Conecta la línea de tiempo (spec 004, research R5).
+
+        La línea recibe cada transacción cerrada con ``registrar_accion(transaccion)`` y cada
+        retroceso con ``recortar(cantidad)``. El límite de 5 del pergamino no cambia (FR-014).
+        """
+        self._linea = linea
+
+    def __getstate__(self):
+        # Un punto de control copia el estado completo, y el historial forma parte de él.
+        # La línea no va dentro: tiene todos los puntos de control y la copia crecería sin fin.
+        estado = self.__dict__.copy()
+        estado["_linea"] = None
+        return estado
+
     def get_cantidad(self) -> int:
         # No incluye el intervalo que todavía está abierto.
         return self._intervalos.cantidad
@@ -66,8 +84,12 @@ class HistorialReversible:
             return
 
         # Guarda la transacción como la más reciente.
-        self._intervalos.insertar(self._actual)
+        cerrada = self._actual
+        self._intervalos.insertar(cerrada)
         self._actual = None
+        linea = getattr(self, "_linea", None)
+        if linea is not None:
+            linea.registrar_accion(cerrada)
 
         if self._intervalos.cantidad > self.LIMITE:
             # Descarta el registro antiguo sin modificar la partida.
@@ -133,6 +155,9 @@ class HistorialReversible:
         # Retira la transacción después de revertir sus cambios.
         transaccion.revertir(estado)
         self._intervalos.quitar_nodo(nodo)
+        linea = getattr(self, "_linea", None)
+        if linea is not None:
+            linea.recortar(1)
 
         return True
 
