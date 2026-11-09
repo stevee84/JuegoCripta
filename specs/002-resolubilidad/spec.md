@@ -301,6 +301,10 @@ el mismo resultado que se obtendría al empezarla.
   ubicación de las llaves sí se informa: §3.5 la pide expresamente para el informe.
 - La verificación no simula el combate, el tiempo ni el azar: solo responde si existe alguna
   manera de ganar bajo los supuestos de FR-002.
+- El costo de una salida no participa del resultado: la alcanzabilidad es binaria, así que
+  cambiar costos válidos no puede cambiar el veredicto, el orden de llaves, la frontera ni los
+  círculos. Acordado con la capacidad 001, que introduce los costos, y protegido con una
+  regresión sobre las criptas publicadas y las de prueba.
 - Si una cripta sin solución se fuerza, el jugador asume que puede no poder terminarla; el
   programa no cambia ninguna regla del juego para compensarlo.
 - El servicio publica criptas sin solución a propósito, y la cripta usada en la revisión será

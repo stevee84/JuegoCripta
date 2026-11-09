@@ -94,8 +94,24 @@ Con `V` salas, `E` salidas y `L` llaves:
 - La continuación más allá de la frontera visita cada sala restante una vez: `O(V + E)`.
 - Los círculos se buscan siguiendo una flecha por llave: `O(L)`.
 
-Total **`O(V + E + L)`**, frente a `O(L·(V+E))` de la alternativa ingenua. La memoria es
-`O(V + E + L)`.
+El recorrido en sí es **`O(V + E + L)`**, frente a `O(L·(V+E))` de la alternativa ingenua. La
+memoria es `O(V + E + L)`.
+
+**Pero el costo observado no es lineal, y la causa está fuera de esta capacidad.**
+`MapaCripta.obtener_sala` recorre el arreglo de salas —su propio comentario lo declara: «búsqueda
+O(n), sin índice hash»—, así que cada consulta por id cuesta `O(V)` y el recorrido completo se
+vuelve `O(V²)` en criptas grandes. Medido con un perfilador sobre una cripta de 641 salas, esa
+función sola se lleva el 35 % del tiempo de verificación.
+
+Sustituyéndola por un índice por id, con la misma tabla hash propia, el tiempo baja de 18,85 ms a
+7,34 ms en 641 salas y el factor al duplicar el tamaño pasa de 2,9 a 2,1, que es lo que `SC-002`
+pide. No se cambió aquí porque `MapaCripta` es un componente compartido y el Principio VIII exige
+identificar a sus consumidores y acordar el cambio; además es justo la observación que el profesor
+hizo sobre la primera parte y que el Principio II recoge. Queda reportado al grupo.
+
+Esto **no** compromete el límite de §6.1: la cripta publicada más grande tiene 50 salas y se
+verifica en 0,51 ms. El efecto solo aparece en las criptas sintéticas de cientos de salas que
+genera el `--bench`.
 
 ### 5. Evidencia empírica
 
@@ -152,6 +168,12 @@ a pedir nada (`SC-004`).
 - **Las criptas sintéticas del `--bench` son cadenas regulares.** Validan el crecimiento, no
   cualquier topología; una cripta muy ramificada o con muchas puertas por sala podría comportarse
   distinto.
+- **Los costos de §3.1 no participan del veredicto.** La alcanzabilidad es binaria, así que la
+  verificación mira destino, apertura y llave requerida, nunca el peso de la salida. Se acordó
+  con la capacidad 001, que introduce los costos, y hay una regresión que comprueba sobre las
+  cuatro criptas publicadas y las de prueba que cambiar costos válidos no altera el veredicto,
+  el orden de llaves, la frontera ni los círculos. La consecuencia es que esta capacidad **no**
+  dice nada sobre la ruta más barata: eso es «ir a» (§3.4), en la capacidad 003.
 - Las mediciones son de un solo equipo y no caracterizan otras máquinas.
 
 **Trazabilidad**: `logica/verificador_resolubilidad.py`; `service/inicializador_partida.py`;
