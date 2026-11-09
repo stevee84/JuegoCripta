@@ -2037,6 +2037,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
 | 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
 | 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
+| 37 | Implementación de T007 a T009: estructura de la línea de tiempo | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2232,6 +2233,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** En `logica/historial_reversible.py` (archivo de Joshua): `vincular_linea`; al cerrar una acción el historial le entrega la transacción a la línea y al retroceder le avisa el recorte. Sin línea vinculada se comporta igual que antes y el límite de 5 del pergamino no cambia. Pruebas en `tests/test_logica/test_historial_linea.py` (6, citan FR-013, FR-014 y FR-021). Suite: 1101 aprobadas.
 
 **Qué hubo que corregir.** Antes de implementar se vio que, si el historial guarda la línea, copiar el estado para un punto de control copiaría también la línea con todos sus puntos de control, y la copia crecería sin fin. El historial excluye la línea al copiarse o serializarse (`__getstate__`), y hay una prueba para eso.
+
+## Prompt 37 — Implementación de T007 a T009: estructura de la línea de tiempo
+
+> **Prompt**
+>
+> continua
+
+(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** `logica/linea_tiempo.py` (nuevo): `LineaTiempo` con los instantes de decisión en un arreglo no decreciente, un punto de control cada K acciones (una sola copia profunda del estado y de las transacciones de su ventana) y la cola de referencias vivas; `buscar_ultimo_menor_o_igual`, búsqueda binaria propia sin `bisect`. Pruebas en `tests/test_logica/test_linea_tiempo.py` (10, citan FR-001, FR-015, FR-017, FR-019 y FR-021), sobre partidas reales en `cripta-04`. Suite: 1112 aprobadas. También quedó escrito `recortar`, que es T023; no se marca como hecha hasta tener sus pruebas (T021 y T022).
+
+**Qué hubo que corregir.** El plan decía que la cola conserva las últimas 2K acciones; con K chico eso no alcanza para recortar después de un pergamino que revierte 5 acciones (con K = 1 serían 2). Se corrigió a max(2K, K + 5) en research, data-model y tasks, en un commit anterior al código (`169d211`).
 
 # Steven Moya Porras — Parte II
 
