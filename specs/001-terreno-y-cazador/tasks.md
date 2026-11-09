@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: planificación de implementación. T005 es la única tarea cerrada: verificó una dependencia ya integrada sin implementar 001. Las 75 tareas restantes de implementación, pruebas, coordinación y verificación permanecen sin marcar; ninguna cobertura futura descrita aquí se considera ejecutada.
+**Estado**: implementación en curso. T005 verificó una dependencia ya integrada y T007–T009 completaron el índice por ID de `MapaCripta`; las 72 tareas restantes de implementación, pruebas, coordinación y verificación permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento tras remediación**: 76 tareas (T001–T076), sin reutilizar IDs; T005 marcada y 75 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009 marcadas y 72 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -54,9 +54,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Purpose**: eliminar búsquedas lineales frecuentes sin alterar firmas, orden, identidad ni enlace de salas. Steven solicitó expresamente que Sofía implemente el índice de su `MapaCripta`; `plan.md` identifica los consumidores reales. La condición histórica de componente compartido exige compatibilidad, no una nueva reasignación. Bloquea US2–US4; US1 solo depende de este índice donde el motor busca destinos.
 
-- [ ] T007 [P] Sofía — ampliar `tests/test_logica/test_mapa_cripta.py` con pruebas de índice ID→instancia, `contiene_sala`, orden estable de `obtener_salas()`, sustitución en la misma posición y revinculación de referencias entrantes; resultado verificable: lista e índice siempre señalan a la misma `Sala` y los IDs no enteros se rechazan (FR-011, FR-013, FR-018, PR-001, PR-002).
-- [ ] T008 Sofía — implementar en `logica/mapa_cripta.py` un `TablaHashImpl` ID→sala conservando `_salas`, actualizarlo en altas/sustituciones y hacer O(1) esperado `obtener_sala`/`contiene_sala`; al sustituir, invalidar `_enlaces_listos` y revincular antes de exponer vecinos (FR-011, FR-013, FR-018, PR-001, PR-002).
-- [ ] T009 Sofía — ampliar `tests/test_restricciones_enunciado.py` para comprobar que el índice de `MapaCripta` es `TablaHashImpl` y que las rutas de producción nuevas siguen sin `dict`, `set`, `heapq`, `bisect`, `collections`, ordenamientos o bibliotecas de grafos prohibidos (FR-011, FR-018, PR-001–PR-004).
+- [x] T007 [P] Sofía — ampliar `tests/test_logica/test_mapa_cripta.py` con pruebas de índice ID→instancia, `contiene_sala`, orden estable de `obtener_salas()`, sustitución en la misma posición y revinculación de referencias entrantes; resultado verificable: lista e índice siempre señalan a la misma `Sala` y los IDs no enteros se rechazan (FR-011, FR-013, FR-018, PR-001, PR-002).
+- [x] T008 Sofía — implementar en `logica/mapa_cripta.py` un `TablaHashImpl` ID→sala conservando `_salas`, actualizarlo en altas/sustituciones y hacer O(1) esperado `obtener_sala`/`contiene_sala`; al sustituir, invalidar `_enlaces_listos` y revincular antes de exponer vecinos (FR-011, FR-013, FR-018, PR-001, PR-002).
+- [x] T009 Sofía — ampliar `tests/test_restricciones_enunciado.py` para comprobar que el índice de `MapaCripta` es `TablaHashImpl` y que las rutas de producción nuevas siguen sin `dict`, `set`, `heapq`, `bisect`, `collections`, ordenamientos o bibliotecas de grafos prohibidos (FR-011, FR-018, PR-001–PR-004).
+
+**Evidencia T007–T009 (2026-11-09)**: `MapaCripta` conserva `_salas` para el orden y añade `_salas_por_id: TablaHashImpl`; altas/sustituciones actualizan ambas representaciones, `obtener_sala`/`contiene_sala` validan IDs y consultan la tabla, y `vincular_salidas` resuelve por esa vía. Las pruebas cubren identidad, ausencias, orden, sustitución, revinculación y alias tras `deepcopy`/`pickle`. Resultado focalizado final de mapa/copia/restricciones: `67 passed, 2 subtests passed`; consumidores relevantes, copia/serialización y restricciones: `209 passed, 2 subtests passed`; suite completa final: `1109 passed, 2 subtests passed in 101.44s`. T072–T076 permanecen abiertas: no se ejecutaron benchmarks ni se documentó evidencia de rendimiento.
 
 **Checkpoint**: el mapa conserva firmas y recorrido determinista, y ofrece acceso frecuente esperado O(1), sin duplicar `MonticuloMinimo` ni `TablaHashImpl`. La política no confirmada de una salida sin inversa no bloquea este índice ni sus pruebas/benchmarks estructurales.
 

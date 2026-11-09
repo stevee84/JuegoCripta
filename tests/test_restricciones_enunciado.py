@@ -90,3 +90,33 @@ def test_indices_de_datos_usan_la_tabla_hash_propia(tmp_path, monkeypatch):
 
     respuesta = crear_repositorio(CacheCatalogo(25), fuente, "x").resolver_lote(["itm_antorcha"])
     assert list(respuesta) == ["entidades"] and isinstance(respuesta["entidades"], list)
+
+
+def test_indice_de_mapa_usa_tabla_hash_propia_y_conserva_instancias():
+    """Constitución I/II: el índice de salas es propio y canónico."""
+    from dto.sala import Sala
+    from estructuras.tabla_hash import TablaHashImpl
+    from logica.mapa_cripta import MapaCripta
+
+    mapa = MapaCripta()
+    salas = [Sala(30), Sala(10), Sala(20)]
+    for sala in salas:
+        mapa.agregar_sala(sala)
+
+    assert isinstance(mapa._salas_por_id, TablaHashImpl)
+    assert [sala.id_sala for sala in mapa.obtener_salas()] == [30, 10, 20]
+    for sala in salas:
+        assert mapa.obtener_sala(sala.id_sala) is sala
+        assert mapa._salas_por_id.obtener(sala.id_sala) is sala
+
+    ruta = RAIZ / "logica" / "mapa_cripta.py"
+    arbol = ast.parse(ruta.read_text(encoding="utf-8"))
+    usos_dict = [
+        nodo.lineno
+        for nodo in ast.walk(arbol)
+        if isinstance(nodo, (ast.Dict, ast.DictComp))
+        or (isinstance(nodo, ast.Call)
+            and isinstance(nodo.func, ast.Name)
+            and nodo.func.id == "dict")
+    ]
+    assert not usos_dict, f"MapaCripta usa dict como índice en líneas {usos_dict}"

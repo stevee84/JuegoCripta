@@ -1910,6 +1910,30 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 46 — Implementación de T007–T009: índice por ID de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Trabaja únicamente en T007–T009 de `specs/001-terreno-y-cazador/tasks.md`, en Sofia. Implementa el índice de `MapaCripta` usando `TablaHashImpl` existente: `obtener_sala` y `contiene_sala` O(1) esperado, preservando validación, firmas, orden e identidad; mantén lista e índice coherentes en altas/sustituciones y revincula destinos canónicos mediante el índice. Conserva las pruebas preparatorias, completa solo cobertura necesaria para `deepcopy`/`pickle` y restricciones, ejecuta pruebas focalizadas, consumidores y suite completa, marca T007–T009 solo si cumplen y deja T072–T076 pendientes. Sin rutas, terreno, cazadores, benchmarks, cambios de compañeros, commit, push, merge o cambio de rama.
+
+**Precondiciones.** La ejecución inició en `Sofia@51ae583c39c1db53d8da736cf9659cd1225fe2bf`, un commit delante de `origin/Sofia`, con un único cambio local previo: las pruebas preparatorias de T007 en `tests/test_logica/test_mapa_cripta.py`. Se conservaron íntegramente. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 24/24. No había `.specify/extensions.yml`, hooks ni configuración de ignores pendiente.
+
+**T007–T008.** La fase roja inicial fue `8 passed, 1 failed`: solo faltaba `MapaCripta.contiene_sala`. Se añadió `_salas_por_id = TablaHashImpl()` sin reemplazar `_salas`; la lista sigue siendo la única fuente del orden de recorrido. `agregar_sala` valida el ID, actualiza lista e índice en altas y sustituye la referencia en la misma posición; `obtener_sala` y `contiene_sala` validan y consultan la tabla. Toda alta/sustitución invalida `_enlaces_listos`; `vecinos_abiertos` fuerza `vincular_salidas`, que resuelve cada destino canónico mediante el `obtener_sala` indexado. No se recorrió la tabla para ordenar el mapa.
+
+**Cobertura añadida.** Se conservaron los seis casos preparatorios de T007 y se añadió un único caso con subpruebas para `copy.deepcopy` y `pickle`, comprobando que la lista, `_salas_por_id`, `obtener_sala`, `Puerta.destino_sala` y `vecinos_abiertos` comparten exactamente las instancias copiadas/reconstruidas. T009 añadió en `tests/test_restricciones_enunciado.py` la comprobación de que el índice es `TablaHashImpl` y contiene las mismas instancias; la prueba AST existente siguió revisando producción completa contra `dict`/`set`, `heapq`, `bisect`, `collections`, ordenamientos y bibliotecas de grafos prohibidos.
+
+**Resultados ejecutados.** Mapa + restricciones: **65 passed, 2 subtests passed in 0.85s**; tras añadir la comprobación AST explícita contra `dict`, el foco final de mapa/copia/restricciones terminó en **67 passed, 2 subtests passed in 0.44s**. Consumidores relevantes —adaptación compartida, inicialización, restauración, carga gradual/BFS, resolubilidad, rastro, salas pendientes, guardado, copia/serialización—: **209 passed, 2 subtests passed in 8.25s**. Suite completa final con `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short`: **1109 passed, 2 subtests passed in 101.44s**. No hubo omitidas ni fallos reportados.
+
+**Cierre y alcance.** T007, T008 y T009 cumplieron y quedaron marcadas; T072–T076 permanecen abiertas porque no se implementaron ni ejecutaron benchmarks. Archivos modificados: `logica/mapa_cripta.py`, `tests/test_logica/test_mapa_cripta.py`, `tests/test_restricciones_enunciado.py`, `specs/001-terreno-y-cazador/tasks.md` y este apartado. No se tocaron rutas, terreno, cazadores, `TablaHashImpl`, clases de compañeros, formato de guardado o benchmarks; sin commit, push, merge ni cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
