@@ -14,7 +14,9 @@ from datos.presupuesto_solicitudes import PresupuestoSolicitudes
 from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
 from dto.accion import ResultadoAccion
+from controller.resumen_resolubilidad import linea_inicio, lineas_informe
 from logica.bitacora_pantalla import BitacoraPantalla
+from service.inicializador_partida import CriptaNoResoluble
 from service.juego_service import JuegoService
 from service.partida_service import PartidaService
 from vista import presentacion_juego as presentacion
@@ -288,7 +290,8 @@ class ControladorJuego:
             if not partes:
                 raise ValueError("Comando vacío.")
             operacion = partes[0].lower()
-            consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior")
+            consultas = ("estado", "criptas", "puntajes", "bitacora", "ayuda", "salir", "siguiente", "anterior",
+                         "resolubilidad")
             acciones = ("mover", "abrir", "cripta", "registro", "exportar_parcial")
             if operacion == "puntajes" and len(partes) not in (1, 2):
                 raise ValueError("puntajes acepta opcionalmente un criterio de orden.")
@@ -346,13 +349,25 @@ class ControladorJuego:
                 if self._vista is not None:
                     self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
                 resultado = ResultadoAccion(True, "Bitácora mostrada.")
+            elif operacion == "resolubilidad":
+                # 002-T050 (FR-014 de la 002): el informe de antes de empezar, sin recalcular.
+                estado = self._servicio.obtener_estado()
+                if estado is None:
+                    raise ValueError("No hay una partida iniciada.")
+                informe = self._servicio.obtener_informe_resolubilidad()
+                if informe is None:
+                    raise ValueError("Esta partida no tiene informe de resolubilidad "
+                                     "(por ejemplo, una partida de prueba).")
+                if self._vista is not None:
+                    self._vista.mostrar_mensaje("\n".join(lineas_informe(estado.cripta_id, informe)))
+                resultado = ResultadoAccion(True, "Informe de resolubilidad mostrado.")
             elif operacion == "ayuda":
                 self._vista.mostrar_mensaje(
                     "Jugar: estado; abrir/mover DIRECCION; atacar/recoger NÚMERO|NOMBRE|ID; esperar. "
                     "Los nombres deben ser inequívocos (con o sin comillas).\n"
                     "Inventario: siguiente, anterior, seleccionar ID (o nombre), inventario [peso|valor|nombre]. "
                     "usar [ID|NOMBRE] usa el seleccionado sin argumentos; equipar; soltar; retroceder [ID] sin tiempo.\n"
-                    "Partidas: criptas; cripta ID; guardar [RUTA]; cargar [RUTA]; salir. "
+                    "Partidas: criptas; cripta ID; resolubilidad; guardar [RUTA]; cargar [RUTA]; salir. "
                     "Guardado v8: cargar inicia un historial vacío.\n"
                     "Técnicos: bitacora; puntajes [acciones_ejecutadas|enemigos_derrotados|reloj_final] ascendente; "
                     "registro RUTA antes de la primera acción; exportar_parcial RUTA sin validar reanudación."
@@ -370,8 +385,16 @@ class ControladorJuego:
                 if anterior is not None and not anterior.partida_activa:
                     self._preparar_nueva_partida()
                 self._nuevo_presupuesto()
-                self._servicio.iniciar_partida(partes[1])
+                try:
+                    self._servicio.iniciar_partida(partes[1])
+                except CriptaNoResoluble as error:
+                    # 002-T049 (FR-011 y FR-013 de la 002): no inicia, y se dice por qué.
+                    lineas = [linea_inicio(error.informe)] + lineas_informe(partes[1], error.informe)
+                    raise ValueError("\n".join(lineas)) from None
                 self._historial = self._servicio.obtener_estado().historial
+                informe = self._servicio.obtener_informe_resolubilidad()
+                if informe is not None:
+                    self._publicar(linea_inicio(informe, forzada=not informe.puede_iniciar))
                 registro = self._iniciar_registro_automatico()
                 resultado = ResultadoAccion(True, f"Partida iniciada. {registro}")
             elif operacion == "registro":

@@ -2035,6 +2035,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
 | 33 | Implementación de T001: medición del riesgo R3 (`/speckit-implement`) | 07/11/2026 |
 | 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
+| 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2206,6 +2207,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** T003: `tests/test_logica/test_cambios_linea.py`, con 8 pruebas que citan FR-001, FR-005 y FR-012; la principal juega 120 acciones reales en `cripta-04` (moverse, atacar, recoger, soltar, equipar, usar) y comprueba que cada transacción queda idéntica después de deshacer y rehacer. T004: en `logica/cambios.py` (archivo de Joshua), `CambioSoloLinea`, `TransaccionAccion.registrar_solo_linea`, `deshacer_mientras` (no vacía la transacción) y `rehacer`, más un inverso por cada uno de los 13 tipos de cambio. `revertir` salta los cambios «solo línea» y no cambió en lo demás. Suite: 1083 aprobadas.
 
 **Qué hubo que corregir.** (1) Los cambios de inventario se marcan como deshechos y no se pueden deshacer dos veces; el inverso guarda también el propio cambio para que la línea pueda consultar muchas veces. (2) La agenda queda con otra forma interna después de cancelar y restaurar un evento, aunque con los mismos eventos; la prueba compara la agenda por sus eventos, como ya ocurría con el pergamino. (3) En la partida de prueba no hubo turnos de enemigos, así que el inverso del azar se prueba aparte. Un tipo de cambio sin inverso hace fallar la consulta antes de tocar el estado; las specs 001 y 003 deben declararlo (contrato de dependencias).
+
+## Prompt 35 — Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050)
+
+> **Prompt**
+>
+> revisa si ya se hizo bien el merge, si es asi continua
+
+(Continuación de `/speckit-implement`. Steven pidió terminar las dos tareas pendientes de su spec 002, que tocan `controller/` y `vista/`.)
+
+**Qué se obtuvo.** `controller/resumen_resolubilidad.py` (nuevo) con `linea_inicio` (las tres líneas distinguibles de FR-013 de la 002) y `lineas_informe` (el informe completo). En `controller/controlador_juego.py`: al iniciar una partida se muestra la línea de resolubilidad; si la cripta no tiene solución o no se pudo verificar, la partida no inicia y se muestra el informe; y el comando nuevo `resolubilidad` muestra el informe de antes de empezar. En `vista/vista_pygame.py`, un botón «Resolubilidad». Pruebas en `tests/test_controller/test_resolubilidad_interfaz.py` (9, citan FR-013 y FR-014 de la 002). Suite: 1095 aprobadas.
+
+**Qué hubo que corregir.** (1) El comando `cripta` no atrapaba `CriptaNoResoluble`: con una cripta sin solución la consola se cerraba con un error en lugar de mostrar el informe. (2) `main.imprimir_informe` (de Steven) imprime en lugar de devolver texto; para no modificar su archivo se reescribió el formato en `lineas_informe` y una prueba compara las dos salidas línea por línea para que no se separen. El botón de pygame no se revisó en pantalla; solo se comprobó que cabe en el panel.
 
 # Steven Moya Porras — Parte II
 

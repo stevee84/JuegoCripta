@@ -137,9 +137,9 @@ partida original.
 
 **Meta**: las partes de §7.3 que no dependen de la 003.
 
-- [ ] T036 [P] Escribir en `tests/test_controller/test_resolubilidad_interfaz.py`: al iniciar se muestra una de las tres líneas de [cli-verificar.md](../002-resolubilidad/contracts/cli-verificar.md) según el informe (con solución, sin solución, no verificada); el comando `resolubilidad` muestra el informe completo y es el mismo antes y después de conseguir llaves (FR-013 y FR-014 de la spec 002)
-- [ ] T037 Tarea **002-T049** (de la spec 002): mostrar la línea de resolubilidad al iniciar la partida desde `controller/controlador_juego.py`, en `vista/vista_consola.py` y en `vista/vista_pygame.py`, a partir de `JuegoService.obtener_informe_resolubilidad()` (FR-013 de la 002)
-- [ ] T038 Tarea **002-T050** (de la spec 002): comando `resolubilidad` en `controller/controlador_juego.py` que muestra el informe completo en consola y en pygame (FR-014 y FR-017 de la 002)
+- [X] T036 [P] Escribir en `tests/test_controller/test_resolubilidad_interfaz.py`: al iniciar se muestra una de las tres líneas de [cli-verificar.md](../002-resolubilidad/contracts/cli-verificar.md) según el informe (con solución, sin solución, no verificada); el comando `resolubilidad` muestra el informe completo y es el mismo antes y después de conseguir llaves (FR-013 y FR-014 de la spec 002)
+- [X] T037 Tarea **002-T049** (de la spec 002): mostrar la línea de resolubilidad al iniciar la partida desde `controller/controlador_juego.py`, en `vista/vista_consola.py` y en `vista/vista_pygame.py`, a partir de `JuegoService.obtener_informe_resolubilidad()` (FR-013 de la 002)
+- [X] T038 Tarea **002-T050** (de la spec 002): comando `resolubilidad` en `controller/controlador_juego.py` que muestra el informe completo en consola y en pygame (FR-014 y FR-017 de la 002)
 - [ ] T039 Agregar en `vista/vista_pygame.py`, en métodos nuevos, un botón «Historia» que pide t o #k y muestra las líneas del resumen en un panel; la lógica sigue en el controlador (FR-008)
 
 ---
