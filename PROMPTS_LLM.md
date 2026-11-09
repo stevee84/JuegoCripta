@@ -1800,6 +1800,42 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 **Pendientes reales.** Continúan abiertas las firmas/representación de rutas y los demás archivos compartidos (G1), costo/rango/simetría (G2), vista conocida 003 (G3), revisión cruzada T005 y `LineaTiempo` completa para T056 (G4a/G4b), persistencia coordinada v9→formato futuro (G5) y referencia oficial (G6). La política de una salida sin inversa permanece no confirmada y no bloquea T007–T009/T072–T075. Se modificaron solo documentos de `specs/001-terreno-y-cazador/` y esta entrada; no se cambió `spec.md`, constitución, código o pruebas, no se ejecutaron pruebas/benchmarks y no se hizo commit, push, merge ni implementación.
 
+## Prompt 43 — Verificación de la interfaz base de Joshua (T005)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> En la rama Sofia, realiza únicamente T005 de
+> `specs/001-terreno-y-cazador/tasks.md`. Revisa las interfaces locales
+> de cambios e historial de Joshua y comprueba su compatibilidad con 001:
+> transacciones, deshacer y rehacer, `fotografiar_para_rehacer` y uso de
+> los helpers de `logica/mutaciones.py`.
+>
+> Contrasta el código con el contrato de 001. Distingue las interfaces
+> disponibles de la integración con `LineaTiempo` que todavía esté
+> pendiente. Ejecuta las pruebas existentes relevantes. No implementes
+> terreno, cazadores ni rutas; no modifiques código de compañeros ni
+> interfaces compartidas. No cierres G4b por verificar solamente la
+> interfaz base.
+>
+> Actualiza únicamente la evidencia de T005, el contrato si corresponde
+> y mi apartado de `PROMPTS_LLM.md`. Marca T005 solo si cumple sus
+> criterios completos. Informa archivos, pruebas y pendientes. Sin
+> commit, push ni merge.
+
+**Checkout y revisión.** T005 se ejecutó sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`. Se inspeccionaron sin modificar `logica/cambios.py`, `logica/historial_reversible.py` y `logica/mutaciones.py`. La rama contiene `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. Las transacciones normales omiten cambios solo-línea al retroceder; la consulta temporal fotografía antes de deshacer y rehace en orden contrario; un tipo nuevo sin fotografía falla antes de mutar.
+
+**Compatibilidad con 001.** Los helpers `atributo`, `dato`, `agregar`, `quitar` y `quitar_identidad` registran antes de mutar y producen `CambioAtributo`, `CambioDato` o `CambioLista`, tipos reconocidos por la fotografía base. Esto permite que 001 reutilice esos helpers. Si 001 introduce un tipo de cambio nuevo, ese tipo deberá declarar `fotografiar_para_rehacer`; T005 no afirma que cambios todavía inexistentes ya estén probados. El historial entrega transacciones cerradas, notifica recortes y no arrastra la línea al copiar/serializar el historial.
+
+**Pruebas y cierre.** Se ejecutó `./.venv/Scripts/python.exe -m pytest -q tests/test_logica/test_cambios_linea.py tests/test_logica/test_historial_linea.py tests/test_logica/test_cambios.py tests/test_logica/test_historial_reversible.py tests/test_logica/test_cambio_soltar_objeto.py`: **44 passed in 0.76s**. T005 cumplió sus criterios y quedó marcada. G4a queda cerrada; G4b permanece abierta porque `logica/linea_tiempo.py` no está en `HEAD`. La punta observada `origin/joshua@5b67c081c4af25e0bf77fcfa27d3dacc8a06728e` sí contiene la línea completa y `historia`, pero no es ancestro de `HEAD`. También siguen pendientes T040/T056, los cambios nuevos de 001 y la persistencia conjunta.
+
+**Archivos modificados.** Solo `specs/001-terreno-y-cazador/tasks.md`, `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md` y este apartado. No se modificaron código, pruebas, interfaces compartidas, terreno, cazadores o rutas; no se hizo commit, push ni merge.
+
 ---
 
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
