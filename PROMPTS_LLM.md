@@ -1836,6 +1836,78 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 **Archivos modificados.** Solo `specs/001-terreno-y-cazador/tasks.md`, `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md` y este apartado. No se modificaron código, pruebas, interfaces compartidas, terreno, cazadores o rutas; no se hizo commit, push ni merge.
 
+## Prompt 44 — Preparación de las pruebas de T007 (índice de MapaCripta)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> En Sofia, prepara únicamente las pruebas de T007 correspondientes al
+> índice por ID de MapaCripta. Reutiliza la cobertura de
+> `tests/test_logica/test_mapa_cripta.py` y añade solo los casos
+> faltantes: salas existentes e inexistentes, orden de recorrido,
+> identidad de salas y destinos vinculados, sustitución en la misma
+> posición sin duplicar, y coherencia de referencias tras revincular.
+> No modifiques producción ni implementes el índice; no añadas
+> mediciones de tiempo. Ejecuta las pruebas relevantes, distingue las
+> que ya pasan de las que requieren la implementación futura y no
+> cambies expectativas para ocultar fallos. Marca T007 solo si cumple
+> todos sus criterios. Registra el trabajo en este apartado.
+
+**Cobertura reutilizada.** Se conservaron íntactos los tres casos previos de `tests/test_logica/test_mapa_cripta.py` (`test_ids_de_sala_invalidos_no_se_convierten`, `test_agregar_y_obtener_sala`, `test_vecinos_abiertos`) y se ejecutó también `test_mapa_reemplaza_sala_y_no_expone_arreglo` de `tests/test_logica/test_adaptacion_compartida.py` como regresión de sustitución vigente, sin tocar dichos archivos.
+
+**Casos añadidos.** Seis pruebas nuevas en la misma clase: identidad canónica y `None` de `obtener_sala`; `contiene_sala` existente/ausente/rechazo de `"1"`; orden de llegada e identidad de referencias en `obtener_salas()` con independencia de la copia devuelta; sustitución por ID reutilizando posición sin duplicar ni desplazar; destino canónico tras `vincular_salidas()` y en `vecinos_abiertos`; y revinculación que actualiza puertas entrantes de origen y salientes de la sala sustituta. Sin mediciones de tiempo: esas filas quedan reservadas a T072–T076.
+
+**Ejecución y fase roja.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=long tests/test_logica/test_mapa_cripta.py tests/test_logica/test_adaptacion_compartida.py::test_mapa_reemplaza_sala_y_no_expone_arreglo` produce **9 passed, 1 failed in 0.12s**. El único fallo es `AttributeError: 'MapaCripta' object has no attribute 'contiene_sala'` en `test_contiene_sala_existente_ausente_y_rechaza_id_invalido`: la prueba exige un contrato que T008 implementará, y se dejó fallar en vez de atenuar la expectativa. Con la implementación linear actual pasan 9 de 10, incluyendo identidad y sustitución.
+
+**Cierre de T007.** No se marcó: T007 exige que lista e índice señalen siempre a la misma `Sala` con acceso O(1) esperado a través del índice propio, y eso solo es verificable después de T008 (y T009 para las restricciones). Las pruebas quedan listas como fase roja controlada.
+
+**Archivos modificados.** Solo `tests/test_logica/test_mapa_cripta.py` y este apartado. `specs/001-terreno-y-cazador/tasks.md` no fue tocado y T007 permanece sin marcar. Sin cambios en producción ni en código de compañeros; sin commit, push ni merge.
+
+## Prompt 45 — Revisión del análisis cruzado de Joshua (A1, A2, M1–M3, B1, B2)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Revisa los siete hallazgos del análisis cruzado de Joshua sobre
+> `e89574d` (A1, A2, M1, M2, M3, B1, B2). Ejecuta `/speckit.clarify`
+> para A1 contrastando el PDF oficial §§3.1/§4.1 con FR-001, FR-002 y
+> AC-020 y distinguiendo cuatro casos; si queda decisión normativa,
+> pregunta y espera respuesta. Revisa A2 contra el código publicado
+> por Joshua (firma de `deshacer_m_while` y restauración de eventos
+> posteriores al instante consultado), distinguiendo local y remoto.
+> Remedia M1 (hashes y disponibilidad real, sin cerrar G4b), M2
+> (enlaces técnicos y derivados fuera de copias y guardado), M3
+> (propuesta coordinada v10 con costo, rango, mapa conocido y línea,
+> pendiente de confirmación; T041/T055 comprueban el mismo formato),
+> B1 (cambios de pergaminos «solo línea») y B2 (prioriza índice, US1 y
+> US2). Registra el análisis en este apartado; no atribuyas como
+> propias las 1139 pruebas comunicadas por Joshua. Sin commit, push ni
+> merge.
+
+**A1 resuelto con decisión del equipo.** El PDF se extrajo a texto (13 páginas): §3.1 establece «Cada salida puede declarar un campo costo, entero mayor o igual que 1. Si no lo declara, su costo es 100. El costo es el mismo en ambos sentidos» y §4.1 declara `costo` por sentido. Resultados: ambos sentidos omiten → 100 y 100 (expreso); uno declara 100 y otro omite → 100 frente a 100, sin contradicción; uno declara distinto de 100 y otro omite → decisión normativa elegida en consulta del 09/11: default 100 en el omitido y, por diferir del declarado, AC-020 de 001 rechaza la salida identificando ambos valores, **sin herencia**; salida sin sentido inverso → decisión de dejarla **sin definir**: sin regla de rechazo ni aceptación y sin bloquear índice, benchmarks, US1 ni cazador. La lectura es consistente con FR-001/FR-002 ya escritas, por lo que `spec.md` no se modificó; la regla quedó registrada en el contrato de Steven.
+
+**A2 verificado contra código remoto.** La firma `deshacer_mientras(estado, condicion, inversos: list) -> None` es la misma en local (`Sofia@b046f882`) y en remoto, pero el **protocolo de la condición cambió en remoto**: la punta `origin/joshua@f4da930dbdbf951609894a1501bfca2c4ea9264a` invoca `condicion(estado, cambio)` (diff desde `927d886`). La restauración de eventos posteriores al instante consultado también vive solo en remoto: `consultar_instante(t)` usa `_reconstruir(..., hasta_instante=t)` con `_hasta`, que continúa deshaciendo `CambioAgenda` de eventos con `tiempo > t` aun después de cruzar el reloj y devuelve todo con `TransaccionAccion.rehacer` en `finally`. T040/T056 ahora se redactan contra ese protocolo; la clase completa sigue sin integrarse localmente y no se implementó la línea.
+
+**M1 — hashes y disponibilidad real.** Consultados: `Sofia@e89574d` (día 08), `Sofia@b046f882` (hoy), merge base `joshua@927d886` y cuatro commits remotos `d055563`, `b039b8b`, `5b67c08`, `4cbac6d`. La disponibilidad local real continúa siendo la interfaz base (con `registrar_solo_linea`, `rehacer`, fotografía y `vincular_linea`); **G4b permanece abierta** y la existencia remota no la cierra.
+
+**M2 y B1.** Contractualizado que los enlaces técnicos (`HistorialReversible._linea`, `Inventario.historial_linea`) y los derivados (índice de mapa, cachés, fronteras) **no se copian ni persisten**: se reconstruyen y los enlaces se excluyen vía `__getstate__` (el de inventario es nuevo en remoto). B1 quedó documentado en §5 «Pergaminos» del contrato: recoger/soltar con `reversible=False` queda anotado «solo línea» sin añadir cambios a la lista pública, y el consumo se traslada a la línea tras `recortar` mediante `anotar_para_linea`/`anotar_solo_linea`; 001 no marca sus cambios nuevos como «solo línea» salvo decisión explícita.
+
+**M3 y B2.** En el contrato de Steven quedó registrada como **propuesta no confirmada** una entrega coordinada v10 única con costo, rango, mapa conocido y línea de tiempo, con invalidación de v9 por P1 §4.10; T041/T055 se reescribieron para comprobar ese mismo formato cuando exista la entrega. B2 añadió en `tasks.md` la prioridad de avance acordada: índice (Phase 2) → US1 → US2, y después US3/US4 según sus puertas, conservando todos los requisitos obligatorios y dependencias.
+
+**Pruebas comunicadas de Joshua.** Las **1139 aprobadas** figuran en su propio `PROMPTS_LLM.md` (entrada de Fases 4–5) y corresponden a la suite de su punta remota; **no se ejecutaron en esta revisión ni se atribuyen a Sofía**, y ningún cierre de puerta se basa en esa cifra.
+
+**Archivos modificados.** `specs/001-terreno-y-cazador/tasks.md` (B2, T040, T041, T055, T056 — solo evidencia, sin marcar), `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md` (A1 + propuesta v10), `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md` (A2, M1, M2, B1) y este apartado. No se tocaron `spec.md`, constitución, código ni pruebas; las pruebas preparatorias de T007 de ayer y su registro se conservan íntegros. Sin commit, push, merge ni cambio de rama.
+
 ---
 
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
