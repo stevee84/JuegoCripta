@@ -70,7 +70,8 @@ inventario). Aplicarlo deja el dato como estaba antes de deshacer. Solo existe d
 
 **Resolución de una consulta por instante t**: búsqueda binaria en `instantes` de la mayor posición
 i con `instantes[i]` ≤ t; k = i + 1. Si `instantes[i]` = t, responder «antes de #k». Si no,
-reconstruir «antes de #(k+1)» y deshacer la transacción k mientras el reloj sea > t (research R4).
+reconstruir «antes de #(k+1)» y deshacer la transacción k mientras el reloj sea > t o el cambio
+siguiente sea la extracción de un evento posterior a t (research R4).
 
 ## Resumen de estado
 

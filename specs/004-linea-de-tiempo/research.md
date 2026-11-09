@@ -117,6 +117,10 @@ no decreciente. Para `historia <t>`:
    registran después del cambio de reloj de ese evento, así que al detenerse quedan aplicados
    exactamente los eventos con tiempo ≤ t (FR-001, FR-002). La transacción k es la única deshecha a
    medias: el total sigue ≤ K.
+   **Corregido al implementar T015**: el motor saca el evento de la agenda *antes* de adelantar el
+   reloj, así que cuando el reloj vuelve a ser ≤ t todavía hay que devolver a la agenda los eventos
+   con tiempo > t que ya se habían extraído. La condición mira también el cambio siguiente: se sigue
+   deshaciendo mientras sea la extracción de un evento posterior a t.
 
 **Alternativas**: buscar k recorriendo las acciones (O(n), viola FR-019); guardar un punto de
 control por evento (viola FR-017).
