@@ -122,6 +122,7 @@ el principio VII y se corrigieron en R3 y R8.
 |---|---|---|
 | Tiempo de `historia` (peor caso y promedio) con 5 000 acciones | SC-001, FR-024 | K = 10, 50, 200; sin puntos de control |
 | Memoria retenida por la línea | FR-021, SC-005 | Mismos K; 2 500 frente a 5 000 acciones |
+| Costo de crear un punto de control frente al límite de 20 ms por ciclo (§6.1) | FR-017, riesgo de T001 | Cripta de referencia; copia del estado ≈ 29 ms en T001 |
 | Hacia atrás frente a hacia adelante | FR-024, §5.5 | Cripta sintética con todo el contenido cargado |
 | Deshacer y rehacer en sitio frente a copia de trabajo por consulta | R3 | La copia solo como alternativa descartada |
 | Retroceso con pergamino de punta a punta frente a copia completa | FR-025 | Carga de la Parte II |

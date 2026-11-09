@@ -64,7 +64,7 @@ Apéndice B). Requiere el guardado v10 de Steven.
 ## 6. Mediciones
 
 ```bash
-python main.py --bench --checkpoint-cada 50
+python main.py --bench --checkpoint-cada 10
 ```
 
 La salida JSON debe incluir la sección de la línea de tiempo con K = 10, 50 y 200, sin puntos de

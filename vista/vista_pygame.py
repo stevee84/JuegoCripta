@@ -400,6 +400,9 @@ class VistaPygame:
         gap = self.BTN_GAP
         self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar", NARANJA, enabled=activa))
         self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
+        # 002-T050: informe de resolubilidad de antes de empezar (FR-014 de la spec 002).
+        self._botones.append(Boton((px + bw + 80 + 2 * gap, barra_y, 150, self.BTN_H),
+                                   "Resolubilidad", "resolubilidad"))
         self._botones.extend(self._botones_sala)
 
     def _colocar_fila(self, items, px, panel_w, y):

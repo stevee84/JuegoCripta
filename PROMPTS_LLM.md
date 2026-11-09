@@ -2318,6 +2318,10 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 30 | Plan de la línea de tiempo (`/speckit-plan`) | 07/11/2026 |
 | 31 | Tareas de la línea de tiempo (`/speckit-tasks`) | 07/11/2026 |
 | 32 | Análisis de la línea de tiempo y correcciones (`/speckit-analyze`) | 07/11/2026 |
+| 33 | Implementación de T001: medición del riesgo R3 (`/speckit-implement`) | 07/11/2026 |
+| 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
+| 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
+| 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -2467,6 +2471,52 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** Un informe con cobertura de 100 % (los 31 FR y los 6 SC tienen tareas; ninguna tarea sin requisito) y 9 hallazgos: 2 críticos, 4 medios y 3 bajos. Los dos críticos contradecían el principio VII de la constitución: (C1) el plan hacía una copia de trabajo del estado en cada consulta, y la constitución solo permite como copias completas los puntos de control; (C2) después de cargar una partida podía quedar un punto de control extra, contra «no más de una cada K acciones» (§3.6, FR-017).
 
 **Qué hubo que corregir.** Con la aprobación de Joshua se corrigieron el plan y sus artefactos; `spec.md` no cambió. (C1) La consulta ahora deshace en sitio, sobre el punto de control o el estado vivo, anotando el inverso de cada cambio, y rehace en un `finally` (research R3). (C2) El guardado v10 serializa juntos el estado vivo y la línea, y al cargar el estado sale de la línea (research R8 y `contracts/guardado-v10.md`; hay que acordarlo con Steven). Medios: se agregó `service/juego_service.py` a la tabla de componentes, T001 ahora mide deshacer y rehacer en sitio, y las tareas de Steven se renombraron 002-T049 y 002-T050 para no confundirlas con las propias. Bajos: se agregaron pruebas con la partida terminada, con dos pergaminos seguidos y con K mayor que la cantidad de acciones; `pickle` quedó anotado como límite conocido. Los dos errores críticos eran del diseño que propuso Claude en el Prompt 30, no del enunciado.
+
+## Prompt 33 — Implementación de T001: medición del riesgo R3 (`/speckit-implement`)
+
+> **Prompt**
+>
+> /speckit-implement Implementa únicamente T001 de specs/004-linea-de-tiempo/tasks.md (medición del riesgo R3 en benchmarks/linea_tiempo.py y anotación del resultado en research.md). No implementes otras tareas ni toques código de Steven ni de Sofía.
+
+**Qué se obtuvo.** `benchmarks/linea_tiempo.py` (nuevo), que juega una partida real sin red sobre `cripta-04` (50 salas) y mide, para K = 10, 50 y 200, deshacer K transacciones sobre una copia conjunta del estado frente a copiar el estado completo. Resultados en research R3: con K = 10, deshacer tarda 5,6 ms de mediana; con K = 50, 30 ms; la copia completa por consulta es de 8 a 14 veces más lenta. Deshacer sobre la copia conjunta da exactamente el estado de K acciones antes.
+
+**Qué hubo que corregir.** (1) La primera ejecución falló: `copy.deepcopy` del estado real reventaba en la lista de enemigos de la sala (`dto/sala.py`, de Sofía). El plan decía que la copia ya funcionaba porque se había comprobado con un estado más simple. Sofía lo arregló en `f89b7b5` y research R2 se corrigió en un commit aparte (`d1b7dba`). (2) El jugador moría a las 45 acciones; se le dio vida muy alta solo dentro de la medición. (3) La comprobación de deshacer estaba mal escrita (comparaba contra una partida que había terminado antes) y se corrigió. (4) Con los datos, K = 50 no cabe en los 50 ms de §6.1, así que el K por defecto provisional pasó a 10 (research R7) y se agregó a T041 medir el costo de crear un punto de control frente al límite de 20 ms por ciclo. Rehacer todavía no existe: su costo es una estimación hasta T004.
+
+## Prompt 34 — Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo
+
+> **Prompt**
+>
+> ok, continuemos
+
+(Continuación de `/speckit-implement` del Prompt 33, sobre la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** T003: `tests/test_logica/test_cambios_linea.py`, con 8 pruebas que citan FR-001, FR-005 y FR-012; la principal juega 120 acciones reales en `cripta-04` (moverse, atacar, recoger, soltar, equipar, usar) y comprueba que cada transacción queda idéntica después de deshacer y rehacer. T004: en `logica/cambios.py` (archivo de Joshua), `CambioSoloLinea`, `TransaccionAccion.registrar_solo_linea`, `deshacer_mientras` (no vacía la transacción) y `rehacer`, más un inverso por cada uno de los 13 tipos de cambio. `revertir` salta los cambios «solo línea» y no cambió en lo demás. Suite: 1083 aprobadas.
+
+**Qué hubo que corregir.** (1) Los cambios de inventario se marcan como deshechos y no se pueden deshacer dos veces; el inverso guarda también el propio cambio para que la línea pueda consultar muchas veces. (2) La agenda queda con otra forma interna después de cancelar y restaurar un evento, aunque con los mismos eventos; la prueba compara la agenda por sus eventos, como ya ocurría con el pergamino. (3) En la partida de prueba no hubo turnos de enemigos, así que el inverso del azar se prueba aparte. Un tipo de cambio sin inverso hace fallar la consulta antes de tocar el estado; las specs 001 y 003 deben declararlo (contrato de dependencias).
+
+## Prompt 35 — Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050)
+
+> **Prompt**
+>
+> revisa si ya se hizo bien el merge, si es asi continua
+
+(Continuación de `/speckit-implement`. Steven pidió terminar las dos tareas pendientes de su spec 002, que tocan `controller/` y `vista/`.)
+
+**Qué se obtuvo.** `controller/resumen_resolubilidad.py` (nuevo) con `linea_inicio` (las tres líneas distinguibles de FR-013 de la 002) y `lineas_informe` (el informe completo). En `controller/controlador_juego.py`: al iniciar una partida se muestra la línea de resolubilidad; si la cripta no tiene solución o no se pudo verificar, la partida no inicia y se muestra el informe; y el comando nuevo `resolubilidad` muestra el informe de antes de empezar. En `vista/vista_pygame.py`, un botón «Resolubilidad». Pruebas en `tests/test_controller/test_resolubilidad_interfaz.py` (9, citan FR-013 y FR-014 de la 002). Suite: 1095 aprobadas.
+
+**Qué hubo que corregir.** (1) El comando `cripta` no atrapaba `CriptaNoResoluble`: con una cripta sin solución la consola se cerraba con un error en lugar de mostrar el informe. (2) `main.imprimir_informe` (de Steven) imprime en lugar de devolver texto; para no modificar su archivo se reescribió el formato en `lineas_informe` y una prueba compara las dos salidas línea por línea para que no se separen. El botón de pygame no se revisó en pantalla; solo se comprobó que cabe en el panel.
+
+## Prompt 36 — Implementación de T005 y T006: el historial avisa a la línea de tiempo
+
+> **Prompt**
+>
+> Sí, sigue
+
+(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** En `logica/historial_reversible.py` (archivo de Joshua): `vincular_linea`; al cerrar una acción el historial le entrega la transacción a la línea y al retroceder le avisa el recorte. Sin línea vinculada se comporta igual que antes y el límite de 5 del pergamino no cambia. Pruebas en `tests/test_logica/test_historial_linea.py` (6, citan FR-013, FR-014 y FR-021). Suite: 1101 aprobadas.
+
+**Qué hubo que corregir.** Antes de implementar se vio que, si el historial guarda la línea, copiar el estado para un punto de control copiaría también la línea con todos sus puntos de control, y la copia crecería sin fin. El historial excluye la línea al copiarse o serializarse (`__getstate__`), y hay una prueba para eso.
 
 # Steven Moya Porras — Parte II
 

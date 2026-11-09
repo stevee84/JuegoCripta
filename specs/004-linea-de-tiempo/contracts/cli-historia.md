@@ -42,7 +42,7 @@ exista, la sección del mapa dice `Mapa conocido: no disponible`.
 
 | Bandera | Efecto | Requisitos |
 |---|---|---|
-| `--checkpoint-cada K` | K entero ≥ 1; sirve en partida, `--replay` y `--bench`. Sin ella, K por defecto (provisional 50). Otro valor: error y no arranca. | FR-015, FR-016 |
+| `--checkpoint-cada K` | K entero ≥ 1; sirve en partida, `--replay` y `--bench`. Sin ella, K por defecto (provisional 10). Otro valor: error y no arranca. | FR-015, FR-016 |
 | `--hasta t` | Solo con `--replay`. t entero ≥ 0. Si no, error antes de reproducir. | FR-009 |
 
 ### `--replay partida.log --hasta t`
