@@ -1,0 +1,2537 @@
+{
+  "entorno_ejecutor": {
+    "python": "3.12.10",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "reloj": "perf_counter_ns"
+  },
+  "tamanos": [
+    256,
+    512,
+    1024
+  ],
+  "repeticiones": 9,
+  "mediciones": [
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1061900,
+      "p95": 1270100,
+      "maximo": 1270100,
+      "minimo": 954200,
+      "muestras": [
+        1157000,
+        1061900,
+        1168500,
+        1056800,
+        954200,
+        990200,
+        1032500,
+        1171500,
+        1270100
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 320,
+          "huella": "f6fdc5a559b783fbeba4bca1f7313fc3b239539eae2422e538ee664425bfa318"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 222840,
+        "pico_preparacion": 259166,
+        "final_actual": 275720,
+        "pico_operacion": 275768,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1390300,
+      "p95": 1494400,
+      "maximo": 1494400,
+      "minimo": 1302700,
+      "muestras": [
+        1494400,
+        1453800,
+        1382400,
+        1420000,
+        1405400,
+        1390300,
+        1319500,
+        1302700,
+        1312600
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 320,
+          "huella": "f6fdc5a559b783fbeba4bca1f7313fc3b239539eae2422e538ee664425bfa318"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 94048,
+        "pico_preparacion": 122920,
+        "final_actual": 94864,
+        "pico_operacion": 94992,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 841400,
+      "p95": 1138700,
+      "maximo": 1138700,
+      "minimo": 822300,
+      "muestras": [
+        836500,
+        868900,
+        1138700,
+        1084600,
+        862500,
+        841400,
+        836200,
+        838600,
+        822300
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "bd04e54b5baca6646b918f1bc20fd5b801bd960e52f3a9a81b76e4f3577fcfa2"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "6cdcde2d3982b1637d5337fc1ac452d7a4e6ea96e61e812ecdd65304dab96119"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 193432,
+        "pico_preparacion": 243542,
+        "final_actual": 197096,
+        "pico_operacion": 234142,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 968700,
+      "p95": 1281800,
+      "maximo": 1281800,
+      "minimo": 922200,
+      "muestras": [
+        1281800,
+        984800,
+        922200,
+        1097200,
+        950600,
+        944000,
+        959600,
+        968700,
+        974500
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "bd04e54b5baca6646b918f1bc20fd5b801bd960e52f3a9a81b76e4f3577fcfa2"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "6cdcde2d3982b1637d5337fc1ac452d7a4e6ea96e61e812ecdd65304dab96119"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 67936,
+        "pico_preparacion": 96648,
+        "final_actual": 68784,
+        "pico_operacion": 69108,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 872300,
+      "p95": 1627500,
+      "maximo": 1627500,
+      "minimo": 738600,
+      "muestras": [
+        796200,
+        780500,
+        951900,
+        1070200,
+        872300,
+        1144300,
+        1627500,
+        738600,
+        762000
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "e5c9de0b45c1e5b54487be704f15d47c668389abdd0a8c1863f29cfffbac61e0"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "e47ccd7f00c8b4dd5bd84fd00e5c0f784b137b63f5e5d62dea2a8609c8a8c7ad"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 194008,
+        "pico_preparacion": 244118,
+        "final_actual": 197120,
+        "pico_operacion": 234622,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 219900,
+      "p95": 236100,
+      "maximo": 236100,
+      "minimo": 210900,
+      "muestras": [
+        236100,
+        229100,
+        210900,
+        216200,
+        223500,
+        215200,
+        221000,
+        215600,
+        219900
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "e5c9de0b45c1e5b54487be704f15d47c668389abdd0a8c1863f29cfffbac61e0"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "e47ccd7f00c8b4dd5bd84fd00e5c0f784b137b63f5e5d62dea2a8609c8a8c7ad"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 68520,
+        "pico_preparacion": 97232,
+        "final_actual": 69088,
+        "pico_operacion": 69256,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 32,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 448100,
+      "p95": 718500,
+      "maximo": 718500,
+      "minimo": 360200,
+      "muestras": [
+        448100,
+        450100,
+        360200,
+        438000,
+        364300,
+        718500,
+        653300,
+        365200,
+        558100
+      ],
+      "trabajo": {
+        "operaciones": 32,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 224,
+          "huella": "08f8917e675c4fcf6d648632503dc2e616593de38759b13c90f4fdf7a05ae796"
+        },
+        "resultado": {
+          "cantidad": 32,
+          "huella": "cecabad025755230e40081f83b40c9beeb3b262e3a65f9f90c4b64838a9d1f8d"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 193400,
+        "pico_preparacion": 243510,
+        "final_actual": 224072,
+        "pico_operacion": 224256,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 32,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 163400,
+      "p95": 177600,
+      "maximo": 177600,
+      "minimo": 146600,
+      "muestras": [
+        163700,
+        172800,
+        163400,
+        177600,
+        146600,
+        151200,
+        170700,
+        153200,
+        146900
+      ],
+      "trabajo": {
+        "operaciones": 32,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 224,
+          "huella": "08f8917e675c4fcf6d648632503dc2e616593de38759b13c90f4fdf7a05ae796"
+        },
+        "resultado": {
+          "cantidad": 32,
+          "huella": "cecabad025755230e40081f83b40c9beeb3b262e3a65f9f90c4b64838a9d1f8d"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 67912,
+        "pico_preparacion": 96624,
+        "final_actual": 68456,
+        "pico_operacion": 68896,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1854900,
+      "p95": 2031700,
+      "maximo": 2031700,
+      "minimo": 1771700,
+      "muestras": [
+        1918000,
+        1854900,
+        2031700,
+        1771700,
+        1963200,
+        1839000,
+        1858700,
+        1776700,
+        1842300
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 256,
+          "huella": "86175aebb909ad49caac2153feed298f6c35401751efdf8cfcee7dae5123d619"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 202840,
+        "pico_preparacion": 247910,
+        "final_actual": 248080,
+        "pico_operacion": 248382,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1645900,
+      "p95": 1723500,
+      "maximo": 1723500,
+      "minimo": 1538900,
+      "muestras": [
+        1645900,
+        1538900,
+        1614100,
+        1635600,
+        1723500,
+        1653800,
+        1571200,
+        1714900,
+        1670700
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "cb16dce1c1bb62a55f382fb6d2e322dd918b7d4e07a63d6ac8d7319f4845bf44"
+        },
+        "despues": {
+          "eventos": 256,
+          "huella": "86175aebb909ad49caac2153feed298f6c35401751efdf8cfcee7dae5123d619"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "2945eff58a62d4ddb75f1583e63d0092cd4118709d9198befb47c330aeb81a95"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 74152,
+        "pico_preparacion": 102864,
+        "final_actual": 75064,
+        "pico_operacion": 75200,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "1bb57694c76d583d640ec163b27e1e75e2a6d851f3d0cd16fc7f03e2b020382e"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2961200,
+      "p95": 4430900,
+      "maximo": 4430900,
+      "minimo": 2855900,
+      "muestras": [
+        2961200,
+        2907500,
+        2855900,
+        3152300,
+        3267600,
+        2942400,
+        2936200,
+        4430900,
+        3020600
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "5cf4b69073df64ff25b849ecaa399299f34a6698ddf510b506537b84e24cb20c"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "5cf4b69073df64ff25b849ecaa399299f34a6698ddf510b506537b84e24cb20c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "1bb57694c76d583d640ec163b27e1e75e2a6d851f3d0cd16fc7f03e2b020382e"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 187672,
+        "pico_preparacion": 237782,
+        "final_actual": 113480,
+        "pico_operacion": 228270,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "1bb57694c76d583d640ec163b27e1e75e2a6d851f3d0cd16fc7f03e2b020382e"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2693500,
+      "p95": 3446500,
+      "maximo": 3446500,
+      "minimo": 2452200,
+      "muestras": [
+        2693500,
+        2822500,
+        2452200,
+        3446500,
+        2716500,
+        2495700,
+        2898100,
+        2506100,
+        2535800
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "5cf4b69073df64ff25b849ecaa399299f34a6698ddf510b506537b84e24cb20c"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "5cf4b69073df64ff25b849ecaa399299f34a6698ddf510b506537b84e24cb20c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "1bb57694c76d583d640ec163b27e1e75e2a6d851f3d0cd16fc7f03e2b020382e"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 62184,
+        "pico_preparacion": 90896,
+        "final_actual": 62520,
+        "pico_operacion": 63868,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2611300,
+      "p95": 4670600,
+      "maximo": 4670600,
+      "minimo": 2337100,
+      "muestras": [
+        2337100,
+        4670600,
+        2379700,
+        3493600,
+        2540200,
+        2727300,
+        2597900,
+        2611300,
+        2631800
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 640,
+          "huella": "4c323391db669bb77c82d1d5200e3f9bd34a9d62c1986218e6694611936bfbeb"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 447144,
+        "pico_preparacion": 504768,
+        "final_actual": 520240,
+        "pico_operacion": 520320,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 6249200,
+      "p95": 7476600,
+      "maximo": 7476600,
+      "minimo": 5576400,
+      "muestras": [
+        6378100,
+        6059300,
+        7476600,
+        6359800,
+        5576400,
+        5772000,
+        6284600,
+        6249200,
+        6087800
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 640,
+          "huella": "4c323391db669bb77c82d1d5200e3f9bd34a9d62c1986218e6694611936bfbeb"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 198808,
+        "pico_preparacion": 256360,
+        "final_actual": 200136,
+        "pico_operacion": 200264,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2657400,
+      "p95": 4944300,
+      "maximo": 4944300,
+      "minimo": 2196500,
+      "muestras": [
+        2289500,
+        2436900,
+        2338100,
+        2657400,
+        3523200,
+        4944300,
+        4123300,
+        3030200,
+        2196500
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "8085fa5adf2ccf35089f1404c57bfaa11b97878676d81746b11f414e3c6524d6"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "daaf70ddc37adaad33429562da000aef3591e977b13e75890950fcb3f9a5f41c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 388376,
+        "pico_preparacion": 465494,
+        "final_actual": 380216,
+        "pico_operacion": 427558,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4472200,
+      "p95": 5010100,
+      "maximo": 5010100,
+      "minimo": 4231500,
+      "muestras": [
+        4458700,
+        4996500,
+        5010100,
+        4311100,
+        4231500,
+        4561000,
+        4236200,
+        4547500,
+        4472200
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "8085fa5adf2ccf35089f1404c57bfaa11b97878676d81746b11f414e3c6524d6"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "daaf70ddc37adaad33429562da000aef3591e977b13e75890950fcb3f9a5f41c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 146120,
+        "pico_preparacion": 203504,
+        "final_actual": 147480,
+        "pico_operacion": 147916,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1754200,
+      "p95": 2272100,
+      "maximo": 2272100,
+      "minimo": 1703300,
+      "muestras": [
+        1745500,
+        1742900,
+        1752100,
+        1800100,
+        1754200,
+        1703300,
+        1831700,
+        1970300,
+        2272100
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "5ce3bd4ea47b16b7c07f4a84bfa3a5caa5a8a61f7e2edd7a64414b1986337b76"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "00f4f84168ce2804553cd53dd6cea27991e599e6677e52598e13e66c99d29385"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 389816,
+        "pico_preparacion": 466702,
+        "final_actual": 381280,
+        "pico_operacion": 429030,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 838800,
+      "p95": 905900,
+      "maximo": 905900,
+      "minimo": 807400,
+      "muestras": [
+        905900,
+        838800,
+        873400,
+        864700,
+        842100,
+        830800,
+        807400,
+        830700,
+        821400
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "5ce3bd4ea47b16b7c07f4a84bfa3a5caa5a8a61f7e2edd7a64414b1986337b76"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "00f4f84168ce2804553cd53dd6cea27991e599e6677e52598e13e66c99d29385"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 147240,
+        "pico_preparacion": 204624,
+        "final_actual": 148320,
+        "pico_operacion": 148544,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1018100,
+      "p95": 1918100,
+      "maximo": 1918100,
+      "minimo": 922800,
+      "muestras": [
+        972300,
+        1302100,
+        1077800,
+        1118500,
+        1918100,
+        1018100,
+        979400,
+        1010400,
+        922800
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 448,
+          "huella": "8ff55bf2bff8460cfba1279e4559251cebf04bf2354fe8f70ce5d77273664537"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "b50f34b76200aeb01a0517b726b8f4ea27b81976441bf5c305475e332a475c5c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 388376,
+        "pico_preparacion": 465494,
+        "final_actual": 389672,
+        "pico_operacion": 428094,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 560000,
+      "p95": 568800,
+      "maximo": 568800,
+      "minimo": 540200,
+      "muestras": [
+        562500,
+        559200,
+        556400,
+        568800,
+        566500,
+        560000,
+        562900,
+        555700,
+        540200
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 448,
+          "huella": "8ff55bf2bff8460cfba1279e4559251cebf04bf2354fe8f70ce5d77273664537"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "b50f34b76200aeb01a0517b726b8f4ea27b81976441bf5c305475e332a475c5c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 146120,
+        "pico_preparacion": 203504,
+        "final_actual": 146856,
+        "pico_operacion": 147360,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4152400,
+      "p95": 4973500,
+      "maximo": 4973500,
+      "minimo": 3830600,
+      "muestras": [
+        3945200,
+        3830600,
+        4073600,
+        4478000,
+        4973500,
+        4239600,
+        4353900,
+        4143600,
+        4152400
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 512,
+          "huella": "980ec5e45c993fdedddf09654581cf65499e421ae4c9eba1ff76e3273b0a4df7"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 406840,
+        "pico_preparacion": 474462,
+        "final_actual": 436232,
+        "pico_operacion": 452406,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 6483100,
+      "p95": 7230800,
+      "maximo": 7230800,
+      "minimo": 6051600,
+      "muestras": [
+        6051600,
+        7179400,
+        6526900,
+        6364200,
+        6483100,
+        7230800,
+        6326100,
+        6643800,
+        6464800
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "395acbe508670b93c5694169209a50230e3b4652567af8c9659b49699633284b"
+        },
+        "despues": {
+          "eventos": 512,
+          "huella": "980ec5e45c993fdedddf09654581cf65499e421ae4c9eba1ff76e3273b0a4df7"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "097b5fb66c381a8605fc8feac4dcb59adca58c12ec7eff09654430a1c56eac85"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 158504,
+        "pico_preparacion": 215888,
+        "final_actual": 156824,
+        "pico_operacion": 158808,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 512,
+        "patron": "determinista_t047",
+        "huella_fixture": "0e1e461db80be237f6afde32b10ce319a600e1d544bf8e1c6b8fb069d6a2e6ae"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 6527400,
+      "p95": 8172100,
+      "maximo": 8172100,
+      "minimo": 6173900,
+      "muestras": [
+        6601700,
+        7640800,
+        6513000,
+        6423600,
+        6173900,
+        6245700,
+        7389100,
+        8172100,
+        6527400
+      ],
+      "trabajo": {
+        "operaciones": 512,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "ba9bcb09e36233b1634ac1a8482db011458c9d56b2d907ec6721fd61111414dd"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 512,
+          "huella": "ba9bcb09e36233b1634ac1a8482db011458c9d56b2d907ec6721fd61111414dd"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "0e1e461db80be237f6afde32b10ce319a600e1d544bf8e1c6b8fb069d6a2e6ae"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 373784,
+        "pico_preparacion": 450902,
+        "final_actual": 207608,
+        "pico_operacion": 412966,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 512,
+        "patron": "determinista_t047",
+        "huella_fixture": "0e1e461db80be237f6afde32b10ce319a600e1d544bf8e1c6b8fb069d6a2e6ae"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 10024700,
+      "p95": 10821900,
+      "maximo": 10821900,
+      "minimo": 9603900,
+      "muestras": [
+        10062200,
+        9682600,
+        10118000,
+        10024700,
+        9603900,
+        10821900,
+        9980100,
+        10005400,
+        10184600
+      ],
+      "trabajo": {
+        "operaciones": 512,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "ba9bcb09e36233b1634ac1a8482db011458c9d56b2d907ec6721fd61111414dd"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 512,
+          "huella": "ba9bcb09e36233b1634ac1a8482db011458c9d56b2d907ec6721fd61111414dd"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "0e1e461db80be237f6afde32b10ce319a600e1d544bf8e1c6b8fb069d6a2e6ae"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 131528,
+        "pico_preparacion": 188912,
+        "final_actual": 131864,
+        "pico_operacion": 134412,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 5138200,
+      "p95": 12853300,
+      "maximo": 12853300,
+      "minimo": 4375200,
+      "muestras": [
+        5138200,
+        5042800,
+        12853300,
+        4375200,
+        4717800,
+        4756700,
+        5377300,
+        8935500,
+        10307200
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 1280,
+          "huella": "58ca7b086348610a569a69d38719322a79276d4038f5241535a9c930c657e33d"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 876320,
+        "pico_preparacion": 1010238,
+        "final_actual": 1005240,
+        "pico_operacion": 1023446,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 20509300,
+      "p95": 21620000,
+      "maximo": 21620000,
+      "minimo": 19509600,
+      "muestras": [
+        20911400,
+        20333300,
+        20471700,
+        20933600,
+        19793300,
+        21620000,
+        20509300,
+        19509600,
+        20524500
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 1280,
+          "huella": "58ca7b086348610a569a69d38719322a79276d4038f5241535a9c930c657e33d"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 406744,
+        "pico_preparacion": 521984,
+        "final_actual": 409288,
+        "pico_operacion": 409416,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4594200,
+      "p95": 14105200,
+      "maximo": 14105200,
+      "minimo": 4105400,
+      "muestras": [
+        4564400,
+        5014300,
+        4754100,
+        4594200,
+        4716000,
+        14105200,
+        4249800,
+        4105400,
+        4356400
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "c2f957c7eae52c7907b4a6d841e7a4bc0ff94373b67b372228b02a3a14b25c5c"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "a1446b5f85bfee17e1e2de7e8c0553884e407c426d5c7cfff8f808113f675c90"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 780472,
+        "pico_preparacion": 911846,
+        "final_actual": 697472,
+        "pico_operacion": 819718,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 17663600,
+      "p95": 18235700,
+      "maximo": 18235700,
+      "minimo": 17116200,
+      "muestras": [
+        17740300,
+        17598600,
+        17775500,
+        17334300,
+        17961300,
+        17116200,
+        18235700,
+        17440600,
+        17663600
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "c2f957c7eae52c7907b4a6d841e7a4bc0ff94373b67b372228b02a3a14b25c5c"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "a1446b5f85bfee17e1e2de7e8c0553884e407c426d5c7cfff8f808113f675c90"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 301224,
+        "pico_preparacion": 415952,
+        "final_actual": 303704,
+        "pico_operacion": 304140,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4125400,
+      "p95": 9742800,
+      "maximo": 9742800,
+      "minimo": 3822000,
+      "muestras": [
+        4012600,
+        4153800,
+        5359900,
+        3937800,
+        4125400,
+        9742800,
+        4468100,
+        3822000,
+        4017200
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "2d8cbf553024b750a8552f2db13516bbe60e90652b8cfda1932ca73e0aa6a936"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "afc3ea9c40aca2541ad2cb5d2a29f7a203992f2571dba98317866f617142786c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 782616,
+        "pico_preparacion": 913990,
+        "final_actual": 699616,
+        "pico_operacion": 821878,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3628100,
+      "p95": 4149400,
+      "maximo": 4149400,
+      "minimo": 3445500,
+      "muestras": [
+        3692500,
+        3524000,
+        3695600,
+        4149400,
+        3628100,
+        3551200,
+        3482500,
+        3637900,
+        3445500
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "2d8cbf553024b750a8552f2db13516bbe60e90652b8cfda1932ca73e0aa6a936"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "afc3ea9c40aca2541ad2cb5d2a29f7a203992f2571dba98317866f617142786c"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 303368,
+        "pico_preparacion": 418096,
+        "final_actual": 305568,
+        "pico_operacion": 305792,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2180900,
+      "p95": 2957000,
+      "maximo": 2957000,
+      "minimo": 2026000,
+      "muestras": [
+        2180900,
+        2038800,
+        2162100,
+        2448700,
+        2520100,
+        2957000,
+        2346200,
+        2026000,
+        2171900
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 896,
+          "huella": "1e4f0ba134ddec224d601c3c078620fc9d83d682d7d26504e1b165624cec2b8c"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "ebaa901741229a505a894a7b4ee70c7bf7d9eaaabcaba88f653afe0b5270c13e"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 780472,
+        "pico_preparacion": 911846,
+        "final_actual": 773448,
+        "pico_operacion": 820502,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1756700,
+      "p95": 1889100,
+      "maximo": 1889100,
+      "minimo": 1732600,
+      "muestras": [
+        1814700,
+        1889100,
+        1774800,
+        1755200,
+        1755700,
+        1767200,
+        1756700,
+        1744100,
+        1732600
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 896,
+          "huella": "1e4f0ba134ddec224d601c3c078620fc9d83d682d7d26504e1b165624cec2b8c"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "ebaa901741229a505a894a7b4ee70c7bf7d9eaaabcaba88f653afe0b5270c13e"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 301224,
+        "pico_preparacion": 415952,
+        "final_actual": 302472,
+        "pico_operacion": 303040,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 9816700,
+      "p95": 16836600,
+      "maximo": 16836600,
+      "minimo": 8838300,
+      "muestras": [
+        8838300,
+        16836600,
+        9096800,
+        10365600,
+        9921000,
+        9068100,
+        9533100,
+        9816700,
+        10947700
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 1024,
+          "huella": "ae52e1cbca771b87695b556bc0126772a48d87b148d23e9bff08e0d893030c7f"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 816592,
+        "pico_preparacion": 931320,
+        "final_actual": 813128,
+        "pico_operacion": 862398,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "determinista_t047",
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 24942300,
+      "p95": 26906700,
+      "maximo": 26906700,
+      "minimo": 24062900,
+      "muestras": [
+        24942300,
+        25840300,
+        25110700,
+        26906700,
+        24062900,
+        24777100,
+        24729100,
+        24324600,
+        24980900
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "824bd3d5e65c6ec0442dd7d5360860c6a3b7ed53b533acb85093e691fc564ed8"
+        },
+        "despues": {
+          "eventos": 1024,
+          "huella": "ae52e1cbca771b87695b556bc0126772a48d87b148d23e9bff08e0d893030c7f"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "c86fccf4b82b69fc2d26a5def5daafb96b9fe42f69f8ab90334080c7c05eb851"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 325896,
+        "pico_preparacion": 440624,
+        "final_actual": 320472,
+        "pico_operacion": 326200,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 1024,
+        "patron": "determinista_t047",
+        "huella_fixture": "64f086231b210687212a195b41eef3ce5299653e71c34a50e264a28556951044"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 15826100,
+      "p95": 16518100,
+      "maximo": 16518100,
+      "minimo": 14774700,
+      "muestras": [
+        14774700,
+        15837600,
+        16518100,
+        14796100,
+        15862100,
+        15611400,
+        15508600,
+        15997400,
+        15826100
+      ],
+      "trabajo": {
+        "operaciones": 1024,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "d4a01b962932985e8dbd33f01f29041e10fdc0b1fba357937959dce2ccedff9e"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 1024,
+          "huella": "d4a01b962932985e8dbd33f01f29041e10fdc0b1fba357937959dce2ccedff9e"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "64f086231b210687212a195b41eef3ce5299653e71c34a50e264a28556951044"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 750072,
+        "pico_preparacion": 881446,
+        "final_actual": 452600,
+        "pico_operacion": 789318,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 1024,
+        "patron": "determinista_t047",
+        "huella_fixture": "64f086231b210687212a195b41eef3ce5299653e71c34a50e264a28556951044"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 39401700,
+      "p95": 39747800,
+      "maximo": 39747800,
+      "minimo": 39017400,
+      "muestras": [
+        39401700,
+        39438400,
+        39747800,
+        39207300,
+        39475500,
+        39487000,
+        39066100,
+        39306800,
+        39017400
+      ],
+      "trabajo": {
+        "operaciones": 1024,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "d4a01b962932985e8dbd33f01f29041e10fdc0b1fba357937959dce2ccedff9e"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 1024,
+          "huella": "d4a01b962932985e8dbd33f01f29041e10fdc0b1fba357937959dce2ccedff9e"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "64f086231b210687212a195b41eef3ce5299653e71c34a50e264a28556951044"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 270824,
+        "pico_preparacion": 385552,
+        "final_actual": 271160,
+        "pico_operacion": 275788,
+        "incluida_en_tiempo": false
+      }
+    }
+  ],
+  "alcance": "T047_agenda_aislada_sin_ciclo_cazadores_ni_main_bench"
+}

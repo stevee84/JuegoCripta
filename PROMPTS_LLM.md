@@ -2060,6 +2060,30 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 52 — T047: medición aislada de AgendaEventos
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar solo el bloque de medición de `AgendaEventos` de T047/PR-005: comparar insertar, extraer, cancelar por ID/actor, reprogramar y empates frente a una lista lineal manual benchmark-local; validar equivalencia antes de medir, separar fixtures y memoria del tiempo, conservar muestras/esquema reproducible, añadir pruebas sin umbrales, ejecutar el benchmark y dejar abierta cualquier parte que dependa de cazadores/costos o `--bench`.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@87d00dbb16975fd3b205c9bc3dafd5681fde170e`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron T047, AC-015, PR-004–PR-006, el diseño de complejidad, `AgendaEventos`, sus índices/montículo y los proveedores previos. No se modificaron producción, estructuras compartidas, `main.py` ni clases de compañeros.
+
+**Proveedor y alternativa.** Se creó el subbloque de agenda de `benchmarks/terreno_cazador_integrante1.py`. `medir_agenda` queda publicado mediante `PROVEEDORES`; `_AgendaLinealBenchmark` permanece privada y usa recorridos para buscar/retirar. Conserva las validaciones pertinentes, prioridad `(tiempo, secuencia)`, orden de cancelación por actor y secuencia nueva al reprogramar. La semilla 2609 genera bases idénticas para ambas alternativas. Cada una de las seis operaciones tiene filas separadas y cargas 256/512/1024; insertar, extraer, cancelar ID y reprogramar operan sobre un cuarto de la base, cancelar actor sobre cuatro actores y empates extrae toda la base con tiempo común.
+
+**Corrección antes del reloj.** En una corrida independiente se comparan evento por evento el estado inicial, resultados extraídos/cancelados, tiempos, secuencias, estado final y orden completo de empates. Reprogramar verifica específicamente secuencias nuevas consecutivas desde `n`. Las huellas de fixture, antes, resultado y después quedan en cada pareja. La creación de base y de objetos por insertar ocurre fuera del reloj; dentro permanecen búsquedas, validación, mantenimiento de índices/montículo o lista y construcción del resultado exigido. `tracemalloc` mide base, preparación, final y pico de operación en una corrida separada marcada `incluida_en_tiempo=false`.
+
+**Evidencia real.** `benchmarks/resultados/agenda_t047_c1_r9_256-512-1024.json` contiene 36 filas, 324 muestras, entorno Windows/Python 3.12.10, un calentamiento y nueve repeticiones en `ns_por_lote`, con mediana, p95 de rango más cercano, máximo, mínimo, trabajo y memoria. Todas las filas declaran equivalencia. Para 1024 eventos, medianas agenda/lineal: insertar 5 138 200/20 509 300 ns; extraer 4 594 200/17 663 600; cancelar ID 4 125 400/3 628 100; cancelar actor 2 180 900/1 756 700; reprogramar 9 816 700/24 942 300; resolver empates 15 826 100/39 401 700. Estos datos no imponen umbrales ni adoptan una alternativa.
+
+**Pruebas y estado.** `tests/test_bench_agenda_t047.py` cubre equivalencia de las seis operaciones, secuencia nueva, desempate, esquema, muestras, cargas, memoria separada y proveedor. La ejecución focalizada y regresiones de agenda/integración terminó en **82 passed in 0.94s**; `py_compile` pasó. Una orden previa inválida que nombraba un archivo inexistente no ejecutó pruebas y no se usa como evidencia. T047 permanece abierta porque PR-005 todavía exige carga equivalente con costos variables/cazadores activos y registro por T049 en `main.py --bench`; la medición aislada no prueba el ciclo oficial de 20 ms. Sin commit, push, merge ni cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
