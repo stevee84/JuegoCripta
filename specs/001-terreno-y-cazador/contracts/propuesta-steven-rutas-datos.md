@@ -1,14 +1,13 @@
 # Respuesta parcial con Steven: datos ponderados y rutas para «ir a»
 
-**Estado**: ACUERDO PARCIAL ACTUALIZADO. Steven confirmó la semántica de validación, simetría, vista conocida, recálculo por paso y casos terminales; las firmas Python, la representación exacta y la asignación de archivos compartidos siguen abiertas. Steven asume la persistencia de costo/rango/mapa conocido coordinada con Joshua, pero no hay formato o versión implementados comprobados. Este documento no modifica ni sustituye specs 002/003, archivos de Steven ni un contrato de Joshua.
+**Estado**: ACUERDO PARCIAL ACTUALIZADO. Steven confirmó la semántica de validación, simetría, vista conocida, recálculo por paso y casos terminales; también solicitó a Sofía el índice de `MapaCripta`. Las firmas Python, la representación exacta y la asignación de los demás archivos compartidos siguen abiertas. Steven asume la persistencia de costo/rango/mapa conocido coordinada con Joshua, pero no hay formato o versión implementados comprobados. Este documento no modifica ni sustituye specs 002/003, archivos de Steven ni un contrato de Joshua.
 
-**Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven adapta los datos, construye la vista del mapa conocido y asume la persistencia de costo/rango/mapa conocido en coordinación con Joshua. Ningún acuerdo autoriza a Sofía a editar clases de Steven ni fija quién modifica DTO, inicialización u otros archivos compartidos.
+**Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven adapta los datos, construye la vista del mapa conocido y asume la persistencia de costo/rango/mapa conocido en coordinación con Joshua. Steven solicitó expresamente que Sofía implemente el índice por ID de `MapaCripta`, componente de Sofía, conservando firmas, orden e identidad. Ese acuerdo específico no autoriza a Sofía a editar clases de Steven ni fija quién modifica DTO, inicialización u otros archivos compartidos.
 
 **Evidencia consultada el 2026-11-08**:
 
-- checkout local `Sofia`: `f89b7b53722e92c1337fe57c7bebf5528c1ec53e`;
-- punta publicada de `Steve`: `757d747b461cdb755705ca5cdd90391090112782`, consultada con `git show`/`git grep` sin checkout ni merge;
-- en esa punta `GuardadoBinario.VERSION = 9` y no están publicados 003 ni la implementación de costo/rango/mapa conocido;
+- checkout local `Sofia`: `3df43c63c68a33f692148b737c12b0c0a4208569`, que contiene `Steve@757d747b461cdb755705ca5cdd90391090112782` mediante la integración de Joshua;
+- en esa entrega `GuardadoBinario.VERSION = 9` y no están publicados 003 ni la implementación de costo/rango/mapa conocido;
 - los puntos de §§3–4 siguientes son acuerdos comunicados por Steven, pendientes de implementación salvo evidencia posterior.
 
 ## 1. Objetivo
@@ -28,6 +27,8 @@ La respuesta de Steven confirma responsabilidades, pero todavía no constituye i
 - `MapaCripta` aún no publica `contiene_sala` ni `salidas_transitables`; `obtener_sala()` y el enlace actual continúan usando la lista lineal.
 - `GuardadoBinario.VERSION` es **9**. `_escribir_sala()` y `_leer_sala_datos()` no incluyen costo/rango y el lector exige versión exacta.
 - `verificador_resolubilidad.verificar()` usa destino, apertura y llaves, no pesos. Incorporar costos no cambia su alcanzabilidad.
+
+Steven solicitó a Sofía resolver el cuello de botella lineal mediante el índice de `MapaCripta`. No se encontró un acuerdo explícito contradictorio: la anotación previa de que era un componente compartido exigía identificar consumidores y acordar el cambio. El plan enumera esos consumidores y T007–T009/T072–T076 conservan contrato y aportan pruebas/mediciones. La solicitud no resuelve las asignaciones todavía abiertas de DTO, inicialización, vista conocida o persistencia.
 
 ## 3. Acuerdos confirmados
 
@@ -90,7 +91,7 @@ Esto cierra la semántica, pero no fija nombres, firma Python, clase/protocolo, 
 - La búsqueda minimiza la suma de costos positivos y, entre rutas mínimas, elige la primera vecina de menor ID numérico.
 - Un límite de costo restringe la consulta del cazador; «ir a» no recibe reglas nuevas desde 001.
 - Deben acordarse la firma Python y la representación exacta de paso, destino alcanzado y sin ruta.
-- Debe asignarse de forma concreta quién edita cada archivo compartido. La responsabilidad conceptual de Steven no asigna automáticamente `dto/sala.py`, `dto/actor.py` o `service/inicializador_partida.py`.
+- Debe asignarse de forma concreta quién edita cada archivo compartido. La responsabilidad conceptual de Steven no asigna automáticamente `dto/sala.py`, `dto/actor.py` o `service/inicializador_partida.py`. `logica/mapa_cripta.py` queda fuera de esa pregunta concreta: Steven pidió expresamente que Sofía implemente allí el índice, preservando su API, orden e identidad.
 
 Los nombres de estados, campos y tipos de retorno no quedan fijados por esta propuesta.
 
@@ -112,7 +113,7 @@ Steven asume la persistencia de costo, rango y mapa conocido coordinada con Josh
 
 ## 5. Puntos todavía no confirmados por ambos
 
-- firmas Python, representación exacta del resultado y asignación de archivos compartidos;
+- firmas Python, representación exacta del resultado y asignación de los archivos compartidos de datos/rutas todavía no acordados; el índice de `MapaCripta` ya está asignado a Sofía;
 - mecanismo, claves, invalidación y propietario de reutilización para «ir a»;
 - compatibilidad de lectura, versión final y entrega concreta de persistencia coordinada;
 - política para una salida sin sentido inverso cuando no existe contradicción entre dos costos, no definida por las fuentes consultadas.
@@ -134,7 +135,8 @@ Steven asume la persistencia de costo, rango y mapa conocido coordinada con Josh
 - [x] Steven acepta recálculo por paso, origen=destino con costo 0 sin paso y ausencia de ruta distinguible.
 - [x] Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua.
 - [ ] Ambos fijan firmas Python y representación exacta sin confundir «sin ruta» con «ya en destino».
-- [ ] Se asignan de forma concreta los archivos compartidos y se aclara la política de salidas sin inversa.
+- [x] Steven solicita a Sofía implementar el índice de `MapaCripta` conservando firmas, orden e identidad; el plan identifica sus consumidores reales.
+- [ ] Se asignan de forma concreta los demás archivos compartidos y se aclara la política de salidas sin inversa.
 - [ ] 003 y 001 demuestran equivalencia y miden el límite de 5 ms con costo completo.
 - [ ] Steven y Joshua publican campos, compatibilidad y versión de guardado y se verifica el hash de la entrega.
 - [ ] Implementación y pruebas futuras verifican los acuerdos; ninguna se considera realizada por este documento.

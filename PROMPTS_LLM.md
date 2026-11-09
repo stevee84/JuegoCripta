@@ -1715,6 +1715,91 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 **Resultado de los 16 hallazgos.** Quince quedaron corregidos en la planificación. C004 quedó **no confirmado**: la ausencia de sentido inverso no tiene política definida en las fuentes consultadas y no se convirtió en requisito. La ejecución oficial de AC-013 permanece externamente pendiente, aunque su prueba de esquema/salida ya está planificada. No se implementó código, no se editaron pruebas, no se ejecutó la suite y no se hizo commit, push, merge ni cambio de rama.
 
+## Prompt 41 — Reanálisis de 001 después de integrar Joshua
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Repite el análisis de `specs/001-terreno-y-cazador` sobre el checkout
+> actual de Sofia, después de integrar `origin/joshua` y los cambios
+> de Steven incluidos en esa rama. La suite local terminó con
+> `1101 passed`, sin fallos ni omisiones; no vuelvas a ejecutarla.
+>
+> Lee constitución, PDF oficial, spec, plan, tasks y contratos de 001.
+> Comprueba las interfaces locales actuales de cambios e historial,
+> incluido `fotografiar_para_rehacer`, sin asumir que toda 004 o el
+> guardado futuro están implementados. Revisa los 16 hallazgos del
+> Prompt 39 frente a la remediación del Prompt 40 e informa cierres,
+> pendientes y hallazgos nuevos con gravedad y evidencia.
+>
+> Distingue errores reales, acuerdos pendientes, entregas externas no
+> implementadas y validación pendiente con la referencia oficial.
+> Comprueba propiedad de archivos, dependencias sin ciclos, paralelismo,
+> alternativas limitadas a benchmarks y tareas de `DECISIONES.md`/README.
+>
+> No modifiques los artefactos analizados, código ni pruebas. Solo
+> registra la invocación y su resultado real en el apartado de Sofía de
+> `PROMPTS_LLM.md`, sin marcar tareas ni hacer commit, push, merge o
+> `/speckit.implement`. Termina indicando qué tareas propias podrían
+> comenzar tras la revisión cruzada y cuáles permanecen bloqueadas.
+
+**Checkout e interfaces comprobadas.** El análisis se hizo sobre `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569`, merge de `c67e2aa4ef1f31bb6cd8ab7d68f3ce78c036bbcc` con `joshua@927d8860639f3efa6260172d3e03cae61f74301b`; contiene `972af5421d628171a4464709858275b100151c1e` y `Steve@757d747b461cdb755705ca5cdd90391090112782`. Están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. La punta actual `origin/joshua@d055563` no es ancestro del checkout: no está local su clase completa `LineaTiempo`. `GuardadoBinario.VERSION` continúa en 9 y no están implementados costo, rango, rutas ponderadas, vista 003 ni persistencia conjunta. Se aceptó como evidencia comunicada `1101 passed`, sin fallos ni omisiones; la suite no se volvió a ejecutar.
+
+**Revisión de Prompt 39/40.** Los quince hallazgos remediados en Prompt 40 continúan cerrados: propiedad de T003/T049, secuencia T042→T043, ciclo US3/US4, experimentos solo en benchmarks, tareas de `DECISIONES.md` §§5.1/5.2/5.6 y README, separación análisis/remediación, escritura frente a ejecución de pruebas, solapamientos de integraciones, esquema AC-013, decisiones separadas de cazador/«ir a», alternativa lineal de agenda y actualización descriptiva original. C004 continúa abierto y no confirmado: PDF, spec y acuerdo de Steven no definen si una salida sin sentido inverso debe rechazarse. La planificación conserva 71 tareas únicas, 21 marcas `[P]`, 30 AC trazados, todos los FR/PR cubiertos, cero tareas marcadas y ninguna dependencia circular detectada.
+
+**Hallazgos nuevos.** Se detectaron dos incumplimientos constitucionales críticos antes de implementar. Primero, `DECISIONES.md` §5.4 identifica `MapaCripta` como componente compartido que exige acordar el cambio e identificar consumidores, pero `plan.md` lo declara archivo de Sofía y T007/T008 asignan su contrato e implementación sin una tarea de coordinación ni inventario de consumidores; contradice el Principio VIII. Segundo, T007–T009 prueban estructura y restricciones, pero ninguna tarea/medición compara explícitamente el acceso por ID del índice frente a una alternativa lineal conectada a `--bench`, verificación exigida por el Principio II. También hay un hallazgo alto de estado documental: plan, research, data-model, quickstart, contrato de Joshua y G4 aún afirman que la interfaz base y el enlace del historial no están locales, aunque sí lo están. Como hallazgo bajo, plan/quickstart aún registran `1071 passed` en vez del resultado comunicado actual `1101 passed`. No se modificaron esos artefactos por la restricción de solo lectura.
+
+**Dependencias y siguiente trabajo.** G1 (firmas/representación y archivos compartidos), G2 (costo/rango/simetría), G3 (vista conocida 003), G5 (persistencia coordinada) y G6 (carga oficial para AC-013) siguen abiertos; G4 ya no es una entrega remota para la interfaz base, pero requiere revisión cruzada y actualización documental, y no equivale a toda 004. Antes de código deben remediarse y revisarse los dos hallazgos constitucionales. Después podrían comenzar T010–T015 y el oráculo T042; T005 puede verificarse contra lo ya integrado. T007–T009 requieren primero acordar la frontera compartida de `MapaCripta` y añadir su medición. T016–T029 siguen bloqueadas por G1/G2 y la fase del índice según corresponda; T040/T056 esperan el cierre revisado de T005 y el trabajo nuevo de 001; T041/T055 esperan G5; T052–T054/T066 esperan G1/G3; T051 espera G6. No se ejecutaron pruebas ni benchmarks, no se marcaron tareas y no se hizo commit, push, merge, cambio de rama ni implementación.
+
+## Prompt 42 — Remediación focalizada posterior al reanálisis de 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Remedia únicamente K003, C005, I008 y E001 del Prompt 41.
+>
+> Para K003, documenta que Sofía implementa el índice de `MapaCripta`
+> por solicitud expresa de Steven, conservando firmas, orden e identidad,
+> e identifica consumidores reales mediante búsquedas en código. No
+> conviertas la condición de componente compartido en una prohibición
+> automática y reporta cualquier acuerdo explícito contradictorio.
+>
+> Para C005, añade al final tareas de benchmark del mapa conectadas a
+> `--bench`: búsqueda por ID frente a alternativa lineal y vinculación
+> antes/después, con varios tamaños/cargas equivalentes; separa
+> construcción, consultas y vinculación y comprueba resultados e
+> identidad antes de tiempos. La alternativa vive solo en benchmarks.
+>
+> Para I008, refleja las interfaces de Joshua presentes en `HEAD`,
+> incluidos `rehacer` y `vincular_linea`, distinguiéndolas de
+> `LineaTiempo` completa, integración pendiente y pruebas conjuntas no
+> realizadas. Para E001, conserva `1071 passed` como histórico y registra
+> la corrida comunicada de `1101 passed` sin atribuirla a esta ejecución.
+>
+> No añadas rechazo de salidas sin inversa ni permitas que esa pregunta
+> bloquee las pruebas independientes del índice. Actualiza solo documentos
+> de 001 y este apartado; no cambies `spec.md`, constitución, código o
+> pruebas, ni hagas merge, commit, push o implementación. Devuelve diff,
+> tareas agregadas y pendientes reales.
+
+**K003 remediado.** Se registró la solicitud expresa de Steven para que Sofía implemente el índice de su `MapaCripta`. La búsqueda de código confirmó consumidores en construcción/restauración (`main.py`, inicializador, restaurador y `PartidaService`), simulación/verificación (motor, resolubilidad, rastro y efectos), servicios/datos, vista, benchmarks y pruebas. El contrato conserva firmas, orden, sustitución e identidad/alias de salas. No apareció un acuerdo explícito contradictorio: `DECISIONES.md` §5.4, dedicado a Resolubilidad, registró históricamente la necesidad de identificar consumidores y acordar el cambio, no una prohibición; la solicitud de Steven aporta ese acuerdo. DTO, inicialización, persistencia y `main.py` mantienen sus fronteras separadas.
+
+**C005 remediado en planificación.** Se agregaron T072–T076 sin reutilizar IDs: prueba de conexión/esquema, construcción separada del índice, consulta por ID frente a recorrido lineal benchmark-local, vinculación lineal frente a indexada y documentación final en una subsección propia **«Índice por ID de MapaCripta (evidencia complementaria de 001)»**, separada de §5.4 y enlazada desde la revisión de decisiones de §5.6. T049/T050/T062/T071, dependencias, paralelismo y matrices se actualizaron para conectar las filas una sola vez a `main.py --bench`. Cada variante usa varios tamaños/densidades y cargas equivalentes, verifica resultados, orden e identidad canónica antes de medir, y separa generación, construcción, consultas y enlace. El plan queda en 76 tareas, 22 `[P]`, cero marcadas y US4=17.
+
+**I008 y E001 remediados.** En `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`; T005 conserva la revisión cruzada de proceso. La punta observada `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` contiene `LineaTiempo` completa y su creación al iniciar, pero no es ancestro de `HEAD`; G4 se separó entre revisión de base local y entrega completa necesaria para ejecutar T056. Se preservó `1071 passed` como línea histórica y se añadió la corrida posterior comunicada de `1101 passed`, sin fallos ni omisiones, indicando que esta remediación no ejecutó la suite.
+
+**Pendientes reales.** Continúan abiertas las firmas/representación de rutas y los demás archivos compartidos (G1), costo/rango/simetría (G2), vista conocida 003 (G3), revisión cruzada T005 y `LineaTiempo` completa para T056 (G4a/G4b), persistencia coordinada v9→formato futuro (G5) y referencia oficial (G6). La política de una salida sin inversa permanece no confirmada y no bloquea T007–T009/T072–T075. Se modificaron solo documentos de `specs/001-terreno-y-cazador/` y esta entrada; no se cambió `spec.md`, constitución, código o pruebas, no se ejecutaron pruebas/benchmarks y no se hizo commit, push, merge ni implementación.
+
 ---
 
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista

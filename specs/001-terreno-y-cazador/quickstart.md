@@ -8,7 +8,7 @@ Esta guía describe cómo validar la futura implementación. En esta fase no se 
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
 - Acuerdo parcial con Steven reflejado: validación, identificación de sentidos, ambigüedad, vista conocida, recálculo por paso y casos terminales confirmados; firmas Python y archivos compartidos siguen abiertos. Steven asume persistencia coordinada con Joshua, sin versión publicada comprobada.
-- Estado local: `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Publicaciones consultadas sin integrar: `Steve@757d747b461cdb755705ca5cdd90391090112782` y `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889` (interfaz 004 introducida en `972af5421d628171a4464709858275b100151c1e`).
+- Estado local: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569`, que integra `Steve@757d747b461cdb755705ca5cdd90391090112782`, la interfaz base de Joshua introducida en `972af5421d628171a4464709858275b100151c1e` y el enlace del historial de `927d8860639f3efa6260172d3e03cae61f74301b`. La clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` no está integrada localmente.
 
 ## Comandos previstos
 
@@ -25,7 +25,7 @@ Las pruebas del servicio en línea se ejecutan y reportan aparte; aceptación fu
 
 ### Línea base posterior al merge
 
-La ejecución comunicada para `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` terminó con `1071 passed`, sin omisiones. Esta revisión no volvió a ejecutar pruebas. El resultado demuestra que el merge conserva la regresión existente; no demuestra todavía los 30 escenarios ni los requisitos de rendimiento de 001, porque costo, rango, cazador ponderado y sus proveedores aún no están implementados.
+La línea base histórica comunicada tras el merge anterior terminó con `1071 passed`, sin omisiones. Después de integrar la interfaz base de Joshua se comunicó otra corrida de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1101 passed`, sin fallos ni omisiones. Esta revisión documental no volvió a ejecutar pruebas. El resultado más reciente demuestra que el checkout integrado conserva la regresión existente; no demuestra todavía los 30 escenarios ni los requisitos de rendimiento de 001, porque costo, rango, cazador ponderado y sus proveedores aún no están implementados.
 
 ## Oráculos independientes
 
@@ -88,6 +88,9 @@ Estos criterios están planificados; no se han implementado ni ejecutado en esta
 | AC-014 | matriz individual/compartida, uno/muchos, pequeño/grande, reutilizar/cero, puertas estables/inestables | equivalencia primero; reporte de tiempo, trabajo y memoria; PR-003/PR-004/PR-006 |
 | AC-015 | seis operaciones de agenda con cientos de eventos | comparación por operación y ciclo mixto; PR-005 |
 | Integración 003 (pendiente) | una decisión de «ir a» desde cero y alternativas reutilizadas | equivalencia primero; costo completo frente a 5 ms, sin afirmar cumplimiento antes de medir |
+| Índice de `MapaCripta` — construcción | mismos IDs/instancias en varios tamaños | generación fuera; construcción de lista+índice y memoria separadas |
+| Índice de `MapaCripta` — búsqueda | aciertos inicio/medio/final y ausencias | índice propio frente a recorrido lineal benchmark-local; identidad primero |
+| Índice de `MapaCripta` — vinculación | mismos grafos y densidades antes/después | tiempo de enlace separado; orden, destinos y alias canónicos iguales antes de medir |
 
 ## Casos del Apéndice B
 
@@ -136,6 +139,16 @@ Para `N` de cientos y al menos un tamaño superior:
 
 Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/manual permitida solo en benchmark. Para inserción se incluye construir la agenda vacía; para las demás operaciones la carga común queda fuera, pero las búsquedas, cambios de índices y limpieza propios de la operación quedan dentro. Un ciclo mixto mide la carga de punta a punta.
 
+### Mapa e índice por ID
+
+`benchmarks/mapa_cripta_integrante1.py` usa generadores deterministas para varios tamaños y densidades. El proveedor informa tres grupos sin mezclar intervalos:
+
+1. construir `_salas` y `TablaHashImpl`, dejando fuera únicamente la generación del fixture;
+2. consultar secuencias equivalentes de IDs presentes/ausentes frente a un recorrido lineal local al benchmark;
+3. vincular los mismos grafos mediante resolución lineal y mediante el índice propio, sin incluir la construcción o las consultas independientes.
+
+Antes de comparar tiempos se exige igualdad de IDs y ausencias, mismo orden de salas/puertas y que cada `destino_sala` sea exactamente la instancia canónica correspondiente. Steven solicitó expresamente a Sofía implementar el índice conservando firmas, orden e identidad; no se encontró un acuerdo explícito contradictorio. T049 conecta el proveedor una sola vez a `main.py --bench`. La política no confirmada de salidas sin inversa no forma parte de estos fixtures estructurales y no los bloquea.
+
 ## Reversión y determinismo
 
 1. Capturar el estado canónico anterior a una acción.
@@ -156,7 +169,7 @@ Además de la reversión funcional:
 5. Con la producción inicial de recálculo, comprobar que no se conserva caché/instantánea entre decisiones y que `historia`, `RETROCEDER` e `iniciar` no requieren ganchos de invalidación.
 6. Si una decisión posterior adopta reutilización, ejecutar entonces las pruebas planificadas de `historia`, retroceso e inicio/carga sobre la caché externa; no anticiparlas como requisito de la vía sin estado retenido.
 
-El checkout local solo ofrece deshacer destructivo (`deshacer_ultimo`/`revertir`). La rama remota de Joshua publica `deshacer_mientras`, `rehacer` y `fotografiar_para_rehacer(inverso, estado)`, pero las pruebas conjuntas no pueden ejecutarse satisfactoriamente en `Sofia` hasta integrar esa entrega. Escribir una prueba antes de la integración no equivale a que pueda pasar.
+El checkout local ofrece `deshacer_ultimo`/`revertir`, `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. T005 conserva la revisión cruzada de estas interfaces como requisito de proceso. Esto no equivale a tener local la clase completa `LineaTiempo` de `origin/joshua@b039b8b…`, ni permite ejecutar todavía las pruebas conjuntas sobre cambios nuevos de 001 que no se han implementado.
 
 ### Estado de persistencia
 

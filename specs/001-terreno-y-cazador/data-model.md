@@ -59,6 +59,10 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 
 **Estado observado tras el merge**: `MapaCripta` conserva `_salas`, `_enlaces_listos` y sustitución en posición, pero aún no tiene la tabla por ID. `obtener_sala()` es lineal y `vincular_salidas()` la invoca por puerta; 001 debe introducir el índice sin cambiar el orden de la lista.
 
+**Propiedad y compatibilidad**: `MapaCripta` es un componente de Sofía y Steven solicitó expresamente que Sofía implemente su índice por ID. La solicitud conserva las firmas existentes y no asigna DTO, inicialización o persistencia. Los consumidores comprobados incluyen construcción/restauración (`main.py`, inicializador, restaurador y `PartidaService`), simulación/verificación (motor, resolubilidad, rastro y efectos), servicios/datos (juego, carga gradual, decodificador y guardado), vista, benchmarks y pruebas. Todos deben seguir observando el mismo orden, las mismas instancias y los mismos destinos enlazados.
+
+**Medición prevista**: T072–T076 separan construcción de lista+índice, consultas por ID y vinculación de salidas. La consulta y el enlace indexados se comparan con recorridos lineales locales al benchmark usando varios `V/E` y exactamente los mismos IDs, orden e instancias. Resultados, ausencias y alias `Puerta.destino_sala` se validan antes de tiempos. La cuestión no confirmada de una salida sin inversa no interviene en estas pruebas estructurales.
+
 ## 4. Actor
 
 **Campos relevantes**:
@@ -190,7 +194,7 @@ Para «ir a», el mecanismo de reutilización, sus claves y su propietario sigue
 
 **Excluido**: montículos de ruta, etiquetas, distancias, métricas e instantáneas. Después de deshacer, esos derivados se eliminan y se reconstruyen desde el estado restaurado.
 
-**Mecanismo real local**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. En `Sofia@f89b7b5…` solo hay deshacer destructivo. Joshua publicó remotamente `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y la extensión `fotografiar_para_rehacer(inverso, estado)` (`972af542…`, consultada en `joshua@112cd78…`), pero aún no están disponibles en el checkout local.
+**Mecanismo real local**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. `Sofia@3df43c6…` contiene `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea` mediante `972af542…`/`927d886…`. Esto hace disponible la interfaz base, no la clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b…`, ni demuestra todavía las pruebas conjuntas con cambios nuevos de 001.
 
 **Compatibilidad con 004**: un cambio nuevo solo retiene valores y referencias canónicas incluidas en el paquete `(estado, transacciones)`. Debe conservar alias correctos al copiar ese paquete con `deepcopy` y al serializar conjuntamente estado/línea con `pickle`; no referencia motor, servicio de rutas, cachés, callbacks ni recursos externos.
 

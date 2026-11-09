@@ -1,6 +1,6 @@
 # Acuerdo condicionado con Joshua: cambios reversibles y reconstrucción
 
-**Estado**: ACEPTACIÓN CONDICIONADA; INTERFAZ BASE PUBLICADA, AÚN NO INTEGRADA LOCALMENTE. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. Joshua publicó deshacer temporal/rehacer y el gancho para cambios nuevos, pero el checkout `Sofia` todavía no los contiene; la línea completa, el guardado coordinado y las pruebas conjuntas de 001 siguen pendientes. Este documento no modifica archivos de Joshua ni de Steven.
+**Estado**: ACEPTACIÓN CONDICIONADA; INTERFAZ BASE INTEGRADA LOCALMENTE, REVISIÓN CONJUNTA Y LÍNEA COMPLETA PENDIENTES. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. El checkout `Sofia` contiene deshacer temporal/rehacer, el gancho para cambios nuevos y el enlace del historial. La clase completa `LineaTiempo` publicada después, el guardado coordinado y las pruebas conjuntas con cambios nuevos de 001 siguen pendientes. Este documento no modifica archivos de Joshua ni de Steven.
 
 ## 1. Objetivo
 
@@ -8,14 +8,7 @@ Permitir que retroceso y línea de tiempo restauren exactamente el estado introd
 
 ## Estado comprobado local y remoto
 
-**Checkout local consultado**: `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Su interfaz disponible sigue siendo:
-
-- `CambioReversible.deshacer(estado)`;
-- `TransaccionAccion.registrar(cambio)` y `revertir(estado)`; `revertir` vacía y marca la transacción;
-- `HistorialReversible.deshacer_ultimo(estado) -> bool`; elimina la transacción después de revertirla;
-- no existe localmente una operación de rehacer ni una interfaz implementada de consulta histórica.
-
-**Publicación remota consultada sin checkout/merge**: `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889`; la implementación fue introducida en `972af5421d628171a4464709858275b100151c1e`. Publica en `logica/cambios.py`:
+**Checkout local consultado**: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569`, cuyo segundo padre es `joshua@927d8860639f3efa6260172d3e03cae61f74301b`. Contiene la implementación introducida en `972af5421d628171a4464709858275b100151c1e`. Su interfaz disponible en `logica/cambios.py` incluye:
 
 - `TransaccionAccion.registrar_solo_linea(cambio)`;
 - `TransaccionAccion.deshacer_mientras(estado, condicion, inversos: list) -> None`, sin vaciar ni marcar la transacción;
@@ -23,7 +16,9 @@ Permitir que retroceso y línea de tiempo restauren exactamente el estado introd
 - extensión para cualquier cambio nuevo mediante `fotografiar_para_rehacer(inverso, estado)`; si falta, falla antes de deshacer;
 - pruebas en `tests/test_logica/test_cambios_linea.py`.
 
-Que esté publicado en otra rama no lo vuelve disponible en el checkout local. 001 no copia ni reedita ese código: lo consumirá y verificará cuando se integre por el flujo acordado. En el hash consultado aún no está publicada una clase `LineaTiempo` ni un enlace nuevo de `HistorialReversible`.
+Además, `logica/historial_reversible.py` publica localmente `HistorialReversible.vincular_linea(linea)`, avisa `registrar_accion` al cerrar y `recortar(1)` al retroceder, y tiene pruebas en `tests/test_logica/test_historial_linea.py`.
+
+La disponibilidad local es un hecho del checkout y no depende de cerrar la revisión documental T005. Esa tarea conserva la revisión cruzada como puerta de proceso antes de escribir/ejecutar las integraciones de 001. La punta actual `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` contiene `logica/linea_tiempo.py` y su creación al iniciar, pero no es ancestro de `HEAD`: la clase completa `LineaTiempo` no está integrada localmente. 001 consume la interfaz base y no copia ni reedita código de Joshua.
 
 El guardado real es **v9** (`GuardadoBinario.VERSION = 9`). El **v10** de `specs/004-linea-de-tiempo/contracts/guardado-v10.md` es una propuesta para Steven: serializar en una sola operación el estado vivo y la línea como bytes opacos. No está implementado y debe coordinarse con la incorporación de costo/rango.
 
@@ -132,8 +127,10 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 - [x] 004 confirma que la línea no llama al cazador ni necesita una interfaz nueva de 001.
 - [x] Se acuerda que las cachés no observables viven fuera del estado/transacciones y no forman parte de puntos de control o guardado.
 - [x] Se delimita que `historia` no invalida y que 001 invalida tras retroceso exitoso e inicio/carga.
-- [x] 004 publica deshacer temporal/rehacer y `fotografiar_para_rehacer(inverso, estado)` en `972af5421d628171a4464709858275b100151c1e`, visible en la punta remota consultada `112cd78ab85a5b0f9a580353e5824f4aeb517889`.
-- [ ] Esas interfaces se integran en `Sofia` y se verifican allí; su publicación remota no cierra esta dependencia local.
+- [x] 004 publica deshacer temporal/rehacer y `fotografiar_para_rehacer(inverso, estado)` en `972af5421d628171a4464709858275b100151c1e`.
+- [x] Esa interfaz base y `HistorialReversible.vincular_linea` están integrados en `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` mediante `972af542…`/`927d886…`.
+- [ ] T005 completa la revisión cruzada de proceso sobre interfaces y pruebas locales; disponibilidad y revisión no se confunden.
+- [ ] Se integra y verifica la clase completa `LineaTiempo` publicada posteriormente; no se asume disponible por existir en `origin/joshua@b039b8b…`.
 - [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados; cada tipo nuevo declara `fotografiar_para_rehacer` si lo exige la interfaz integrada.
 - [ ] Si la evidencia adopta reutilización productiva, se planifican y prueban entonces sus puntos de invalidación; con recálculo sin estado retenido no se añaden.
 - [ ] Los cambios nuevos pasan pruebas de `deepcopy`, `pickle`, deshacer/rehacer exacto y ausencia de referencias a motor/cachés.

@@ -6,7 +6,7 @@
 
 ## Summary
 
-La capacidad incorporará costos de salida a todos los movimientos, validará los datos de terreno y cazadores, y añadirá decisiones de cazador mediante rutas ponderadas deterministas. Steven confirmó validación estricta de costo/rango, identificación de sentidos por origen/destino con detección de ambigüedad, vista de «ir a» limitada a salas exploradas, recálculo por paso y casos terminales distinguibles. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench` hasta una decisión con evidencia. La producción inicial no retiene resultados de ruta, por lo que no necesita caché, generaciones ni invalidación. El mapa mantendrá su lista ordenada de referencias y añadirá un índice propio por ID. Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua, pero firmas, archivos compartidos y versión implementada siguen pendientes.
+La capacidad incorporará costos de salida a todos los movimientos, validará los datos de terreno y cazadores, y añadirá decisiones de cazador mediante rutas ponderadas deterministas. Steven confirmó validación estricta de costo/rango, identificación de sentidos por origen/destino con detección de ambigüedad, vista de «ir a» limitada a salas exploradas, recálculo por paso y casos terminales distinguibles. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench` hasta una decisión con evidencia. La producción inicial no retiene resultados de ruta, por lo que no necesita caché, generaciones ni invalidación. Por solicitud expresa comunicada por Steven, Sofía implementará en su `MapaCripta` el índice propio por ID conservando firmas públicas, orden e identidad de salas; su costo se comparará con la alternativa lineal únicamente en `--bench`. Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua, pero las firmas de rutas, otros archivos compartidos y la versión implementada siguen pendientes.
 
 ## Technical Context
 
@@ -16,27 +16,27 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 
 **Storage**: esqueleto y catálogo procedentes de `FuenteDatos`; `GuardadoBinario.VERSION = 9` y `partida.log`. V9 persiste, entre otros datos, el informe de resolubilidad de 002, pero todavía no serializa `Puerta.costo` ni el rango materializado del cazador. Los resultados de ruta son exclusivamente memoria derivada y no se persisten.
 
-**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. Línea base comunicada tras el merge: `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` → `1071 passed`, sin omisiones. Esa regresión satisfecha no sustituye las futuras pruebas de aceptación de 001.
+**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. La línea base histórica documentada tras el merge anterior fue `1071 passed`, sin omisiones. Después de integrar la interfaz base de Joshua se comunicó una corrida posterior de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1101 passed`, sin fallos ni omisiones; esta actualización documental no volvió a ejecutar la suite. Ninguna de esas regresiones sustituye las futuras pruebas de aceptación de 001.
 
 **Target Platform**: aplicación de escritorio/CLI local en Windows; scripts de spec-kit ejecutados mediante PowerShell desde el puente WSL/Windows. Los modos `--bench` y `--replay` no instancian la vista.
 
 **Project Type**: aplicación Python MVC con simulación por eventos, CLI y vista Pygame.
 
-**Performance Goals**: ciclo completo entre decisiones del jugador `< 20 ms` en la referencia oficial con decenas de cazadores (`PR-001`); trabajo de rango pequeño acotado por su región (`PR-002`); matriz de comparaciones y agenda bajo carga nueva (`PR-003`–`PR-006`); medición conjunta con 003 del costo completo de una decisión de «ir a» frente a 5 ms, todavía sin evidencia.
+**Performance Goals**: ciclo completo entre decisiones del jugador `< 20 ms` en la referencia oficial con decenas de cazadores (`PR-001`); trabajo de rango pequeño acotado por su región (`PR-002`); construcción/consulta/vinculación del mapa medidas por separado frente a la base lineal; matriz de comparaciones y agenda bajo carga nueva (`PR-003`–`PR-006`); medición conjunta con 003 del costo completo de una decisión de «ir a» frente a 5 ms, todavía sin evidencia.
 
 **Constraints**: determinismo; estructuras propias; sin `dict`/`set` como índice o caché; sin `heapq`, `bisect`, `collections`, `sorted()`, `list.sort()` ni bibliotecas de grafos/rutas en producción; sin red, disco, renderizado o preparación de fixtures dentro de intervalos que no los evalúen; sí se incluye dentro del tiempo toda preparación auxiliar necesaria por consulta o ciclo.
 
 **Scale/Scope**: esqueleto completo en memoria, costos positivos, cientos de eventos pendientes, decenas de cazadores activos y rangos pequeños o grandes. La carga exacta de la referencia oficial sigue sujeta a la publicación prevista por el enunciado; no se inventa.
 
-**Evidencia de ramas consultada el 2026-11-08 (sin checkout ni merge)**:
+**Evidencia del checkout y ramas consultada el 2026-11-08**:
 
 | Estado | Hash | Disponible |
 |---|---|---|
-| checkout local `Sofia` | `f89b7b53722e92c1337fe57c7bebf5528c1ec53e` | interfaces destructivas actuales; v9; sin costo/rango/003 |
-| publicado `Steve` | `757d747b461cdb755705ca5cdd90391090112782` | trabajo de 002; `GuardadoBinario.VERSION = 9`; no publica aún las entregas acordadas de 001/003 |
-| publicado `joshua` | `112cd78ab85a5b0f9a580353e5824f4aeb517889` | contiene la implementación 004 de `972af5421d628171a4464709858275b100151c1e`: deshacer temporal, rehacer y `fotografiar_para_rehacer`; pendiente de integrar localmente |
+| checkout local `Sofia` | `3df43c63c68a33f692148b737c12b0c0a4208569` | integra `joshua@927d886…`, incluido `972af542…`: deshacer temporal, rehacer, fotografía y enlace del historial; v9; sin costo/rango/003 |
+| integrado desde `Steve` por Joshua | `757d747b461cdb755705ca5cdd90391090112782` | trabajo de 002; `GuardadoBinario.VERSION = 9`; no publica aún las entregas acordadas de 001/003 |
+| punta actual publicada `origin/joshua` | `b039b8b871d40984aa0e4bd74e8dd57b85e6224a` | contiene la clase completa `LineaTiempo` de `d055563` y su creación al iniciar; no es ancestro del checkout local y esa entrega completa sigue pendiente de integrar |
 
-Los acuerdos comunicados no se clasifican como código disponible. La publicación en otra rama tampoco se clasifica como disponibilidad local.
+Los acuerdos comunicados no se clasifican como código disponible. La interfaz base de Joshua sí es código local por estar en `HEAD`; una publicación posterior en otra rama, como `LineaTiempo`, no lo es.
 
 ## Constitution Check
 
@@ -45,16 +45,16 @@ Los acuerdos comunicados no se clasifican como código disponible. La publicaci�
 | Principio | Estado después de revisar el merge |
 |---|---|
 | I. Estructuras propias | **Comprobado en el diseño**. Rutas e índices se limitan a estructuras propias; el montículo actual permite insertar y extraer, pero no actualizar prioridad. Las alternativas de biblioteca solo aparecen en `--bench`. |
-| II. Acceso por identificador | **Pendiente de 001**. El código integrado conserva `MapaCripta._salas` y búsquedas lineales; el índice propio por ID sigue siendo trabajo de 001. La sustitución infrecuente continuará costada por separado. |
+| II. Acceso por identificador | **Pendiente de 001 con verificación completa planificada**. El código integrado conserva `MapaCripta._salas` y búsquedas lineales; T007–T009 implementan/verifican el índice y T072–T075 separan construcción, consultas y vinculación frente a alternativa lineal benchmark-local. |
 | III. Determinismo | **Comprobado en el diseño**. La etiqueta ordena por costo y primera vecina; el ID de sala estabiliza trabajo ya empatado. Falta probar la implementación de 001. |
 | IV. Separación MVC | **Comprobado en la frontera actual**. `--bench` y `--verificar` salen antes de crear la vista; rutas productivas permanecen en lógica y las alternativas de reutilización en benchmarks. |
 | V. Datos desde el servicio | **Responsabilidad confirmada; implementación pendiente**. Steven implementará validación estricta de costo/rango, default 100 solo por ausencia y simetría tras `vincular_salidas()`. El código aún no incorpora esos campos. |
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
-| VII. Estado reversible | **Aceptación condicionada; interfaz publicada fuera del checkout**. Las mutaciones canónicas de 001 usan transacciones. Joshua publicó deshacer/rehacer temporal y el gancho de fotografía, pero aún no están integrados localmente. Sin reutilización productiva no existen cachés que invalidar. |
-| VIII. Contratos estables | **Acuerdos parciales con frontera explícita**. Steven acepta semántica de datos/vista/pasos y asume persistencia coordinada; firmas y archivos concretos siguen abiertos. Joshua publicó interfaces en su rama, no en `Sofia`. `main.py` y demás puntos compartidos requieren integración conjunta acordada. |
+| VII. Estado reversible | **Interfaz base local; integración conjunta pendiente**. `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `vincular_linea` están en `HEAD`. La clase completa `LineaTiempo`, el guardado y las pruebas conjuntas de cambios nuevos de 001 siguen pendientes. Sin reutilización productiva no existen cachés que invalidar. |
+| VIII. Contratos estables | **Fronteras explícitas**. Steven solicitó que Sofía implemente el índice de su `MapaCripta`, preservando firmas, orden e identidad; abajo se enumeran sus consumidores reales. Las firmas de rutas, DTO/inicialización/persistencia y `main.py` conservan sus acuerdos separados y no quedan asignados por esa solicitud. |
 | IX. Rendimiento medido | **Decisión provisional pendiente de medición**. La vía común de proveedores existe, pero todavía no registra mediciones de rutas/invalidez de 001 ni las seis operaciones exigidas de agenda. |
 | X. Especificación y trazabilidad | **Comprobado en los artefactos**. Los ajustes describen código existente sin cambiar reglas de `spec.md`. |
-| XI. Pruebas | **Regresión actual satisfecha; cobertura 001 pendiente**. Se reportan `1071 passed` sin omisiones; [quickstart.md](quickstart.md) conserva la cobertura futura de los 30 escenarios de 001. |
+| XI. Pruebas | **Regresión actual comunicada; cobertura 001 pendiente**. Se reportan históricamente `1071 passed` y, después de integrar la interfaz base de Joshua, `1101 passed` sin fallos ni omisiones; esta revisión no ejecutó la suite. [quickstart.md](quickstart.md) conserva la cobertura futura de los 30 escenarios de 001. |
 
 La puerta de planificación no detecta una violación constitucional. Esto no cierra los contratos, la implementación ni la evidencia de rendimiento de 001.
 
@@ -101,8 +101,8 @@ logica/
 ├── acciones.py                     # intervalo común; sin cambiar otros costos
 ├── motor_juego.py                  # costo de la salida y ejecución reversible
 ├── agenda_eventos.py               # reprogramación y agenda medida
-├── cambios.py                      # local: interfaz destructiva; 004 remoto publica extensión temporal
-└── historial_reversible.py         # interfaz local de retroceso; enlace futuro de 004 aún no publicado
+├── cambios.py                      # local: deshacer temporal, rehacer y extensión de fotografía de 004
+└── historial_reversible.py         # local: retroceso y vincular_linea; LineaTiempo completa aún no integrada
 benchmarks/
 ├── terreno_cazador_integrante1.py  # nuevo proveedor conectado a --bench
 ├── benchmark_ciclo_real_integrante1.py
@@ -127,6 +127,7 @@ main.py                             # punto compartido: registro de 001 solo med
 | Búsqueda individual ponderada y limitada por rango | FR-007, FR-008, FR-009, FR-010, FR-013, PR-002 |
 | Etiqueta lexicográfica por primera vecina | FR-011, FR-015 |
 | Índice propio de salas conservando la lista | FR-011, FR-013, FR-018, PR-001, PR-002 |
+| Benchmark separado de construcción, consulta por ID y vinculación frente a base lineal | FR-011, FR-013, FR-018, PR-001, PR-002, PR-004, PR-006 |
 | Recálculo sin estado retenido; invalidación solo si una decisión posterior adopta reutilización | FR-014–FR-016 |
 | Matriz de rutas, invalidación, ciclo completo y agenda | PR-001–PR-006 |
 | Oráculo independiente y cobertura por identificador | FR-001–FR-018, PR-001–PR-006 |
@@ -149,11 +150,23 @@ main.py                             # punto compartido: registro de 001 solo med
 
 ### 2. Índice de salas sin perder orden ni identidad
 
-`MapaCripta` mantiene `_salas` como lista de referencias en orden de llegada y añadirá un `TablaHashImpl` por ID. El merge no adelantó ese cambio: `obtener_sala()` y `vincular_salidas()` siguen recorriendo la lista. `obtener_salas()` conservará el orden y copiará únicamente referencias; `obtener_sala()` consultará el índice.
+`MapaCripta` mantiene `_salas` como lista de referencias en orden de llegada y añadirá un `TablaHashImpl` por ID. Steven solicitó expresamente a Sofía esta optimización después de que su medición de 002 identificara la búsqueda lineal como causa del costo no lineal. La solicitud acuerda el cambio sobre un componente de Sofía; no transfiere a Sofía DTO, inicialización, persistencia ni archivos de Steven. No se encontró un acuerdo explícito contradictorio: §5.4 de `DECISIONES.md`, que permanece dedicado a Resolubilidad, registró históricamente el cuello de botella y la necesidad de acordar el cambio, no una prohibición. La evidencia nueva del índice irá a una subsección propia y solo se enlazará desde la revisión de decisiones de §5.6. El merge no adelantó el índice: `obtener_sala()` y `vincular_salidas()` siguen recorriendo la lista. `obtener_salas()` conservará el orden y copiará únicamente referencias; `obtener_sala()` consultará el índice sin cambiar su firma.
 
 Para un ID nuevo, `agregar_sala()` añade al final y actualizará la tabla en O(1) esperado y amortizado. Para sustituir un ID existente, se recorrerá `_salas` hasta hallar su posición, se reemplazará allí y se actualizará el índice: O(`V`) y mismo orden, sin añadir un segundo índice para una operación infrecuente. Como el código actual ya usa `_enlaces_listos`, si el mapa estaba vinculado la sustitución debe dejarlo pendiente y, antes de exponer vecinos otra vez, `vincular_salidas()` debe resolver todas las `Puerta.destino_sala` desde sus IDs. El costo esperado completo es O(`V+E`) y el peor caso O(`V·E`) si cada consulta hash degenera.
 
 No se usa el orden interno de la tabla hash para recorrer ni desempatar. Así, un rehash no cambia la simulación y las referencias de `Puerta.destino_sala` siguen apuntando a las instancias presentes en la lista (`FR-011`, `FR-013`, `FR-015`, `FR-018`). La comparación completa está en [research.md](research.md).
+
+**Consumidores reales identificados por búsqueda de imports y llamadas**:
+
+| Contrato de `MapaCripta` | Consumidores de producción comprobados | Compatibilidad que debe conservarse |
+|---|---|---|
+| construcción, `agregar_sala`, `vincular_salidas` | `main.py`, `service/inicializador_partida.py`, `service/restaurador_partida.py`, `service/partida_service.py` | mismas firmas; sustitución en la misma posición; enlace a las instancias canónicas |
+| `obtener_sala` en simulación/verificación | `logica/motor_juego.py`, `logica/verificador_resolubilidad.py`, `logica/registro_rastro.py`, `logica/gestor_efectos.py` | mismo `Sala` por identidad o `None`; rechazo heredado de IDs inválidos |
+| consultas desde servicios/datos | `service/juego_service.py`, `service/cargador_contenido.py`, `datos/decodificador_datos.py` | sin cambiar carga gradual, incorporación de contenido ni referencias |
+| recorrido `obtener_salas` | `datos/guardado_binario.py`, motor, servicios, `vista/presentacion_juego.py`, `vista/vista_pygame.py` | lista nueva con las mismas referencias y orden de llegada |
+| mediciones y regresiones | `benchmarks/integrante2.py`, `benchmarks/bench_ampliado.py`, `benchmarks/benchmark_ciclo_real_integrante1.py`, `benchmarks/linea_tiempo.py` y pruebas de lógica/servicio/datos | resultados e identidad iguales antes de comparar rendimiento |
+
+T007–T009 protegen ese contrato. T072–T075 medirán por separado: (a) construir lista+índice; (b) consultar IDs frente a recorrido lineal; y (c) vincular las mismas salidas con resolución lineal frente a indexada. Los fixtures se generan fuera del intervalo; cada alternativa recibe mismos IDs, orden, instancias y carga, y la igualdad/identidad se comprueba antes de cronometrar.
 
 ### 3. Ruta ponderada provisional
 
@@ -232,7 +245,7 @@ La producción provisional recalcula cada decisión. Para «ir a», la integraci
 - `calcular_intervalo` sigue siendo la única fórmula común. El motor no modifica el costo de una acción ya no relacionada con movimiento.
 - `AgendaEventos.reprogramar` cancela y reinserta el mismo evento con tiempo nuevo y secuencia nueva; el cambio de velocidad conserva la fórmula proporcional y registra todos los cambios para poder deshacerlos (`FR-006`).
 - Movimiento de cazadores registra retiro/inserción de listas, `sala_actual`, ataques/vida, agenda, reloj y secuencias mediante `logica.mutaciones` (`atributo`, `agregar`, `quitar_identidad`, `registrar`) y los cambios/registro automático de agenda, siempre dentro de la transacción abierta. No se crea un observador general de atributos.
-- La interfaz disponible **en el checkout local** es `CambioReversible.deshacer(estado)`, `TransaccionAccion.registrar/revertir` e `HistorialReversible.deshacer_ultimo(estado) -> bool`; no existe allí `rehacer`. Joshua publicó remotamente `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y `fotografiar_para_rehacer(inverso, estado)` en `972af542…`, visible en `joshua@112cd78…`. 001 no los considera disponibles hasta su integración local ni modifica el archivo de Joshua.
+- La interfaz disponible **en el checkout local** incluye `CambioReversible.deshacer(estado)`, `TransaccionAccion.registrar/revertir`, `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)`, `HistorialReversible.deshacer_ultimo(estado) -> bool` y `vincular_linea`. Llegó mediante `972af542…` y `927d886…`, ambos ancestros de `Sofia@3df43c6…`. La clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b…` no está local; tampoco están el guardado coordinado ni las pruebas conjuntas con cambios todavía inexistentes de 001.
 - Todo cambio nuevo de 001 debe sobrevivir a `copy.deepcopy((estado, transacciones))` conservando referencias hacia las entidades copiadas, y al `pickle` conjunto de estado vivo/línea propuesto por 004. Por ello contiene solo valores y referencias canónicas incluidas en el paquete, nunca motor, servicio de rutas, cachés, callbacks o recursos externos.
 - Las rutas, etiquetas, montículos de consulta e instantáneas no son estado del juego y no entran en `HistorialReversible` (`FR-016`).
 - Una acción rechazada se valida antes de mutar o aborta su transacción, y no deja datos derivados presentados como válidos (`FR-017`).
@@ -259,49 +272,52 @@ Cada fila de 001 informará semilla, entorno, calentamiento, repeticiones, carga
 
 **Agenda** (`PR-005`): la conexión actual solo adapta la extracción de `benchmark_agenda_integrante1.py`. 001 agregará, sin atribuirlas al proveedor actual, mediciones separadas de insertar, extraer, cancelar por ID, cancelar por actor, reprogramar y resolver empates, más el ciclo mixto con costos variables y cazadores.
 
+**Mapa e índice** (Constitución II, `PR-001`, `PR-002`, `PR-004`, `PR-006`): `benchmarks/mapa_cripta_integrante1.py` aportará filas separadas para construcción del índice, consultas por ID y vinculación de salidas. Usará varios tamaños y densidades equivalentes; comparará consultas y vinculación con una representación/recorrido lineal permitido solo dentro del benchmark. Generación del fixture, construcción, consultas y vinculación tendrán intervalos distintos. Antes de tiempos se comprobarán IDs, ausencias, orden de salas/puertas y que cada destino sea exactamente la instancia canónica. T049 conectará el proveedor una sola vez a `main.py --bench`; T050/T071 registrarán y validarán la evidencia y T076 creará una subsección documental propia, separada de §5.4 y enlazada desde la revisión de §5.6.
+
 La evidencia decidirá si: (a) permanece la búsqueda individual; (b) se usa compartida solo con múltiples cazadores y estado estable; o (c) se adopta una estrategia adaptativa con umbral medido. No se fijará un umbral por intuición.
 
 ### 8. Estrategia de pruebas
 
 [quickstart.md](quickstart.md) contiene una fila por cada AC, incluidos AC-B01–AC-B07. Las pruebas de rutas pequeñas usarán enumeración exhaustiva de rutas simples y las matrices mayores una relajación completa independiente. Comparan decisión y costos observables; trabajo, frontera y orden interno se instrumentan aparte.
 
-La reversión captura el estado canónico antes del intervalo, ejecuta acciones/cazadores/puertas/velocidad, retrocede y compara todos los campos reversibles, aplicando la excepción de pergaminos de FR-016. Después ejecuta las mismas acciones desde el mismo estado posterior al retroceso en dos partidas y compara registros. La línea base posterior al merge es `1071 passed` sin omisiones; debe conservarse al añadir la cobertura específica de 001.
+La reversión captura el estado canónico antes del intervalo, ejecuta acciones/cazadores/puertas/velocidad, retrocede y compara todos los campos reversibles, aplicando la excepción de pergaminos de FR-016. Después ejecuta las mismas acciones desde el mismo estado posterior al retroceso en dos partidas y compara registros. La línea base histórica fue `1071 passed`; la corrida posterior comunicada tras integrar la interfaz base de Joshua fue `1101 passed`, sin fallos ni omisiones. Esta revisión documental no ejecutó ninguna de las dos; la regresión debe conservarse al añadir la cobertura específica de 001.
 
 ## Ownership and Integration Boundaries
 
 ### Archivos de Sofía
 
 - `logica/mapa_cripta.py`, `logica/rutas_ponderadas.py`, `logica/comportamiento_enemigos.py`, `logica/acciones.py`, `logica/motor_juego.py`.
+- Steven solicitó expresamente a Sofía implementar el índice de `MapaCripta`; se conservan firmas, orden e identidad para los consumidores enumerados en §2. La calificación histórica de «componente compartido» obliga a conservar/coordinar el contrato, no prohíbe modificar un componente propio ya acordado.
 - Mediciones de 001 bajo `benchmarks/` y pruebas de terreno/cazador bajo `tests/`.
 - Propuesta de registro en `main.py` únicamente mediante una integración conjunta acordada; no es archivo propio de Sofía.
 
 ### Puntos de integración pendientes
 
-- **Steven**: confirmó validación estricta, simetría identificada por origen/destino con detección de ambigüedad, vista de exploradas, recálculo por paso y casos terminales; asume persistencia coordinada. La punta `757d747…` aún no implementa esas entregas. Firmas, asignación de archivos y política de ausencia de inversa siguen abiertas: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md).
-- **Joshua**: mantiene la aceptación condicionada y publicó deshacer/rehacer temporal y el gancho `fotografiar_para_rehacer` en su rama (`112cd78…`, introducido por `972af542…`). No está integrado en `Sofia`; línea completa, enlace del historial y guardado coordinado siguen pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
+- **Steven**: confirmó validación estricta, simetría identificada por origen/destino con detección de ambigüedad, vista de exploradas, recálculo por paso y casos terminales; asume persistencia coordinada y solicitó a Sofía el índice de `MapaCripta`. La entrega `757d747…` aún no implementa costo/rango/003/persistencia. Firmas de rutas, asignación de los demás archivos y política de ausencia de inversa siguen abiertas: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md).
+- **Joshua**: la interfaz base introducida por `972af542…` y el enlace de historial de `927d886…` están integrados en `Sofia@3df43c6…`: deshacer/rehacer temporal, fotografía y `vincular_linea`. T005 mantiene la revisión cruzada de proceso. La clase completa `LineaTiempo` contenida en la punta posterior `b039b8b…`, el guardado coordinado y las pruebas conjuntas de 001 siguen pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
 - **Spec 002**: la versión integrada resolvió las dos observaciones revisadas: un fallo al obtener ubicaciones deja la cripta sin verificar y bloquea el inicio salvo `--forzar` (`FR-011`, `FR-019`), y retiró la divulgación de contenido de rutas frente a la niebla. Solo se permite identificar al enemigo que custodia una llave, excepción exigida para ubicarla. 001 no modifica ese spec ni su recorrido; el índice conserva orden e identidad y los costos no alteran la resolubilidad. Como hallazgo de implementación, `InicializadorPartida._verificar()` captura `CriptaAPIError` y `ValueError`, mientras `convertir_llaves()` puede producir `TypeError` ante un ID de sala de tipo inválido; ese borde no se corrige desde 001.
 - **Spec 004**: reconstruye hacia atrás desde el punto de control siguiente, deshaciendo como máximo K transacciones y rehaciendo con inversos en `finally`. Re-simular hacia adelante existe solo como alternativa de `--bench`. Su FR-022 necesita costos y cazadores canónicos, pero no cachés de ruta. No se modifica `specs/004-linea-de-tiempo`.
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas y el diseño provisional. No se propone cambiar `spec.md`: la política para una salida sin inversa no está definida y queda como pregunta contractual, sin rebajar FR-002. Permanecen por cerrar firmas/archivos, integración local de la interfaz publicada por Joshua, entrega coordinada de persistencia y decisiones condicionadas por medición.
+[research.md](research.md) fija las alternativas y el diseño provisional. No se propone cambiar `spec.md`: la política para una salida sin inversa no está definida y queda como pregunta contractual, sin rebajar FR-002 ni bloquear índice/benchmarks independientes. Permanecen por cerrar firmas/archivos de rutas y datos compartidos, integración de `LineaTiempo` completa, entrega coordinada de persistencia y decisiones condicionadas por medición.
 
 ## Phase 1 Outputs
 
 - [data-model.md](data-model.md): entidades canónicas, derivadas, validaciones y transiciones.
 - [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md): acuerdo parcial sobre datos/vista y propuesta pendiente sobre resultado, reutilización y guardado.
-- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): acuerdo condicionado y evidencia de interfaz publicada remotamente, aún no integrada localmente.
+- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): interfaz base disponible localmente; revisión cruzada, `LineaTiempo` completa, pruebas conjuntas y guardado aún pendientes.
 - [quickstart.md](quickstart.md): guía futura de validación, matriz completa de escenarios y `--bench`.
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con condiciones abiertas**. Joshua publicó la interfaz temporal en otra rama, pero no está disponible localmente y no implementa aún la línea completa o el guardado coordinado. Steven confirmó semántica y responsabilidad, pero su punta consultada no publica costo/rango/003/persistencia. Tampoco existe evidencia de `--bench` para seleccionar estrategia ni de la medición de 5 ms con 003.
+**Puerta de diseño satisfecha con condiciones abiertas**. La interfaz temporal de Joshua y el enlace del historial están disponibles localmente; T005 conserva su revisión cruzada. No están locales la clase completa `LineaTiempo` ni el guardado coordinado. Steven confirmó semántica y responsabilidad, pero su entrega integrada no publica costo/rango/003/persistencia. El benchmark del índice queda planificado en T072–T076; todavía no existe evidencia ejecutada de mapa, estrategia de rutas ni de la medición de 5 ms con 003.
 
 ## Risks and Pending Agreements Before Tasks
 
-1. **Integración de datos con Steven**: están confirmadas semántica e identificación por origen/destino; faltan implementación, asignación de archivos, representación y aclarar la salida sin inversa.
+1. **Integración de datos con Steven**: están confirmadas semántica e identificación por origen/destino, y el índice de `MapaCripta` está asignado a Sofía; faltan implementación de costo/rango, asignación de los demás archivos, representación y aclarar la salida sin inversa.
 2. **Contrato de «ir a» con Steven/003**: vista, recálculo y casos terminales están confirmados; bloquean la integración la firma/representación, entrega de 003 y evidencia conjunta de 5 ms.
-3. **Integración histórica con Joshua**: la interfaz base está publicada remotamente y pendiente de integración local. Cada cambio nuevo de 001 deberá ofrecer `fotografiar_para_rehacer` cuando corresponda y pasar pruebas conjuntas; el guardado sigue abierto. No hay invalidación de rutas mientras producción recalcule sin retener estado.
+3. **Integración histórica con Joshua**: la interfaz base y `vincular_linea` están disponibles localmente y pendientes solo de revisión cruzada T005. `LineaTiempo` completa, cada fotografía de cambios nuevos de 001, las pruebas conjuntas y el guardado siguen abiertos. No hay invalidación de rutas mientras producción recalcule sin retener estado.
 4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
 5. **Elección de estrategia**: individual es provisional. Compartida/adaptativa o cualquier reutilización de «ir a» solo se seleccionará con resultados de costo completo y equivalencia.
 6. **Persistencia coordinada**: Steven la asume coordinado con Joshua; deben publicar campos, compatibilidad, archivos y versión. V10 ni otra versión se reserva unilateralmente.
