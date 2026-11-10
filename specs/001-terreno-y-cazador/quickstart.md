@@ -38,6 +38,19 @@ Para `Sofia@5000d1f`, Sofía comunicó una corrida de `.venv/Scripts/python.exe 
 
 Estas cifras sí corresponden a la ejecución del bloque. No incluyen benchmarks ni demuestran el límite oficial de 20 ms.
 
+### Ejecución del núcleo US3 con recálculo desde cero
+
+- Foco T031 (los cinco archivos requeridos): **13 passed in 1.48s**.
+- Foco con copia/serialización canónica: **15 passed in 0.67s**.
+- Regresiones relacionadas de lógica, integración, costo/rango y copia: **493 passed, 4 subtests passed in 3.52s**.
+- Restricciones del enunciado: **56 passed in 0.51s**.
+- Contrato offline completo: **41 passed in 5.06s**.
+- `py_compile` de los siete archivos de prueba modificados y `git diff --check`: correctos.
+
+El oráculo de US3 enumera rutas simples sin invocar `proximo_paso`. Las pruebas comprueban recálculo tras puertas, jugador, velocidad, otros actores, retroceso, reinicio y enlace de un estado deserializado; empate numérico y orden incidental permutado; bytes de `partida.log`; restauración de salas, actores, vida, reloj, agenda, secuencias, puertas y azar; excepciones de pergamino/`registrar_solo_linea`; y alias de copias conjuntas por `deepcopy` y `pickle`. La instrumentación por referencias débiles confirma que cada consulta libera su montículo y sus dos tablas. No se encontró un defecto de producción y no se añadieron cachés, generaciones ni observadores.
+
+No se ejecutó la suite completa porque este bloque solo cambió pruebas y documentación. Tampoco se ejecutaron benchmarks. `LineaTiempo` completa y el formato conjunto con mapa conocido siguen ausentes; por ello T040/T041/T055/T056 permanecen abiertas.
+
 ## Oráculos independientes
 
 1. **Grafos pequeños**: enumeración exhaustiva de rutas simples usando listas. Selecciona el mínimo `(costo_total, primera_vecina_id)` y sirve de referencia para acción, alcanzabilidad/rango, costo total, primera vecina y costo del paso.

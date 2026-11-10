@@ -2131,6 +2131,28 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 55 — US3 vigente, determinista, reversible y sin estado de rutas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, completar el bloque desbloqueado de US3 sin avanzar benchmarks ni código de 003/004. Comparar buscador y cazador con cálculo independiente tras cambios de puertas, jugador, velocidad, otros actores, retroceso e inicio/enlace de estado; validar determinismo con empates y orden permutado; comprobar retroceso/copia de estado canónico, excepciones de pergaminos y cambios solo de línea, `deepcopy`/`pickle` conjuntos y ausencia de motor, servicios o cálculos derivados. Mantener recálculo sin cachés, usar helpers reversibles, corregir solo defectos demostrados de 001 y dejar abiertas las integraciones que requieren `LineaTiempo` completa. Sin commit, push, merge ni cambio de rama.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@21c234248d4f9b7bcdeb3c9c299e40498a2d131a`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. La interfaz base de `HistorialReversible` está disponible, pero no existe `logica/linea_tiempo.py`. Se limitaron los cambios a pruebas y documentos de 001; no se tocaron producción, clases de compañeros, `main.py`, benchmarks, 003 ni 004.
+
+**Vigencia y determinismo.** `test_cazador_vigencia.py` usa una enumeración independiente de rutas simples en cada comparación. Cubre abrir/cerrar, cierre automático despachado por agenda, movimiento real del jugador, cambio reversible de velocidad y reprogramación, y movimiento/muerte de otro actor. `test_cazador_determinismo.py` ejecuta dos partidas de igual semilla/acciones con orden de salas y conexiones permutado; un empate exacto de costo 5 elige la primera vecina numérica 2 y conserva decisiones, notificaciones, reloj, secuencias, agenda, azar y bytes de `partida.log`.
+
+**Retroceso, copia y ausencia de estado retenido.** Un intervalo real incluye espera, dos movimientos del cazador, ataque, vencimiento de velocidad con reprogramación y cierre automático. El pergamino real restaura salas, actores, vida, reloj, agenda, secuencias, puertas y azar, dejando fuera su propio consumo y un cambio `registrar_solo_linea`; la continuación vuelve a coincidir. Un fallo inducido tras mover aborta sin residuos. Las copias conjuntas `(estado, transacciones)` por `deepcopy` y `pickle` conservan alias de entidades, listas e inversos y no alcanzan motor, servicio, caché o DTO de rutas. Referencias débiles demuestran que cada consulta libera un montículo y dos tablas. Retroceso, reinicio y enlace de un estado deserializado vuelven a calcular sin caché, generación, instantánea ni observador.
+
+**Validación y cierre.** T031: **13 passed in 1.48s**; foco incluyendo copia DTO: **15 passed in 0.67s**; regresiones relacionadas: **493 passed, 4 subtests passed in 3.52s**; restricciones: **56 passed in 0.51s**; contrato offline: **41 passed in 5.06s**. `py_compile` y `git diff --check` pasaron. No se encontró un defecto de producción, por lo que no se cambió producción ni se ejecutó la suite completa. Se cerraron T030–T039. T040/T056 siguen abiertas por G4b (`LineaTiempo` completa); T041/T055 siguen abiertas por T006/G5. No se ejecutaron benchmarks y no hubo commit, push, merge ni cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
