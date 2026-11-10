@@ -1,13 +1,14 @@
 """Benchmarks aislados de terreno/cazador del integrante 1.
 
-Este primer subbloque cubre únicamente la agenda de T047. La lista lineal es
-una referencia manual privada del benchmark; no reemplaza ``AgendaEventos``.
-Fixtures, validación observable y memoria se ejecutan fuera del cronómetro.
+Las alternativas inversa compartida y reutilizada son privadas de este módulo;
+producción continúa calculando cada ruta desde cero. Los fixtures, oráculos y
+validaciones se ejecutan antes del reloj. La memoria usa una corrida separada.
 """
 
 from dataclasses import dataclass
 import gc
 import hashlib
+import heapq
 import json
 import platform
 import random
@@ -18,6 +19,7 @@ import tracemalloc
 
 from dto.evento import Evento
 from logica.agenda_eventos import AgendaEventos
+from logica.rutas_ponderadas import SalidaTransitable, proximo_paso
 
 
 SEMILLA = 2609
@@ -32,6 +34,22 @@ OPERACIONES = (
     "cancelar_actor",
     "reprogramar",
     "resolver_empates",
+)
+
+ALTERNATIVA_INDIVIDUAL = "individual_produccion_recalculo"
+ALTERNATIVA_COMPARTIDA = "inversa_compartida_recalculo_benchmark"
+ALTERNATIVA_REUTILIZADA = "inversa_compartida_reutilizada_benchmark"
+CICLOS_RUTAS = 3
+CANTIDAD_CAZADORES = 20
+FASES_RUTAS = (
+    "mantenimiento_puertas",
+    "construccion_inicial",
+    "reconstruccion",
+    "consultas_recalculo",
+    "consultas_iniciales",
+    "consultas_reutilizadas",
+    "invalidacion",
+    "limpieza",
 )
 
 
@@ -468,7 +486,706 @@ def medir_agenda(repeticiones=9, tamanos=CARGAS_AGENDA):
     return filas
 
 
-PROVEEDORES = (medir_agenda,)
+@dataclass(frozen=True)
+class _ConexionRuta:
+    origen_id: int
+    destino_id: int
+    costo: int
+    abierta: bool = True
+    mutable: bool = False
+
+
+@dataclass(frozen=True)
+class _ResultadoRutaObservable:
+    alcanzable: bool
+    costo_total: int | None
+    primera_vecina_id: int | None
+    costo_primera_salida: int | None
+
+
+@dataclass(frozen=True)
+class _EscenarioRutas:
+    identificador: str
+    salas: tuple
+    conexiones: tuple
+    origenes: tuple
+    objetivo_id: int
+    limite: int
+    patron_puertas: str
+    ciclos: int
+    medicion: str
+    region_alcanzable: int | None = None
+
+
+class _VistaRutasBenchmark:
+    """Vista mutable del fixture; no es una caché ni una vista productiva."""
+
+    def __init__(self, escenario):
+        self._salas = escenario.salas
+        self._conexiones = escenario.conexiones
+        self._abiertas = [conexion.abierta for conexion in self._conexiones]
+        self._salidas = {sala_id: [] for sala_id in self._salas}
+        for indice, conexion in enumerate(self._conexiones):
+            self._salidas[conexion.origen_id].append(indice)
+
+    def contiene_sala(self, sala_id):
+        return sala_id in self._salidas
+
+    def salidas_transitables(self, sala_id):
+        return tuple(
+            SalidaTransitable(
+                self._conexiones[indice].destino_id,
+                self._conexiones[indice].costo,
+            )
+            for indice in self._salidas[sala_id]
+            if self._abiertas[indice]
+        )
+
+    def conexiones_actuales(self):
+        return tuple(
+            _ConexionRuta(
+                conexion.origen_id,
+                conexion.destino_id,
+                conexion.costo,
+                self._abiertas[indice],
+                conexion.mutable,
+            )
+            for indice, conexion in enumerate(self._conexiones)
+        )
+
+    def aplicar_ciclo(self, ciclo, inestable):
+        cambios = 0
+        for indice, conexion in enumerate(self._conexiones):
+            nueva = conexion.abierta
+            if inestable and conexion.mutable:
+                nueva = conexion.abierta if (ciclo + indice) % 2 else not conexion.abierta
+            if self._abiertas[indice] != nueva:
+                self._abiertas[indice] = nueva
+                cambios += 1
+        return cambios
+
+
+class _TemporalesInversos:
+    def __init__(self, inversas, frontera):
+        self.inversas = inversas
+        self.frontera = frontera
+
+    def limpiar(self):
+        cantidad = len(self.frontera)
+        self.frontera.clear()
+        for salidas in self.inversas.values():
+            salidas.clear()
+        self.inversas.clear()
+        return cantidad
+
+
+class _InstantaneaInversaBenchmark:
+    """Distancias inversas experimentales, nunca alcanzables desde el juego."""
+
+    def __init__(self, objetivo_id, limite, distancias, metricas):
+        self.objetivo_id = objetivo_id
+        self.limite = limite
+        self.distancias = distancias
+        self.metricas = metricas
+
+    def consultar(self, vista, origen_id, limite):
+        self.metricas["consultas"] += 1
+        if origen_id == self.objetivo_id:
+            return _ResultadoRutaObservable(True, 0, None, None)
+        mejor = None
+        for salida in vista.salidas_transitables(origen_id):
+            self.metricas["salidas_seleccion"] += 1
+            restante = self.distancias.get(salida.destino_id)
+            if restante is None:
+                continue
+            candidata = (
+                salida.costo + restante,
+                salida.destino_id,
+                salida.costo,
+            )
+            if mejor is None or candidata[:2] < mejor[:2]:
+                mejor = candidata
+        if mejor is None or mejor[0] > limite:
+            return _ResultadoRutaObservable(False, None, None, None)
+        return _ResultadoRutaObservable(True, mejor[0], mejor[1], mejor[2])
+
+    def limpiar(self):
+        cantidad = len(self.distancias)
+        self.distancias.clear()
+        return cantidad
+
+
+class _ReutilizacionInversaBenchmark:
+    """Retención e invalidación explícitas, exclusivamente para AC-014."""
+
+    def __init__(self):
+        self._instantanea = None
+        self.generacion = 0
+        self.invalidaciones = 0
+
+    def disponible(self):
+        return self._instantanea is not None
+
+    def publicar(self, instantanea):
+        self._instantanea = instantanea
+
+    def consultar(self, vista, origen_id, limite):
+        if self._instantanea is None:
+            raise ValueError("La instantánea experimental fue invalidada.")
+        return self._instantanea.consultar(vista, origen_id, limite)
+
+    def invalidar(self):
+        anterior = self._instantanea
+        self._instantanea = None
+        self.generacion += 1
+        self.invalidaciones += 1
+        return anterior
+
+    def limpiar(self):
+        anterior = self._instantanea
+        self._instantanea = None
+        return anterior
+
+
+def _resultado_observable(resultado):
+    return _ResultadoRutaObservable(
+        resultado.alcanzable,
+        resultado.costo_total,
+        resultado.primera_vecina_id,
+        resultado.costo_primera_salida,
+    )
+
+
+def _accion_ruta(resultado):
+    return ("MOVER" if resultado.alcanzable
+            and resultado.primera_vecina_id is not None else "SIN_PASO")
+
+
+def _oraculo_relajacion_rutas(
+        salas, conexiones, origen_id, objetivo_id, limite):
+    """Oráculo Bellman-Ford local; no comparte recorrido con las alternativas."""
+    if origen_id == objetivo_id:
+        return _ResultadoRutaObservable(True, 0, None, None)
+    etiquetas = {origen_id: (0, None, None)}
+    for _ in range(max(0, len(salas) - 1)):
+        cambio = False
+        anteriores = dict(etiquetas)
+        for conexion in conexiones:
+            if not conexion.abierta or conexion.origen_id not in anteriores:
+                continue
+            distancia, primera, costo_primero = anteriores[conexion.origen_id]
+            es_primera = primera is None
+            candidata = (
+                distancia + conexion.costo,
+                conexion.destino_id if es_primera else primera,
+                conexion.costo if es_primera else costo_primero,
+            )
+            vigente = etiquetas.get(conexion.destino_id)
+            if vigente is None or candidata[:2] < vigente[:2]:
+                etiquetas[conexion.destino_id] = candidata
+                cambio = True
+        if not cambio:
+            break
+    mejor = etiquetas.get(objetivo_id)
+    if mejor is None or mejor[0] > limite:
+        return _ResultadoRutaObservable(False, None, None, None)
+    return _ResultadoRutaObservable(True, mejor[0], mejor[1], mejor[2])
+
+
+def _construir_inversa(vista, objetivo_id, limite):
+    """Invierte cada salida dirigida existente; nunca inventa el sentido opuesto."""
+    conexiones = vista.conexiones_actuales()
+    inversas = {sala_id: [] for sala_id in vista._salas}
+    examinadas_grafo = 0
+    aristas_inversas = 0
+    for conexion in conexiones:
+        examinadas_grafo += 1
+        if conexion.abierta:
+            # u -> v se recorre desde v hacia u al calcular distancias al objetivo.
+            inversas[conexion.destino_id].append(
+                (conexion.origen_id, conexion.costo))
+            aristas_inversas += 1
+
+    distancias = {objetivo_id: 0}
+    frontera = [(0, objetivo_id)]
+    fijadas = set()
+    insertadas = 1
+    frontera_maxima = 1
+    obsoletas = 0
+    relajadas = 0
+    while frontera:
+        distancia, sala_id = heapq.heappop(frontera)
+        if sala_id in fijadas or distancias.get(sala_id) != distancia:
+            obsoletas += 1
+            continue
+        if distancia > limite:
+            heapq.heappush(frontera, (distancia, sala_id))
+            break
+        fijadas.add(sala_id)
+        for predecesor_id, costo in inversas[sala_id]:
+            relajadas += 1
+            nueva = distancia + costo
+            if nueva > limite:
+                continue
+            anterior = distancias.get(predecesor_id)
+            if anterior is not None and anterior <= nueva:
+                continue
+            distancias[predecesor_id] = nueva
+            heapq.heappush(frontera, (nueva, predecesor_id))
+            insertadas += 1
+            frontera_maxima = max(frontera_maxima, len(frontera))
+    metricas = {
+        "salas_fijadas": len(fijadas),
+        "salas_descubiertas": len(distancias),
+        "salidas_examinadas": relajadas,
+        "conexiones_examinadas_construccion": examinadas_grafo,
+        "salidas_examinadas_grafo": examinadas_grafo,
+        "aristas_inversas": aristas_inversas,
+        "aristas_relajadas": relajadas,
+        "entradas_insertadas": insertadas,
+        "frontera_maxima": frontera_maxima,
+        "obsoletas_extraidas": obsoletas,
+        "frontera_final_limpiada": len(frontera),
+        "frontera_final": len(frontera),
+        "consultas": 0,
+        "salidas_seleccion": 0,
+    }
+    return (
+        _InstantaneaInversaBenchmark(
+            objetivo_id, limite, distancias, metricas),
+        _TemporalesInversos(inversas, frontera),
+    )
+
+
+def _consultar_produccion(vista, escenario):
+    resultados = []
+    trabajo = {
+        "consultas": 0,
+        "salas_fijadas": 0,
+        "salas_descubiertas": 0,
+        "salidas_examinadas": 0,
+        "entradas_insertadas": 0,
+        "frontera_maxima": 0,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+    }
+    for origen_id in escenario.origenes:
+        resultado = proximo_paso(
+            vista, origen_id, escenario.objetivo_id, escenario.limite)
+        resultados.append(_resultado_observable(resultado))
+        metricas = resultado.metricas
+        trabajo["consultas"] += 1
+        for nombre in (
+                "salas_fijadas", "salas_descubiertas", "salidas_examinadas",
+                "entradas_insertadas", "obsoletas_extraidas",
+                "frontera_final_limpiada"):
+            trabajo[nombre] += getattr(metricas, nombre)
+        trabajo["frontera_maxima"] = max(
+            trabajo["frontera_maxima"], metricas.frontera_maxima)
+    return tuple(resultados), trabajo
+
+
+def _sumar_trabajo(acumulado, nuevo):
+    for nombre, valor in nuevo.items():
+        if nombre == "frontera_maxima":
+            acumulado[nombre] = max(acumulado.get(nombre, 0), valor)
+        elif type(valor) is int:
+            acumulado[nombre] = acumulado.get(nombre, 0) + valor
+
+
+def _firma_resultados(resultados):
+    serializable = tuple(
+        (resultado.alcanzable, resultado.costo_total,
+         resultado.primera_vecina_id, resultado.costo_primera_salida)
+        for ciclo in resultados for resultado in ciclo
+    )
+    return _huella(serializable)
+
+
+def _validar_escenario(escenario):
+    """Valida oráculo, producción, compartida y reutilizada antes del reloj."""
+    vistas = {
+        nombre: _VistaRutasBenchmark(escenario)
+        for nombre in ("oraculo", "produccion", "compartida", "reutilizada")
+    }
+    cache = _ReutilizacionInversaBenchmark()
+    resultados_esperados = []
+    inestable = escenario.patron_puertas == "cambios_frecuentes"
+    for ciclo in range(escenario.ciclos):
+        for vista in vistas.values():
+            vista.aplicar_ciclo(ciclo, inestable)
+        conexiones = vistas["oraculo"].conexiones_actuales()
+        esperados = tuple(
+            _oraculo_relajacion_rutas(
+                escenario.salas, conexiones, origen_id,
+                escenario.objetivo_id, escenario.limite)
+            for origen_id in escenario.origenes
+        )
+        produccion, _ = _consultar_produccion(
+            vistas["produccion"], escenario)
+        compartida, temporales = _construir_inversa(
+            vistas["compartida"], escenario.objetivo_id, escenario.limite)
+        temporales.limpiar()
+        resultados_compartidos = tuple(
+            compartida.consultar(
+                vistas["compartida"], origen_id, escenario.limite)
+            for origen_id in escenario.origenes
+        )
+        compartida.limpiar()
+
+        if inestable and cache.disponible():
+            anterior = cache.invalidar()
+            anterior.limpiar()
+        if not cache.disponible():
+            instantanea, temporales = _construir_inversa(
+                vistas["reutilizada"], escenario.objetivo_id,
+                escenario.limite)
+            temporales.limpiar()
+            cache.publicar(instantanea)
+        resultados_reutilizados = tuple(
+            cache.consultar(
+                vistas["reutilizada"], origen_id, escenario.limite)
+            for origen_id in escenario.origenes
+        )
+        for nombre, obtenidos in (
+                ("producción", produccion),
+                ("inversa compartida", resultados_compartidos),
+                ("reutilización experimental", resultados_reutilizados)):
+            acciones = tuple(_accion_ruta(resultado) for resultado in obtenidos)
+            acciones_esperadas = tuple(
+                _accion_ruta(resultado) for resultado in esperados)
+            if obtenidos != esperados or acciones != acciones_esperadas:
+                raise ValueError(
+                    f"{nombre} diverge del oráculo antes de medir "
+                    f"en {escenario.identificador}, ciclo {ciclo}.")
+        resultados_esperados.append(esperados)
+    restante = cache.limpiar()
+    if restante is not None:
+        restante.limpiar()
+    return {
+        "equivalencia_observable": True,
+        "campos": (
+            "alcanzable", "costo_total", "primera_vecina_id",
+            "costo_primera_salida"),
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": _firma_resultados(resultados_esperados),
+        "salidas_dirigidas": True,
+        "accion_derivada_comparada": True,
+        "contadores_internos_comparados": False,
+    }
+
+
+def _fases_vacias():
+    return {fase: 0 for fase in FASES_RUTAS}
+
+
+def _ejecutar_lote(escenario, alternativa, vista):
+    fases = _fases_vacias()
+    trabajo = {"ciclos": escenario.ciclos, "cazadores": len(escenario.origenes)}
+    resultados_ciclos = []
+    cache = _ReutilizacionInversaBenchmark()
+    inestable = escenario.patron_puertas == "cambios_frecuentes"
+    inicio_total = perf_counter_ns()
+    for ciclo in range(escenario.ciclos):
+        inicio = perf_counter_ns()
+        cambios = vista.aplicar_ciclo(ciclo, inestable)
+        fases["mantenimiento_puertas"] += perf_counter_ns() - inicio
+        trabajo["cambios_puerta"] = trabajo.get("cambios_puerta", 0) + cambios
+
+        if alternativa == ALTERNATIVA_INDIVIDUAL:
+            inicio = perf_counter_ns()
+            resultados, metricas = _consultar_produccion(vista, escenario)
+            fases["consultas_recalculo"] += perf_counter_ns() - inicio
+            _sumar_trabajo(trabajo, metricas)
+            resultados_ciclos.append(resultados)
+            continue
+
+        if alternativa == ALTERNATIVA_COMPARTIDA:
+            inicio = perf_counter_ns()
+            instantanea, temporales = _construir_inversa(
+                vista, escenario.objetivo_id, escenario.limite)
+            fase_construccion = (
+                "construccion_inicial" if ciclo == 0 else "reconstruccion")
+            fases[fase_construccion] += perf_counter_ns() - inicio
+            _sumar_trabajo(trabajo, instantanea.metricas)
+            inicio = perf_counter_ns()
+            trabajo["frontera_limpiada"] = trabajo.get(
+                "frontera_limpiada", 0) + temporales.limpiar()
+            fases["limpieza"] += perf_counter_ns() - inicio
+            selecciones_antes = instantanea.metricas["salidas_seleccion"]
+            inicio = perf_counter_ns()
+            resultados = tuple(
+                instantanea.consultar(vista, origen_id, escenario.limite)
+                for origen_id in escenario.origenes)
+            fases["consultas_iniciales"] += perf_counter_ns() - inicio
+            resultados_ciclos.append(resultados)
+            trabajo["consultas"] = trabajo.get("consultas", 0) + len(
+                escenario.origenes)
+            trabajo["salidas_seleccion"] = trabajo.get(
+                "salidas_seleccion", 0) + (
+                    instantanea.metricas["salidas_seleccion"]
+                    - selecciones_antes)
+            inicio = perf_counter_ns()
+            trabajo["distancias_limpiadas"] = trabajo.get(
+                "distancias_limpiadas", 0) + instantanea.limpiar()
+            fases["limpieza"] += perf_counter_ns() - inicio
+            continue
+
+        if alternativa != ALTERNATIVA_REUTILIZADA:
+            raise ValueError(f"Alternativa de rutas desconocida: {alternativa}")
+        disponible_antes = cache.disponible()
+        if inestable and disponible_antes and cambios:
+            inicio = perf_counter_ns()
+            anterior = cache.invalidar()
+            fases["invalidacion"] += perf_counter_ns() - inicio
+            trabajo["invalidaciones"] = trabajo.get("invalidaciones", 0) + 1
+            inicio = perf_counter_ns()
+            trabajo["distancias_limpiadas"] = trabajo.get(
+                "distancias_limpiadas", 0) + anterior.limpiar()
+            fases["limpieza"] += perf_counter_ns() - inicio
+            disponible_antes = False
+        if not cache.disponible():
+            inicio = perf_counter_ns()
+            instantanea, temporales = _construir_inversa(
+                vista, escenario.objetivo_id, escenario.limite)
+            fase_construccion = (
+                "construccion_inicial"
+                if trabajo.get("construcciones", 0) == 0
+                else "reconstruccion")
+            fases[fase_construccion] += perf_counter_ns() - inicio
+            trabajo["construcciones"] = trabajo.get("construcciones", 0) + 1
+            _sumar_trabajo(trabajo, instantanea.metricas)
+            inicio = perf_counter_ns()
+            trabajo["frontera_limpiada"] = trabajo.get(
+                "frontera_limpiada", 0) + temporales.limpiar()
+            fases["limpieza"] += perf_counter_ns() - inicio
+            cache.publicar(instantanea)
+        selecciones_antes = cache._instantanea.metricas["salidas_seleccion"]
+        inicio = perf_counter_ns()
+        resultados = tuple(
+            cache.consultar(vista, origen_id, escenario.limite)
+            for origen_id in escenario.origenes)
+        fase_consulta = (
+            "consultas_reutilizadas" if disponible_antes
+            else "consultas_iniciales")
+        fases[fase_consulta] += perf_counter_ns() - inicio
+        trabajo["consultas"] = trabajo.get("consultas", 0) + len(
+            escenario.origenes)
+        trabajo["salidas_seleccion"] = trabajo.get(
+            "salidas_seleccion", 0) + (
+                cache._instantanea.metricas["salidas_seleccion"]
+                - selecciones_antes)
+        resultados_ciclos.append(resultados)
+    if alternativa == ALTERNATIVA_REUTILIZADA:
+        inicio = perf_counter_ns()
+        restante = cache.limpiar()
+        if restante is not None:
+            trabajo["distancias_limpiadas"] = trabajo.get(
+                "distancias_limpiadas", 0) + restante.limpiar()
+        fases["limpieza"] += perf_counter_ns() - inicio
+    total = perf_counter_ns() - inicio_total
+    return {
+        "total": total,
+        "fases": fases,
+        "trabajo": trabajo,
+        "huella_resultados": _firma_resultados(resultados_ciclos),
+    }
+
+
+def _medir_memoria_rutas(escenario, alternativa):
+    gc.collect()
+    vista = _VistaRutasBenchmark(escenario)
+    tracemalloc.start()
+    base_actual, _ = tracemalloc.get_traced_memory()
+    resultado = _ejecutar_lote(escenario, alternativa, vista)
+    final_actual, pico = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    if not resultado["huella_resultados"]:
+        raise AssertionError("La corrida de memoria no produjo resultados.")
+    return {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": base_actual,
+        "final_actual": final_actual,
+        "pico_lote": pico,
+        "incluida_en_tiempo": False,
+    }
+
+
+def _resumen_muestras(muestras):
+    return {
+        "mediana": statistics.median(muestras),
+        "p95": _percentil_95(muestras),
+        "maximo": max(muestras),
+        "minimo": min(muestras),
+        "muestras": muestras,
+    }
+
+
+def _medir_escenario(escenario, alternativa, repeticiones, validacion):
+    corridas = []
+    for _ in range(repeticiones + CALENTAMIENTO):
+        vista = _VistaRutasBenchmark(escenario)  # fixture común fuera del reloj
+        corridas.append(_ejecutar_lote(escenario, alternativa, vista))
+    medidas = corridas[CALENTAMIENTO:]
+    huellas = {corrida["huella_resultados"] for corrida in medidas}
+    if huellas != {validacion["huella_resultados"]}:
+        raise ValueError("La medición produjo un resultado distinto al validado.")
+    trabajos = [corrida["trabajo"] for corrida in medidas]
+    if any(trabajo != trabajos[0] for trabajo in trabajos[1:]):
+        raise ValueError("Los contadores de trabajo no son deterministas.")
+    muestras = [corrida["total"] for corrida in medidas]
+    fases = {
+        fase: _resumen_muestras([
+            corrida["fases"][fase] for corrida in medidas])
+        for fase in FASES_RUTAS
+    }
+    carga = {
+        "salas": len(escenario.salas),
+        "salidas": len(escenario.conexiones),
+        "cazadores": len(escenario.origenes),
+        "rango": escenario.limite,
+        "rango_tipo": "pequeno" if escenario.limite < len(
+            escenario.salas) else "grande",
+        "puertas": escenario.patron_puertas,
+        "ciclos": escenario.ciclos,
+        "objetivo": escenario.objetivo_id,
+        "huella_fixture": _huella(tuple(
+            (conexion.origen_id, conexion.destino_id, conexion.costo,
+             conexion.abierta, conexion.mutable)
+            for conexion in escenario.conexiones)),
+    }
+    if escenario.region_alcanzable is not None:
+        carga.update({
+            "salas_region_alcanzable": escenario.region_alcanzable,
+            "salas_exteriores": len(escenario.salas) - escenario.region_alcanzable,
+        })
+    fila = {
+        "medicion": escenario.medicion,
+        "escenario": escenario.identificador,
+        "alternativa": alternativa,
+        "n": len(escenario.salas),
+        "carga": carga,
+        "semilla": SEMILLA,
+        "entorno": _entorno(),
+        "calentamiento": CALENTAMIENTO,
+        "repeticiones": repeticiones,
+        "unidad": "ns_por_lote",
+        **_resumen_muestras(muestras),
+        "fases": fases,
+        "trabajo": trabajos[0],
+        "fixture_fuera": True,
+        "validacion": validacion,
+        "memoria": _medir_memoria_rutas(escenario, alternativa),
+        "alcance": "sintetico_no_demuestra_pr_001",
+    }
+    return fila
+
+
+def _escenario_region(n):
+    if n < 8:
+        raise ValueError("AC-012 requiere al menos ocho salas.")
+    conexiones = [
+        _ConexionRuta(4, 2, 2),
+        _ConexionRuta(2, 0, 2),
+        _ConexionRuta(4, 3, 1),
+        _ConexionRuta(3, 1, 1),
+        _ConexionRuta(1, 0, 2),
+        # El exterior es dirigido hacia afuera y empieza fuera del rango.
+        _ConexionRuta(4, 5, 5),
+    ]
+    for sala_id in range(5, n - 1):
+        conexiones.append(_ConexionRuta(sala_id, sala_id + 1, 1))
+    return _EscenarioRutas(
+        f"ac012_region_5_exterior_{n - 5}",
+        tuple(range(n)), tuple(conexiones), (4,), 0, 4,
+        "estables", 1, "rutas_ac012_region", region_alcanzable=5)
+
+
+def _conexiones_matriz(n):
+    conexiones = []
+    for sala_id in range(1, n):
+        conexiones.append(_ConexionRuta(
+            sala_id, sala_id - 1, 1 + sala_id % 5))
+        if sala_id >= 3:
+            conexiones.append(_ConexionRuta(
+                sala_id, sala_id - 3, 2 + sala_id % 7,
+                abierta=sala_id % 4 != 0, mutable=True))
+        if sala_id + 2 < n:
+            # Salida dirigida hacia el exterior: crea ciclos, no una inversa implícita.
+            conexiones.append(_ConexionRuta(
+                sala_id, sala_id + 2, 3 + sala_id % 3,
+                abierta=sala_id % 5 != 0, mutable=True))
+    conexiones.append(_ConexionRuta(0, n - 1, 50, abierta=True, mutable=True))
+    return tuple(conexiones)
+
+
+def _origenes_matriz(n, cantidad):
+    if cantidad == 1:
+        return (n - 1,)
+    disponibles = tuple(range(1, n))
+    paso = max(1, len(disponibles) // cantidad)
+    origenes = tuple(disponibles[indice]
+                     for indice in range(0, len(disponibles), paso))
+    return origenes[:cantidad]
+
+
+def _escenarios_matriz(tamanos):
+    if not tamanos or any(type(n) is not int or n < 1 for n in tamanos):
+        raise ValueError("Los tamaños de rutas deben ser enteros positivos.")
+    n = max(32, min(64, max(tamanos)))
+    conexiones = _conexiones_matriz(n)
+    escenarios = []
+    for cantidad in (1, min(CANTIDAD_CAZADORES, n - 1)):
+        for tipo_rango, limite in (
+                ("pequeno", max(8, n // 6)),
+                ("grande", 10 * n)):
+            for puertas in ("estables", "cambios_frecuentes"):
+                escenarios.append(_EscenarioRutas(
+                    f"ac014_h{cantidad}_{tipo_rango}_{puertas}",
+                    tuple(range(n)), conexiones,
+                    _origenes_matriz(n, cantidad), 0, limite,
+                    puertas, CICLOS_RUTAS, "rutas_ac014_matriz"))
+    return tuple(escenarios)
+
+
+def medir_rutas_region(repeticiones=9, tamanos=(32, 128, 512)):
+    """AC-012: misma región de cinco salas mientras crece solo el exterior."""
+    if repeticiones < 1:
+        raise ValueError("Se requiere al menos una repetición medida.")
+    cargas = sorted({n for n in tamanos if type(n) is int and n >= 8})
+    if not cargas:
+        raise ValueError("AC-012 requiere tamaños de al menos ocho salas.")
+    if len(cargas) > 3:
+        cargas = [cargas[0], cargas[len(cargas) // 2], cargas[-1]]
+    filas = []
+    for n in cargas:
+        escenario = _escenario_region(n)
+        validacion = _validar_escenario(escenario)
+        for alternativa in (ALTERNATIVA_INDIVIDUAL, ALTERNATIVA_COMPARTIDA):
+            filas.append(_medir_escenario(
+                escenario, alternativa, repeticiones, validacion))
+    return filas
+
+
+def medir_rutas_matriz(repeticiones=9, tamanos=(32, 64)):
+    """AC-014: individual/compartida/reutilizada en la matriz acordada."""
+    if repeticiones < 1:
+        raise ValueError("Se requiere al menos una repetición medida.")
+    filas = []
+    for escenario in _escenarios_matriz(tamanos):
+        validacion = _validar_escenario(escenario)
+        for alternativa in (
+                ALTERNATIVA_INDIVIDUAL,
+                ALTERNATIVA_COMPARTIDA,
+                ALTERNATIVA_REUTILIZADA):
+            filas.append(_medir_escenario(
+                escenario, alternativa, repeticiones, validacion))
+    return filas
+
+
+PROVEEDORES_RUTAS = (medir_rutas_region, medir_rutas_matriz)
+PROVEEDORES = (medir_agenda,) + PROVEEDORES_RUTAS
 
 
 if __name__ == "__main__":
@@ -476,7 +1193,11 @@ if __name__ == "__main__":
         "entorno_ejecutor": _entorno(),
         "tamanos": list(CARGAS_AGENDA),
         "repeticiones": 9,
-        "mediciones": medir_agenda(),
-        "alcance": "T047_agenda_aislada_sin_ciclo_cazadores_ni_main_bench",
+        "mediciones": (
+            medir_agenda()
+            + medir_rutas_region()
+            + medir_rutas_matriz()
+        ),
+        "alcance": "sintetico_sin_ciclo_oficial_ni_main_bench",
     }
     print(json.dumps(informe, ensure_ascii=False, indent=2))

@@ -2153,6 +2153,28 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 56 — Benchmarks sintéticos de rutas compartidas y reutilizadas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, implementar el bloque desbloqueado de benchmarks de rutas de US4: individual productiva frente a inversa compartida, uno/decenas de cazadores, rangos pequeños/grandes, región fija con exterior creciente, puertas estables/inestables y recálculo frente a reutilización experimental con invalidación explícita. Mantener alternativas solo en benchmarks, validar observables con oráculos independientes antes de medir, respetar sentidos dirigidos, incluir costo completo/fases/memoria/muestras y guardar resultados. Integrar solo por el acuerdo vigente de T049, sin afirmar PR-001/20 ms, decidir estrategia ni avanzar 003/004. Sin commit, push, merge ni cambio de rama.
+
+**Precondiciones y límites.** La ejecución comenzó limpia en `Sofia@5aca2b0abc961349d54294e1852266445745802f`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se confirmó que `main.py --bench` registra hoy el proveedor de mapa, pero el texto vigente de T049 reserva rutas/ciclo a una integración conjunta posterior a T044–T048. Por ello no se editó `main.py`: se publicó y probó `PROVEEDORES_RUTAS` mediante la interfaz estándar de `benchmarks.integrante3.ejecutar`, dejando el registro real pendiente.
+
+**Implementación benchmark-local.** `benchmarks/terreno_cazador_integrante1.py` conserva la agenda existente y añade generadores deterministas, un oráculo de relajación completa, cálculo inverso compartido y reutilización con invalidación explícita. La inversa se construye únicamente desde aristas dirigidas reales (`u → v` se recorre como `v → u`) y una prueba demuestra que una salida única no crea el sentido opuesto. Producción sigue llamando `proximo_paso` por cazador y no recibió cachés ni cambios. La equivalencia previa compara alcanzabilidad contractual, costo, primera vecina y costo del primer paso; los contadores se reportan, no se igualan.
+
+**Medición.** AC-012 mantiene cinco salas alcanzables al crecer el total a 32/128/512; producción conservó `F=5`, `D=5`, `E=6`, `P=5`, `Q=2`, mientras la compartida contabiliza separadamente construir el inverso completo. AC-014 produce 24 combinaciones de tres alternativas, 1/20 cazadores, rango pequeño/grande y puertas estables/cambios frecuentes durante tres ciclos. Las filas separan mantenimiento, construcción inicial, reconstrucción, consultas recalculadas/iniciales/reutilizadas, invalidación, limpieza y total. `tracemalloc` usa otra corrida. El JSON `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json` conserva **30 filas/270 muestras**, entorno, semilla 2609, calentamiento, nueve repeticiones, cargas, mediana, p95, máximo/mínimo y trabajo.
+
+**Resultados y validación.** Para 20 cazadores/rango grande, las medianas sintéticas estable individual/compartida/reutilizada fueron 26 813 300/587 200/301 700 ns; con cambios frecuentes, 18 713 300/662 300/586 800 ns. En AC-012 el recálculo individual conservó 42 900/48 600/139 900 ns con trabajo regional constante (`F=5, D=5, E=6, P=5, Q=2`) y la construcción inversa compartida creció 38 500/107 800/417 300 ns de 32 a 512 salas. No se extrae una decisión productiva de estos datos. Pruebas de equivalencia, esquema y conexión: **55 passed in 6.89s**; rutas relacionadas: **21 passed in 0.21s**; restricciones: **56 passed in 1.31s**; `py_compile` pasó. Se cerraron T044–T046 y T065. T043, T047–T051 y T071 continúan abiertas según sus dependencias; en particular T049 espera acuerdo/propietario de `main.py` y T051 la referencia oficial. No se afirma PR-001 ni 20 ms, no se avanzó a T057/decisión final ni a 003/004, y no hubo commit, push, merge o cambio de rama.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

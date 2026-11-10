@@ -8,6 +8,7 @@ from benchmarks.terreno_cazador_integrante1 import (
     CARGAS_AGENDA,
     OPERACIONES,
     PROVEEDORES,
+    PROVEEDORES_RUTAS,
     _validar_equivalencia,
     medir_agenda,
 )
@@ -88,7 +89,8 @@ def test_cargas_por_defecto_son_cientos_de_eventos_y_varias_cargas():
 
 
 def test_proveedor_queda_disponible_para_integracion_posterior():
-    assert PROVEEDORES == (medir_agenda,)
+    assert PROVEEDORES[0] is medir_agenda
+    assert PROVEEDORES[1:] == PROVEEDORES_RUTAS
 
 
 def test_no_hay_umbral_temporal_en_el_contrato():

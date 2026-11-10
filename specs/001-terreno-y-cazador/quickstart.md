@@ -51,6 +51,36 @@ El oráculo de US3 enumera rutas simples sin invocar `proximo_paso`. Las pruebas
 
 No se ejecutó la suite completa porque este bloque solo cambió pruebas y documentación. Tampoco se ejecutaron benchmarks. `LineaTiempo` completa y el formato conjunto con mapa conocido siguen ausentes; por ello T040/T041/T055/T056 permanecen abiertas.
 
+### Ejecución aislada de rutas US4 (T044–T046/T065)
+
+Comando reproducible equivalente al ejecutado:
+
+```powershell
+@'
+import json
+from pathlib import Path
+from benchmarks.terreno_cazador_integrante1 import (
+    CALENTAMIENTO, SEMILLA, _entorno, medir_rutas_region, medir_rutas_matriz,
+)
+filas = medir_rutas_region(9, (32, 128, 512)) + medir_rutas_matriz(9, (32, 64))
+Path("benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json").write_text(
+    json.dumps({
+        "entorno_ejecutor": _entorno(), "semilla": SEMILLA,
+        "calentamiento": CALENTAMIENTO, "repeticiones": 9,
+        "cargas_region": [32, 128, 512], "cargas_matriz": [32, 64],
+        "alcance": "sintetico_no_demuestra_pr_001_ni_20_ms_oficial",
+        "integracion_main_bench": "pendiente_t049_acuerdo_propietario_main",
+        "mediciones": filas,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+'@ | .\.venv\Scripts\python.exe -
+```
+
+El archivo conservado contiene **30 filas y 270 muestras** con semilla 2609, un calentamiento y nueve repeticiones. AC-012 usa 32/128/512 salas y una región alcanzable fija de cinco; los contadores productivos permanecieron `F=5`, `D=5`, `E=6`, `P=5`, `Q=2`. AC-014 usa 64 salas, 1/20 cazadores, rangos pequeño/grande, puertas estables/inestables y tres ciclos. Cada fila separa costo inicial, reconstrucciones, consultas recalculadas/iniciales/reutilizadas, invalidación, mantenimiento, limpieza y total; la memoria se mide aparte.
+
+Como referencia descriptiva, no decisoria, para 20 cazadores y rango grande las medianas de lote estable fueron 26 813 300 ns (individual), 587 200 ns (compartida recalculada) y 301 700 ns (reutilizada); con cambios frecuentes fueron 18 713 300, 662 300 y 586 800 ns. En AC-012 el recálculo individual mantuvo medianas de 42 900/48 600/139 900 ns (32/128/512 salas; trabajo `F=5, D=5, E=6, P=5, Q=2` constante), mientras la construcción inversa compartida creció 38 500/107 800/417 300 ns al barrer el grafo total. Son cargas sintéticas: no cierran PR-001, no prueban 20 ms oficiales y no autorizan una estrategia productiva.
+
+Validación: **55 pruebas de benchmark/conexión**, **21 pruebas de rutas relacionadas** y **56 restricciones** aprobadas. `PROVEEDORES_RUTAS` conecta correctamente por `benchmarks.integrante3.ejecutar`; no se modificó `main.py` porque el acuerdo vigente de T049 solo cubre el mapa y T048 sigue pendiente.
+
 ## Oráculos independientes
 
 1. **Grafos pequeños**: enumeración exhaustiva de rutas simples usando listas. Selecciona el mínimo `(costo_total, primera_vecina_id)` y sirve de referencia para acción, alcanzabilidad/rango, costo total, primera vecina y costo del paso.
