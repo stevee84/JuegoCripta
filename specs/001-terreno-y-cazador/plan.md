@@ -6,7 +6,7 @@
 
 ## Summary
 
-La capacidad incorporará costos de salida a todos los movimientos, validará los datos de terreno y cazadores, y añadirá decisiones de cazador mediante rutas ponderadas deterministas. Steven confirmó validación estricta de costo/rango, identificación de sentidos por origen/destino con detección de ambigüedad, vista de «ir a» limitada a salas exploradas, recálculo por paso y casos terminales distinguibles. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench` hasta una decisión con evidencia. La producción inicial no retiene resultados de ruta, por lo que no necesita caché, generaciones ni invalidación. Por solicitud expresa comunicada por Steven, Sofía implementará en su `MapaCripta` el índice propio por ID conservando firmas públicas, orden e identidad de salas; su costo se comparará con la alternativa lineal únicamente en `--bench`. Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua, pero las firmas de rutas, otros archivos compartidos y la versión implementada siguen pendientes.
+La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` ya integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench` hasta una decisión con evidencia. La producción inicial no retiene resultados de ruta. Mapa conocido, `LineaTiempo` completa y persistencia conjunta restante siguen pendientes.
 
 ## Technical Context
 
@@ -14,9 +14,9 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 
 **Primary Dependencies**: biblioteca estándar, `requests` y `pygame` ya existentes. Sin dependencias nuevas. En producción se reutilizan `TablaHashImpl`, `MonticuloMinimo`, `IndiceOrdenado`, `ListaDobleImpl`, `AgendaEventos` y el mecanismo de `CambioReversible` propios.
 
-**Storage**: esqueleto y catálogo procedentes de `FuenteDatos`; `GuardadoBinario.VERSION = 9` y `partida.log`. V9 persiste, entre otros datos, el informe de resolubilidad de 002, pero todavía no serializa `Puerta.costo` ni el rango materializado del cazador. Los resultados de ruta son exclusivamente memoria derivada y no se persisten.
+**Storage**: esqueleto y catálogo procedentes de `FuenteDatos`; `GuardadoBinario.VERSION = 10` y `partida.log`. V10 serializa `Puerta.costo` y rango; todavía no constituye la entrega conjunta completa de mapa conocido y línea de tiempo. Los resultados de ruta son exclusivamente memoria derivada y no se persisten.
 
-**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. La línea base histórica documentada tras el merge anterior fue `1071 passed`, sin omisiones. Después de integrar la interfaz base de Joshua se comunicó una corrida posterior de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1101 passed`, sin fallos ni omisiones; esta actualización documental no volvió a ejecutar la suite. Ninguna de esas regresiones sustituye las futuras pruebas de aceptación de 001.
+**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. Para `5000d1f`, Sofía comunicó `1204 passed, 4 subtests passed`; esta actualización documental no ejecutó esa suite y no la presenta como resultado propio. La implementación de este bloque tendrá su propia validación por etapas.
 
 **Target Platform**: aplicación de escritorio/CLI local en Windows; scripts de spec-kit ejecutados mediante PowerShell desde el puente WSL/Windows. Los modos `--bench` y `--replay` no instancian la vista.
 
@@ -32,8 +32,8 @@ La capacidad incorporará costos de salida a todos los movimientos, validará lo
 
 | Estado | Hash | Disponible |
 |---|---|---|
-| checkout local `Sofia` | `3df43c63c68a33f692148b737c12b0c0a4208569` | integra `joshua@927d886…`, incluido `972af542…`: deshacer temporal, rehacer, fotografía y enlace del historial; v9; sin costo/rango/003 |
-| integrado desde `Steve` por Joshua | `757d747b461cdb755705ca5cdd90391090112782` | trabajo de 002; `GuardadoBinario.VERSION = 9`; no publica aún las entregas acordadas de 001/003 |
+| checkout local `Sofia` | `5000d1fe8af268987206827e4c524c05bd599357` | integra costo/rango, simetría de sentidos existentes y guardado v10 de esos campos; conserva interfaz base de Joshua; sin vista conocida/`LineaTiempo` completa |
+| base de Steven integrada | `5000d1fe8af268987206827e4c524c05bd599357` | G2 disponible localmente; validación comunicada `1204 passed, 4 subtests passed`, no ejecutada en esta revisión |
 | punta actual publicada `origin/joshua` | `b039b8b871d40984aa0e4bd74e8dd57b85e6224a` | contiene la clase completa `LineaTiempo` de `d055563` y su creación al iniciar; no es ancestro del checkout local y esa entrega completa sigue pendiente de integrar |
 
 Los acuerdos comunicados no se clasifican como código disponible. La interfaz base de Joshua sí es código local por estar en `HEAD`; una publicación posterior en otra rama, como `LineaTiempo`, no lo es.
@@ -48,13 +48,13 @@ Los acuerdos comunicados no se clasifican como código disponible. La interfaz b
 | II. Acceso por identificador | **Pendiente de 001 con verificación completa planificada**. El código integrado conserva `MapaCripta._salas` y búsquedas lineales; T007–T009 implementan/verifican el índice y T072–T075 separan construcción, consultas y vinculación frente a alternativa lineal benchmark-local. |
 | III. Determinismo | **Comprobado en el diseño**. La etiqueta ordena por costo y primera vecina; el ID de sala estabiliza trabajo ya empatado. Falta probar la implementación de 001. |
 | IV. Separación MVC | **Comprobado en la frontera actual**. `--bench` y `--verificar` salen antes de crear la vista; rutas productivas permanecen en lógica y las alternativas de reutilización en benchmarks. |
-| V. Datos desde el servicio | **Responsabilidad confirmada; implementación pendiente**. Steven implementará validación estricta de costo/rango, default 100 solo por ausencia y simetría tras `vincular_salidas()`. El código aún no incorpora esos campos. |
+| V. Datos desde el servicio | **G2 integrada**. `5000d1f` valida costo/rango, default 100 solo por ausencia y simetría entre sentidos existentes tras `vincular_salidas()`; acepta sentidos únicos. |
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
 | VII. Estado reversible | **Interfaz base local; integración conjunta pendiente**. `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `vincular_linea` están en `HEAD`. La clase completa `LineaTiempo`, el guardado y las pruebas conjuntas de cambios nuevos de 001 siguen pendientes. Sin reutilización productiva no existen cachés que invalidar. |
-| VIII. Contratos estables | **Fronteras explícitas**. Steven solicitó que Sofía implemente el índice de su `MapaCripta`, preservando firmas, orden e identidad; abajo se enumeran sus consumidores reales. Las firmas de rutas, DTO/inicialización/persistencia y `main.py` conservan sus acuerdos separados y no quedan asignados por esa solicitud. |
+| VIII. Contratos estables | **Fronteras explícitas**. Steven conserva DTO/inicialización/guardado; Sofía conserva mapa, rutas y vista del cazador. G1 fija firma/resultado sin asignar la vista conocida de 003. |
 | IX. Rendimiento medido | **Decisión provisional pendiente de medición**. La vía común de proveedores existe, pero todavía no registra mediciones de rutas/invalidez de 001 ni las seis operaciones exigidas de agenda. |
-| X. Especificación y trazabilidad | **Comprobado en los artefactos**. Los ajustes describen código existente sin cambiar reglas de `spec.md`. |
-| XI. Pruebas | **Regresión actual comunicada; cobertura 001 pendiente**. Se reportan históricamente `1071 passed` y, después de integrar la interfaz base de Joshua, `1101 passed` sin fallos ni omisiones; esta revisión no ejecutó la suite. [quickstart.md](quickstart.md) conserva la cobertura futura de los 30 escenarios de 001. |
+| X. Especificación y trazabilidad | **Enmienda confirmada**. FR-002 acepta sentidos únicos y compara costos solo cuando ambos existen; se registra antes del código. |
+| XI. Pruebas | **Regresión comunicada; cobertura propia pendiente**. Para `5000d1f` se comunicaron `1204 passed, 4 subtests passed`; esta revisión no los ejecutó. [quickstart.md](quickstart.md) conserva la cobertura de 001. |
 
 La puerta de planificación no detecta una violación constitucional. Esto no cierra los contratos, la implementación ni la evidencia de rendimiento de 001.
 
@@ -137,16 +137,16 @@ main.py                             # punto compartido: registro de 001 solo med
 ### 1. Datos y validación en el límite
 
 - Steven implementará en su frontera de datos que cada salida presente `costo` entero estricto `>= 1`. Solo si el campo está ausente usa 100; `bool`, texto, fracción, cero o negativo presentes se rechazan y nunca se sustituyen (`FR-001`).
-- Después de `mapa.vincular_salidas()`, la validación identifica sentidos por `(origen_id, destino_id)`, compara costos y detecta como ambigua la multiplicidad entre el mismo par en vez de emparejar por posición. Una diferencia identifica ambos sentidos y rechaza la cripta antes de invocar a 002 (`FR-002`). El PDF y la aclaración vigente no definen por sí solos si toda ausencia de inversa debe rechazarse; esa pregunta queda abierta y no se convierte en regla de implementación.
+- Después de `mapa.vincular_salidas()`, la validación identifica sentidos por `(origen_id, destino_id)`, compara costos y detecta como ambigua la multiplicidad entre el mismo par en vez de emparejar por posición. Una diferencia entre dos sentidos existentes rechaza la cripta antes de invocar a 002 (`FR-002`). Una salida sin inversa es válida y no crea otra conexión.
 - Steven implementará que una ficha con `comportamiento == "cazador"` exija `rango` con `type(rango) is int` y `rango >= 0`; ausencia, booleano, cadena, fracción o negativo rechazan la ficha de forma descriptiva (`FR-009`).
 - Los IDs de sala continúan bajo `validar_id_sala`; no se convierten (`FR-011`).
-- `DecodificadorDatos.convertir_sala()` tiene dos caminos que deberán conservar el mismo dato: `salidas` para el API y `puertas` para registros reconstruidos. Hoy ambos construyen `Puerta` sin costo.
-- `DecodificadorDatos._adaptar_contenido_externo()` ya resuelve la ficha antes de construir cada `Enemigo`; ese es un punto posible para validar/materializar `rango` cuando el comportamiento sea `cazador`. `convertir_contenido()` es el camino simétrico de reconstrucción.
-- `InicializadorPartida._construir()` reúne todas las páginas, detecta IDs repetidos, vincula salidas y, antes de cargar contenido, llama a la verificación de 002. Steven propuso y Sofía acepta usar el recorrido inmediatamente posterior al enlace para la simetría; la implementación y sus pruebas siguen pendientes.
+- `DecodificadorDatos.convertir_sala()` conserva costo en sus caminos de API y reconstrucción.
+- `_adaptar_contenido_externo()` valida/materializa `rango` para cazadores y `convertir_contenido()` lo reconstruye.
+- `InicializadorPartida._construir()` reúne páginas, detecta IDs repetidos, vincula salidas y valida multiplicidad/simetría antes de 002.
 - `verificador_resolubilidad.verificar()` consume apertura, llave y destino, no costos. Steven confirmó que los pesos no cambian la alcanzabilidad; 001 no modifica la regla de 002.
-- La responsabilidad conceptual está acordada, pero no la asignación de DTO/inicializador u otros archivos compartidos. La representación materializada y la firma también siguen abiertas.
+- Steven conserva DTO/inicializador/guardado; Sofía implementa rutas/vista del cazador con la firma acordada.
 
-**Persistencia vigente**: `GuardadoBinario.VERSION` sigue siendo 9 tanto localmente como en `Steve@757d747…`; el lector exige coincidencia exacta y todavía no serializa costo/rango. Steven asume implementar costo/rango/mapa conocido coordinado con Joshua y la línea, pero no se ha publicado una versión verificable ni se asignaron archivos concretos. Costo/rango serán canónicos; resultados de ruta no se persisten. La propuesta v10 de 004 no prueba una versión implementada ni permite reservarla desde 001.
+**Persistencia vigente**: `GuardadoBinario.VERSION` es 10 en `5000d1f` y serializa costo/rango. Mapa conocido y línea de tiempo completa aún requieren coordinación Steven/Joshua. Los resultados de ruta no se persisten.
 
 ### 2. Índice de salas sin perder orden ni identidad
 
@@ -293,14 +293,14 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ### Puntos de integración pendientes
 
-- **Steven**: confirmó validación estricta, simetría identificada por origen/destino con detección de ambigüedad, vista de exploradas, recálculo por paso y casos terminales; asume persistencia coordinada y solicitó a Sofía el índice de `MapaCripta`. La entrega `757d747…` aún no implementa costo/rango/003/persistencia. Firmas de rutas, asignación de los demás archivos y política de ausencia de inversa siguen abiertas: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md).
+- **Steven**: `5000d1f` integra costo/rango, simetría de sentidos existentes y persistencia v10 de esos campos; acepta sentidos únicos. Aceptó la firma `proximo_paso(...) -> ResultadoRuta` y asignó rutas/vista del cazador a Sofía. La vista conocida de 003 y la persistencia conjunta completa siguen abiertas: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md).
 - **Joshua**: la interfaz base introducida por `972af542…` y el enlace de historial de `927d886…` están integrados en `Sofia@3df43c6…`: deshacer/rehacer temporal, fotografía y `vincular_linea`. T005 mantiene la revisión cruzada de proceso. La clase completa `LineaTiempo` contenida en la punta posterior `b039b8b…`, el guardado coordinado y las pruebas conjuntas de 001 siguen pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
 - **Spec 002**: la versión integrada resolvió las dos observaciones revisadas: un fallo al obtener ubicaciones deja la cripta sin verificar y bloquea el inicio salvo `--forzar` (`FR-011`, `FR-019`), y retiró la divulgación de contenido de rutas frente a la niebla. Solo se permite identificar al enemigo que custodia una llave, excepción exigida para ubicarla. 001 no modifica ese spec ni su recorrido; el índice conserva orden e identidad y los costos no alteran la resolubilidad. Como hallazgo de implementación, `InicializadorPartida._verificar()` captura `CriptaAPIError` y `ValueError`, mientras `convertir_llaves()` puede producir `TypeError` ante un ID de sala de tipo inválido; ese borde no se corrige desde 001.
 - **Spec 004**: reconstruye hacia atrás desde el punto de control siguiente, deshaciendo como máximo K transacciones y rehaciendo con inversos en `finally`. Re-simular hacia adelante existe solo como alternativa de `--bench`. Su FR-022 necesita costos y cazadores canónicos, pero no cachés de ruta. No se modifica `specs/004-linea-de-tiempo`.
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas y el diseño provisional. No se propone cambiar `spec.md`: la política para una salida sin inversa no está definida y queda como pregunta contractual, sin rebajar FR-002 ni bloquear índice/benchmarks independientes. Permanecen por cerrar firmas/archivos de rutas y datos compartidos, integración de `LineaTiempo` completa, entrega coordinada de persistencia y decisiones condicionadas por medición.
+[research.md](research.md) fija las alternativas y el diseño provisional. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2 están cerradas; permanecen abiertas la vista conocida, `LineaTiempo` completa, persistencia conjunta restante y decisiones condicionadas por medición.
 
 ## Phase 1 Outputs
 
@@ -311,16 +311,16 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con condiciones abiertas**. La interfaz temporal de Joshua y el enlace del historial están disponibles localmente; T005 conserva su revisión cruzada. No están locales la clase completa `LineaTiempo` ni el guardado coordinado. Steven confirmó semántica y responsabilidad, pero su entrega integrada no publica costo/rango/003/persistencia. El benchmark del índice queda planificado en T072–T076; todavía no existe evidencia ejecutada de mapa, estrategia de rutas ni de la medición de 5 ms con 003.
+**Puerta de diseño satisfecha con condiciones abiertas**. G1/G2 y la interfaz base reversible están disponibles. No están locales la vista conocida ni la clase completa `LineaTiempo`; la persistencia conjunta restante y la medición de 5 ms con 003 siguen pendientes. T049 registra hoy solo el proveedor de mapa, no rutas/ciclo.
 
 ## Risks and Pending Agreements Before Tasks
 
-1. **Integración de datos con Steven**: están confirmadas semántica e identificación por origen/destino, y el índice de `MapaCripta` está asignado a Sofía; faltan implementación de costo/rango, asignación de los demás archivos, representación y aclarar la salida sin inversa.
-2. **Contrato de «ir a» con Steven/003**: vista, recálculo y casos terminales están confirmados; bloquean la integración la firma/representación, entrega de 003 y evidencia conjunta de 5 ms.
+1. **Integración de datos con Steven**: G1/G2 cerradas en `5000d1f`; costo/rango, firma/resultado, archivos de Sofía y política de sentidos únicos están confirmados. Falta la vista conocida de 003.
+2. **Contrato de «ir a» con Steven/003**: firma, recálculo y casos terminales están confirmados; bloquean la integración la entrega de la vista de 003 y evidencia conjunta de 5 ms.
 3. **Integración histórica con Joshua**: la interfaz base y `vincular_linea` están disponibles localmente y pendientes solo de revisión cruzada T005. `LineaTiempo` completa, cada fotografía de cambios nuevos de 001, las pruebas conjuntas y el guardado siguen abiertos. No hay invalidación de rutas mientras producción recalcule sin retener estado.
 4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
 5. **Elección de estrategia**: individual es provisional. Compartida/adaptativa o cualquier reutilización de «ir a» solo se seleccionará con resultados de costo completo y equivalencia.
-6. **Persistencia coordinada**: Steven la asume coordinado con Joshua; deben publicar campos, compatibilidad, archivos y versión. V10 ni otra versión se reserva unilateralmente.
+6. **Persistencia coordinada**: v10 de costo/rango está integrada; mapa conocido y línea completa aún requieren campos, compatibilidad y prueba conjunta.
 7. **Componentes compartidos**: el diseño no exige ampliar `MonticuloMinimo`. El registro en `main.py` requiere tarea conjunta y no autoriza edición unilateral.
 
 ## Complexity Tracking

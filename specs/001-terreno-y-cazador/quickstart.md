@@ -7,8 +7,8 @@ Esta guía describe cómo validar la futura implementación. En esta fase no se 
 - Rama Git real: `Sofia`.
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
-- Acuerdo parcial con Steven reflejado: validación, identificación de sentidos, ambigüedad, vista conocida, recálculo por paso y casos terminales confirmados; firmas Python y archivos compartidos siguen abiertos. Steven asume persistencia coordinada con Joshua, sin versión publicada comprobada.
-- Estado local: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569`, que integra `Steve@757d747b461cdb755705ca5cdd90391090112782`, la interfaz base de Joshua introducida en `972af5421d628171a4464709858275b100151c1e` y el enlace del historial de `927d8860639f3efa6260172d3e03cae61f74301b`. La clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` no está integrada localmente.
+- G1/G2 cerradas: Steven aceptó `proximo_paso(...) -> ResultadoRuta`; `5000d1f` integra costo/rango estrictos, simetría de sentidos existentes y v10 para esos campos. Las salidas sin inversa son válidas.
+- Estado local base: `Sofia@5000d1fe8af268987206827e4c524c05bd599357`. Mapa conocido, clase completa `LineaTiempo` y persistencia conjunta restante continúan pendientes.
 
 ## Comandos previstos
 
@@ -25,7 +25,7 @@ Las pruebas del servicio en línea se ejecutan y reportan aparte; aceptación fu
 
 ### Línea base posterior al merge
 
-La línea base histórica comunicada tras el merge anterior terminó con `1071 passed`, sin omisiones. Después de integrar la interfaz base de Joshua se comunicó otra corrida de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1101 passed`, sin fallos ni omisiones. Esta revisión documental no volvió a ejecutar pruebas. El resultado más reciente demuestra que el checkout integrado conserva la regresión existente; no demuestra todavía los 30 escenarios ni los requisitos de rendimiento de 001, porque costo, rango, cazador ponderado y sus proveedores aún no están implementados.
+Para `Sofia@5000d1f`, Sofía comunicó una corrida de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1204 passed, 4 subtests passed`. Esta revisión documental no ejecutó esa suite y no presenta el conteo como propio. Costo/rango están integrados; cazador/rutas todavía requieren la validación propia de este bloque.
 
 ## Oráculos independientes
 
@@ -72,7 +72,7 @@ Una diferencia en esos resultados observables falla antes de medir tiempos. El o
 Estos criterios están planificados; no se han implementado ni ejecutado en esta actualización:
 
 1. **Default estricto**: omitir `costo` produce 100; presentar `True`, `False`, texto, fracción, cero o negativo rechaza el dato sin sustituirlo.
-2. **Simetría después del enlace**: identificar sentidos por origen/destino, rechazar costos distintos y detectar múltiples salidas ambiguas. La ausencia de inversa se conserva como pregunta pendiente: no se añade un rechazo que PDF/spec/acuerdo no definieron.
+2. **Simetría después del enlace**: identificar sentidos por origen/destino, rechazar costos distintos y detectar múltiples salidas ambiguas. Una salida sin inversa se acepta y no crea otro sentido.
 3. **Resolubilidad independiente del peso**: variar costos válidos sin cambiar puertas/llaves conserva el resultado de alcanzabilidad de 002.
 4. **Mapa conocido independiente**: dos estados reales distintos con las mismas salas exploradas y puertas recordadas abiertas producen el mismo siguiente paso.
 5. **Conocimiento vigente**: después de cada paso de «ir a», cambiar origen o conocimiento obliga a decidir otra vez y nunca continúa una secuencia precalculada.
@@ -106,7 +106,7 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`, y pasa el resultado a `benchmarks.integrante3.ejecutar`. Ese ejecutor incorpora además las mediciones heredadas de agenda y ciclo. La integración futura de 001 requiere acuerdo con el propietario del punto compartido para añadir una sola tupla, sin reemplazar ni registrar dos veces proveedores existentes.
+`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Los proveedores de rutas y ciclo de 001 aún requieren integración conjunta, sin reemplazar ni registrar dos veces los existentes.
 
 El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` todavía necesita un adaptador para aparecer en el informe estándar. La agenda común actual reporta extracción; las otras cinco operaciones exigidas por `PR-005` siguen siendo parte del proveedor de 001.
 
@@ -147,7 +147,7 @@ Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/
 2. consultar secuencias equivalentes de IDs presentes/ausentes frente a un recorrido lineal local al benchmark;
 3. vincular los mismos grafos mediante resolución lineal y mediante el índice propio, sin incluir la construcción o las consultas independientes.
 
-Antes de comparar tiempos se exige igualdad de IDs y ausencias, mismo orden de salas/puertas y que cada `destino_sala` sea exactamente la instancia canónica correspondiente. Steven solicitó expresamente a Sofía implementar el índice conservando firmas, orden e identidad; no se encontró un acuerdo explícito contradictorio. T049 conecta el proveedor una sola vez a `main.py --bench`. La política no confirmada de salidas sin inversa no forma parte de estos fixtures estructurales y no los bloquea.
+Antes de comparar tiempos se exige igualdad de IDs y ausencias, mismo orden de salas/puertas y que cada `destino_sala` sea exactamente la instancia canónica correspondiente. `main.py --bench` ya conecta el proveedor de mapa; los sentidos únicos aceptados no forman parte de estos fixtures estructurales.
 
 ## Reversión y determinismo
 
@@ -173,7 +173,7 @@ El checkout local ofrece `deshacer_ultimo`/`revertir`, `registrar_solo_linea`, `
 
 ### Estado de persistencia
 
-La versión ejecutable sigue siendo v9. El v10 citado por 004 es solo una propuesta no implementada y no queda reservado por 001. Las pruebas de ida y vuelta permanecen bloqueadas hasta que Steven y Joshua acuerden conjuntamente campos, responsables, compatibilidad y versión final. La aceptación condicionada de la frontera con Joshua no equivale a que estas comprobaciones hayan pasado.
+La versión ejecutable es v10 y persiste costo/rango. Las pruebas de ida y vuelta de mapa conocido más línea de tiempo permanecen bloqueadas hasta la entrega conjunta completa; este bloque no modifica ese guardado.
 
 ## Señales de salida
 

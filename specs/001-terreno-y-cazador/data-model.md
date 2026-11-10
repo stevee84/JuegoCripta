@@ -17,7 +17,7 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 
 ## 2. Puerta/Salida
 
-**Responsabilidad**: arista dirigida que representa un sentido de una salida bidireccional.
+**Responsabilidad**: arista dirigida; puede existir o no el sentido inverso.
 
 | Campo | Tipo/relación | Validación | Estado |
 |---|---|---|---|
@@ -28,9 +28,9 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 | `abierta` | booleano | estado actual | canónico reversible |
 | cierre/llave/evento | contrato heredado | validación existente | canónico reversible |
 
-**Invariante**: cuando se identifican los dos sentidos de una salida, comparten costo. Se identifican por origen/destino y una multiplicidad entre el mismo par debe detectarse como ambigua; una contradicción rechaza la cripta antes de jugar (`FR-002`). Las fuentes consultadas no definen si toda salida sin inversa se rechaza, por lo que esa política permanece pendiente.
+**Invariante**: cuando existen los dos sentidos de una salida, comparten costo. Se identifican por origen/destino y una multiplicidad entre el mismo par debe detectarse como ambigua; una contradicción rechaza la cripta antes de jugar (`FR-002`). Un sentido sin inversa es válido y no crea una conexión implícita.
 
-**Estado observado**: `Puerta` y los dos caminos de `DecodificadorDatos.convertir_sala()` todavía no tienen `costo`; la tabla anterior sigue siendo el modelo objetivo de 001. Steven confirmó que implementará la validación, con 100 solo por ausencia y rechazo de todo valor presente inválido.
+**Estado integrado (`5000d1f`)**: `Puerta` y ambos caminos de `DecodificadorDatos.convertir_sala()` publican `costo`; Steven implementó 100 solo por ausencia y rechazo de todo valor presente inválido.
 
 **Transiciones**:
 
@@ -53,15 +53,15 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 - el índice y la lista apuntan a la misma instancia;
 - ninguna decisión usa el orden de iteración de la tabla hash;
 - vincular destinos no cambia el orden de salas ni puertas.
-- el recorrido posterior a `vincular_salidas()` identifica sentidos por `(origen_id, destino_id)`, detecta pares múltiples ambiguos y rechaza costos asimétricos antes de ejecutar 002; no inventa todavía una política para la ausencia de inversa.
+- el recorrido posterior a `vincular_salidas()` identifica sentidos por `(origen_id, destino_id)`, detecta pares múltiples ambiguos, rechaza costos asimétricos cuando ambos existen y acepta sentidos únicos antes de ejecutar 002.
 
 **Sustitución infrecuente**: si `agregar_sala` recibe un ID existente, recorre la lista O(`V`) para encontrar su posición, coloca allí la nueva referencia y actualiza la tabla. Si el mapa estaba vinculado, vuelve a resolver todas las referencias `destino_sala` desde sus IDs antes de exponerlo; esto actualiza las salidas entrantes y las de la sala nueva, con O(`V+E`) esperado y O(`V·E`) peor caso si el índice hash degenera. Durante carga inicial puede diferirse hasta el único `vincular_salidas` final.
 
-**Estado observado tras el merge**: `MapaCripta` conserva `_salas`, `_enlaces_listos` y sustitución en posición, pero aún no tiene la tabla por ID. `obtener_sala()` es lineal y `vincular_salidas()` la invoca por puerta; 001 debe introducir el índice sin cambiar el orden de la lista.
+**Estado integrado**: `MapaCripta` conserva `_salas`, `_enlaces_listos` y sustitución en posición, y añade `_salas_por_id: TablaHashImpl`; `obtener_sala()` y el enlace consultan el índice sin cambiar el orden de la lista.
 
 **Propiedad y compatibilidad**: `MapaCripta` es un componente de Sofía y Steven solicitó expresamente que Sofía implemente su índice por ID. La solicitud conserva las firmas existentes y no asigna DTO, inicialización o persistencia. Los consumidores comprobados incluyen construcción/restauración (`main.py`, inicializador, restaurador y `PartidaService`), simulación/verificación (motor, resolubilidad, rastro y efectos), servicios/datos (juego, carga gradual, decodificador y guardado), vista, benchmarks y pruebas. Todos deben seguir observando el mismo orden, las mismas instancias y los mismos destinos enlazados.
 
-**Medición prevista**: T072–T076 separan construcción de lista+índice, consultas por ID y vinculación de salidas. La consulta y el enlace indexados se comparan con recorridos lineales locales al benchmark usando varios `V/E` y exactamente los mismos IDs, orden e instancias. Resultados, ausencias y alias `Puerta.destino_sala` se validan antes de tiempos. La cuestión no confirmada de una salida sin inversa no interviene en estas pruebas estructurales.
+**Medición existente**: T073–T075 separan construcción de lista+índice, consultas por ID y vinculación de salidas. La aceptación de sentidos únicos no interviene en esos fixtures estructurales.
 
 ## 4. Actor
 
@@ -83,7 +83,7 @@ Este modelo distingue estado canónico reversible de cálculos derivados. Los no
 | `comportamiento` | `"cazador"` | ficha de enemigo |
 | `rango` | entero `>= 0` | obligatorio; booleano, cadena, fracción, negativo o ausencia rechazan la ficha |
 
-**Estado observado**: `Enemigo` no materializa `rango`. El camino externo ya resuelve la ficha en `DecodificadorDatos._adaptar_contenido_externo()` y el camino de reanudación vuelve a vincular fichas en `RestauradorPartida._completar_v5()`. Steven confirmó que implementará su validación estricta; la representación materializada y su persistencia compatible siguen pendientes.
+**Estado integrado (`5000d1f`)**: `Enemigo.rango` se materializa y valida en el camino externo y se conserva en reconstrucción/guardado v10.
 
 **Estado de decisión**: no se persiste. En cada turno se produce `ATACAR`, `ESPERAR` o `MOVER` a una primera vecina con costo de acción.
 
@@ -131,9 +131,9 @@ La tabla de mejores etiquetas contiene como máximo una etiqueta vigente por sal
 
 No se insertan etiquetas con distancia superior al rango. Con costos positivos, descartarlas no puede ocultar una ruta que regrese dentro del límite. Al terminar se liberan mejores etiquetas, fijadas y todas las entradas restantes. Nada de esto es reversible ni persistente.
 
-## 8. ResultadoRuta (derivado; representación abierta)
+## 8. ResultadoRuta (derivado; representación acordada)
 
-El modelo interno necesita distinguir conceptualmente estos resultados; los nombres no son una API acordada:
+La firma acordada es `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` y distingue:
 
 | Estado conceptual | Paso | Costo total |
 |---|---|---|
@@ -141,19 +141,19 @@ El modelo interno necesita distinguir conceptualmente estos resultados; los nomb
 | origen igual a destino | ninguno | 0 |
 | sin ruta | ninguno | ausencia explícita, distinta del caso anterior |
 
-Steven acepta que la operación conceptual de próximo paso nunca entregue una secuencia comprometida: cada paso de «ir a» se consulta de nuevo con origen, destino y conocimiento vigentes. El nombre `proximo_paso` no constituye una firma acordada.
+Steven acepta que la operación nunca entregue una secuencia comprometida: cada paso de «ir a» se consulta de nuevo con origen, destino y conocimiento vigentes.
 
-Para la lógica y la instrumentación de 001 pueden ser necesarios los siguientes datos conceptuales, sin fijar campos ni tipo de retorno entre integrantes:
+`ResultadoRuta` es inmutable y fija estos campos:
 
 | Campo | Valor |
 |---|---|
-| estado/alcanzabilidad | distingue paso, destino alcanzado y ausencia de ruta |
+| `alcanzable` | `True` para paso/origen=objetivo; `False` para ausencia de ruta o límite insuficiente |
 | `costo_total` | entero o ausencia |
 | `primera_vecina_id` | entero o ausencia |
 | `costo_primera_salida` | entero o ausencia |
-| métricas | fijadas `F`, descubiertas `D`, salidas examinadas `E`, entradas insertadas `P`, frontera máxima `Q`, obsoletas extraídas y frontera final limpiada; solo instrumentación/bench |
+| instrumentación | fijadas `F`, descubiertas `D`, salidas examinadas `E`, entradas insertadas `P`, frontera máxima `Q`, obsoletas extraídas y frontera final limpiada; no altera los cuatro observables |
 
-El comportamiento transforma el resultado en una acción; `ATACAR` y `ESPERAR` no pertenecen al buscador. El resultado no modifica estado. La firma Python y la representación exacta continúan pendientes de acuerdo.
+El comportamiento transforma el resultado en una acción; `ATACAR` y `ESPERAR` no pertenecen al buscador. El resultado no modifica estado.
 
 ## 9. InstantáneaRutaCompartida (solo benchmark; no producción)
 

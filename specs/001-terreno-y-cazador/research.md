@@ -105,7 +105,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Rationale**: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` integra `972af5421d628171a4464709858275b100151c1e` y `927d8860639f3efa6260172d3e03cae61f74301b`: están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `HistorialReversible.vincular_linea`. 001 consume esa interfaz y no copia ni modifica clases de Joshua. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
-**Estado observado**: la interfaz base y el enlace del historial están locales, pero la clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` no es ancestro del checkout y sigue pendiente de integrar. También siguen pendientes la revisión cruzada T005 y las pruebas conjuntas con cambios nuevos de 001, que todavía no existen. El guardado continúa en v9; costo/rango aún no forman parte del registro de sala.
+**Estado observado**: la interfaz base y el enlace del historial están locales y T005 está cerrada; la clase completa `LineaTiempo` sigue pendiente. `5000d1f` integra guardado v10 de costo/rango, no la persistencia conjunta restante.
 
 **Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para el formato que finalmente acuerden Steven y Joshua. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
 
@@ -131,7 +131,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Decision**: preparar una tupla propia de proveedores de 001 y coordinar con el propietario de `main.py` su registro único en la concatenación entregada a `benchmarks.integrante3.ejecutar`; conservar los proveedores actuales, conectar el ciclo real y medir rutas, reutilización experimental y las seis operaciones de agenda. El fixture común se prepara fuera; todo trabajo requerido por la operación/ciclo permanece dentro.
 
-**Rationale**: la constitución exige una vía ejecutable y comparaciones; los scripts aislados no bastan. Actualmente `main.py` concatena `benchmarks.integrante2.PROVEEDORES` y `benchmarks.bench_ampliado.PROVEEDORES`; `integrante3.ejecutar` añade la medición existente de agenda y un ciclo que todavía ejecuta `prueba_rendimiento_sofia.py`. `benchmark_ciclo_real_integrante1.py` existe, pero no está en esa vía. La agenda conectada solo mide extracción, no las seis operaciones de `PR-005`. Además, `integrante3.medir()` produce mediana y mínimo, de modo que p95/máximo de 001 deben calcularse en su proveedor o adaptador sin reinterpretar mediciones ajenas.
+**Rationale**: la constitución exige una vía ejecutable y comparaciones; los scripts aislados no bastan. `main.py` ya concatena `PROVEEDORES_MAPA`, parte entregada de T049. Rutas/ciclo de 001 aún no están registrados; la agenda común no sustituye las seis operaciones de `PR-005`.
 
 **Alternatives considered**:
 
@@ -143,13 +143,13 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Decision**: distinguir siempre checkout local, publicación remota y acuerdo comunicado. Registrar el acuerdo parcial con Steven y la aceptación condicionada de Joshua sin presentar otra rama como integrada ni un acuerdo como implementación.
 
-**Rationale**: Steven confirmó validación estricta, identificación por origen/destino y ambigüedad entre salidas múltiples, vista de exploradas, recálculo por paso y casos terminales; asume persistencia coordinada con Joshua. Su entrega integrada `757d747…` todavía no publica costo/rango/003/persistencia, y firmas/archivos siguen abiertos. También solicitó expresamente a Sofía el índice de `MapaCripta`, acuerdo limitado a conservar ese contrato propio. El PDF §3.1 y `spec.md` no definen expresamente el rechazo de toda salida sin inversa, por lo que se mantiene como pregunta y no bloquea índice ni benchmarks independientes. La interfaz temporal y el enlace del historial de Joshua están integrados en `Sofia`; la clase completa `LineaTiempo` de la punta `b039b8b…` y el guardado coordinado siguen pendientes. El formato comprobado continúa en v9 y ninguna versión posterior está reservada por 001.
+**Rationale**: `Sofia@5000d1f` integra costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de esos campos. Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` con los cuatro observables acordados y asignó a Sofía rutas/vista del cazador; el equipo acepta sentidos sin inversa. La vista conocida de 003, la clase completa `LineaTiempo` y su persistencia conjunta siguen pendientes. La validación `1204 passed, 4 subtests passed` es evidencia comunicada por Sofía sobre la base integrada, no ejecutada en este bloque.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.
 
 ## R-12 — Frontera de «ir a» y resultado del buscador
 
-**Decision semántica aceptada por Steven**: el buscador devuelve un único siguiente paso, no una secuencia completa, y «ir a» recalcula antes de cada paso. `ATACAR` y `ESPERAR` son decisiones del comportamiento y quedan fuera. Origen igual a destino produce costo total 0 sin paso; ausencia de ruta es un resultado explícito distinto. Los nombres, firmas Python y representación exacta no se fijan todavía.
+**Decisión aceptada por Steven**: `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`. El resultado inmutable publica `alcanzable`, `costo_total`, `primera_vecina_id` y `costo_primera_salida`, más métricas separadas. Devuelve un único siguiente paso, no una secuencia completa, y «ir a» recalcula antes de cada paso. `ATACAR` y `ESPERAR` quedan fuera. Origen igual a destino produce `alcanzable=True`, costo 0 y sin paso; ausencia de ruta/límite insuficiente produce `alcanzable=False` sin costo ni paso.
 
 **Rationale**: decidir un paso por vez permite aplicar §3.4 con origen, destino y conocimiento actuales, y evita que una ruta calculada con puertas recordadas antiguas se trate como compromiso futuro. Separar el resultado geométrico de la acción impide introducir reglas de combate o espera en un servicio reutilizado por 003.
 

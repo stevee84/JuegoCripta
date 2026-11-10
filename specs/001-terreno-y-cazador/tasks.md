@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. T005 verificó una dependencia ya integrada, T007–T009 completaron el índice por ID de `MapaCripta`, T012–T013 prepararon la compatibilidad y reprogramación reversible desbloqueadas de US1, T019 completó los casos sintéticos desbloqueados de rutas de US2, T042 completó el oráculo independiente de rutas para benchmark, T047 tiene ejecutado su subbloque aislado de agenda pero sigue abierta por la carga equivalente con cazadores/costos y `--bench`, y T073–T075 completaron el proveedor aislado de medición; las 65 tareas restantes permanecen sin marcar y ninguna cobertura futura descrita aquí se considera ejecutada.
+**Estado**: implementación en curso. T002/T003 cierran G1/G2 en `5000d1f`; T005/T007–T009/T012–T013/T019/T042/T073–T075 conservan sus cierres previos. T047 tiene ejecutado su subbloque aislado de agenda pero sigue abierta. Las 63 tareas restantes permanecen sin marcar.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; T005/T007–T009/T012–T013/T019/T042/T073–T075 marcadas y 65 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17. Las 26 restantes cubren setup, fundamento, integraciones y cierre documental.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; 13 marcadas y 63 abiertas; 22 oportunidades `[P]` reales. Historias: US1=9, US2=12, US3=12, US4=17.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -38,15 +38,17 @@ description: "Tareas ejecutables para Terreno y cazador"
 **Purpose**: cerrar o verificar dependencias antes de crear contratos de hecho. Estas tareas no autorizan a Sofía a modificar entregas de compañeros.
 
 - [ ] T001 Sofía — después de aplicar las correcciones documentales del Prompt 39, reejecutar `/speckit.analyze` sobre `.specify/memory/constitution.md` y `specs/001-terreno-y-cazador/{spec.md,plan.md,tasks.md}` como revisión posterior independiente; resultado verificable: el nuevo informe no mezcla análisis de solo lectura con remediación ni autoriza implementación (FR-001–FR-018, PR-001–PR-006).
-- [ ] T002 Conjunta Sofía/Steven — acordar únicamente las firmas Python, protocolo y representación exacta de la operación de siguiente paso, conservando la semántica ya aceptada —paso único, origen=destino con costo 0 sin paso y ausencia de ruta distinguible— sin introducir `ATACAR`/`ESPERAR`; registrar nombres y tipos reales en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md` (FR-007–FR-014, PR-004, PR-006).
-- [ ] T003 Dependencia (Steven) — publicar su entrega de costo/rango estrictos, default 100 solo por ausencia, identificación de sentidos por origen/destino, detección de salidas múltiples ambiguas y costos simétricos; registrar hash y archivos concretos publicados en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md`. Esta tarea no asigna a Steven ni a Sofía DTO/inicialización compartidos y mantiene pendiente la política de una salida sin inversa (FR-001, FR-002, FR-009, FR-011, FR-017, FR-018).
+- [x] T002 Conjunta Sofía/Steven — acordar únicamente las firmas Python, protocolo y representación exacta de la operación de siguiente paso, conservando la semántica ya aceptada —paso único, origen=destino con costo 0 sin paso y ausencia de ruta distinguible— sin introducir `ATACAR`/`ESPERAR`; registrar nombres y tipos reales en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md` (FR-007–FR-014, PR-004, PR-006).
+- [x] T003 Dependencia (Steven) — publicar su entrega de costo/rango estrictos, default 100 solo por ausencia, identificación de sentidos por origen/destino, detección de salidas múltiples ambiguas y costos simétricos cuando ambos sentidos existen; registrar hash y archivos concretos publicados en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md`. La entrega acepta salidas sin inversa y conserva fuera de Sofía DTO/inicialización/guardado de Steven (FR-001, FR-002, FR-009, FR-011, FR-017, FR-018).
 - [ ] T004 Dependencia (Steven) — publicar la vista de mapa conocido solo de salas exploradas con las capacidades acordadas, recálculo por paso y prueba de independencia; registrar hash/rutas concretas en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md`. Bloquea solo integración 001/003, no el cazador (FR-013, FR-014, PR-004, PR-006).
 - [x] T005 Dependencia integrada (Joshua), revisión conjunta — verificar cruzadamente en `Sofia@e89574de14df8a9e672ef0a62590630d37242f05` que `logica/cambios.py`, `logica/historial_reversible.py`, `tests/test_logica/test_cambios_linea.py` y `tests/test_logica/test_historial_linea.py` contienen y conservan `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer(inverso, estado)` y `vincular_linea`; distinguir esta interfaz base ya disponible de la clase completa `LineaTiempo`, todavía no integrada localmente, y no copiar ni modificar código de Joshua (FR-014–FR-016, PR-004).
 - [ ] T006 Dependencia coordinada (Steven/Joshua) — publicar persistencia de costo/rango/mapa conocido y línea de tiempo con campos, compatibilidad, archivos y versión reales; registrar el hash verificado en `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md` y `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md`. Steven asume esta entrega coordinada, pero v9 sigue siendo el único formato comprobado hasta entonces (FR-001, FR-009, FR-016, FR-018).
 
 **Evidencia T005 (2026-11-08)**: inspección local confirmó las cinco interfaces y que `logica/mutaciones.py` registra `CambioAtributo`, `CambioDato` y `CambioLista`, tipos cubiertos por la fotografía base; cualquier tipo nuevo de 001 debe implementar `fotografiar_para_rehacer` y falla antes de deshacer si no lo hace. `./.venv/Scripts/python.exe -m pytest -q tests/test_logica/test_cambios_linea.py tests/test_logica/test_historial_linea.py tests/test_logica/test_cambios.py tests/test_logica/test_historial_reversible.py tests/test_logica/test_cambio_soltar_objeto.py` terminó en `44 passed in 0.76s`. No existe `logica/linea_tiempo.py` en `HEAD`; G4b y T056 permanecen abiertos.
 
-**Checkpoint**: los acuerdos semánticos no equivalen a entregas. T005 cerró la revisión cruzada de la interfaz base local sin cerrar la integración completa de 004. T002–T004/T006 pueden seguir abiertas mientras avanza trabajo no bloqueado; cada tarea posterior declara si necesita código local, publicación remota o solo el acuerdo.
+**Evidencia T002–T003 (2026-11-09)**: Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`; los campos observables, casos terminales e instrumentación están registrados en el contrato. `Sofia@5000d1f` integra costo/rango estrictos, simetría de sentidos existentes, aceptación de sentidos únicos y v10 para costo/rango. La validación `1204 passed, 4 subtests passed` fue comunicada por Sofía y no fue ejecutada en este bloque. G1/G2 quedan cerradas; T004, G4b y la persistencia conjunta completa siguen abiertas.
+
+**Checkpoint**: T002/T003/T005 están cerradas. La vista conocida T004, `LineaTiempo` completa y persistencia conjunta T006 siguen abiertas; no bloquean US1 ni el cazador sobre el esqueleto completo.
 
 ---
 
@@ -60,7 +62,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Evidencia T007–T009 (2026-11-09)**: `MapaCripta` conserva `_salas` para el orden y añade `_salas_por_id: TablaHashImpl`; altas/sustituciones actualizan ambas representaciones, `obtener_sala`/`contiene_sala` validan IDs y consultan la tabla, y `vincular_salidas` resuelve por esa vía. Las pruebas cubren identidad, ausencias, orden, sustitución, revinculación y alias tras `deepcopy`/`pickle`. Resultado focalizado final de mapa/copia/restricciones: `67 passed, 2 subtests passed`; consumidores relevantes, copia/serialización y restricciones: `209 passed, 2 subtests passed`; suite completa final: `1109 passed, 2 subtests passed in 101.44s`. T072–T076 permanecen abiertas: no se ejecutaron benchmarks ni se documentó evidencia de rendimiento.
 
-**Checkpoint**: el mapa conserva firmas y recorrido determinista, y ofrece acceso frecuente esperado O(1), sin duplicar `MonticuloMinimo` ni `TablaHashImpl`. La política no confirmada de una salida sin inversa no bloquea este índice ni sus pruebas/benchmarks estructurales.
+**Checkpoint**: el mapa conserva firmas y recorrido determinista, y ofrece acceso frecuente esperado O(1), sin duplicar `MonticuloMinimo` ni `TablaHashImpl`. Las salidas sin inversa están aceptadas y no alteran estos fixtures estructurales.
 
 ---
 
@@ -70,11 +72,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Independent Test**: con dos salas y actores de distintas velocidades, comprobar costo ausente/presente/mínimo, intervalo, rechazo sin cambios y costos heredados sin activar cazadores.
 
-**Blocked by**: T003 para datos validados; T006 únicamente para persistir/reanudar estos campos, no para desarrollar la historia con fuente fresca.
+**Blocked by**: G2/T003 está cerrada en `5000d1f`; T006 bloquea solo la persistencia conjunta completa, no desarrollar/probar con fuente fresca ni el v10 ya integrado de costo/rango.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Sofía — crear `tests/test_datos/test_terreno_cazador_datos.py` para verificar la futura entrega de Steven: AC-001 usa 100 solo si `costo` falta, AC-019 rechaza valores presentes inválidos y AC-020 identifica por origen/destino costos contradictorios y multiplicidad ambigua; no afirmar rechazo de una salida sin inversa hasta aclararlo (FR-001, FR-002, FR-017, FR-018).
+- [ ] T010 [P] [US1] Sofía — crear `tests/test_datos/test_terreno_cazador_datos.py` para verificar la entrega integrada de Steven: AC-001 usa 100 solo si `costo` falta, AC-019 rechaza valores presentes inválidos y AC-020 identifica por origen/destino costos contradictorios y multiplicidad ambigua; una salida sin inversa es válida (FR-001, FR-002, FR-017, FR-018).
 - [ ] T011 [P] [US1] Sofía — crear `tests/test_logica/test_terreno_movimiento.py` con AC-002 y AC-B06 para jugador, errante y rastreador: el movimiento cobra la salida atravesada y programa `max(1, costo_salida*100//velocidad)` (FR-003, FR-005, FR-018).
 - [x] T012 [P] [US1] Sofía — crear `tests/test_logica/test_terreno_compatibilidad.py` con AC-003 y rechazos de movimiento: atacar/esperar/usar/equipar/recoger/soltar/abrir conservan costo, y un rechazo deja reloj, actor, puertas, agenda e historial idénticos (FR-004, FR-005, FR-017, FR-018).
 - [x] T013 [P] [US1] Sofía — ampliar `tests/test_logica/test_velocidad.py` con AC-B07 para una salida costosa y ambos tipos de actor, verificando tiempo restante proporcional, identidad del evento, secuencia estrictamente nueva y reversión exacta (FR-003, FR-006, FR-016, FR-018).
@@ -99,7 +101,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Independent Test**: usar grafos pequeños sintéticos y un oráculo exhaustivo independiente para comparar acción, costo total, primera vecina y costo del paso, sin contenido remoto ni niebla.
 
-**Blocked by**: T002 para materializar resultado/firma; T003 para `rango`; T007–T009 para acceso por ID. No depende de T004 ni de la vista de «ir a».
+**Blocked by**: T002/T003/T007–T009 están cerradas. No depende de T004 ni de la vista de «ir a».
 
 ### Tests for User Story 2
 
@@ -161,7 +163,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Independent Test**: ejecutar `main.py --bench` offline y comprobar filas, alternativas, equivalencia previa, semillas, calentamiento, repeticiones, carga, unidad, trabajo y percentiles requeridos.
 
-**Blocked by**: US1–US3 para medir rutas y ciclo de producción; el benchmark independiente del mapa requiere T008, no costo/rango ni la política no confirmada de salidas sin inversa. La referencia oficial pendiente bloquea solo T051.
+**Blocked by**: US1–US3 para medir rutas y ciclo de producción; el benchmark independiente del mapa requiere T008, no costo/rango ni la política ya confirmada de aceptar salidas sin inversa. La referencia oficial pendiente bloquea solo T051.
 
 ### Tests for User Story 4
 
@@ -283,8 +285,8 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 | Puerta | Se cierra con | Bloquea | No bloquea |
 |---|---|---|---|
-| G1 — firma/representación del buscador | T002 | T022, T024, T052–T054 | semántica terminal ya acordada, US1, índice y pruebas sintéticas |
-| G2 — costo/rango/simetría publicados e integrados | T003 | cierre de T010/T018, T016–T017, T027–T029 y T064 | escritura previa de oráculos/tests y algoritmo desacoplado |
+| G1 — firma/representación del buscador | **cerrada por T002** | ya no bloquea T022/T024; T052–T054 siguen esperando la vista T004 | US1, índice y pruebas sintéticas |
+| G2 — costo/rango/simetría publicados e integrados | **cerrada por T003 en `5000d1f`** | ya no bloquea T010/T018, T016–T017, T027–T029 ni T064 | persistencia conjunta completa sigue en T006 |
 | G3 — vista de mapa conocido | T004 | T052–T054 | cazador, porque usa su vista real independiente |
 | G4a — revisión cruzada de interfaz Joshua ya integrada | **cerrada por T005** | ya no bloquea T040; satisface una precondición de T056 | disponibilidad local de interfaz base, `deepcopy` y recálculo |
 | G4b — `LineaTiempo` completa integrada localmente | integración por flujo del equipo de la entrega publicada | ejecución T056 | escritura contractual T040 e interfaz base ya local |
@@ -370,7 +372,7 @@ T072: tests/test_bench_mapa_cripta.py
 ### MVP First — US1
 
 1. Completar la revisión posterior T001 y obtener/integrar T003.
-2. Completar Phase 2 sin cambiar firmas, orden ni identidad del mapa; la política pendiente de salidas sin inversa no bloquea estas pruebas independientes.
+2. Completar Phase 2 sin cambiar firmas, orden ni identidad del mapa; la política confirmada de salidas sin inversa no bloquea estas pruebas independientes.
 3. Escribir T010–T015 antes de T016–T017.
 4. Validar US1 de forma independiente con fuente offline en T064; pruebas escritas no equivalen a cierre.
 5. No esperar T002/T004/T005/T006 para demostrar movimiento ponderado fresco.

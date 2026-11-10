@@ -33,7 +33,7 @@ Como participante de una partida, quiero que el tiempo de movimiento refleje el 
 4. **AC-B06 — Apéndice B: costo 1 y velocidad alta [FR-003]**: **Given** un actor de velocidad suficientemente alta para que la división entera de una salida de costo 1 produzca 0, **When** atraviesa la salida, **Then** el intervalo resultante es 1.
 5. **AC-B07 — Apéndice B: cambio de velocidad en salida costosa [FR-006]**: **Given** un actor que ya atravesó una salida costosa y tiene una próxima acción programada, **When** su velocidad cambia en el instante `t`, **Then** el tiempo restante se reajusta a `max(1, (tiempo_siguiente - t) * velocidad_anterior // velocidad_nueva)`, la próxima acción queda en `t + tiempo_restante_reajustado` y la reprogramación asigna un número de secuencia nuevo para conservar el desempate determinista heredado.
 6. **AC-019 — Costo presente inválido [FR-001]**: **Given** una salida cuyo costo presente es booleano, no entero o menor que 1, **When** se valida la cripta, **Then** se rechaza con un error descriptivo que identifica la salida y el valor inválido, sin convertirlo ni reemplazarlo silenciosamente.
-7. **AC-020 — Costos contradictorios [FR-002]**: **Given** una salida cuyos dos sentidos declaran costos distintos, **When** se valida la cripta, **Then** se rechaza con un error descriptivo que identifica la salida y ambos valores, sin elegir ni sustituir silenciosamente ninguno.
+7. **AC-020 — Costos contradictorios [FR-002]**: **Given** una salida para la que existen ambos sentidos y estos declaran costos distintos, **When** se valida la cripta, **Then** se rechaza con un error descriptivo que identifica la salida y ambos valores, sin elegir ni sustituir silenciosamente ninguno. La ausencia completa del sentido inverso es válida y no constituye por sí sola una contradicción.
 
 ---
 
@@ -100,6 +100,7 @@ Como equipo evaluado, queremos medir la persecución y la agenda bajo la carga n
 ### Edge Cases
 
 - El costo ausente equivale a 100. Un costo presente no entero o menor que 1, o costos contradictorios entre ambos sentidos, hacen que se rechace la cripta con un error que identifique la salida y los valores; no se convierten ni reemplazan silenciosamente.
+- Una salida puede existir en un solo sentido. Solo cuando existen ambos sentidos se exige que sus costos efectivos coincidan; la ausencia del inverso no se rechaza ni crea una salida implícita.
 - `d == rango` permite movimiento; solo `d > rango` obliga a esperar por rango.
 - Un rango entero igual a 0 es válido; un rango ausente, negativo, booleano o no entero hace que se rechace la ficha con un error descriptivo, sin conversión ni valor predeterminado.
 - Todo costo válido es positivo, por lo que una salida de costo 1 nunca produce un intervalo menor que 1.
@@ -116,7 +117,7 @@ Como equipo evaluado, queremos medir la persecución y la agenda bajo la carga n
 ### Functional Requirements
 
 - **FR-001 — Dominio del costo**: Cada salida DEBE tener un costo entero mayor o igual que 1; un booleano NO es un costo entero válido. Si el dato está ausente, el costo efectivo DEBE ser 100. Como política acordada ante datos inválidos —no como regla textual del PDF—, un costo presente booleano, no entero o menor que 1 DEBE causar el rechazo de la cripta con un error descriptivo que identifique la salida y el valor, sin convertirlo ni reemplazarlo silenciosamente.
-- **FR-002 — Simetría del costo**: El costo efectivo de una salida DEBE ser el mismo en ambos sentidos. Como política acordada ante datos inválidos —no como regla textual del PDF—, costos contradictorios entre los dos sentidos DEBEN causar el rechazo de la cripta con un error descriptivo que identifique la salida y ambos valores, sin convertirlos ni reemplazarlos silenciosamente.
+- **FR-002 — Simetría del costo cuando existen ambos sentidos**: Si el esqueleto declara los dos sentidos entre un par de salas, sus costos efectivos DEBEN ser iguales. Una salida sin sentido inverso es válida: NO se rechaza y NO crea una conexión implícita. Como política acordada ante datos inválidos —no como regla textual del PDF—, costos contradictorios entre dos sentidos existentes DEBEN causar el rechazo de la cripta con un error descriptivo que identifique la salida y ambos valores, sin convertirlos ni reemplazarlos silenciosamente.
 - **FR-003 — Tiempo de movimiento**: Para todo actor, moverse DEBE programar el siguiente turno con `max(1, costo_salida * 100 // velocidad)` a partir del reloj vigente.
 - **FR-004 — Costos restantes**: Atacar, esperar, usar, equipar, recoger, soltar, abrir y cualquier otra acción distinta de movimiento DEBEN conservar sus costos anteriores.
 - **FR-005 — Conductas existentes**: Los comportamientos anteriores de enemigos DEBEN conservar sus reglas de decisión; cuando se muevan, únicamente cambia el costo temporal según la salida atravesada.
@@ -190,7 +191,7 @@ Como equipo evaluado, queremos medir la persecución y la agenda bajo la carga n
 
 **Agreed policy beyond the PDF's explicit text**:
 
-- Los costos presentes inválidos o contradictorios hacen que se rechace la cripta con un error descriptivo, sin conversión ni reemplazo silencioso; solo la ausencia del campo conserva el valor predeterminado 100 (FR-001, FR-002; aclaración del 2026-11-07).
+- Los costos presentes inválidos o contradictorios entre dos sentidos existentes hacen que se rechace la cripta con un error descriptivo, sin conversión ni reemplazo silencioso; solo la ausencia del campo conserva el valor predeterminado 100. Una salida sin inversa es válida y no crea otro sentido (FR-001, FR-002; aclaraciones del 2026-11-07 y 2026-11-09).
 - El rango admite enteros mayores o iguales que 0; un valor ausente, negativo, booleano o no entero hace que se rechace la ficha con un error descriptivo, sin conversión de cadenas ni valor predeterminado (FR-009; aclaración del 2026-11-07).
 
 La carga exacta de la cripta oficial de referencia no se inventa: PR-001 se aplicará a la publicación o enmienda indicada por §6.1.
