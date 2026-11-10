@@ -454,6 +454,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 38 | `/speckit.tasks` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 39 | `/speckit.analyze` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
 | 40 | Remediación de la planificación 001 con ramas remotas | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
+| 54 | Implementación coherente de US1/US2: terreno, rutas y cazador | Tema 12. Parte II dirigida por especificaciones | 09/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2103,6 +2104,30 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Evidencia existente.** Se transcribieron cargas, entorno y medianas/p95 de construcción, 160/640/2 560 consultas y vinculación con densidades 1/4 para 32/128/512 salas desde `mapa_cripta_original_c1_r9_32-128-512.json`. También se enlazó y resumió `mapa_cripta_repeticion_c5_r30_512.json` (cinco calentamientos, treinta repeticiones). La muestra original de **33 018 900 ns** se conserva como p95/máximo de construcción indexada de 512 salas/densidad 1; la repetición correspondiente registró mediana 639 950, p95 685 600 y máximo 718 600 ns. Solo se afirma que el extremo no reapareció en esas treinta muestras, sin atribuir causa ni eliminarlo.
 
 **Estado.** T076 permanece abierta: T049/T050/T071 aún deben conectar el proveedor una sola vez a `main.py --bench`, ejecutar las filas conectadas y validar el cierre. La subsección dice expresamente que los datos aislados no demuestran el ciclo completo de 20 ms ni vuelven a medir la decisión de Resolubilidad de 002. Se añadió evidencia preparatoria a `tasks.md`; sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 54 — Implementación coherente de US1/US2: terreno, rutas y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, implementar un bloque coherente de US1 y US2: verificar contratos sobre `Steve@5000d1f`, registrar `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`, aceptar salidas sin inversa y comprobar simetría cuando existen ambos sentidos; completar movimiento ponderado, buscador con estructuras propias y cazador reversible. Validar por etapas, ejecutar restricciones, contrato real y suite completa. No avanzar benchmarks/003/004, no tocar clases/guardado de Steven y conservar código sin commit; solo se autoriza un commit documental separado si cambia `spec.md`.
+
+**Precondiciones y enmienda.** El checkout inició limpio en `Sofia@5000d1f`, exactamente la base indicada. Los **1204 passed y 4 subtests passed** se registraron como validación comunicada por Sofía, no como ejecución propia. `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. El código integrado confirmó costo/rango/v10 y el proveedor de mapa en `main.py --bench`; rutas/ciclo de T049 siguen pendientes. Tras confirmación explícita, FR-002 quedó enmendada para aceptar sentidos únicos y comparar costos cuando ambos existen. G1/G2 y la parte real de T049 se registraron en el commit exclusivamente documental autorizado `f74f3e8`; no contiene código.
+
+**US1.** `MotorJuego._aplicar_accion(MOVER)` devuelve `Puerta.costo`; `_turno_enemigo` conserva la puerta abierta concreta elegida y usa su costo para errante/rastreador/cazador. Ataque, espera e inventario conservan sus costos. Se añadieron pruebas de default/validación/simetría condicional, rango, fórmula temporal, rechazos sin mutación, reprogramación reversible, dos paquetes offline con pesos diferentes y dos ejecuciones ponderadas idénticas. Resolubilidad permanece igual al variar solo pesos válidos.
+
+**US2.** `logica/rutas_ponderadas.py` publica `ResultadoRuta`, métricas, entradas inmutables y `proximo_paso`. Usa `MonticuloMinimo`/`TablaHashImpl`, entradas duplicadas, descarte de obsoletas, auxiliares perezosos y limpieza final. La vista del cazador solo lee esqueleto, puertas abiertas y costos. El cazador ataca primero al compartir sala; de otro modo mueve un paso dentro del rango o espera con costo 100. Movimiento/ataque son excluyentes y las mutaciones pasan por helpers reversibles.
+
+**Validación ejecutada.** Foco inicial heredado: **75 passed**. Pruebas nuevas de datos/movimiento/rutas/cazador: **40 passed**. Oráculo productivo + contrato: **17 passed**. Foco ampliado previo: **150 passed, 2 subtests**. T064: **133 passed, 2 subtests in 4.71s**. T029 final: **30 passed in 0.15s**. Regresiones relacionadas: **505 passed, 4 subtests in 7.20s**. Restricciones finales: **56 passed in 0.59s**. Contrato offline completo: **41 passed**. Suite final posterior al ajuste de instrumentación: **1251 passed, 4 subtests passed in 104.16s**. `py_compile` y `git diff --check` pasaron; solo aparecieron avisos informativos LF/CRLF.
+
+**Cierre y límites.** Se marcaron T010–T011, T014–T018, T020–T029, T058, T061 y T064; US1/US2 quedan cerradas. Los cambios de implementación permanecen sin commit para revisión. Siguen abiertas la vista conocida T004/G3, `LineaTiempo` completa G4b, persistencia conjunta T006/G5, T049 para rutas/ciclo y la referencia oficial G6. No se ejecutaron benchmarks ni se afirma cumplimiento de 20 ms. Sin push, merge o cambio de rama.
 
 ---
 

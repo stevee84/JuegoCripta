@@ -530,7 +530,8 @@ class MotorJuego(MotorJuegoContrato):
             return self._obtener_servicio_inventario().usar(estado)
         elif accion.tipo == "EQUIPAR":
             return self._obtener_servicio_inventario().equipar()
-        return ResultadoAccion(True, f"{accion.tipo} ejecutado.", costo=costo_base(accion.tipo),
+        costo = puerta.costo if accion.tipo == "MOVER" else costo_base(accion.tipo)
+        return ResultadoAccion(True, f"{accion.tipo} ejecutado.", costo=costo,
                                notificaciones=notificaciones)
 
     def activar_enemigos_sala(self, sala):
@@ -589,22 +590,26 @@ class MotorJuego(MotorJuegoContrato):
         accion = self.comportamientos.decidir_accion(enemigo, estado)
         tipo = accion["tipo"]
         resultado = []
+        costo = costo_base("MOVER" if tipo == "SEGUIR_RASTRO" else tipo)
         if tipo == "ATACAR":
             if enemigo.sala_actual is estado.jugador.sala_actual and estado.jugador.esta_vivo():
                 resultado.append(self.combate.atacar(enemigo, estado.jugador, estado.azar, estado))
                 resultado.extend(self.combate.procesar_muerte(estado.jugador, estado))
         elif tipo in ("MOVER", "SEGUIR_RASTRO"):
-            for destino in estado.mapa.vecinos_abiertos(enemigo.sala_actual):
-                if destino.id_sala == accion["destino"]:
+            for puerta in enemigo.sala_actual.puertas:
+                if (puerta.abierta
+                        and puerta.destino_sala_id == accion["destino"]
+                        and puerta.destino_sala is not None):
+                    destino = puerta.destino_sala
                     origen = enemigo.sala_actual
                     quitar_identidad(estado, origen.enemigos, enemigo)
                     agregar(estado, destino.enemigos, enemigo)
                     atributo(estado, enemigo, "sala_actual", destino)
+                    costo = puerta.costo
                     resultado.append({"tipo": "ENEMIGO_MOVIDO", "actor": enemigo.id_actor,
                                       "sala": destino.id_sala})
                     break
         if estado.partida_activa and enemigo.esta_activo():
-            costo = costo_base("MOVER" if tipo == "SEGUIR_RASTRO" else tipo)
             intervalo = calcular_intervalo(costo,enemigo.velocidad)
             self._programar(intervalo,"ENEMIGO",enemigo.id_actor,enemigo)
         return resultado

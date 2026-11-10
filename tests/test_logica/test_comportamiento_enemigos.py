@@ -226,6 +226,18 @@ class TestComportamientoEnemigos(unittest.TestCase):
             {"tipo": "SEGUIR_RASTRO", "destino": 2},
         )
 
+        # Cazador usa una ruta ponderada propia sin alterar las tres ramas.
+        cazador = Enemigo(
+            "C", "Cazador", 50, 10, 5, 100, "cazador")
+        cazador.rango = 500
+        cazador.sala_actual = origen
+        estado_rastreador.jugador.sala_actual = vecina_diez
+        origen.puertas[0].costo = 25
+        self.assertEqual(
+            comportamiento.decidir_accion(cazador, estado_rastreador),
+            {"tipo": "MOVER", "destino": 10},
+        )
+
 
 
 if __name__ == "__main__":

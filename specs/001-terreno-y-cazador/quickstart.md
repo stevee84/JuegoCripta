@@ -1,6 +1,6 @@
 # Quickstart de validación: Terreno y cazador
 
-Esta guía describe cómo validar la futura implementación. En esta fase no se crean pruebas ni código.
+Esta guía describe cómo validar la implementación y sus integraciones todavía pendientes.
 
 ## Prerrequisitos
 
@@ -26,6 +26,17 @@ Las pruebas del servicio en línea se ejecutan y reportan aparte; aceptación fu
 ### Línea base posterior al merge
 
 Para `Sofia@5000d1f`, Sofía comunicó una corrida de `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` con `1204 passed, 4 subtests passed`. Esta revisión documental no ejecutó esa suite y no presenta el conteo como propio. Costo/rango están integrados; cazador/rutas todavía requieren la validación propia de este bloque.
+
+### Ejecución de US1 y US2 sobre la base integrada
+
+- Puerta T064: **133 passed, 2 subtests passed in 4.71s**.
+- Foco US2 ampliado: **30 passed in 0.15s**.
+- Regresiones relacionadas: **505 passed, 4 subtests passed in 7.20s**.
+- Restricciones del enunciado: **56 passed in 0.59s**.
+- Contrato offline completo: **41 passed**.
+- Suite completa con `.venv/Scripts/python.exe -m pytest -q -rs --tb=short`: **1251 passed, 4 subtests passed in 104.16s**.
+
+Estas cifras sí corresponden a la ejecución del bloque. No incluyen benchmarks ni demuestran el límite oficial de 20 ms.
 
 ## Oráculos independientes
 

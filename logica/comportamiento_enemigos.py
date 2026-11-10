@@ -1,3 +1,6 @@
+from logica.rutas_ponderadas import VistaMapaCazador, proximo_paso
+
+
 #SOFIA
 class ComportamientoEnemigos:
     """
@@ -45,7 +48,26 @@ class ComportamientoEnemigos:
         if comportamiento == "rastreador":
             return self._accion_rastreador(enemigo, estado)
 
+        if comportamiento == "cazador":
+            return self._accion_cazador(enemigo, estado)
+
         return {"tipo": "ESPERAR"}
+
+    def _accion_cazador(self, enemigo, estado):
+        jugador = estado.jugador
+        if (enemigo.sala_actual is None or jugador is None
+                or not jugador.esta_vivo() or jugador.sala_actual is None
+                or estado.mapa is None):
+            return {"tipo": "ESPERAR"}
+        resultado = proximo_paso(
+            VistaMapaCazador(estado.mapa),
+            enemigo.sala_actual.id_sala,
+            jugador.sala_actual.id_sala,
+            enemigo.rango,
+        )
+        if not resultado.alcanzable or resultado.primera_vecina_id is None:
+            return {"tipo": "ESPERAR"}
+        return {"tipo": "MOVER", "destino": resultado.primera_vecina_id}
 
 
     def _accion_errante(self, enemigo, estado):
