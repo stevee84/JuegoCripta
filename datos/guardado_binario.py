@@ -4,7 +4,7 @@ import os
 import tempfile
 import zlib
 
-from dto.sala import validar_id_sala
+from dto.sala import COSTO_POR_DEFECTO, validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
 from logica.ordenamiento import OrdenadorAdaptativo
 
@@ -18,7 +18,9 @@ class GuardadoBinario:
     # v8: el índice guarda el largo del registro junto al offset, para que leer_sala sea O(log n).
     # v9: el informe de resolubilidad viaja con la partida, para seguir consultable tras
     #     reanudar sin volver a verificar (P2 §3.5, FR-020).
-    VERSION = 9
+    # v10: costo de cada salida y rango de cada cazador (P2 §3.1, §4.1). Se guardan porque
+    #      son datos canónicos de la cripta: sin ellos, reanudar los perdería en silencio.
+    VERSION = 10
     HEADER_FORMAT = "<4sHqIIII"  # firma, versión, semilla, reloj, salas, offset índice, offset jugador
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
     INDICE_ENTRADA = 40  # id de sala (32) + offset (4) + largo del registro (4)
@@ -549,6 +551,7 @@ class GuardadoBinario:
             cierre = getattr(p, 'cierre_automatico', None)
             f.write(struct.pack("<i", -1 if cierre is None else cierre))
             self._escribir_texto(f, getattr(p, 'evento_cierre_id', None) or "")
+            f.write(struct.pack("<i", getattr(p, 'costo', COSTO_POR_DEFECTO)))  # v10 (§3.1)
 
         for e in enemigos:
             self._escribir_texto(f, e.id_actor)
@@ -556,6 +559,8 @@ class GuardadoBinario:
             f.write(struct.pack("<iiiii",
                 e.vida, e.vida_max, e.ataque, e.defensa, e.velocidad))
             self._escribir_texto(f, e.comportamiento)
+            rango = getattr(e, 'rango', None)
+            f.write(struct.pack("<i", -1 if rango is None else rango))  # v10 (§4.1)
             f.write(struct.pack("<B", 1 if e.activo else 0))
             f.write(struct.pack("<B", 1 if getattr(e, 'muerte_procesada', False) else 0))
             self._escribir_texto(f, getattr(e, 'tipo_ficha_id', None) or "")
@@ -680,7 +685,9 @@ class GuardadoBinario:
             fue_abierta_llave = struct.unpack_from("<B", data, o)[0]; o += 1
             cierre_auto_raw = struct.unpack_from("<i", data, o)[0]; o += 4
             ev_cierre, o = self._leer_texto(data, o)
+            costo = struct.unpack_from("<i", data, o)[0]; o += 4   # v10 (§3.1)
             puertas.append({
+                "costo": costo,
                 "id_puerta": id_p, "destino_sala_id": dest,
                 "direccion": dire, "abierta": bool(abierta),
                 "llave_requerida": llave_req or None,
@@ -695,6 +702,7 @@ class GuardadoBinario:
             nom, o = self._leer_texto(data, o)
             v, vm, a, d, vel = struct.unpack_from("<iiiii", data, o); o += 20
             comp, o = self._leer_texto(data, o)
+            rango_raw = struct.unpack_from("<i", data, o)[0]; o += 4   # v10 (§4.1)
             activo = struct.unpack_from("<B", data, o)[0]; o += 1
             muerte = struct.unpack_from("<B", data, o)[0]; o += 1
             tipo_ficha, o = self._leer_texto(data, o)
@@ -710,6 +718,7 @@ class GuardadoBinario:
                 "vida": v, "vida_max": vm, "ataque": a,
                 "defensa": d, "velocidad": vel,
                 "comportamiento": comp, "activo": bool(activo),
+                "rango": None if rango_raw == -1 else rango_raw,
                 "muerte_procesada": bool(muerte),
                 "tipo_ficha_id": tipo_ficha or None,
                 "botin_preparado": botin,

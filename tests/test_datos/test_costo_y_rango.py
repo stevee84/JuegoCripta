@@ -168,3 +168,69 @@ def test_dos_salidas_al_mismo_destino_con_el_mismo_costo_se_aceptan(tmp_path):
         {"id": 1, "salidas": {"N": {"sala": 2, "costo": 250}, "E": {"sala": 2, "costo": 250}}},
         {"id": 2, "salidas": {"S": {"sala": 1, "costo": 250}}},
     ], tmp_path)
+
+
+# ── Persistencia (v10) ───────────────────────────────────────────────────────
+
+def test_el_costo_y_el_rango_sobreviven_a_guardar_y_reanudar(tmp_path):
+    """Sin esto, reanudar los perdía en silencio y todas las salidas volvían a 100.
+
+    Son datos canónicos de la cripta, no resultados derivados, así que viajan en el archivo.
+    """
+    from datos.fuente_offline import FuenteOffline
+    from datos.guardado_binario import GuardadoBinario
+    from logica.cache_catalogo import CacheCatalogo
+    from service.inicializador_partida import InicializadorPartida
+
+    inicializador = InicializadorPartida()
+    fuente = FuenteOffline("tests/fixtures/api_real")
+    inicializador.preparar("cripta-01", fuente)
+    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+
+    puerta = next(p for p in estado.mapa.obtener_sala(2).puertas if p.destino_sala_id == 5)
+    puerta.costo = 777
+    enemigo = estado.mapa.obtener_sala(4).enemigos[0]
+    enemigo.rango = 600
+
+    ruta = str(tmp_path / "p.bin")
+    GuardadoBinario().guardar(ruta, estado)
+    datos = GuardadoBinario().cargar(ruta)
+    assert datos is not None
+
+    guardada = [p for p in datos["salas"].obtener(2)["puertas"] if p["destino_sala_id"] == 5][0]
+    assert guardada["costo"] == 777
+    assert datos["salas"].obtener(4)["enemigos"][0]["rango"] == 600
+
+
+def test_un_enemigo_sin_rango_vuelve_como_none(tmp_path):
+    from datos.fuente_offline import FuenteOffline
+    from datos.guardado_binario import GuardadoBinario
+    from logica.cache_catalogo import CacheCatalogo
+    from service.inicializador_partida import InicializadorPartida
+
+    inicializador = InicializadorPartida()
+    fuente = FuenteOffline("tests/fixtures/api_real")
+    inicializador.preparar("cripta-01", fuente)
+    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    ruta = str(tmp_path / "p.bin")
+    GuardadoBinario().guardar(ruta, estado)
+    datos = GuardadoBinario().cargar(ruta)
+    assert datos["salas"].obtener(4)["enemigos"][0]["rango"] is None
+
+
+def test_una_partida_de_la_version_anterior_se_reporta_incompatible(tmp_path):
+    from datos.fuente_offline import FuenteOffline
+    from datos.guardado_binario import GuardadoBinario
+    from logica.cache_catalogo import CacheCatalogo
+    from service.inicializador_partida import InicializadorPartida
+
+    inicializador = InicializadorPartida()
+    fuente = FuenteOffline("tests/fixtures/api_real")
+    inicializador.preparar("cripta-01", fuente)
+    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    ruta = tmp_path / "p.bin"
+    GuardadoBinario().guardar(str(ruta), estado)
+    crudo = bytearray(ruta.read_bytes())
+    crudo[4:6] = (9).to_bytes(2, "little")
+    ruta.write_bytes(bytes(crudo))
+    assert GuardadoBinario().cargar(str(ruta)) is None
