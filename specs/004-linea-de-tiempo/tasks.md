@@ -126,8 +126,8 @@ partida original.
 
 **Meta**: la línea sobrevive a guardar y reanudar.
 
-- [ ] T032 [P] [US5] Escribir en `tests/test_logica/test_linea_tiempo.py`: `exportar_bytes` e `importar_bytes` conservan el estado vivo, K, instantes, puntos y cola; tras importar, todas las consultas dan lo mismo que antes, la cantidad de puntos de control es la misma (ninguno extra) y todos siguen en múltiplos de K; al importar con otro K pedido se conserva el guardado y se informa (US5-1, US5-2) (FR-017, FR-028, FR-029, FR-030)
-- [ ] T033 [US5] Implementar `exportar_bytes(estado)` e `importar_bytes(datos) -> (estado, linea)` en `logica/linea_tiempo.py` según [guardado-v10.md](./contracts/guardado-v10.md), serializando el estado vivo y la línea en una sola operación con `pickle` (FR-017, FR-028, FR-029, FR-030)
+- [X] T032 [P] [US5] Escribir en `tests/test_logica/test_linea_tiempo.py`: `exportar_bytes` e `importar_bytes` conservan el estado vivo, K, instantes, puntos y cola; tras importar, todas las consultas dan lo mismo que antes, la cantidad de puntos de control es la misma (ninguno extra) y todos siguen en múltiplos de K; al importar con otro K pedido se conserva el guardado y se informa (US5-1, US5-2) (FR-017, FR-028, FR-029, FR-030)
+- [X] T033 [US5] Implementar `exportar_bytes(estado)` e `importar_bytes(datos) -> (estado, linea)` en `logica/linea_tiempo.py` según [guardado-v10.md](./contracts/guardado-v10.md), serializando el estado vivo y la línea en una sola operación con `pickle` (FR-017, FR-028, FR-029, FR-030)
 - [ ] T034 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` la prueba de punta a punta: guardar con el guardado v10, cargar y repetir consultas; usar el aviso de K de FR-030 en `controller/controlador_juego.py` al cargar (US5-1, US5-2) (FR-028, FR-030)
 - [ ] T035 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` que un archivo v9, uno v8 y uno de la Parte I se reportan como incompatibles y nunca se cargan en silencio (US5-3; **Apéndice B: archivo de la Parte I**) (FR-031)
 
@@ -140,7 +140,7 @@ partida original.
 - [X] T036 [P] Escribir en `tests/test_controller/test_resolubilidad_interfaz.py`: al iniciar se muestra una de las tres líneas de [cli-verificar.md](../002-resolubilidad/contracts/cli-verificar.md) según el informe (con solución, sin solución, no verificada); el comando `resolubilidad` muestra el informe completo y es el mismo antes y después de conseguir llaves (FR-013 y FR-014 de la spec 002)
 - [X] T037 Tarea **002-T049** (de la spec 002): mostrar la línea de resolubilidad al iniciar la partida desde `controller/controlador_juego.py`, en `vista/vista_consola.py` y en `vista/vista_pygame.py`, a partir de `JuegoService.obtener_informe_resolubilidad()` (FR-013 de la 002)
 - [X] T038 Tarea **002-T050** (de la spec 002): comando `resolubilidad` en `controller/controlador_juego.py` que muestra el informe completo en consola y en pygame (FR-014 y FR-017 de la 002)
-- [ ] T039 Agregar en `vista/vista_pygame.py`, en métodos nuevos, un botón «Historia» que pide t o #k y muestra las líneas del resumen en un panel; la lógica sigue en el controlador (FR-008)
+- [X] T039 Agregar en `vista/vista_pygame.py`, en métodos nuevos, un botón «Historia» que pide t o #k y muestra las líneas del resumen en un panel; la lógica sigue en el controlador (FR-008)
 
 ---
 
@@ -166,7 +166,7 @@ partida original.
 - [X] T047 Elegir el K por defecto con los datos de T041 y fijarlo en `configuracion.py`; actualizar R7 en `research.md`. Si cambia el valor del plan, corregir primero el plan en un commit separado (FR-016)
 - [X] T048 Escribir la sección §5.5 de `DECISIONES.md`: problema, alternativas, decisión, complejidad, evidencia de `--bench`, límites, enlace a spec y plan, y si la decisión final coincide con el plan (enunciado §7.1)
 - [X] T049 Agregar a `README.md` las banderas `--checkpoint-cada` y `--replay … --hasta` y el comando `historia` (enunciado §7.2)
-- [ ] T050 Correr `python -m pytest -q` completo y los pasos de [quickstart.md](./quickstart.md); informar aprobadas, omitidas (las [DEPENDE]) y fallidas por separado (constitución XI)
+- [X] T050 Correr `python -m pytest -q` completo y los pasos de [quickstart.md](./quickstart.md); informar aprobadas, omitidas (las [DEPENDE]) y fallidas por separado (constitución XI)
 
 ---
 

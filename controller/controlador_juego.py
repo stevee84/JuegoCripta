@@ -98,6 +98,16 @@ class ControladorJuego:
         if ruta_guardado is not None:
             self._ruta_partida = Path(ruta_guardado) / ARCHIVO_PARTIDA
 
+    def _mostrar_lineas(self, lineas) -> None:
+        """Un resumen de varias líneas: panel si la vista lo tiene (pygame), mensaje si no."""
+        if self._vista is None:
+            return
+        mostrar = getattr(self._vista, "mostrar_lineas", None)
+        if mostrar is not None:
+            mostrar(lineas)
+        else:
+            self._vista.mostrar_mensaje("\n".join(lineas))
+
     def configurar_checkpoint_cada(self, k) -> None:
         """K de --checkpoint-cada para las partidas que se inicien (spec 004, FR-015)."""
         self._servicio.configurar_checkpoint_cada(k)
@@ -361,9 +371,7 @@ class ControladorJuego:
                 linea = self._servicio.obtener_linea_tiempo()
                 if self._servicio.obtener_estado() is None or linea is None:
                     raise ValueError("historia: no hay una partida iniciada.")
-                lineas = consultar_historia(linea, partes[1])
-                if self._vista is not None:
-                    self._vista.mostrar_mensaje("\n".join(lineas))
+                self._mostrar_lineas(consultar_historia(linea, partes[1]))
                 resultado = ResultadoAccion(True, "Historia mostrada.")
             elif operacion == "resolubilidad":
                 # 002-T050 (FR-014 de la 002): el informe de antes de empezar, sin recalcular.
@@ -374,8 +382,7 @@ class ControladorJuego:
                 if informe is None:
                     raise ValueError("Esta partida no tiene informe de resolubilidad "
                                      "(por ejemplo, una partida de prueba).")
-                if self._vista is not None:
-                    self._vista.mostrar_mensaje("\n".join(lineas_informe(estado.cripta_id, informe)))
+                self._mostrar_lineas(lineas_informe(estado.cripta_id, informe))
                 resultado = ResultadoAccion(True, "Informe de resolubilidad mostrado.")
             elif operacion == "ayuda":
                 self._vista.mostrar_mensaje(

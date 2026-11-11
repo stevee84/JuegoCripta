@@ -2789,6 +2789,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 43 | Implementación de la Fase 7 (T029 a T031): `--checkpoint-cada K` | 10/11/2026 |
 | 44 | Mediciones de la línea de tiempo en `--bench` (T002, T041 a T046) | 10/11/2026 |
 | 45 | Optimizar el punto de control, fijar K y documentar §5.5 (T047 a T049) | 10/11/2026 |
+| 46 | Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050) | 11/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3070,6 +3071,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** Medido sobre un estado de 1 500 acciones, copiar el historial del pergamino era casi todo el costo del punto de control (22 de 25 ms): guarda cientos de cambios y cada turno enemigo guarda una tupla de 625 enteros con el estado del azar. `LineaTiempo._memo_compartido` hace que el punto de control comparta el historial (solo sirve para seguir jugando) y esas tuplas inmutables; la copia del paquete bajó de 71,5 a 19,1 ms y todas las pruebas de equivalencia siguen pasando. La medición ahora toma el tiempo sin `tracemalloc` y la memoria por muestreo. Con 5 000 acciones y K = 10 medido solo: `historia` 16,3 ms de mediana, 59,7 ms en el p95 y 82,7 ms de máximo; crear un punto, 50,6 ms; memoria estimada, 647 MB. K = 50 y K = 200 pasan los 100 ms de mediana, y sin puntos de control una consulta llega a 97 s. Se fijó K = 10 (`LineaTiempo.K_POR_DEFECTO`, research R7). `DECISIONES.md` tiene la sección §5.5 completa y, en §5.6, el retroceso de punta a punta (3,1 ms frente a 82,8 ms de copiar el estado). El README tiene las banderas y comandos de la 004. Resultados en `benchmarks/resultados/linea_tiempo_5000.json` y `linea_tiempo_5000_k10.json`. Suite: 1326 aprobadas.
 
 **Qué hubo que corregir.** (1) Copiar un atributo del estado por separado falla por cómo se reconstruyen las salas; para encontrar qué pesaba se midió cuánto ahorra compartir cada atributo al copiar el estado completo. (2) La primera versión dejaba el historial en `None` dentro del punto de control; se cambió a compartirlo, que cuesta lo mismo y deja un estado válido. (3) Con las cuatro líneas en el mismo proceso la memoria pasaba de 1,5 GB y aparecían pausas de varios segundos que distorsionaban los máximos; K = 10 se midió de nuevo en un proceso aparte. (4) Con esta carga extrema ningún K cumple todos los límites: el p95 y el máximo de `historia` superan 50 ms y la acción que crea un punto de control supera los 20 ms por ciclo; quedó documentado en los límites de §5.5 con las mejoras posibles.
+
+## Prompt 46 — Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050)
+
+> **Prompt**
+>
+> Termina todas las tareas de specs/004-linea-de-tiempo/tasks.md que no dependen de Steven ni de Sofía: T032 y T033, exportar e importar la línea de tiempo en bytes según el contrato guardado-v10 (estado vivo y línea en una sola serialización, conservando el K guardado y avisando si se pide otro), con pruebas de ida y vuelta; T039, un botón Historia en la vista pygame que pida t o #k y muestre el resumen en un panel, agregando solo métodos nuevos en vista/vista_pygame.py; y T050, correr la suite completa y la guía de validación, informando aprobadas, omitidas y fallidas por separado. Deja marcadas como pendientes las que dependen del guardado v10 de Steven (T034, T035) y de la spec 003 (T040). Si el contrato cambia al implementarlo, actualízalo primero.
+
+**Qué se obtuvo.** `LineaTiempo.exportar_bytes`, `importar_bytes` (devuelve el estado y la línea y vuelve a conectar historial e inventario) y `aviso_k` en `logica/linea_tiempo.py`, con 5 pruebas: la ida y vuelta da las mismas consultas por acción y por instante, sin puntos de control extra; la línea sigue registrando acciones después de cargar; se conserva el K guardado; la infraestructura no viaja; y se rechazan bytes ajenos. En pygame: botón «Historia», diálogo de texto (`_dialogo_texto`) y panel de varias líneas (`mostrar_lineas`), que también usa el comando `resolubilidad`; el controlador usa el panel si la vista lo tiene y el mensaje de siempre en la consola. 4 pruebas en `tests/test_controller/test_historia_pygame.py`, sin ventana. Suite: 1335 aprobadas, 0 omitidas, 0 fallidas. Quedan pendientes T034, T035 y T040.
+
+**Qué hubo que corregir.** (1) El estado guarda la caché, el catálogo vivo y el cargador de contenido, que con el servicio web pueden tener el cliente de red; no viajan en los bytes y al cargar los vuelve a conectar el guardado. Se agregó al contrato `guardado-v10.md` antes del código. (2) La comparación por bytes de pickle daba diferencias falsas después de cargar: dos textos iguales pasan a ser objetos distintos, y `Sala` reconstruye su índice de enemigos en otra posición. Las pruebas de ida y vuelta comparan el estado por estructura y valores, sin depender de esas dos cosas.
 
 # Steven Moya Porras — Parte II
 

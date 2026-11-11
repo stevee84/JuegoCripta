@@ -251,3 +251,60 @@ class LineaTiempo:
         """Número de la próxima decisión después del instante t, para el título."""
         i = buscar_ultimo_menor_o_igual(self.instantes, t)
         return i + 1 if self.instantes[i] == t else i + 2
+
+    # --- Persistencia (FR-028 a FR-030, contrato specs/004-linea-de-tiempo/contracts/guardado-v10.md) ---
+
+    # Infraestructura que no viaja en los bytes de la línea: caché, catálogo vivo y cargador de
+    # contenido (pueden tener la fuente de datos o el cliente de red). Al cargar quedan en None y
+    # quien restaura la partida los vuelve a conectar, como ya hace el guardado.
+    INFRAESTRUCTURA = ("CacheCatalogo", "CatalogoVivo", "CargadorContenido", "ClienteAPI",
+                       "FuenteOffline", "PresupuestoSolicitudes")
+
+    def exportar_bytes(self, estado=None) -> bytes:
+        """Estado vivo y línea en una sola serialización, para conservar sus referencias (R8)."""
+        import io
+        import pickle
+
+        if estado is not None and estado is not self._estado:
+            raise ValueError("La línea pertenece a otro estado de partida.")
+        infraestructura = self.INFRAESTRUCTURA
+
+        class _Exportador(pickle.Pickler):
+            def persistent_id(self, obj):
+                nombre = type(obj).__name__
+                return ("INFRA", nombre) if nombre in infraestructura else None
+
+        flujo = io.BytesIO()
+        _Exportador(flujo, protocol=pickle.HIGHEST_PROTOCOL).dump(
+            {"formato": "linea-tiempo-1", "estado": self._estado, "linea": self})
+        return flujo.getvalue()
+
+    @classmethod
+    def importar_bytes(cls, datos: bytes):
+        """Devuelve (estado, linea). El estado de la partida es el que trae la línea (R8)."""
+        import io
+        import pickle
+
+        class _Importador(pickle.Unpickler):
+            def persistent_load(self, pid):
+                return None
+
+        paquete = _Importador(io.BytesIO(datos)).load()
+        if not isinstance(paquete, dict) or paquete.get("formato") != "linea-tiempo-1":
+            raise ValueError("La sección de la línea de tiempo no tiene un formato conocido.")
+        estado, linea = paquete["estado"], paquete["linea"]
+        if not isinstance(linea, LineaTiempo) or linea._estado is not estado:
+            raise ValueError("La sección de la línea de tiempo está incompleta.")
+        # Los enlaces que no viajan en las copias (historial e inventario) se vuelven a conectar.
+        if estado.historial is not None:
+            estado.historial.vincular_linea(linea)
+        if estado.inventario is not None:
+            estado.inventario.historial_linea = estado.historial
+        return estado, linea
+
+    def aviso_k(self, k_pedido):
+        """FR-030: al cargar se conserva el K guardado; si se pidió otro, se informa."""
+        if k_pedido is None or k_pedido == self.k:
+            return None
+        return (f"La partida se guardó con --checkpoint-cada {self.k}; se conserva ese valor y "
+                f"se ignora {k_pedido}.")

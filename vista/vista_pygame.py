@@ -403,6 +403,9 @@ class VistaPygame:
         # 002-T050: informe de resolubilidad de antes de empezar (FR-014 de la spec 002).
         self._botones.append(Boton((px + bw + 80 + 2 * gap, barra_y, 150, self.BTN_H),
                                    "Resolubilidad", "resolubilidad"))
+        # Spec 004 (FR-008): historia <t> o historia #k, pidiendo el valor en un diálogo.
+        self._botones.append(Boton((px + bw + 80 + 150 + 3 * gap, barra_y, 110, self.BTN_H),
+                                   "Historia", "__historia__"))
         self._botones.extend(self._botones_sala)
 
     def _colocar_fila(self, items, px, panel_w, y):
@@ -1079,6 +1082,71 @@ class VistaPygame:
 
     # --- Diálogo de salida ---
 
+    def _dialogo_texto(self, pregunta, largo_maximo=12):
+        """Pide un texto corto (spec 004). Enter acepta, Escape cancela y devuelve None."""
+        overlay = pygame.Surface((self.ANCHO, self.ALTO), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        dlg_w, dlg_h = 520, 150
+        dlg_x = (self.ANCHO - dlg_w) // 2
+        dlg_y = (self.ALTO - dlg_h) // 2
+        texto = ""
+        while True:
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    return None
+                if evento.type == pygame.KEYDOWN:
+                    if evento.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                        return texto.strip() or None
+                    if evento.key == pygame.K_ESCAPE:
+                        return None
+                    if evento.key == pygame.K_BACKSPACE:
+                        texto = texto[:-1]
+                    elif evento.unicode and evento.unicode.isprintable() and len(texto) < largo_maximo:
+                        texto += evento.unicode
+            self._pantalla.blit(overlay, (0, 0))
+            pygame.draw.rect(self._pantalla, (25, 25, 35), (dlg_x, dlg_y, dlg_w, dlg_h), border_radius=10)
+            pygame.draw.rect(self._pantalla, CYAN, (dlg_x, dlg_y, dlg_w, dlg_h), 2, border_radius=10)
+            etiqueta = self._font_med.render(pregunta, True, BLANCO)
+            self._pantalla.blit(etiqueta, (dlg_x + 20, dlg_y + 20))
+            pygame.draw.rect(self._pantalla, GRIS_OSCURO, (dlg_x + 20, dlg_y + 60, dlg_w - 40, 34))
+            valor = self._font_grande.render(texto + "_", True, CYAN)
+            self._pantalla.blit(valor, (dlg_x + 28, dlg_y + 64))
+            ayuda = self._font.render("Enter para consultar, Escape para cancelar", True, GRIS_CLARO)
+            self._pantalla.blit(ayuda, (dlg_x + 20, dlg_y + 110))
+            pygame.display.flip()
+            self._reloj.tick(self.FPS)
+
+    def mostrar_lineas(self, lineas):
+        """Muestra varias líneas en un panel (historia, resolubilidad) hasta un clic o una tecla."""
+        for linea in lineas:
+            self.bitacora.agregar(str(linea))
+        if self._pantalla is None:
+            return
+        overlay = pygame.Surface((self.ANCHO, self.ALTO), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 170))
+        alto_linea = 22
+        dlg_w = min(self.ANCHO - 60, 900)
+        dlg_h = min(self.ALTO - 60, 60 + alto_linea * len(lineas))
+        dlg_x = (self.ANCHO - dlg_w) // 2
+        dlg_y = (self.ALTO - dlg_h) // 2
+        while True:
+            for evento in pygame.event.get():
+                if evento.type in (pygame.QUIT, pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                    return
+            self._pantalla.blit(overlay, (0, 0))
+            pygame.draw.rect(self._pantalla, (25, 25, 35), (dlg_x, dlg_y, dlg_w, dlg_h), border_radius=10)
+            pygame.draw.rect(self._pantalla, CYAN, (dlg_x, dlg_y, dlg_w, dlg_h), 2, border_radius=10)
+            y = dlg_y + 16
+            for linea in lineas:
+                if y > dlg_y + dlg_h - 40:
+                    break
+                self._dibujar_texto_ajustado(str(linea), self._font, BLANCO, (dlg_x + 20, y), dlg_w - 40)
+                y += alto_linea
+            pie = self._font.render("Clic o una tecla para volver", True, GRIS_CLARO)
+            self._pantalla.blit(pie, (dlg_x + 20, dlg_y + dlg_h - 28))
+            pygame.display.flip()
+            self._reloj.tick(self.FPS)
+
     def _dialogo_salir(self, controlador):
         overlay = pygame.Surface((self.ANCHO, self.ALTO), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 160))
@@ -1237,6 +1305,11 @@ class VistaPygame:
                                 self._pagina_sala += 1
                             elif b.comando.startswith("__orden__:"):
                                 self._elegir_orden(controlador, b.comando.split(":", 1)[1])
+                            elif b.comando == "__historia__":
+                                texto = self._dialogo_texto(
+                                    "Historia: un instante (400) o una acción (#12)")
+                                if texto:
+                                    controlador.procesar_comando(f"historia {texto}")
                             elif b.comando != "__noop__":
                                 controlador.procesar_comando(b.comando)
                             break

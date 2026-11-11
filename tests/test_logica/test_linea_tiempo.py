@@ -529,5 +529,110 @@ class TestVariosK(unittest.TestCase):
         self.assertEqual(linea.puntos[0].accion, 0)
 
 
+
+_INFRA = ("cache_inicial", "catalogo_inicial", "cargador_contenido", "_catalogo_ficha")
+_FUERA = _PicklerJuego.FUERA
+
+
+def huella_sin_infra(estado):
+    """Estructura y valores del estado del juego, sin caché, catálogo vivo ni cargador.
+
+    No compara bytes de pickle: después de cargar, dos textos iguales pueden ser objetos
+    distintos y pickle los escribe distinto. Aquí cada objeto se describe por su clase y sus
+    atributos, y las referencias repetidas por el orden en que aparecen.
+    """
+    vistos = []
+
+    def describir(valor):
+        if valor is None or isinstance(valor, (bool, int, float, str, bytes)):
+            return valor
+        for i, visto in enumerate(vistos):
+            if visto is valor:
+                return ("REF", i)
+        nombre = type(valor).__name__
+        if nombre in _FUERA:
+            return ("FUERA", nombre)
+        vistos.append(valor)
+        if isinstance(valor, (list, tuple)):
+            return (nombre, tuple(describir(v) for v in valor))
+        if isinstance(valor, dict):
+            return ("dict", tuple((describir(k), describir(v)) for k, v in valor.items()))
+        if hasattr(valor, "getstate") and nombre == "Random":
+            return ("Random", valor.getstate())
+        if hasattr(valor, "recorrer") and hasattr(valor, "_monticulo"):
+            eventos = [(e.id_evento, e.tiempo, e.secuencia, e.tipo, e.destinatario_id)
+                       for e in valor.recorrer()]
+            eventos.sort()
+            return ("AGENDA", tuple(eventos))
+        if nombre == "TablaHashImpl":
+            claves = list(valor.claves())
+            claves.sort(key=repr)
+            return ("TABLA", tuple((c, describir(valor.obtener(c))) for c in claves))
+        fuera = ("_orden_frente", "historial_linea", "_indice_monticulo") + _INFRA
+        claves = [k for k in vars(valor) if k not in fuera]
+        claves.sort()  # al cargar, Sala reconstruye su índice de enemigos en otra posición
+        return (nombre, tuple((k, describir(vars(valor)[k])) for k in claves))
+
+    import sys
+    limite = sys.getrecursionlimit()
+    sys.setrecursionlimit(max(limite, 20000))
+    try:
+        return describir(estado)
+    finally:
+        sys.setrecursionlimit(limite)
+
+
+class TestBytes(unittest.TestCase):
+    """T032: exportar e importar la línea (FR-017, FR-028, FR-029, FR-030)."""
+
+    def setUp(self):
+        self.estado, motor, self.linea, elegir = partida_con_linea(4, cripta="cripta-01")
+        jugar(self.estado, motor, elegir, 30)
+        n = self.linea.cantidad_acciones()
+        self.consultas = [self.linea.consultar_accion(k, huella_sin_infra) for k in range(1, n + 2)]
+        self.instantes = [self.linea.consultar_instante(t, huella_sin_infra)
+                          for t in range(0, self.estado.reloj + 1, 37)]
+
+    def test_fr028_fr029_ida_y_vuelta_da_las_mismas_consultas(self):
+        estado, linea = LineaTiempo.importar_bytes(self.linea.exportar_bytes(self.estado))
+        self.assertEqual(huella_sin_infra(estado), huella_sin_infra(self.estado))
+        self.assertEqual(linea.k, self.linea.k)
+        self.assertEqual(linea.instantes, self.linea.instantes)
+        self.assertEqual(len(linea.puntos), len(self.linea.puntos))
+        self.assertTrue(all(p.accion % linea.k == 0 for p in linea.puntos))
+        n = linea.cantidad_acciones()
+        self.assertEqual([linea.consultar_accion(k, huella_sin_infra) for k in range(1, n + 2)],
+                         self.consultas)
+        self.assertEqual([linea.consultar_instante(t, huella_sin_infra)
+                          for t in range(0, estado.reloj + 1, 37)], self.instantes)
+
+    def test_fr028_tras_cargar_la_linea_sigue_registrando(self):
+        estado, linea = LineaTiempo.importar_bytes(self.linea.exportar_bytes())
+        self.assertIs(estado.historial._linea, linea)
+        self.assertIs(estado.inventario.historial_linea, estado.historial)
+        motor = MotorJuego()
+        motor.estado = estado
+        n = linea.cantidad_acciones()
+        self.assertTrue(motor.ejecutar_accion(Accion("ESPERAR")).exito)
+        self.assertEqual(linea.cantidad_acciones(), n + 1)
+
+    def test_fr030_se_conserva_el_k_guardado(self):
+        _, linea = LineaTiempo.importar_bytes(self.linea.exportar_bytes())
+        self.assertIsNone(linea.aviso_k(None))
+        self.assertIsNone(linea.aviso_k(4))
+        self.assertIn("se conserva ese valor", linea.aviso_k(50))
+        self.assertEqual(linea.k, 4)
+
+    def test_fr029_la_infraestructura_no_viaja(self):
+        estado, _ = LineaTiempo.importar_bytes(self.linea.exportar_bytes())
+        self.assertIsNone(estado.cache_inicial)
+        self.assertIsNone(estado.catalogo_inicial)
+
+    def test_fr031_bytes_ajenos_se_rechazan(self):
+        import pickle
+        with self.assertRaises(ValueError):
+            LineaTiempo.importar_bytes(pickle.dumps({"formato": "otro"}))
+
+
 if __name__ == "__main__":
     unittest.main()
