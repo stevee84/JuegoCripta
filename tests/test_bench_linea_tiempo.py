@@ -22,7 +22,7 @@ def test_fr024_a_fr027_el_proveedor_trae_todas_las_mediciones():
     for fila in historia:
         limite = 10 ** 9 if fila["k"] == "sin puntos de control" else fila["k"]
         assert fila["max_transacciones_por_consulta"] <= limite
-        assert fila["memoria_puntos_mb"] >= 0
+        assert fila["memoria_puntos_mb_estimada"] >= 0
     for fila in filas:
         if fila["medicion"] == "linea_tiempo_adelante_vs_atras":
             assert fila["mismo_estado"], fila

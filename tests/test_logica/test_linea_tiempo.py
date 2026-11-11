@@ -96,7 +96,8 @@ class TestEstructura(unittest.TestCase):
         jugar(estado, motor, elegir, 8)
         punto = linea.puntos[-1]
         self.assertIsNot(punto.estado, estado)
-        self.assertIsNone(punto.estado.historial._linea)
+        # El punto de control comparte el historial del pergamino en vez de copiarlo (R2, T041).
+        self.assertIs(punto.estado.historial, estado.historial)
         self.assertIsNot(punto.transacciones[-1], linea.cola[-1])
 
     def test_fr017_una_accion_rechazada_no_llega_a_la_linea(self):

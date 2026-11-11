@@ -163,9 +163,9 @@ partida original.
 
 ## Fase 12: Cierre
 
-- [ ] T047 Elegir el K por defecto con los datos de T041 y fijarlo en `configuracion.py`; actualizar R7 en `research.md`. Si cambia el valor del plan, corregir primero el plan en un commit separado (FR-016)
-- [ ] T048 Escribir la sección §5.5 de `DECISIONES.md`: problema, alternativas, decisión, complejidad, evidencia de `--bench`, límites, enlace a spec y plan, y si la decisión final coincide con el plan (enunciado §7.1)
-- [ ] T049 Agregar a `README.md` las banderas `--checkpoint-cada` y `--replay … --hasta` y el comando `historia` (enunciado §7.2)
+- [X] T047 Elegir el K por defecto con los datos de T041 y fijarlo en `configuracion.py`; actualizar R7 en `research.md`. Si cambia el valor del plan, corregir primero el plan en un commit separado (FR-016)
+- [X] T048 Escribir la sección §5.5 de `DECISIONES.md`: problema, alternativas, decisión, complejidad, evidencia de `--bench`, límites, enlace a spec y plan, y si la decisión final coincide con el plan (enunciado §7.1)
+- [X] T049 Agregar a `README.md` las banderas `--checkpoint-cada` y `--replay … --hasta` y el comando `historia` (enunciado §7.2)
 - [ ] T050 Correr `python -m pytest -q` completo y los pasos de [quickstart.md](./quickstart.md); informar aprobadas, omitidas (las [DEPENDE]) y fallidas por separado (constitución XI)
 
 ---

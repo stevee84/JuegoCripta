@@ -1,0 +1,40 @@
+{
+ "segundos": 102.5,
+ "filas": [
+  {
+   "medicion": "linea_tiempo_historia",
+   "k": 10,
+   "acciones": 5000,
+   "puntos_de_control": 501,
+   "memoria_puntos_mb_estimada": 647.13,
+   "memoria_por_punto_kb": 1322.7,
+   "max_transacciones_por_consulta": 9,
+   "mediana_ms": 16.342,
+   "p95_ms": 59.678,
+   "maximo_ms": 82.718,
+   "muestras": 85,
+   "cumple_50ms": false,
+   "crear_punto_mediana_ms": 50.604
+  },
+  {
+   "medicion": "linea_tiempo_accion_sin_punto",
+   "mediana_ms": 3.442,
+   "p95_ms": 7.799,
+   "maximo_ms": 2322.679,
+   "muestras": 4500
+  },
+  {
+   "medicion": "linea_tiempo_accion_con_punto",
+   "k": 10,
+   "crear_punto": {
+    "mediana_ms": 50.604,
+    "p95_ms": 188.314,
+    "maximo_ms": 3077.055,
+    "muestras": 501
+   },
+   "accion_con_punto_estimada_mediana_ms": 54.046,
+   "umbral_ciclo_ms": 20,
+   "cumple_20ms": false
+  }
+ ]
+}

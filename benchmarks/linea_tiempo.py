@@ -210,21 +210,37 @@ def huella_juego(estado) -> bytes:
 
 
 class _LineaMedida(LineaTiempo):
-    """La línea real, midiendo con tracemalloc la memoria y el tiempo de cada punto de control."""
+    """La línea real, midiendo el tiempo de cada punto de control y su memoria por muestreo.
+
+    El tiempo se mide sin tracemalloc, que hace la copia varias veces más lenta. La memoria se
+    mide con tracemalloc sobre una copia aparte de 1 de cada ``MUESTREO`` puntos (que se
+    descarta), y el total se estima multiplicando el promedio por la cantidad de puntos.
+    """
+
+    MUESTREO = 10
 
     def __init__(self, estado, k):
-        self.bytes_puntos = 0
+        self.bytes_muestras = []
         self.ns_puntos = []
         super().__init__(estado, k)
 
+    @property
+    def bytes_puntos(self):
+        if not self.bytes_muestras:
+            return 0
+        return sum(self.bytes_muestras) / len(self.bytes_muestras) * len(self.puntos)
+
     def _punto_control(self, accion, ventana):
-        tracemalloc.start()
-        antes = tracemalloc.get_traced_memory()[0]
         inicio = perf_counter_ns()
         punto = super()._punto_control(accion, ventana)
         self.ns_puntos.append(perf_counter_ns() - inicio)
-        self.bytes_puntos += tracemalloc.get_traced_memory()[0] - antes
-        tracemalloc.stop()
+        if (len(self.ns_puntos) - 1) % self.MUESTREO == 0:
+            tracemalloc.start()
+            antes = tracemalloc.get_traced_memory()[0]
+            muestra = super()._punto_control(accion, ventana)
+            self.bytes_muestras.append(tracemalloc.get_traced_memory()[0] - antes)
+            tracemalloc.stop()
+            del muestra
         return punto
 
 
@@ -328,7 +344,7 @@ def medir_consultas(lineas, consultas=40, semilla=3):
             "k": "sin puntos de control" if linea.k == SIN_PUNTOS else linea.k,
             "acciones": linea.cantidad_acciones(),
             "puntos_de_control": len(linea.puntos),
-            "memoria_puntos_mb": round(linea.bytes_puntos / 2 ** 20, 2),
+            "memoria_puntos_mb_estimada": round(linea.bytes_puntos / 2 ** 20, 2),
             "memoria_por_punto_kb": round(linea.bytes_puntos / 1024 / len(linea.puntos), 1),
             "max_transacciones_por_consulta": tocadas,
             **resumen,

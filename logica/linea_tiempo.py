@@ -106,8 +106,35 @@ class LineaTiempo:
 
     def _punto_control(self, accion, ventana) -> PuntoControl:
         # Una sola copia para estado y ventana: así conservan las referencias entre sí (R2).
-        estado, transacciones = copy.deepcopy((self._estado, ventana))
+        estado, transacciones = copy.deepcopy((self._estado, ventana), self._memo_compartido(ventana))
         return PuntoControl(accion, estado, transacciones)
+
+    def _memo_compartido(self, ventana):
+        """Lo que el punto de control comparte en vez de copiar (research R2, medido en T041).
+
+        - El historial del pergamino: un punto de control solo sirve para consultar, nunca para
+          seguir jugando, y copiar sus 5 transacciones era casi todo el costo de la copia. La
+          copia apunta al mismo historial; las consultas no lo modifican, porque no abren
+          acciones.
+        - El estado del azar que guarda cada turno enemigo (una tupla de 625 enteros): es
+          inmutable, así que compartirlo es seguro y evita recorrerlo en cada copia.
+        """
+        from logica.cambios import CambioAzar, CambioSoloLinea
+
+        memo = {}
+        historial = getattr(self._estado, "historial", None)
+        if historial is not None:
+            memo[id(historial)] = historial
+        for transaccion in ventana:
+            nodo = transaccion._cambios.primero
+            while nodo is not None:
+                cambio = nodo.valor
+                if type(cambio) is CambioSoloLinea:
+                    cambio = cambio.cambio
+                if type(cambio) is CambioAzar and type(cambio.anterior) is tuple:
+                    memo[id(cambio.anterior)] = cambio.anterior
+                nodo = nodo.siguiente
+        return memo
 
     def registrar_accion(self, transaccion) -> None:
         """Lo llama el historial al cerrar una acción aceptada (T006)."""

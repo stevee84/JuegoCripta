@@ -1,83 +1,83 @@
 {
- "segundos": 1417.2,
+ "segundos": 812.1,
  "filas": [
   {
    "medicion": "linea_tiempo_historia",
    "k": 10,
    "acciones": 5000,
    "puntos_de_control": 501,
-   "memoria_puntos_mb": 780.41,
-   "memoria_por_punto_kb": 1595.1,
+   "memoria_puntos_mb_estimada": 644.27,
+   "memoria_por_punto_kb": 1316.8,
    "max_transacciones_por_consulta": 9,
-   "mediana_ms": 15.967,
-   "p95_ms": 48.676,
-   "maximo_ms": 51.938,
+   "mediana_ms": 24.042,
+   "p95_ms": 75.635,
+   "maximo_ms": 100.147,
    "muestras": 45,
    "cumple_50ms": false,
-   "crear_punto_mediana_ms": 641.652
+   "crear_punto_mediana_ms": 66.603
   },
   {
    "medicion": "linea_tiempo_historia",
    "k": 50,
    "acciones": 5000,
    "puntos_de_control": 101,
-   "memoria_puntos_mb": 529.78,
-   "memoria_por_punto_kb": 5371.2,
+   "memoria_puntos_mb_estimada": 517.93,
+   "memoria_por_punto_kb": 5251.1,
    "max_transacciones_por_consulta": 48,
-   "mediana_ms": 75.563,
-   "p95_ms": 266.858,
-   "maximo_ms": 433.564,
+   "mediana_ms": 128.729,
+   "p95_ms": 473.012,
+   "maximo_ms": 482.426,
    "muestras": 45,
    "cumple_50ms": false,
-   "crear_punto_mediana_ms": 2948.844
+   "crear_punto_mediana_ms": 294.245
   },
   {
    "medicion": "linea_tiempo_historia",
    "k": 200,
    "acciones": 5000,
    "puntos_de_control": 26,
-   "memoria_puntos_mb": 506.52,
-   "memoria_por_punto_kb": 19949.0,
+   "memoria_puntos_mb_estimada": 439.28,
+   "memoria_por_punto_kb": 17301.0,
    "max_transacciones_por_consulta": 193,
-   "mediana_ms": 418.201,
-   "p95_ms": 1283.602,
-   "maximo_ms": 10517.198,
+   "mediana_ms": 549.556,
+   "p95_ms": 1917.791,
+   "maximo_ms": 2307.378,
    "muestras": 45,
    "cumple_50ms": false,
-   "crear_punto_mediana_ms": 11928.878
+   "crear_punto_mediana_ms": 1372.205
   },
   {
    "medicion": "linea_tiempo_historia",
    "k": "sin puntos de control",
    "acciones": 5000,
    "puntos_de_control": 1,
-   "memoria_puntos_mb": 0.29,
-   "memoria_por_punto_kb": 294.9,
+   "memoria_puntos_mb_estimada": 0.29,
+   "memoria_por_punto_kb": 298.8,
    "max_transacciones_por_consulta": 3932,
-   "mediana_ms": 12031.271,
-   "p95_ms": 111969.004,
-   "maximo_ms": 111969.004,
+   "mediana_ms": 22938.781,
+   "p95_ms": 97239.122,
+   "maximo_ms": 97239.122,
    "muestras": 5,
    "cumple_50ms": false,
-   "crear_punto_mediana_ms": 27.856
+   "crear_punto_mediana_ms": 4.143
   },
   {
    "medicion": "linea_tiempo_accion_sin_punto",
-   "mediana_ms": 3.191,
-   "p95_ms": 5.066,
-   "maximo_ms": 5648.321,
+   "mediana_ms": 4.371,
+   "p95_ms": 9.183,
+   "maximo_ms": 11474.292,
    "muestras": 4500
   },
   {
    "medicion": "linea_tiempo_accion_con_punto",
    "k": 10,
    "crear_punto": {
-    "mediana_ms": 641.652,
-    "p95_ms": 943.014,
-    "maximo_ms": 10648.236,
+    "mediana_ms": 66.603,
+    "p95_ms": 122.848,
+    "maximo_ms": 7586.193,
     "muestras": 501
    },
-   "accion_con_punto_estimada_mediana_ms": 644.843,
+   "accion_con_punto_estimada_mediana_ms": 70.974,
    "umbral_ciclo_ms": 20,
    "cumple_20ms": false
   },
@@ -85,12 +85,12 @@
    "medicion": "linea_tiempo_accion_con_punto",
    "k": 50,
    "crear_punto": {
-    "mediana_ms": 2948.844,
-    "p95_ms": 3822.049,
-    "maximo_ms": 5749.299,
+    "mediana_ms": 294.245,
+    "p95_ms": 668.633,
+    "maximo_ms": 9306.427,
     "muestras": 101
    },
-   "accion_con_punto_estimada_mediana_ms": 2952.035,
+   "accion_con_punto_estimada_mediana_ms": 298.616,
    "umbral_ciclo_ms": 20,
    "cumple_20ms": false
   },
@@ -98,12 +98,12 @@
    "medicion": "linea_tiempo_accion_con_punto",
    "k": 200,
    "crear_punto": {
-    "mediana_ms": 11928.878,
-    "p95_ms": 19298.028,
-    "maximo_ms": 22815.354,
+    "mediana_ms": 1372.205,
+    "p95_ms": 8034.892,
+    "maximo_ms": 12223.796,
     "muestras": 26
    },
-   "accion_con_punto_estimada_mediana_ms": 11932.069,
+   "accion_con_punto_estimada_mediana_ms": 1376.576,
    "umbral_ciclo_ms": 20,
    "cumple_20ms": false
   },
@@ -111,15 +111,15 @@
    "medicion": "linea_tiempo_adelante_vs_atras",
    "k": 10,
    "hacia_atras": {
-    "mediana_ms": 53.859,
-    "p95_ms": 140.75,
-    "maximo_ms": 140.75,
+    "mediana_ms": 43.559,
+    "p95_ms": 146.076,
+    "maximo_ms": 146.076,
     "muestras": 8
    },
    "re_simular": {
-    "mediana_ms": 8.475,
-    "p95_ms": 35.037,
-    "maximo_ms": 35.037,
+    "mediana_ms": 10.166,
+    "p95_ms": 25.552,
+    "maximo_ms": 25.552,
     "muestras": 8
    },
    "mismo_estado": true
@@ -128,15 +128,15 @@
    "medicion": "linea_tiempo_adelante_vs_atras",
    "k": 50,
    "hacia_atras": {
-    "mediana_ms": 58.109,
-    "p95_ms": 215.781,
-    "maximo_ms": 215.781,
+    "mediana_ms": 62.225,
+    "p95_ms": 233.277,
+    "maximo_ms": 233.277,
     "muestras": 8
    },
    "re_simular": {
-    "mediana_ms": 84.416,
-    "p95_ms": 154.298,
-    "maximo_ms": 154.298,
+    "mediana_ms": 95.013,
+    "p95_ms": 153.116,
+    "maximo_ms": 153.116,
     "muestras": 8
    },
    "mismo_estado": true
@@ -145,15 +145,15 @@
    "medicion": "linea_tiempo_adelante_vs_atras",
    "k": 200,
    "hacia_atras": {
-    "mediana_ms": 619.117,
-    "p95_ms": 1711.101,
-    "maximo_ms": 1711.101,
+    "mediana_ms": 618.321,
+    "p95_ms": 1265.306,
+    "maximo_ms": 1265.306,
     "muestras": 8
    },
    "re_simular": {
-    "mediana_ms": 128.133,
-    "p95_ms": 545.924,
-    "maximo_ms": 545.924,
+    "mediana_ms": 130.569,
+    "p95_ms": 651.869,
+    "maximo_ms": 651.869,
     "muestras": 8
    },
    "mismo_estado": true
@@ -162,41 +162,41 @@
    "medicion": "retroceso_punta_a_punta",
    "incluye": "reloj, agenda, rastro, puertas, trampas, inventario y azar",
    "deshacer_transaccion": {
-    "mediana_ms": 3.123,
-    "p95_ms": 5.314,
-    "maximo_ms": 5.314,
+    "mediana_ms": 3.252,
+    "p95_ms": 4.406,
+    "maximo_ms": 4.406,
     "muestras": 10
    },
    "alternativa_copia_completa_por_accion": {
-    "mediana_ms": 82.783,
-    "p95_ms": 89.149,
-    "maximo_ms": 89.149,
+    "mediana_ms": 95.025,
+    "p95_ms": 127.955,
+    "maximo_ms": 127.955,
     "muestras": 10
    }
   },
   {
    "medicion": "replay_completo",
    "acciones_en_log": 15,
-   "mediana_ms": 35.33,
-   "p95_ms": 49.947,
-   "maximo_ms": 49.947,
+   "mediana_ms": 38.516,
+   "p95_ms": 38.699,
+   "maximo_ms": 38.699,
    "muestras": 5
   },
   {
    "medicion": "replay_version_incompatible",
    "rechazado": true,
-   "mediana_ms": 6.718,
-   "p95_ms": 15.086,
-   "maximo_ms": 15.086,
+   "mediana_ms": 6.761,
+   "p95_ms": 18.003,
+   "maximo_ms": 18.003,
    "muestras": 5
   },
   {
    "medicion": "inventario_vista_ordenada",
    "criterio": "peso",
    "objetos": 10,
-   "mediana_ms": 0.053,
-   "p95_ms": 0.058,
-   "maximo_ms": 0.058,
+   "mediana_ms": 0.042,
+   "p95_ms": 0.052,
+   "maximo_ms": 0.052,
    "muestras": 15,
    "orden_real_intacto": true
   },
@@ -204,9 +204,9 @@
    "medicion": "inventario_vista_ordenada",
    "criterio": "valor",
    "objetos": 10,
-   "mediana_ms": 0.052,
-   "p95_ms": 0.055,
-   "maximo_ms": 0.055,
+   "mediana_ms": 0.042,
+   "p95_ms": 0.044,
+   "maximo_ms": 0.044,
    "muestras": 15,
    "orden_real_intacto": true
   },
@@ -214,9 +214,9 @@
    "medicion": "inventario_vista_ordenada",
    "criterio": "nombre",
    "objetos": 10,
-   "mediana_ms": 0.052,
-   "p95_ms": 0.064,
-   "maximo_ms": 0.064,
+   "mediana_ms": 0.041,
+   "p95_ms": 0.055,
+   "maximo_ms": 0.055,
    "muestras": 15,
    "orden_real_intacto": true
   },
@@ -225,8 +225,8 @@
    "objetos": 10,
    "rechazado": true,
    "mediana_ms": 0.003,
-   "p95_ms": 0.006,
-   "maximo_ms": 0.006,
+   "p95_ms": 0.009,
+   "maximo_ms": 0.009,
    "muestras": 15
   }
  ]
