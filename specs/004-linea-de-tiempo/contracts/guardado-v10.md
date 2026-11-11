@@ -15,7 +15,14 @@
    ```text
    linea.exportar_bytes(estado) -> bytes
    LineaTiempo.importar_bytes(datos: bytes) -> (estado, linea)
+   linea.aviso_k(k_pedido) -> str | None   # FR-030: texto para avisar si se pidió otro K
    ```
+
+   Implementado en `logica/linea_tiempo.py` (T032 y T033). La caché (`cache_inicial`), el
+   catálogo vivo (`catalogo_inicial`), el cargador de contenido y la fuente de datos **no viajan**
+   en los bytes: pueden tener el cliente de red. Al cargar quedan en `None` y quien restaura la
+   partida los vuelve a conectar, como ya hace hoy el guardado. Los enlaces del historial y del
+   inventario con la línea se reconectan dentro de `importar_bytes`.
 
    Si el estado no tiene línea de tiempo (partida de prueba, por ejemplo), la sección se escribe con
    longitud 0; al cargar se usa el estado que arma el guardado y se crea una línea nueva a partir de él.
