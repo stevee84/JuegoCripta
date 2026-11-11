@@ -2951,9 +2951,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> ok, continuemos
-
-(Continuación de `/speckit-implement` del Prompt 33, sobre la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Continúa con /speckit-implement en specs/004-linea-de-tiempo, solo las tareas T003 y T004. Primero escribe tests/test_logica/test_cambios_linea.py con pruebas que citen FR-001, FR-005 y FR-012: un cambio marcado «solo línea» no lo deshace el pergamino; deshacer mientras se cumpla una condición, del más reciente al más antiguo, sin vaciar la transacción; y que deshacer y rehacer deje el estado idéntico para cada tipo de cambio, también si algo falla a la mitad, usando una partida real offline de cripta-04. Después implementa en logica/cambios.py registrar_solo_linea, deshacer_mientras y rehacer, con el inverso de cada tipo de cambio. No cambies revertir ni ninguna firma existente, y no toques código de Steven ni de Sofía. Corre la suite completa y marca las tareas en tasks.md.
 
 **Qué se obtuvo.** T003: `tests/test_logica/test_cambios_linea.py`, con 8 pruebas que citan FR-001, FR-005 y FR-012; la principal juega 120 acciones reales en `cripta-04` (moverse, atacar, recoger, soltar, equipar, usar) y comprueba que cada transacción queda idéntica después de deshacer y rehacer. T004: en `logica/cambios.py` (archivo de Joshua), `CambioSoloLinea`, `TransaccionAccion.registrar_solo_linea`, `deshacer_mientras` (no vacía la transacción) y `rehacer`, más un inverso por cada uno de los 13 tipos de cambio. `revertir` salta los cambios «solo línea» y no cambió en lo demás. Suite: 1083 aprobadas.
 
@@ -2963,9 +2961,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> revisa si ya se hizo bien el merge, si es asi continua
-
-(Continuación de `/speckit-implement`. Steven pidió terminar las dos tareas pendientes de su spec 002, que tocan `controller/` y `vista/`.)
+> Verifica que el merge de origin/Steve en mi rama joshua haya quedado bien y que no falte nada de Steven ni de Sofía. Si está bien, implementa T036 a T038 de specs/004-linea-de-tiempo/tasks.md, que corresponden a 002-T049 y 002-T050 de la spec de Steven: al iniciar una partida muestra una línea con el resultado de la resolubilidad (tiene solución, sin solución o no se pudo verificar), y agrega el comando resolubilidad que muestra el informe completo, en consola y en pygame. Usa JuegoService.obtener_informe_resolubilidad() y el formato de specs/002-resolubilidad/contracts/cli-verificar.md, sin modificar main.py ni otros archivos de Steven; si una cripta no tiene solución, la partida no debe iniciar y debe mostrarse el informe. Escribe las pruebas primero, citando FR-013 y FR-014 de la 002.
 
 **Qué se obtuvo.** `controller/resumen_resolubilidad.py` (nuevo) con `linea_inicio` (las tres líneas distinguibles de FR-013 de la 002) y `lineas_informe` (el informe completo). En `controller/controlador_juego.py`: al iniciar una partida se muestra la línea de resolubilidad; si la cripta no tiene solución o no se pudo verificar, la partida no inicia y se muestra el informe; y el comando nuevo `resolubilidad` muestra el informe de antes de empezar. En `vista/vista_pygame.py`, un botón «Resolubilidad». Pruebas en `tests/test_controller/test_resolubilidad_interfaz.py` (9, citan FR-013 y FR-014 de la 002). Suite: 1095 aprobadas.
 
@@ -2975,9 +2971,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> Sí, sigue
-
-(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa T005 y T006 de specs/004-linea-de-tiempo/tasks.md. Escribe tests/test_logica/test_historial_linea.py: con una línea vinculada, el historial le entrega cada transacción cerrada y le avisa el recorte al usar un pergamino; un intento abortado no llega a la línea; sin línea vinculada el historial se comporta igual que antes y el límite del pergamino sigue en 5. Después agrega vincular_linea en logica/historial_reversible.py sin cambiar firmas existentes. Cuida que copiar o guardar el historial no arrastre la línea, porque los puntos de control copian el estado completo.
 
 **Qué se obtuvo.** En `logica/historial_reversible.py` (archivo de Joshua): `vincular_linea`; al cerrar una acción el historial le entrega la transacción a la línea y al retroceder le avisa el recorte. Sin línea vinculada se comporta igual que antes y el límite de 5 del pergamino no cambia. Pruebas en `tests/test_logica/test_historial_linea.py` (6, citan FR-013, FR-014 y FR-021). Suite: 1101 aprobadas.
 
@@ -2987,9 +2981,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> continua
-
-(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa T007 a T009 de specs/004-linea-de-tiempo/tasks.md. Crea logica/linea_tiempo.py con la clase LineaTiempo según el data-model: los instantes de cada decisión en un arreglo no decreciente, un punto de control cada K acciones copiando en una sola operación el estado y las transacciones de su ventana, y la cola de referencias vivas a las acciones recientes. Agrega una búsqueda binaria propia para encontrar el instante, sin dict, set ni bisect. Escribe pruebas que citen FR-017, FR-019 y FR-021 con partidas reales offline. Si encuentras algo del plan que no funciona, corrígelo primero en el plan en un commit aparte.
 
 **Qué se obtuvo.** `logica/linea_tiempo.py` (nuevo): `LineaTiempo` con los instantes de decisión en un arreglo no decreciente, un punto de control cada K acciones (una sola copia profunda del estado y de las transacciones de su ventana) y la cola de referencias vivas; `buscar_ultimo_menor_o_igual`, búsqueda binaria propia sin `bisect`. Pruebas en `tests/test_logica/test_linea_tiempo.py` (10, citan FR-001, FR-015, FR-017, FR-019 y FR-021), sobre partidas reales en `cripta-04`. Suite: 1112 aprobadas. También quedó escrito `recortar`, que es T023; no se marca como hecha hasta tener sus pruebas (T021 y T022).
 
@@ -2999,9 +2991,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> Sí, sigue
-
-(Continuación de `/speckit-implement`, cierre de la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa T010 y T011 de specs/004-linea-de-tiempo/tasks.md. En service/juego_service.py crea y vincula la línea de tiempo al iniciar una partida nueva, con K = 10 provisional y un método para configurarlo, tocando lo mínimo porque es un archivo compartido con Steven. Crea controller/resumen_historia.py con el resumen de FR-004 en el orden fijo del data-model (reloj, sala, jugador con sus estadísticas efectivas, inventario, efectos, enemigos de la sala y mapa conocido, que por ahora dice «no disponible»), reutilizando los ayudantes de texto de vista/presentacion_juego.py. Agrega las pruebas y corre la suite completa.
 
 **Qué se obtuvo.** T010: `service/juego_service.py` crea la línea de tiempo al final de `iniciar_partida` (partida nueva) y la vincula al historial; `configurar_checkpoint_cada(k)` y `obtener_linea_tiempo()`; K = 10 por omisión (`LineaTiempo.K_POR_DEFECTO`). T011: `controller/resumen_historia.py` (nuevo), `lineas_resumen(estado, titulo)` con el orden fijo del data-model, usando los ayudantes de texto de `vista/presentacion_juego.py`. Pruebas: 2 en `tests/test_logica/test_linea_tiempo.py` y 4 en `tests/test_controller/test_resumen_historia.py` (citan FR-004, FR-005, FR-015 y FR-016). Suite: 1119 aprobadas.
 
@@ -3011,9 +3001,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> revisa que todo quedara subido y si si, sigue
-
-(Continuación de `/speckit-implement`, Fase 3 de `specs/004-linea-de-tiempo/tasks.md`, el MVP.)
+> Revisa que todo esté subido a GitHub y, si es así, implementa la Fase 3 de specs/004-linea-de-tiempo/tasks.md (T012 a T017), que es el MVP. En logica/linea_tiempo.py agrega la consulta por instante: elegir el punto de control, deshacer en sitio como máximo K transacciones (parcialmente la última si t cae entre dos decisiones), armar el resumen y rehacer en un finally. Agrega el comando historia <t> en controller/controlador_juego.py y en la ayuda de la consola. Las pruebas deben comparar cada instante contra estados grabados al jugar una partida real con turnos de enemigos, y cubrir los casos del Apéndice B: t futuro, varios eventos en el mismo instante y que historia no consume tiempo, no se registra en partida.log ni toca el historial del pergamino.
 
 **Qué se obtuvo.** En `logica/linea_tiempo.py`: `consultar_instante` y `consultar_accion`, que eligen el punto de control, deshacen en sitio como máximo K transacciones (parcialmente la última cuando t cae entre dos decisiones), arman el resumen y rehacen en un `finally`. En `controller/resumen_historia.py`, `consultar_historia` con los títulos y los mensajes de rechazo del contrato. En `controller/controlador_juego.py`, el comando `historia <t>` (también acepta `#k`) y su línea en `ayuda`. Pruebas: T012 compara cada instante de una partida real de 60 acciones en `cripta-01` (con turnos de enemigos y varios eventos en el mismo instante, caso del Apéndice B) contra el estado grabado al jugar; T013 los rechazos (t futuro, Apéndice B); T014 dos partidas iguales, una con consultas entre acción y acción: mismo estado final, mismo `partida.log`, mismo reloj, azar e historial del pergamino (Apéndice B). Suite: 1129 aprobadas.
 
@@ -3023,9 +3011,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> Sí, sigue
-
-(Continuación de `/speckit-implement`, Fases 4 y 5 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa las Fases 4 y 5 de specs/004-linea-de-tiempo/tasks.md (T018 a T024). Para historia #k, prueba con una partida real de 1 000 acciones que cada #k coincida con el estado de antes de esa acción, el rango válido y la partida terminada. Para el pergamino, recorta la línea al retroceder y haz que los pergaminos recogidos, soltados y consumidos se vean bien en el pasado usando cambios «solo línea», sin modificar el motor de Sofía ni romper las pruebas de la Parte I. Cubre el caso del Apéndice B de historia después de un pergamino, dos pergaminos seguidos y que el recorte no dependa del largo de la partida.
 
 **Qué se obtuvo.** Fase 4: pruebas de `historia #k` sobre una partida real de 1 000 acciones en `cripta-01` (cada #k coincide con el estado de antes de esa acción, nunca se tocan más de K transacciones), rango válido y partida terminada; prueba del comando en la consola. Fase 5: al recoger o soltar un pergamino, el inventario anota el cambio como «solo línea» en el historial (la lista de cambios devuelta sigue vacía, como en la Parte I); al consumirlo, el historial le pasa el consumo a la línea después del recorte, sin tocar el motor de Sofía; «antes de #(n+1)» siempre sale del estado vivo. Pruebas: lo revertido deja de existir con K = 1, 3, 4 y 10 (Apéndice B), el pergamino aparece antes y consumido después, dos pergaminos seguidos, límite de 5, y el recorte cuesta lo mismo con 1 000 que con 5 000 acciones. Suite: 1139 aprobadas.
 
@@ -3047,9 +3033,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> revisa si ya quedo todo, si es asi, sigamos con nuestro trabajo, cuanto tenemos avanzado en %?
-
-(Continuación de `/speckit-implement`, Fase 6 de `specs/004-linea-de-tiempo/tasks.md`, después de integrar `origin/Sofia` con terreno, cazadores y guardado v10 de costo y rango.)
+> Revisa que todo esté subido y dime cuánto llevamos de la spec 004 en porcentaje. Después implementa la Fase 6 de specs/004-linea-de-tiempo/tasks.md (T025 a T028): la bandera --hasta t en configuracion.py, válida solo junto con --replay y como entero mayor o igual que 0; el parámetro hasta en EjecutorReplay.reproducir para detenerse en ese instante y devolver el mismo resumen que historia t; y en main.py imprimir ese resumen sin instanciar la vista. Si t es posterior al final, muestra el estado final e indica que la partida terminó antes. Sin --hasta el replay debe comportarse igual que en la Parte I. Las pruebas deben comparar contra historia t de la partida original y comprobar en un proceso aparte que no se carga la vista.
 
 **Qué se obtuvo.** `--hasta T` en `configuracion.py` (solo junto con `--replay`, entero ≥ 0; si no, error antes de reproducir). `EjecutorReplay.reproducir(ruta, hasta=None)` se detiene cuando el reloj llega a T y devuelve las líneas de `historia T`; si T es posterior al final, el estado final y «La partida terminó en t=…, antes del instante pedido (…).». Sin `--hasta` devuelve None y se comporta como en la Parte I. `main.py` imprime el resumen sin instanciar la vista. Pruebas en `tests/test_controller/test_replay_hasta.py` (6): mismo texto que `historia t` en la partida original, t posterior al final (Apéndice B), sin `--hasta`, versión incompatible, validación de la bandera y un proceso aparte que comprueba que no se cargan las vistas. Suite: 1316 aprobadas.
 
@@ -3059,9 +3043,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> Sí, sigue
-
-(Continuación de `/speckit-implement`, Fase 7 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa la Fase 7 de specs/004-linea-de-tiempo/tasks.md (T029 a T031): la bandera --checkpoint-cada K en configuracion.py, entero mayor o igual que 1 y rechazada al arrancar si no lo es; pásala a la partida interactiva y al replay. Prueba con K = 1, 7, 50 y un K mayor que la partida que todas las consultas den exactamente lo mismo y que ninguna deshaga más de K transacciones. Lo de --bench déjalo para T046.
 
 **Qué se obtuvo.** `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros se rechazan al arrancar). `main.py` lo pasa a la partida interactiva (`ControladorJuego.configurar_checkpoint_cada`) y al replay (`JuegoService.configurar_checkpoint_cada`); la copia de servicio que usa el replay conserva el K. Pruebas: con K = 1, 7, 50 y un K mayor que la partida, 120 acciones reales en `cripta-01` dan exactamente las mismas consultas por acción y por instante, y ninguna toca más de K transacciones; con K mayor que la partida solo existe el punto inicial; validación de la bandera; el replay y la partida interactiva usan el K pedido. Suite: 1321 aprobadas.
 
