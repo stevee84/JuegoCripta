@@ -10,6 +10,18 @@
 deje de ver lo que no ha descubierto, y que pueda pedir que lo lleven automáticamente a una sala
 que ya conoce."
 
+## Clarifications
+
+### Session 2026-11-11
+
+- Q: Si el jugador ya está en una sala con enemigos cuando pide el viaje, ¿el viaje empieza? → A:
+  Sí. §3.4 detiene el viaje cuando el jugador **entra** a una sala con enemigos, y quien ya está
+  allí no entra. Además, pedir irse de una sala con un enemigo al lado es justo lo razonable:
+  bloquearlo sería impedirle moverse cuando más lo necesita.
+- Q: ¿El daño que llega entre dos pasos, sin que el jugador se mueva —un pulso de veneno, el
+  ataque de un enemigo que lo alcanzó—, detiene el viaje? → A: Sí. La regla existe para devolverle
+  el control cuando algo le pasa, y da igual si el daño llegó al moverse o estando quieto.
+
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
 ### Historia 1 — El jugador solo ve lo que ha descubierto (Prioridad: P1)
@@ -101,6 +113,12 @@ viaje se detiene y que el motivo que se informa es el correcto.
    se corrige y el siguiente cálculo busca otro camino, sin detener el viaje por eso.
 6. **Dado** un viaje que se detuvo, **cuando** el jugador consulta qué pasó, **entonces** puede ver
    el motivo y en qué sala quedó.
+7. **Dado** que el jugador ya está en una sala con enemigos, **cuando** pide ir a otra sala,
+   **entonces** el viaje empieza igual: la parada se dispara al entrar a una sala con enemigos, y
+   él no está entrando.
+8. **Dado** un viaje en curso, **cuando** el jugador recibe daño entre dos pasos sin haberse
+   movido, por un efecto o por un ataque que lo alcanzó, **entonces** el viaje se detiene igual que
+   si el daño hubiera llegado al moverse.
 
 ---
 
@@ -160,8 +178,8 @@ exploradas; se repite con la antorcha apagada y solo quedan avistadas.
   mismo trato que una sala avistada.
 - **El jugador pide ir a una sala explorada que ya no es alcanzable con lo que conoce**: el viaje
   no empieza, o se detiene en cuanto se agota el camino, informando que no hay ruta.
-- **El jugador ya está en una sala con enemigos y pide un viaje**: ver FR-016.
-- **El daño llega entre dos pasos**, por una trampa, un efecto o un ataque: ver FR-017.
+- **El jugador ya está en una sala con enemigos y pide un viaje**: el viaje empieza igual; la parada se dispara al entrar a una sala con enemigos (FR-017).
+- **El daño llega entre dos pasos** sin que el jugador se mueva, por un efecto o un ataque: detiene el viaje igual (FR-018).
 - **Dos salidas de la misma sala llevan a la misma vecina**: no cambia nada; el destino se conoce
   igual y el viaje elige la más barata.
 - **Una sala avistada se vuelve explorada**: deja de ser avistada; los dos estados se excluyen.
@@ -205,23 +223,25 @@ exploradas; se repite con la antorcha apagada y solo quedan avistadas.
   momento, de modo que una puerta que resulte estar cerrada quede descartada en el cálculo
   siguiente.
 - **FR-015**: El viaje NO DEBE abrir ninguna puerta, aunque el jugador tenga la llave que la abre.
-- **FR-016**: El viaje DEBE detenerse cuando el jugador llega al destino, cuando entra a una sala
-  que contiene enemigos —activos o dormidos—, cuando recibe daño, o cuando deja de existir un
-  camino conocido hasta el destino. [NEEDS CLARIFICATION: si el jugador ya está en una sala con
-  enemigos cuando pide el viaje, ¿el viaje no empieza, o empieza y solo se detiene al entrar a la
-  siguiente sala con enemigos?]
-- **FR-017**: El jugador DEBE poder ver por qué se detuvo un viaje y en qué sala quedó. [NEEDS
-  CLARIFICATION: ¿cuenta como «recibir daño» el que llega entre dos pasos sin que el jugador se
-  mueva, por ejemplo un pulso de veneno o el ataque de un enemigo que lo alcanzó?]
-- **FR-018**: Cada paso del viaje DEBE anotarse en la bitácora de la partida como un movimiento
+- **FR-016**: El viaje DEBE detenerse cuando el jugador llega al destino, cuando **entra** a una
+  sala que contiene enemigos —activos o dormidos—, cuando recibe daño, o cuando deja de existir un
+  camino conocido hasta el destino.
+- **FR-017**: Que el jugador ya esté en una sala con enemigos al pedir el viaje NO DEBE impedir que
+  empiece: la condición de parada es entrar a una sala con enemigos, y quien ya está allí no entra.
+  Pedir irse de una sala con un enemigo al lado es un uso legítimo del viaje.
+- **FR-018**: El daño DEBE detener el viaje tanto si llega al moverse como si llega entre dos pasos
+  sin que el jugador se mueva, por ejemplo un pulso de veneno o el ataque de un enemigo que lo
+  alcanzó. La regla existe para devolverle el control cuando algo le pasa.
+- **FR-019**: El jugador DEBE poder ver por qué se detuvo un viaje y en qué sala quedó.
+- **FR-020**: Cada paso del viaje DEBE anotarse en la bitácora de la partida como un movimiento
   individual, y la orden de ir a DEBE anotarse además como un comentario.
-- **FR-019**: El pergamino de retroceso DEBE revertir únicamente el último paso del viaje, porque
+- **FR-021**: El pergamino de retroceso DEBE revertir únicamente el último paso del viaje, porque
   cada paso es una acción del jugador por separado.
-- **FR-020**: El conocimiento del jugador es estado del juego: DEBE revertirse con el pergamino,
+- **FR-022**: El conocimiento del jugador es estado del juego: DEBE revertirse con el pergamino,
   guardarse en el archivo de partida y poder reconstruirse al consultar un instante pasado.
-- **FR-021**: Mientras la antorcha está encendida, entrar a una sala DEBE dejar exploradas todas
+- **FR-023**: Mientras la antorcha está encendida, entrar a una sala DEBE dejar exploradas todas
   sus vecinas, a través de cualquier salida, esté abierta o cerrada.
-- **FR-022**: Explorar una sala por efecto de la antorcha DEBE revelar su nombre y sus salidas, NO
+- **FR-024**: Explorar una sala por efecto de la antorcha DEBE revelar su nombre y sus salidas, NO
   DEBE revelar su contenido y NO DEBE activar sus enemigos ni sus trampas.
 
 ### Entidades principales

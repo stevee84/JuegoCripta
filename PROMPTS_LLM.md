@@ -3301,3 +3301,31 @@ cripta inexistente escupía un traceback, y el propio `quickstart.md` documentab
 entre llaves en una segunda pasada. §5.4 dice «del mismo recorrido», así que se fusionaron; el
 resultado fue más simple, no más complejo: desapareció una función de 35 líneas y una sola tabla
 sustituyó a dos.
+
+## Prompt 15 — `/speckit.specify` y `/speckit.clarify` de 003-niebla-y-ir-a
+
+El texto del `specify` se redactó a partir de §3.3, §3.4 y §5.3 del enunciado, releídas para la
+ocasión, y del contrato de rutas ya cerrado con Sofía. Cubre los tres estados de una sala, la
+memoria de puertas, la antorcha, la separación entre el mapa y el conocimiento, las reglas del
+viaje, las cuatro condiciones de parada, el registro, el retroceso, lo que la interfaz debe
+permitir y los límites de §5.3 y §6.1. Cierra prohibiendo nombrar estructuras, algoritmos, clases
+y módulos.
+
+**Qué se obtuvo.** `specs/003-niebla-y-ir-a/spec.md` con cinco historias priorizadas, 24
+requisitos `FR-001`…`FR-024` y ocho criterios `SC-001`…`SC-008`. Los seis casos obligatorios de
+§3.4 quedaron como escenarios de aceptación.
+
+**El clarify cerró dos preguntas**, las dos sobre cuándo se detiene el viaje y las dos con efecto
+observable:
+
+- *Si el jugador ya está en una sala con enemigos, ¿el viaje empieza?* **Sí.** §3.4 detiene el
+  viaje cuando el jugador **entra** a una sala con enemigos, y quien ya está allí no entra. Además
+  pedir irse de una sala con un enemigo al lado es justo lo razonable.
+- *¿El daño que llega entre dos pasos, sin moverse, detiene el viaje?* **Sí.** La regla existe
+  para devolverle el control cuando algo le pasa, y da igual si el daño llegó al moverse o estando
+  quieto.
+
+**Decisión heredada de 002.** `SC-005` recoge la prueba que pidió Sofía al cerrar el contrato de
+rutas: dos estados reales distintos que produzcan el mismo mapa conocido deben producir el mismo
+viaje. Es la garantía de que «ir a» no observa nada fuera del conocimiento del jugador, que es la
+frontera que ella y yo acordamos y que §3.3 exige.

@@ -13,7 +13,7 @@
 
 ## Completitud de los requisitos
 
-- [ ] No queda ninguna marca [NEEDS CLARIFICATION] — **quedan 2, a propósito, para `/speckit.clarify`**
+- [x] No queda ninguna marca [NEEDS CLARIFICATION]
 - [x] Los requisitos son comprobables y sin ambigüedad
 - [x] Los criterios de éxito son medibles
 - [x] Los criterios de éxito no dependen de la tecnología
@@ -31,13 +31,12 @@
 
 ## Notas
 
-- Las dos marcas `[NEEDS CLARIFICATION]` que quedan son deliberadas y afectan al comportamiento
-  observable del viaje, así que se cierran en `/speckit.clarify`:
-  - `FR-016`: si el jugador ya está en una sala con enemigos cuando pide el viaje, ¿el viaje no
-    empieza o empieza y solo se detiene al entrar a la siguiente sala con enemigos? El enunciado
-    dice «entra a una sala que contiene enemigos», y el jugador que ya está allí no entra.
-  - `FR-017`: si el daño llega entre dos pasos sin que el jugador se mueva —un pulso de veneno, el
-    ataque de un enemigo que lo alcanzó—, ¿cuenta como «recibe daño» para detener el viaje?
+- Ya no queda ninguna marca `[NEEDS CLARIFICATION]`. Las dos se cerraron en `/speckit.clarify`
+  (sesión del 2026-11-11) y quedaron como requisitos propios, FR-017 y FR-018:
+  - El viaje **sí** empieza aunque el jugador ya esté en una sala con enemigos: §3.4 detiene
+    el viaje cuando el jugador *entra* a una sala con enemigos, y quien ya está allí no entra.
+  - El daño detiene el viaje **también** cuando llega entre dos pasos sin que el jugador se
+    mueva: la regla existe para devolverle el control cuando algo le pasa.
 - Los seis casos obligatorios del enunciado quedaron como escenarios de aceptación: destino
   avistado (Historia 2, escenario 3), puerta recordada abierta que en realidad se cerró (Historia
   3, escenario 5), enemigo dormido (Historia 3, escenario 2), empate de costos (Historia 2,
