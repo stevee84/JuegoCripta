@@ -59,6 +59,13 @@ queda en el paquete es la única copia de esa ventana (salvo R5).
 el motor de Sofía, descartado por la constitución VIII); copias del estado sin la ventana de
 cambios (no se podría deshacer sobre ellas).
 
+**Ajuste medido en T041** (estado de 1 500 acciones de `cripta-04`, ventana de 10 transacciones con
+1 122 cambios): copiar el paquete costaba 71,5 ms. El punto de control ahora **comparte en vez de
+copiar** dos cosas: el historial del pergamino (solo sirve para seguir jugando, y un punto de control
+solo se consulta; copiar sus 5 transacciones era la mayor parte del costo) y las tuplas del estado del
+azar que guarda cada turno enemigo (son inmutables). Con eso la copia baja a 19,1 ms. El resto del
+paquete se sigue copiando junto, así que las referencias entre estado y cambios se conservan.
+
 ## R3. ¿Cómo se consulta sin destruir el punto de control?
 
 **Decisión (corregida tras `/speckit-analyze`, hallazgo C1)**: **deshacer y rehacer en sitio**.
@@ -169,6 +176,12 @@ margen y el menor uso de memoria; se justifica con la tabla de `--bench` en `DEC
 
 **Cómo se mide la memoria**: `tracemalloc` (biblioteca estándar, solo en `--bench`), midiendo los
 bytes retenidos por la línea de tiempo después de 5 000 acciones, separado del estado de la partida.
+
+**Decisión final (T047, 2026-11-10)**: **K = 10**, con la medición de 5 000 acciones de `--bench`
+(`benchmarks/resultados/linea_tiempo_5000_k10.json`): mediana de `historia` 16,3 ms, p95 59,7 ms,
+máximo 82,7 ms; K = 50 y K = 200 quedan por encima de 100 ms de mediana. Ningún K cumple a la vez
+los 50 ms en el peor caso y los 20 ms por ciclo con esta carga extrema; los límites están en
+`DECISIONES.md` §5.5.
 
 ## R8. Persistencia y contrato con Steven (guardado v10)
 
