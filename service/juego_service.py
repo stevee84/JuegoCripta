@@ -767,6 +767,7 @@ class JuegoService:
             copia._cache = self._cache
         if self._inicializador is not None:
             copia.conectar_inicializador(self._inicializador)
+        copia._checkpoint_cada = self._checkpoint_cada  # Spec 004: mismo K que el original.
         return copia
 
     def obtener_estado(self):

@@ -153,6 +153,8 @@ def main() -> None:
         replay = EjecutorReplay()
         servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=CacheCatalogo(config.cache_size))
         servicio.conectar_inicializador(InicializadorPartida())
+        if getattr(config, "checkpoint_cada", None) is not None:
+            servicio.configurar_checkpoint_cada(config.checkpoint_cada)  # spec 004, FR-015
         replay.conectar_servicio(servicio)
         try:
             hasta = getattr(config, "hasta", None)
@@ -180,6 +182,8 @@ def main() -> None:
         historial=HistorialReversible(),
     )
     controlador.configurar_arranque(semilla, CacheCatalogo(config.cache_size), config.ruta_guardado)
+    if getattr(config, "checkpoint_cada", None) is not None:
+        controlador.configurar_checkpoint_cada(config.checkpoint_cada)  # spec 004, FR-015
 
     estado = None
     if getattr(config, "demo", False):

@@ -120,3 +120,15 @@ def test_fr003_fr007_historia_por_numero_de_accion(tmp_path, monkeypatch, capsys
         resultado = controlador.procesar_comando(texto)
         assert not resultado.exito
         assert esperado in resultado.mensaje
+
+
+def test_fr015_la_partida_interactiva_usa_el_k_pedido(tmp_path, monkeypatch):
+    """T031: --checkpoint-cada llega a la línea de la partida iniciada desde el controlador."""
+    monkeypatch.chdir(tmp_path)
+    controlador = ControladorJuego(
+        MotorJuego(), VistaConsola(), FuenteOffline(REALES), HistorialReversible())
+    controlador.configurar_arranque(0, CacheCatalogo(25), str(tmp_path))
+    controlador.conectar_inicializador(InicializadorPartida(), 0)
+    controlador.configurar_checkpoint_cada(4)
+    assert controlador.procesar_comando("cripta cripta-01").exito
+    assert controlador._servicio.obtener_linea_tiempo().k == 4

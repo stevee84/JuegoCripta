@@ -111,3 +111,24 @@ def test_fr009_main_no_instancia_la_vista(partida):
         capture_output=True, text=True, encoding="utf-8", cwd=RAIZ, env=entorno)
     assert proceso.returncode == 0, proceso.stderr
     assert "Historia en t=0 (antes de la acción #1)" in proceso.stdout
+
+
+def test_fr015_checkpoint_cada_se_valida_al_arrancar(monkeypatch):
+    """US6-2: 0, negativos o no enteros se rechazan al arrancar; un K válido llega a la config."""
+    for valor in ("0", "-3", "2.5", "abc"):
+        monkeypatch.setattr(sys, "argv", ["main.py", "--checkpoint-cada", valor])
+        with pytest.raises(SystemExit):
+            parsear_argumentos()
+    monkeypatch.setattr(sys, "argv", ["main.py", "--checkpoint-cada", "25"])
+    assert Configuracion().checkpoint_cada == 25
+
+
+def test_fr015_el_replay_usa_el_k_pedido(partida):
+    """FR-015: --checkpoint-cada también vale para --replay, y el resumen no cambia con K."""
+    controlador, linea, ruta = partida
+    reloj = controlador._servicio.obtener_estado().reloj
+    for k in (1, 3):
+        replay = _replay()
+        replay._servicio.configurar_checkpoint_cada(k)
+        assert replay.reproducir(ruta, hasta=reloj // 2) == consultar_historia(linea, str(reloj // 2))
+        assert replay._servicio.obtener_linea_tiempo().k == k

@@ -497,5 +497,36 @@ class TestPergamino(unittest.TestCase):
         self.assertLessEqual(max(pasos), 6)
 
 
+
+class TestVariosK(unittest.TestCase):
+    """T029: el resultado no depende de K y nunca se tocan más de K transacciones (FR-018, FR-023)."""
+
+    def test_fr023_mismas_consultas_con_cualquier_k(self):
+        """US6-1 y US6-3, y el caso borde de K mayor que la cantidad de acciones."""
+        resultados = []
+        for k in (1, 7, 50, 10 ** 6):
+            estado, motor, linea, elegir = partida_con_linea(k, cripta="cripta-01")
+            jugar(estado, motor, elegir, 120)
+            n = linea.cantidad_acciones()
+            consultas = []
+            for accion in range(1, n + 2, 3):
+                consultas.append(linea.consultar_accion(accion, huella))
+                self.assertLessEqual(linea.ultimas_transacciones_tocadas, k)
+            for instante in range(0, estado.reloj + 1, max(1, estado.reloj // 40)):
+                consultas.append(linea.consultar_instante(instante, huella))
+                self.assertLessEqual(linea.ultimas_transacciones_tocadas, k)
+            resultados.append((n, consultas))
+        self.assertGreater(resultados[0][0], 50)
+        for n, consultas in resultados[1:]:
+            self.assertEqual(n, resultados[0][0])
+            self.assertEqual(consultas, resultados[0][1])
+
+    def test_fr017_con_k_mayor_que_n_solo_existe_el_punto_inicial(self):
+        estado, motor, linea, elegir = partida_con_linea(10 ** 6, cripta="cripta-01")
+        jugar(estado, motor, elegir, 30)
+        self.assertEqual(len(linea.puntos), 1)
+        self.assertEqual(linea.puntos[0].accion, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

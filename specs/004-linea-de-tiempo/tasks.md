@@ -116,9 +116,9 @@ partida original.
 
 **Prueba independiente**: la misma partida con varios K da los mismos resúmenes.
 
-- [ ] T029 [P] [US6] Escribir en `tests/test_logica/test_linea_tiempo.py`: con K = 1, K = 7, K = 50 y un K mayor que la cantidad de acciones, todas las consultas de la misma partida son idénticas; ninguna consulta deshace más de K transacciones (contar en la prueba) (US6-1, US6-3, casos borde) (FR-018, FR-023)
-- [ ] T030 [US6] Agregar la bandera `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros: error al arrancar), con prueba en `tests/test_configuracion.py` (US6-2) (FR-015)
-- [ ] T031 [US6] Pasar K desde `main.py` a la partida interactiva, al replay y a `--bench` (FR-015, FR-016)
+- [X] T029 [P] [US6] Escribir en `tests/test_logica/test_linea_tiempo.py`: con K = 1, K = 7, K = 50 y un K mayor que la cantidad de acciones, todas las consultas de la misma partida son idénticas; ninguna consulta deshace más de K transacciones (contar en la prueba) (US6-1, US6-3, casos borde) (FR-018, FR-023)
+- [X] T030 [US6] Agregar la bandera `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros: error al arrancar), con prueba en `tests/test_configuracion.py` (US6-2) (FR-015)
+- [X] T031 [US6] Pasar K desde `main.py` a la partida interactiva, al replay y a `--bench` (FR-015, FR-016). **Hecho el 2026-11-10** para la partida interactiva y el replay; el paso a `--bench` se hace en T046, cuando exista el proveedor
 
 ---
 

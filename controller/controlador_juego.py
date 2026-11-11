@@ -98,6 +98,10 @@ class ControladorJuego:
         if ruta_guardado is not None:
             self._ruta_partida = Path(ruta_guardado) / ARCHIVO_PARTIDA
 
+    def configurar_checkpoint_cada(self, k) -> None:
+        """K de --checkpoint-cada para las partidas que se inicien (spec 004, FR-015)."""
+        self._servicio.configurar_checkpoint_cada(k)
+
     def hay_partida_guardada(self) -> bool:
         """Solo lectura local: la validación de versiones contra la fuente ocurre al cargar."""
         if not self._ruta_partida.is_file():

@@ -2786,6 +2786,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 40 | Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino | 09/11/2026 |
 | 41 | `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d) | 09/11/2026 |
 | 42 | Implementación de la Fase 6 (T025 a T028): `--replay --hasta` | 10/11/2026 |
+| 43 | Implementación de la Fase 7 (T029 a T031): `--checkpoint-cada K` | 10/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3053,6 +3054,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `--hasta T` en `configuracion.py` (solo junto con `--replay`, entero ≥ 0; si no, error antes de reproducir). `EjecutorReplay.reproducir(ruta, hasta=None)` se detiene cuando el reloj llega a T y devuelve las líneas de `historia T`; si T es posterior al final, el estado final y «La partida terminó en t=…, antes del instante pedido (…).». Sin `--hasta` devuelve None y se comporta como en la Parte I. `main.py` imprime el resumen sin instanciar la vista. Pruebas en `tests/test_controller/test_replay_hasta.py` (6): mismo texto que `historia t` en la partida original, t posterior al final (Apéndice B), sin `--hasta`, versión incompatible, validación de la bandera y un proceso aparte que comprueba que no se cargan las vistas. Suite: 1316 aprobadas.
 
 **Qué hubo que corregir.** (1) Al insertar el código se coló un salto de línea real dentro de un `print` de `main.py`; lo atrapó la prueba del proceso aparte. (2) Una prueba existente reemplaza `reproducir` por una función que no acepta `hasta`; `main.py` ahora solo pasa `hasta` cuando la bandera se usa, así la llamada de la Parte I no cambia. (3) `tests/test_configuracion.py` (mayormente de Steven) compara la lista exacta de argumentos por defecto; se agregó `hasta=None`, igual que se hizo al incorporar `--verificar` y `--forzar`.
+
+## Prompt 43 — Implementación de la Fase 7 (T029 a T031): `--checkpoint-cada K`
+
+> **Prompt**
+>
+> Sí, sigue
+
+(Continuación de `/speckit-implement`, Fase 7 de `specs/004-linea-de-tiempo/tasks.md`.)
+
+**Qué se obtuvo.** `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros se rechazan al arrancar). `main.py` lo pasa a la partida interactiva (`ControladorJuego.configurar_checkpoint_cada`) y al replay (`JuegoService.configurar_checkpoint_cada`); la copia de servicio que usa el replay conserva el K. Pruebas: con K = 1, 7, 50 y un K mayor que la partida, 120 acciones reales en `cripta-01` dan exactamente las mismas consultas por acción y por instante, y ninguna toca más de K transacciones; con K mayor que la partida solo existe el punto inicial; validación de la bandera; el replay y la partida interactiva usan el K pedido. Suite: 1321 aprobadas.
+
+**Qué hubo que corregir.** Nada en el comportamiento. `tests/test_configuracion.py` volvió a necesitar el argumento nuevo (`checkpoint_cada=None`) en la lista de valores por defecto. El paso de K a `--bench` queda para T046, porque todavía no existe el proveedor de mediciones de la línea; así quedó anotado en T031.
 
 # Steven Moya Porras — Parte II
 
