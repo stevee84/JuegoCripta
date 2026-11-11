@@ -111,6 +111,8 @@ class Enemigo(Actor):
         )
 
         self.comportamiento = comportamiento
+        # P2 §4.1: solo los cazadores lo declaran; los demás comportamientos lo dejan en None.
+        self.rango = None
 
         # Los enemigos comienzan inactivos hasta que el juego
         # determine que deben participar en la simulación.

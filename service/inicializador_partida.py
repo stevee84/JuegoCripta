@@ -172,6 +172,44 @@ class InicializadorPartida:
         self._preparados = (cripta_id, fuente, generales, version, version_catalogo)
         return version, version_catalogo
 
+    @staticmethod
+    def _registrar_costo(costos, id_origen, puerta):
+        """Anota el costo de un sentido, y rechaza dos salidas distintas entre el mismo par.
+
+        Sofía pidió detectar esa ambigüedad al cerrar el contrato: si una sala declara dos
+        salidas hacia la misma vecina con costos distintos, no hay forma de decidir cuál es
+        «el» costo de ese tramo, y elegir uno en silencio sería inventarlo.
+        """
+        clave = (id_origen, puerta.destino_sala_id)
+        if costos.contiene(clave):
+            anterior = costos.obtener(clave)
+            if anterior[0] != puerta.costo:
+                raise ValueError(
+                    f"La sala {id_origen} declara dos salidas hacia la sala "
+                    f"{puerta.destino_sala_id} con costos distintos: {anterior[1]} cuesta "
+                    f"{anterior[0]} y {puerta.id_puerta} cuesta {puerta.costo}.")
+            return
+        costos.insertar(clave, (puerta.costo, puerta.id_puerta))
+
+    @staticmethod
+    def _validar_simetria(costos):
+        """P2 §3.1: el costo de un tramo es el mismo en los dos sentidos.
+
+        Se comprueba sobre el esqueleto ya reunido y antes de que nadie lo consuma, que es
+        donde se acordó con 001. Un tramo declarado en un solo sentido no es un error aquí:
+        el enunciado no exige que toda salida tenga inversa.
+        """
+        for clave in costos.claves():
+            inversa = (clave[1], clave[0])
+            if not costos.contiene(inversa):
+                continue
+            ida, vuelta = costos.obtener(clave), costos.obtener(inversa)
+            if ida[0] != vuelta[0]:
+                raise ValueError(
+                    f"El tramo entre las salas {clave[0]} y {clave[1]} declara costos "
+                    f"distintos en cada sentido: {ida[1]} cuesta {ida[0]} y {vuelta[1]} "
+                    f"cuesta {vuelta[0]}.")
+
     def _verificar(self, cripta_id, fuente, mapa, generales):
         """Informe de resolubilidad, o 'no se pudo verificar' si el dato falta o viene mal.
 
@@ -259,6 +297,7 @@ class InicializadorPartida:
         mapa.vincular_salidas()
         ids_fichas, fichas_vistas = [], TablaHashImpl()
         self._agregar_id(ids_fichas, fichas_vistas, generales.get("llave_salida"))
+        costos = TablaHashImpl()  # (origen, destino) → costo, para comparar los dos sentidos
         for sala in mapa.obtener_salas():
             for puerta in sala.puertas:
                 if puerta.destino_sala is None:
@@ -267,6 +306,8 @@ class InicializadorPartida:
                         "una sala inexistente.")
                 if puerta.llave_requerida is not None:
                     self._agregar_id(ids_fichas, fichas_vistas, puerta.llave_requerida)
+                self._registrar_costo(costos, sala.id_sala, puerta)
+        self._validar_simetria(costos)
 
         # §3.5: se verifica antes de cargar contenido. Lo gastado hasta aquí —el esqueleto y
         # la consulta de llaves— es lo que la partida necesita igual (FR-016); si no arranca,

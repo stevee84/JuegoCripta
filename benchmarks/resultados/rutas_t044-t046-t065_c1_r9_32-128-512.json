@@ -1,0 +1,6710 @@
+{
+  "entorno_ejecutor": {
+    "python": "3.12.10",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "reloj": "perf_counter_ns"
+  },
+  "semilla": 2609,
+  "calentamiento": 1,
+  "repeticiones": 9,
+  "cargas_region": [
+    32,
+    128,
+    512
+  ],
+  "cargas_matriz": [
+    32,
+    64
+  ],
+  "alcance": "sintetico_no_demuestra_pr_001_ni_20_ms_oficial",
+  "integracion_main_bench": "pendiente_t049_acuerdo_propietario_main",
+  "mediciones": [
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_27",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "14f5b6e83f0afa396751106aad32c9ee57b491b23b1c990d02da28a55be88c22",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 27
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 42900,
+      "p95": 54400,
+      "maximo": 54400,
+      "minimo": 39100,
+      "muestras": [
+        54400,
+        52300,
+        43900,
+        42900,
+        41200,
+        42900,
+        40000,
+        39100,
+        39500
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 1900,
+          "p95": 2500,
+          "maximo": 2500,
+          "minimo": 1800,
+          "muestras": [
+            2500,
+            2300,
+            2100,
+            1900,
+            1900,
+            1900,
+            1800,
+            1900,
+            1900
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 37900,
+          "p95": 48000,
+          "maximo": 48000,
+          "minimo": 35400,
+          "muestras": [
+            48000,
+            47400,
+            39500,
+            38900,
+            37300,
+            37900,
+            36200,
+            35400,
+            35700
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "consultas": 1,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 6,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 4933,
+        "pico_lote": 7083,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_27",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 32,
+      "carga": {
+        "salas": 32,
+        "salidas": 32,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "14f5b6e83f0afa396751106aad32c9ee57b491b23b1c990d02da28a55be88c22",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 27
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 38500,
+      "p95": 44600,
+      "maximo": 44600,
+      "minimo": 35900,
+      "muestras": [
+        44500,
+        39100,
+        37600,
+        39500,
+        44600,
+        38500,
+        36300,
+        35900,
+        35900
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 1900,
+          "p95": 2100,
+          "maximo": 2100,
+          "minimo": 1800,
+          "muestras": [
+            2100,
+            1900,
+            1900,
+            1800,
+            1800,
+            2100,
+            1900,
+            1900,
+            2000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 26400,
+          "p95": 32900,
+          "maximo": 32900,
+          "minimo": 25000,
+          "muestras": [
+            28600,
+            26400,
+            26200,
+            28100,
+            32900,
+            26600,
+            25500,
+            25500,
+            25000
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 4300,
+          "p95": 5600,
+          "maximo": 5600,
+          "minimo": 3800,
+          "muestras": [
+            5600,
+            4700,
+            4300,
+            4200,
+            4600,
+            4300,
+            4100,
+            3800,
+            4000
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 2000,
+          "p95": 3100,
+          "maximo": 3100,
+          "minimo": 1800,
+          "muestras": [
+            3100,
+            2300,
+            1900,
+            2000,
+            2000,
+            2100,
+            1900,
+            1800,
+            1800
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 5,
+        "conexiones_examinadas_construccion": 32,
+        "salidas_examinadas_grafo": 32,
+        "aristas_inversas": 32,
+        "aristas_relajadas": 5,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 1,
+        "salidas_seleccion": 3,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 5
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 6061,
+        "pico_lote": 12504,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_123",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "dcf244588f6200304111ccd44c2d13f0791a01063145d54daf5b53ffaf8ba461",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 123
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 48600,
+      "p95": 53600,
+      "maximo": 53600,
+      "minimo": 47300,
+      "muestras": [
+        53600,
+        50000,
+        49800,
+        48700,
+        47900,
+        48300,
+        47300,
+        47600,
+        48600
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 6500,
+          "p95": 6800,
+          "maximo": 6800,
+          "minimo": 6400,
+          "muestras": [
+            6600,
+            6500,
+            6400,
+            6800,
+            6700,
+            6500,
+            6400,
+            6500,
+            6600
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 39800,
+          "p95": 44200,
+          "maximo": 44200,
+          "minimo": 38900,
+          "muestras": [
+            44200,
+            41000,
+            41100,
+            39800,
+            38900,
+            39800,
+            38900,
+            39100,
+            39900
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "consultas": 1,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 6,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 4933,
+        "pico_lote": 6795,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_123",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 128,
+      "carga": {
+        "salas": 128,
+        "salidas": 128,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "dcf244588f6200304111ccd44c2d13f0791a01063145d54daf5b53ffaf8ba461",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 123
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 107800,
+      "p95": 115600,
+      "maximo": 115600,
+      "minimo": 104700,
+      "muestras": [
+        111200,
+        109000,
+        106400,
+        107000,
+        114900,
+        115600,
+        104700,
+        107100,
+        107800
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 6600,
+          "p95": 7500,
+          "maximo": 7500,
+          "minimo": 6300,
+          "muestras": [
+            6900,
+            7500,
+            6800,
+            6800,
+            6600,
+            6600,
+            6300,
+            6600,
+            6500
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 87900,
+          "p95": 96500,
+          "maximo": 96500,
+          "minimo": 86100,
+          "muestras": [
+            89300,
+            87900,
+            87000,
+            88000,
+            95500,
+            96500,
+            86100,
+            87500,
+            87800
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 4400,
+          "p95": 5300,
+          "maximo": 5300,
+          "minimo": 4100,
+          "muestras": [
+            5300,
+            4800,
+            4400,
+            4400,
+            4200,
+            4200,
+            4100,
+            4700,
+            5200
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 5000,
+          "p95": 5500,
+          "maximo": 5500,
+          "minimo": 4800,
+          "muestras": [
+            5500,
+            5100,
+            5000,
+            5000,
+            5000,
+            4900,
+            4800,
+            5200,
+            5100
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 5,
+        "conexiones_examinadas_construccion": 128,
+        "salidas_examinadas_grafo": 128,
+        "aristas_inversas": 128,
+        "aristas_relajadas": 5,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 1,
+        "salidas_seleccion": 3,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 5
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 14013,
+        "pico_lote": 40336,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_507",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "86736462544808a9303518d50da46ee2b39f813c4dc009c4086d12375d05e350",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 507
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 139900,
+      "p95": 184800,
+      "maximo": 184800,
+      "minimo": 73400,
+      "muestras": [
+        73400,
+        184800,
+        139900,
+        132000,
+        149100,
+        92700,
+        171600,
+        148900,
+        94600
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 45300,
+          "p95": 82100,
+          "maximo": 82100,
+          "minimo": 26200,
+          "muestras": [
+            26400,
+            47000,
+            49700,
+            45300,
+            46500,
+            26200,
+            82100,
+            34800,
+            27400
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 83900,
+          "p95": 128200,
+          "maximo": 128200,
+          "minimo": 44600,
+          "muestras": [
+            44600,
+            128200,
+            83900,
+            81400,
+            97300,
+            63200,
+            85000,
+            110000,
+            62800
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "consultas": 1,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 6,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 4933,
+        "pico_lote": 6763,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac012_region",
+      "escenario": "ac012_region_5_exterior_507",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 512,
+      "carga": {
+        "salas": 512,
+        "salidas": 512,
+        "cazadores": 1,
+        "rango": 4,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 1,
+        "objetivo": 0,
+        "huella_fixture": "86736462544808a9303518d50da46ee2b39f813c4dc009c4086d12375d05e350",
+        "salas_region_alcanzable": 5,
+        "salas_exteriores": 507
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 417300,
+      "p95": 576000,
+      "maximo": 576000,
+      "minimo": 405700,
+      "muestras": [
+        417200,
+        576000,
+        417100,
+        409500,
+        417300,
+        463800,
+        405700,
+        455400,
+        429700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 26000,
+          "p95": 28600,
+          "maximo": 28600,
+          "minimo": 25000,
+          "muestras": [
+            26000,
+            28100,
+            25000,
+            26400,
+            26600,
+            25600,
+            25400,
+            26000,
+            28600
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 364800,
+          "p95": 512200,
+          "maximo": 512200,
+          "minimo": 354700,
+          "muestras": [
+            362800,
+            512200,
+            364000,
+            356600,
+            364800,
+            410900,
+            354700,
+            394300,
+            366200
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 5700,
+          "p95": 9900,
+          "maximo": 9900,
+          "minimo": 4800,
+          "muestras": [
+            5700,
+            9700,
+            5600,
+            5000,
+            5000,
+            6100,
+            4800,
+            9900,
+            6300
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 17500,
+          "p95": 19200,
+          "maximo": 19200,
+          "minimo": 17100,
+          "muestras": [
+            17700,
+            19200,
+            17800,
+            17500,
+            17100,
+            17300,
+            17400,
+            18400,
+            17200
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 1,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 5,
+        "conexiones_examinadas_construccion": 512,
+        "salidas_examinadas_grafo": 512,
+        "aristas_inversas": 512,
+        "aristas_relajadas": 5,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 1,
+        "salidas_seleccion": 3,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 5
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "491dc9c11870df001fae7d3480ec93c63762bcdeea2396bc1dc473aff478722b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 35613,
+        "pico_lote": 152520,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_estables",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 267800,
+      "p95": 330300,
+      "maximo": 330300,
+      "minimo": 263600,
+      "muestras": [
+        274100,
+        268900,
+        272100,
+        267800,
+        263600,
+        330300,
+        265900,
+        265700,
+        266700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 27800,
+          "p95": 28300,
+          "maximo": 28300,
+          "minimo": 27400,
+          "muestras": [
+            27400,
+            27900,
+            28300,
+            27800,
+            27800,
+            28100,
+            27400,
+            27600,
+            27400
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 234700,
+          "p95": 296300,
+          "maximo": 296300,
+          "minimo": 230800,
+          "muestras": [
+            240500,
+            235200,
+            237900,
+            234700,
+            230800,
+            296300,
+            233100,
+            232600,
+            234300
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "consultas": 3,
+        "salas_fijadas": 24,
+        "salas_descubiertas": 24,
+        "salidas_examinadas": 54,
+        "entradas_insertadas": 27,
+        "frontera_maxima": 4,
+        "obsoletas_extraidas": 3,
+        "frontera_final_limpiada": 0
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 6501,
+        "pico_lote": 10368,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_estables",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 420400,
+      "p95": 690600,
+      "maximo": 690600,
+      "minimo": 405900,
+      "muestras": [
+        481300,
+        419200,
+        410300,
+        405900,
+        458700,
+        420400,
+        447500,
+        690600,
+        416900
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 27500,
+          "p95": 38000,
+          "maximo": 38000,
+          "minimo": 26900,
+          "muestras": [
+            26900,
+            27400,
+            27200,
+            27500,
+            29400,
+            28800,
+            29000,
+            38000,
+            27200
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 119600,
+          "p95": 349800,
+          "maximo": 349800,
+          "minimo": 118000,
+          "muestras": [
+            118800,
+            122100,
+            119500,
+            118600,
+            119600,
+            125000,
+            118000,
+            349800,
+            120000
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 239000,
+          "p95": 298500,
+          "maximo": 298500,
+          "minimo": 232700,
+          "muestras": [
+            298500,
+            236700,
+            234200,
+            232700,
+            269400,
+            233000,
+            247000,
+            256200,
+            239000
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 11600,
+          "p95": 18800,
+          "maximo": 18800,
+          "minimo": 8400,
+          "muestras": [
+            13100,
+            11000,
+            10000,
+            8400,
+            15100,
+            11600,
+            18800,
+            18300,
+            10100
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 11000,
+          "p95": 22600,
+          "maximo": 22600,
+          "minimo": 10400,
+          "muestras": [
+            12400,
+            10900,
+            10500,
+            10400,
+            12800,
+            11000,
+            22600,
+            13400,
+            10900
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "salas_fijadas": 15,
+        "salas_descubiertas": 15,
+        "salidas_examinadas": 33,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 477,
+        "aristas_relajadas": 33,
+        "entradas_insertadas": 15,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 6,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 15
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 15509,
+        "pico_lote": 42480,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_estables",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 165600,
+      "p95": 200400,
+      "maximo": 200400,
+      "minimo": 160800,
+      "muestras": [
+        168800,
+        165600,
+        164100,
+        162000,
+        200400,
+        169300,
+        163300,
+        172000,
+        160800
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 27600,
+          "p95": 28500,
+          "maximo": 28500,
+          "minimo": 26600,
+          "muestras": [
+            27800,
+            27300,
+            26600,
+            26900,
+            28500,
+            28000,
+            27900,
+            27600,
+            27300
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 120100,
+          "p95": 144600,
+          "maximo": 144600,
+          "minimo": 116700,
+          "muestras": [
+            121400,
+            120100,
+            120100,
+            118300,
+            144600,
+            120500,
+            117800,
+            127200,
+            116700
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 3400,
+          "p95": 7600,
+          "maximo": 7600,
+          "minimo": 3000,
+          "muestras": [
+            3300,
+            3200,
+            3300,
+            3000,
+            7600,
+            4100,
+            3400,
+            3400,
+            3600
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 5200,
+          "p95": 6200,
+          "maximo": 6200,
+          "minimo": 4900,
+          "muestras": [
+            5300,
+            5100,
+            5200,
+            5000,
+            6200,
+            5500,
+            5200,
+            4900,
+            5000
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 3900,
+          "p95": 4900,
+          "maximo": 4900,
+          "minimo": 3600,
+          "muestras": [
+            4600,
+            4200,
+            3900,
+            3800,
+            4900,
+            4200,
+            3700,
+            3800,
+            3600
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "construcciones": 1,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 11,
+        "conexiones_examinadas_construccion": 186,
+        "salidas_examinadas_grafo": 186,
+        "aristas_inversas": 159,
+        "aristas_relajadas": 11,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 6,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 5
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 15293,
+        "pico_lote": 40536,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_cambios_frecuentes",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 189600,
+      "p95": 199600,
+      "maximo": 199600,
+      "minimo": 187600,
+      "muestras": [
+        192900,
+        189700,
+        188600,
+        189700,
+        199600,
+        188000,
+        187600,
+        189600,
+        187700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 57500,
+          "p95": 62800,
+          "maximo": 62800,
+          "minimo": 56700,
+          "muestras": [
+            57500,
+            57500,
+            57500,
+            59000,
+            62800,
+            57000,
+            57100,
+            58600,
+            56700
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 125900,
+          "p95": 131700,
+          "maximo": 131700,
+          "minimo": 125400,
+          "muestras": [
+            129800,
+            126600,
+            125800,
+            125700,
+            131700,
+            125700,
+            125400,
+            125900,
+            125900
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "consultas": 3,
+        "salas_fijadas": 16,
+        "salas_descubiertas": 16,
+        "salidas_examinadas": 28,
+        "entradas_insertadas": 17,
+        "frontera_maxima": 3,
+        "obsoletas_extraidas": 1,
+        "frontera_final_limpiada": 0
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 5781,
+        "pico_lote": 8904,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_cambios_frecuentes",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 475100,
+      "p95": 534900,
+      "maximo": 534900,
+      "minimo": 430600,
+      "muestras": [
+        450600,
+        475100,
+        483500,
+        514000,
+        534900,
+        498900,
+        441600,
+        435700,
+        430600
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 59900,
+          "p95": 65900,
+          "maximo": 65900,
+          "minimo": 56400,
+          "muestras": [
+            59900,
+            59400,
+            60200,
+            61800,
+            65900,
+            64600,
+            57300,
+            56400,
+            56800
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 121300,
+          "p95": 157100,
+          "maximo": 157100,
+          "minimo": 117400,
+          "muestras": [
+            117900,
+            117400,
+            138500,
+            132300,
+            144200,
+            157100,
+            121300,
+            119400,
+            117900
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 243500,
+          "p95": 274000,
+          "maximo": 274000,
+          "minimo": 230300,
+          "muestras": [
+            243500,
+            267300,
+            251800,
+            272300,
+            274000,
+            237100,
+            233300,
+            233400,
+            230300
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 11000,
+          "p95": 20800,
+          "maximo": 20800,
+          "minimo": 7800,
+          "muestras": [
+            8800,
+            11000,
+            12500,
+            20800,
+            19100,
+            13300,
+            8700,
+            7800,
+            8100
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 10700,
+          "p95": 13100,
+          "maximo": 13100,
+          "minimo": 9500,
+          "muestras": [
+            11500,
+            9900,
+            10600,
+            11000,
+            13100,
+            12600,
+            10700,
+            9900,
+            9500
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "salas_fijadas": 18,
+        "salas_descubiertas": 18,
+        "salidas_examinadas": 35,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 35,
+        "entradas_insertadas": 18,
+        "frontera_maxima": 3,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 4,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 18
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 14517,
+        "pico_lote": 41592,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_pequeno_cambios_frecuentes",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 416700,
+      "p95": 503100,
+      "maximo": 503100,
+      "minimo": 405200,
+      "muestras": [
+        447600,
+        503100,
+        428300,
+        405200,
+        408200,
+        411700,
+        416700,
+        405900,
+        478700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 53900,
+          "p95": 58900,
+          "maximo": 58900,
+          "minimo": 51700,
+          "muestras": [
+            58900,
+            55800,
+            55500,
+            53000,
+            51700,
+            53300,
+            53900,
+            52200,
+            54000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 115500,
+          "p95": 178600,
+          "maximo": 178600,
+          "minimo": 109700,
+          "muestras": [
+            119600,
+            178600,
+            119900,
+            109700,
+            110500,
+            115500,
+            116300,
+            110800,
+            110000
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 219900,
+          "p95": 282800,
+          "maximo": 282800,
+          "minimo": 215600,
+          "muestras": [
+            237500,
+            225300,
+            222100,
+            215600,
+            218300,
+            216100,
+            219900,
+            217100,
+            282800
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 8200,
+          "p95": 16600,
+          "maximo": 16600,
+          "minimo": 7500,
+          "muestras": [
+            9000,
+            16600,
+            8700,
+            8200,
+            7900,
+            7900,
+            7600,
+            7500,
+            9600
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 600,
+          "p95": 900,
+          "maximo": 900,
+          "minimo": 400,
+          "muestras": [
+            800,
+            900,
+            700,
+            600,
+            500,
+            600,
+            600,
+            500,
+            400
+          ]
+        },
+        "limpieza": {
+          "mediana": 9900,
+          "p95": 11600,
+          "maximo": 11600,
+          "minimo": 8900,
+          "muestras": [
+            10900,
+            11600,
+            10400,
+            9000,
+            9900,
+            9200,
+            9600,
+            8900,
+            11400
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "construcciones": 3,
+        "salas_fijadas": 18,
+        "salas_descubiertas": 18,
+        "salidas_examinadas": 35,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 35,
+        "entradas_insertadas": 18,
+        "frontera_maxima": 3,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 4,
+        "frontera_limpiada": 0,
+        "invalidaciones": 2,
+        "distancias_limpiadas": 18
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "9f5047da97ffb4755a69816c5227150601b5b92171816fa48eb8613806cdb320",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 14613,
+        "pico_lote": 41624,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_estables",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2122100,
+      "p95": 2704500,
+      "maximo": 2704500,
+      "minimo": 2014300,
+      "muestras": [
+        2034200,
+        2014300,
+        2136400,
+        2094400,
+        2098600,
+        2122100,
+        2195600,
+        2704500,
+        2479200
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 27600,
+          "p95": 31600,
+          "maximo": 31600,
+          "minimo": 27000,
+          "muestras": [
+            27500,
+            27000,
+            27100,
+            27600,
+            28000,
+            27200,
+            28100,
+            28200,
+            31600
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 2089200,
+          "p95": 2667300,
+          "maximo": 2667300,
+          "minimo": 1981300,
+          "muestras": [
+            2000100,
+            1981300,
+            2103000,
+            2060900,
+            2064900,
+            2089200,
+            2161000,
+            2667300,
+            2436500
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "consultas": 3,
+        "salas_fijadas": 189,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 468,
+        "entradas_insertadas": 219,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 27,
+        "frontera_final_limpiada": 3
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "933fb7b8d7ddeef8200f04ae85700f67b726de0f1a91aebd6b342059569e0d4d",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 25733,
+        "pico_lote": 54992,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_estables",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 518200,
+      "p95": 563700,
+      "maximo": 563700,
+      "minimo": 511200,
+      "muestras": [
+        563700,
+        514800,
+        515000,
+        518200,
+        511200,
+        546500,
+        529800,
+        522100,
+        511800
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 28000,
+          "p95": 28800,
+          "maximo": 28800,
+          "minimo": 27600,
+          "muestras": [
+            28800,
+            28100,
+            28000,
+            27600,
+            27900,
+            27600,
+            28400,
+            28000,
+            28800
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 153000,
+          "p95": 187500,
+          "maximo": 187500,
+          "minimo": 151400,
+          "muestras": [
+            187500,
+            153000,
+            153100,
+            159800,
+            152700,
+            151400,
+            155000,
+            152200,
+            152200
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 302200,
+          "p95": 329400,
+          "maximo": 329400,
+          "minimo": 299900,
+          "muestras": [
+            306800,
+            301300,
+            302200,
+            300100,
+            301700,
+            329400,
+            310800,
+            309300,
+            299900
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 11400,
+          "p95": 15400,
+          "maximo": 15400,
+          "minimo": 9900,
+          "muestras": [
+            15400,
+            11300,
+            10900,
+            11400,
+            9900,
+            15300,
+            12200,
+            11500,
+            11000
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 11300,
+          "p95": 13000,
+          "maximo": 13000,
+          "minimo": 10600,
+          "muestras": [
+            13000,
+            11700,
+            11100,
+            10800,
+            10600,
+            12100,
+            12100,
+            11300,
+            10800
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 477,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 477,
+        "aristas_relajadas": 477,
+        "entradas_insertadas": 228,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 36,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 6,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "933fb7b8d7ddeef8200f04ae85700f67b726de0f1a91aebd6b342059569e0d4d",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 15861,
+        "pico_lote": 47016,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_estables",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 202300,
+      "p95": 284700,
+      "maximo": 284700,
+      "minimo": 198900,
+      "muestras": [
+        284700,
+        202300,
+        201000,
+        208400,
+        244000,
+        207600,
+        201900,
+        199600,
+        198900
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 28200,
+          "p95": 31000,
+          "maximo": 31000,
+          "minimo": 27200,
+          "muestras": [
+            28500,
+            28400,
+            28200,
+            31000,
+            29800,
+            27300,
+            27600,
+            27200,
+            27400
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 155400,
+          "p95": 182700,
+          "maximo": 182700,
+          "minimo": 152400,
+          "muestras": [
+            157100,
+            154200,
+            154400,
+            157900,
+            182700,
+            157900,
+            155400,
+            154800,
+            152400
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 4200,
+          "p95": 10000,
+          "maximo": 10000,
+          "minimo": 3400,
+          "muestras": [
+            6000,
+            4500,
+            3900,
+            3600,
+            10000,
+            5100,
+            3800,
+            3400,
+            4200
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 6000,
+          "p95": 7000,
+          "maximo": 7000,
+          "minimo": 5300,
+          "muestras": [
+            6400,
+            6000,
+            5500,
+            6200,
+            7000,
+            6000,
+            5500,
+            5300,
+            6000
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 4000,
+          "p95": 80200,
+          "maximo": 80200,
+          "minimo": 3900,
+          "muestras": [
+            80200,
+            4100,
+            3900,
+            3900,
+            5600,
+            4300,
+            4000,
+            3900,
+            3900
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 0,
+        "construcciones": 1,
+        "salas_fijadas": 64,
+        "salas_descubiertas": 64,
+        "salidas_examinadas": 159,
+        "conexiones_examinadas_construccion": 186,
+        "salidas_examinadas_grafo": 186,
+        "aristas_inversas": 159,
+        "aristas_relajadas": 159,
+        "entradas_insertadas": 76,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 12,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 6,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 64
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "933fb7b8d7ddeef8200f04ae85700f67b726de0f1a91aebd6b342059569e0d4d",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 15581,
+        "pico_lote": 44808,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_cambios_frecuentes",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1988300,
+      "p95": 2241800,
+      "maximo": 2241800,
+      "minimo": 1902400,
+      "muestras": [
+        2192000,
+        2182900,
+        2135200,
+        1924900,
+        1902400,
+        1964400,
+        1988300,
+        1923800,
+        2241800
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 61000,
+          "p95": 85500,
+          "maximo": 85500,
+          "minimo": 57900,
+          "muestras": [
+            85500,
+            63700,
+            62400,
+            60900,
+            58700,
+            57900,
+            72300,
+            59600,
+            61000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 1908100,
+          "p95": 2172400,
+          "maximo": 2172400,
+          "minimo": 1836600,
+          "muestras": [
+            2096600,
+            2090800,
+            2062400,
+            1855700,
+            1836600,
+            1899900,
+            1908100,
+            1856400,
+            2172400
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "consultas": 3,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 387,
+        "entradas_insertadas": 209,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 15,
+        "frontera_final_limpiada": 2
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "5fdccc6942f5547edb903ba8e5b017569d25a907c06c3758e3ad9ad6ea992ce7",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 24341,
+        "pico_lote": 53696,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_cambios_frecuentes",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 517900,
+      "p95": 1218500,
+      "maximo": 1218500,
+      "minimo": 489000,
+      "muestras": [
+        498400,
+        489000,
+        491200,
+        517900,
+        511200,
+        1218500,
+        599500,
+        532200,
+        586400
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 55000,
+          "p95": 95200,
+          "maximo": 95200,
+          "minimo": 53200,
+          "muestras": [
+            54500,
+            53200,
+            54600,
+            71300,
+            53300,
+            95200,
+            60200,
+            55000,
+            59000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 145100,
+          "p95": 323100,
+          "maximo": 323100,
+          "minimo": 139300,
+          "muestras": [
+            139800,
+            140000,
+            139300,
+            145100,
+            152400,
+            323100,
+            196900,
+            143100,
+            155400
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 275700,
+          "p95": 731000,
+          "maximo": 731000,
+          "minimo": 270200,
+          "muestras": [
+            275700,
+            270200,
+            272400,
+            273900,
+            275700,
+            731000,
+            301900,
+            293100,
+            320300
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 9600,
+          "p95": 26400,
+          "maximo": 26400,
+          "minimo": 8000,
+          "muestras": [
+            9600,
+            8200,
+            8000,
+            9200,
+            12200,
+            25200,
+            14200,
+            9400,
+            26400
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 9900,
+          "p95": 23100,
+          "maximo": 23100,
+          "minimo": 9100,
+          "muestras": [
+            9800,
+            9100,
+            9300,
+            9900,
+            9700,
+            23100,
+            13600,
+            10300,
+            12100
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 389,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 389,
+        "entradas_insertadas": 217,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 25,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 4,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "5fdccc6942f5547edb903ba8e5b017569d25a907c06c3758e3ad9ad6ea992ce7",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 14757,
+        "pico_lote": 45824,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h1_grande_cambios_frecuentes",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 1,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 471200,
+      "p95": 524600,
+      "maximo": 524600,
+      "minimo": 455800,
+      "muestras": [
+        524600,
+        471600,
+        471700,
+        458900,
+        455800,
+        471200,
+        475000,
+        457100,
+        460800
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 50000,
+          "p95": 54600,
+          "maximo": 54600,
+          "minimo": 49200,
+          "muestras": [
+            54600,
+            51100,
+            50200,
+            49700,
+            49200,
+            50000,
+            50900,
+            49600,
+            49500
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 130400,
+          "p95": 151900,
+          "maximo": 151900,
+          "minimo": 129400,
+          "muestras": [
+            151900,
+            138200,
+            130400,
+            129400,
+            129500,
+            129600,
+            138100,
+            129800,
+            131200
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 254000,
+          "p95": 283900,
+          "maximo": 283900,
+          "minimo": 251700,
+          "muestras": [
+            283900,
+            254000,
+            262800,
+            253300,
+            251700,
+            264800,
+            258900,
+            252000,
+            254000
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 8400,
+          "p95": 10400,
+          "maximo": 10400,
+          "minimo": 7700,
+          "muestras": [
+            10400,
+            8700,
+            8400,
+            8100,
+            7800,
+            8600,
+            8400,
+            7700,
+            7700
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 600,
+          "p95": 700,
+          "maximo": 700,
+          "minimo": 500,
+          "muestras": [
+            700,
+            600,
+            500,
+            600,
+            600,
+            500,
+            500,
+            700,
+            600
+          ]
+        },
+        "limpieza": {
+          "mediana": 9100,
+          "p95": 11100,
+          "maximo": 11100,
+          "minimo": 8500,
+          "muestras": [
+            11100,
+            9200,
+            9400,
+            8700,
+            8500,
+            9100,
+            8900,
+            8800,
+            9100
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 1,
+        "cambios_puerta": 307,
+        "construcciones": 3,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 389,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 389,
+        "entradas_insertadas": 217,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 25,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 3,
+        "salidas_seleccion": 4,
+        "frontera_limpiada": 0,
+        "invalidaciones": 2,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "5fdccc6942f5547edb903ba8e5b017569d25a907c06c3758e3ad9ad6ea992ce7",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 14853,
+        "pico_lote": 45856,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_estables",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4674900,
+      "p95": 5232000,
+      "maximo": 5232000,
+      "minimo": 4419500,
+      "muestras": [
+        4761500,
+        5015500,
+        4799000,
+        4440500,
+        4674900,
+        5232000,
+        4427200,
+        4419500,
+        4640500
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 26200,
+          "p95": 30600,
+          "maximo": 30600,
+          "minimo": 24900,
+          "muestras": [
+            27200,
+            26600,
+            27700,
+            26200,
+            25900,
+            30600,
+            25200,
+            25400,
+            24900
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 4641800,
+          "p95": 5191000,
+          "maximo": 5191000,
+          "minimo": 4385800,
+          "muestras": [
+            4724700,
+            4977600,
+            4761400,
+            4405900,
+            4641800,
+            5191000,
+            4396000,
+            4385800,
+            4608800
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "consultas": 60,
+        "salas_fijadas": 558,
+        "salas_descubiertas": 561,
+        "salidas_examinadas": 1389,
+        "entradas_insertadas": 579,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 18,
+        "frontera_final_limpiada": 3
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "7d1c533773a645a57a5e86595fd063a35a1aa7445bd749c8f1b987804002af6b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 42901,
+        "pico_lote": 52576,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_estables",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 465900,
+      "p95": 522400,
+      "maximo": 522400,
+      "minimo": 459900,
+      "muestras": [
+        470400,
+        522400,
+        511900,
+        463800,
+        459900,
+        483300,
+        465100,
+        465900,
+        464500
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 24500,
+          "p95": 30800,
+          "maximo": 30800,
+          "minimo": 24000,
+          "muestras": [
+            24600,
+            30800,
+            25400,
+            24300,
+            24000,
+            25000,
+            24500,
+            24500,
+            24200
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 103300,
+          "p95": 105600,
+          "maximo": 105600,
+          "minimo": 102600,
+          "muestras": [
+            105600,
+            103700,
+            102900,
+            103800,
+            102600,
+            103200,
+            103000,
+            103300,
+            103800
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 205900,
+          "p95": 251400,
+          "maximo": 251400,
+          "minimo": 203600,
+          "muestras": [
+            205900,
+            251400,
+            241100,
+            205100,
+            203600,
+            222900,
+            205100,
+            206000,
+            204400
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 115700,
+          "p95": 124000,
+          "maximo": 124000,
+          "minimo": 113300,
+          "muestras": [
+            116800,
+            118200,
+            124000,
+            114100,
+            113300,
+            115100,
+            116000,
+            115500,
+            115700
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 9300,
+          "p95": 10200,
+          "maximo": 10200,
+          "minimo": 9000,
+          "muestras": [
+            9600,
+            9900,
+            10200,
+            9300,
+            9300,
+            9600,
+            9000,
+            9200,
+            9200
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "salas_fijadas": 15,
+        "salas_descubiertas": 15,
+        "salidas_examinadas": 33,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 477,
+        "aristas_relajadas": 33,
+        "entradas_insertadas": 15,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 150,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 15
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "7d1c533773a645a57a5e86595fd063a35a1aa7445bd749c8f1b987804002af6b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 23565,
+        "pico_lote": 48848,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_estables",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 252200,
+      "p95": 259000,
+      "maximo": 259000,
+      "minimo": 247400,
+      "muestras": [
+        254900,
+        252800,
+        259000,
+        252200,
+        251000,
+        248200,
+        248500,
+        247400,
+        255600
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 23900,
+          "p95": 24800,
+          "maximo": 24800,
+          "minimo": 23600,
+          "muestras": [
+            24100,
+            24300,
+            24800,
+            24400,
+            23900,
+            23700,
+            23900,
+            23600,
+            23700
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 103700,
+          "p95": 112800,
+          "maximo": 112800,
+          "minimo": 102200,
+          "muestras": [
+            105400,
+            104200,
+            112800,
+            103700,
+            102900,
+            102400,
+            102900,
+            102200,
+            103700
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 39500,
+          "p95": 40000,
+          "maximo": 40000,
+          "minimo": 38400,
+          "muestras": [
+            40000,
+            39600,
+            38600,
+            39900,
+            40000,
+            38400,
+            38700,
+            38600,
+            39500
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 76300,
+          "p95": 80800,
+          "maximo": 80800,
+          "minimo": 75400,
+          "muestras": [
+            76300,
+            77000,
+            75400,
+            76700,
+            76400,
+            75700,
+            75400,
+            75500,
+            80800
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 3300,
+          "p95": 3600,
+          "maximo": 3600,
+          "minimo": 3200,
+          "muestras": [
+            3600,
+            3300,
+            3500,
+            3200,
+            3300,
+            3500,
+            3400,
+            3200,
+            3300
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "construcciones": 1,
+        "salas_fijadas": 5,
+        "salas_descubiertas": 5,
+        "salidas_examinadas": 11,
+        "conexiones_examinadas_construccion": 186,
+        "salidas_examinadas_grafo": 186,
+        "aristas_inversas": 159,
+        "aristas_relajadas": 11,
+        "entradas_insertadas": 5,
+        "frontera_maxima": 2,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 150,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 5
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "7d1c533773a645a57a5e86595fd063a35a1aa7445bd749c8f1b987804002af6b",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 23349,
+        "pico_lote": 40536,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_cambios_frecuentes",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3484500,
+      "p95": 4281000,
+      "maximo": 4281000,
+      "minimo": 3339600,
+      "muestras": [
+        4214600,
+        3557200,
+        3484500,
+        3812800,
+        3407400,
+        3399700,
+        3360200,
+        3339600,
+        4281000
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 53600,
+          "p95": 56200,
+          "maximo": 56200,
+          "minimo": 50100,
+          "muestras": [
+            56200,
+            52400,
+            53600,
+            53700,
+            53700,
+            50400,
+            51100,
+            50100,
+            54900
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 3423200,
+          "p95": 4216400,
+          "maximo": 4216400,
+          "minimo": 3283500,
+          "muestras": [
+            4144300,
+            3496200,
+            3423200,
+            3750500,
+            3342900,
+            3342800,
+            3303200,
+            3283500,
+            4216400
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "consultas": 60,
+        "salas_fijadas": 465,
+        "salas_descubiertas": 469,
+        "salidas_examinadas": 979,
+        "entradas_insertadas": 473,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 2,
+        "frontera_final_limpiada": 6
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "07c26ec5849a75941b26d50f0238e23404acfeb25f241339331914ca702b8ef2",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 35893,
+        "pico_lote": 45384,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_cambios_frecuentes",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 509400,
+      "p95": 664600,
+      "maximo": 664600,
+      "minimo": 477000,
+      "muestras": [
+        509400,
+        496600,
+        500800,
+        545900,
+        477000,
+        489700,
+        533600,
+        664600,
+        557700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 51200,
+          "p95": 58400,
+          "maximo": 58400,
+          "minimo": 49400,
+          "muestras": [
+            50700,
+            51200,
+            50500,
+            52300,
+            49400,
+            50200,
+            54400,
+            58400,
+            57000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 106500,
+          "p95": 119700,
+          "maximo": 119700,
+          "minimo": 102900,
+          "muestras": [
+            106500,
+            106600,
+            103900,
+            117500,
+            102900,
+            103800,
+            106300,
+            111100,
+            119700
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 219200,
+          "p95": 320900,
+          "maximo": 320900,
+          "minimo": 202600,
+          "muestras": [
+            219200,
+            210000,
+            215500,
+            243200,
+            202600,
+            213600,
+            233600,
+            320900,
+            231600
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 114400,
+          "p95": 133600,
+          "maximo": 133600,
+          "minimo": 105200,
+          "muestras": [
+            114400,
+            112200,
+            113100,
+            114700,
+            105500,
+            105200,
+            120500,
+            133600,
+            125300
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 9900,
+          "p95": 12700,
+          "maximo": 12700,
+          "minimo": 8700,
+          "muestras": [
+            9900,
+            8700,
+            9600,
+            10100,
+            9000,
+            9100,
+            10200,
+            12700,
+            11400
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "salas_fijadas": 18,
+        "salas_descubiertas": 18,
+        "salidas_examinadas": 35,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 35,
+        "entradas_insertadas": 18,
+        "frontera_maxima": 3,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 124,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 18
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "07c26ec5849a75941b26d50f0238e23404acfeb25f241339331914ca702b8ef2",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 22381,
+        "pico_lote": 47800,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_pequeno_cambios_frecuentes",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 10,
+        "rango_tipo": "pequeno",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 488400,
+      "p95": 519200,
+      "maximo": 519200,
+      "minimo": 482900,
+      "muestras": [
+        498500,
+        498100,
+        484600,
+        488400,
+        483700,
+        482900,
+        484500,
+        519200,
+        503100
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 49300,
+          "p95": 53100,
+          "maximo": 53100,
+          "minimo": 48900,
+          "muestras": [
+            49300,
+            50800,
+            50000,
+            49300,
+            48900,
+            49300,
+            49100,
+            49100,
+            53100
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 103800,
+          "p95": 112300,
+          "maximo": 112300,
+          "minimo": 102500,
+          "muestras": [
+            104700,
+            105600,
+            102800,
+            103800,
+            102500,
+            104000,
+            103500,
+            103600,
+            112300
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 207100,
+          "p95": 237200,
+          "maximo": 237200,
+          "minimo": 203900,
+          "muestras": [
+            211600,
+            214500,
+            205000,
+            205100,
+            206000,
+            203900,
+            207100,
+            237200,
+            210800
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 108300,
+          "p95": 112300,
+          "maximo": 112300,
+          "minimo": 106700,
+          "muestras": [
+            112300,
+            108300,
+            108300,
+            111900,
+            107600,
+            107800,
+            106700,
+            110400,
+            108500
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 600,
+          "p95": 700,
+          "maximo": 700,
+          "minimo": 400,
+          "muestras": [
+            700,
+            600,
+            500,
+            500,
+            600,
+            600,
+            400,
+            600,
+            600
+          ]
+        },
+        "limpieza": {
+          "mediana": 9000,
+          "p95": 9600,
+          "maximo": 9600,
+          "minimo": 8600,
+          "muestras": [
+            9600,
+            9000,
+            8600,
+            8900,
+            9000,
+            9000,
+            8800,
+            9200,
+            8700
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "construcciones": 3,
+        "salas_fijadas": 18,
+        "salas_descubiertas": 18,
+        "salidas_examinadas": 35,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 35,
+        "entradas_insertadas": 18,
+        "frontera_maxima": 3,
+        "obsoletas_extraidas": 0,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 124,
+        "frontera_limpiada": 0,
+        "invalidaciones": 2,
+        "distancias_limpiadas": 18
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "07c26ec5849a75941b26d50f0238e23404acfeb25f241339331914ca702b8ef2",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 22477,
+        "pico_lote": 47832,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_estables",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 26813300,
+      "p95": 28962400,
+      "maximo": 28962400,
+      "minimo": 25867500,
+      "muestras": [
+        26251900,
+        28451500,
+        25867500,
+        27245200,
+        26768500,
+        26941100,
+        26813300,
+        28962400,
+        26551300
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 27100,
+          "p95": 51000,
+          "maximo": 51000,
+          "minimo": 25500,
+          "muestras": [
+            25800,
+            27100,
+            26400,
+            25500,
+            28400,
+            28100,
+            27300,
+            51000,
+            26700
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 26772100,
+          "p95": 28876100,
+          "maximo": 28876100,
+          "minimo": 25830400,
+          "muestras": [
+            26214900,
+            28411900,
+            25830400,
+            27208900,
+            26725700,
+            26895100,
+            26772100,
+            28876100,
+            26512400
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "consultas": 60,
+        "salas_fijadas": 2493,
+        "salas_descubiertas": 2601,
+        "salidas_examinadas": 6126,
+        "entradas_insertadas": 2943,
+        "frontera_maxima": 7,
+        "obsoletas_extraidas": 336,
+        "frontera_final_limpiada": 114
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "2fb8257818a7918b17e37c0d97379f4757ae11254fa21204562409fa684e7d67",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 160105,
+        "pico_lote": 191240,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_estables",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 587200,
+      "p95": 724400,
+      "maximo": 724400,
+      "minimo": 570700,
+      "muestras": [
+        724400,
+        667600,
+        574300,
+        587200,
+        619000,
+        585700,
+        575600,
+        693400,
+        570700
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 24700,
+          "p95": 26400,
+          "maximo": 26400,
+          "minimo": 23700,
+          "muestras": [
+            25900,
+            25300,
+            25500,
+            24100,
+            26400,
+            23700,
+            24200,
+            24700,
+            24200
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 134700,
+          "p95": 144500,
+          "maximo": 144500,
+          "minimo": 134100,
+          "muestras": [
+            143900,
+            144500,
+            134400,
+            134700,
+            134700,
+            135000,
+            134100,
+            134100,
+            135300
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 280300,
+          "p95": 384300,
+          "maximo": 384300,
+          "minimo": 265700,
+          "muestras": [
+            384300,
+            339900,
+            265700,
+            273900,
+            303200,
+            280300,
+            271300,
+            384000,
+            266000
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 132700,
+          "p95": 146400,
+          "maximo": 146400,
+          "minimo": 128000,
+          "muestras": [
+            146400,
+            136900,
+            130300,
+            136900,
+            135000,
+            129700,
+            128300,
+            132700,
+            128000
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 9700,
+          "p95": 11300,
+          "maximo": 11300,
+          "minimo": 9400,
+          "muestras": [
+            11300,
+            10900,
+            9700,
+            9500,
+            10900,
+            9500,
+            9500,
+            9900,
+            9400
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 477,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 477,
+        "aristas_relajadas": 477,
+        "entradas_insertadas": 228,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 36,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 150,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "2fb8257818a7918b17e37c0d97379f4757ae11254fa21204562409fa684e7d67",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 23853,
+        "pico_lote": 53320,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_estables",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "estables",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 301700,
+      "p95": 331000,
+      "maximo": 331000,
+      "minimo": 291200,
+      "muestras": [
+        296000,
+        324500,
+        301700,
+        297300,
+        291200,
+        292500,
+        301800,
+        305600,
+        331000
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 23900,
+          "p95": 28000,
+          "maximo": 28000,
+          "minimo": 23600,
+          "muestras": [
+            23900,
+            25500,
+            23700,
+            23900,
+            23900,
+            23600,
+            24400,
+            24900,
+            28000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 136200,
+          "p95": 151200,
+          "maximo": 151200,
+          "minimo": 132300,
+          "muestras": [
+            135200,
+            139200,
+            141300,
+            136200,
+            132300,
+            133000,
+            136400,
+            132300,
+            151200
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 44700,
+          "p95": 57600,
+          "maximo": 57600,
+          "minimo": 43700,
+          "muestras": [
+            43700,
+            57600,
+            44300,
+            44100,
+            43900,
+            44700,
+            46700,
+            48100,
+            50900
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 85300,
+          "p95": 92800,
+          "maximo": 92800,
+          "minimo": 83400,
+          "muestras": [
+            84300,
+            92800,
+            84300,
+            85300,
+            83400,
+            83700,
+            86800,
+            92500,
+            92000
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 3600,
+          "p95": 4100,
+          "maximo": 4100,
+          "minimo": 3300,
+          "muestras": [
+            3700,
+            4100,
+            3600,
+            3400,
+            3400,
+            3300,
+            3600,
+            3500,
+            4000
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 0,
+        "construcciones": 1,
+        "salas_fijadas": 64,
+        "salas_descubiertas": 64,
+        "salidas_examinadas": 159,
+        "conexiones_examinadas_construccion": 186,
+        "salidas_examinadas_grafo": 186,
+        "aristas_inversas": 159,
+        "aristas_relajadas": 159,
+        "entradas_insertadas": 76,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 12,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 150,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 64
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "2fb8257818a7918b17e37c0d97379f4757ae11254fa21204562409fa684e7d67",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 23573,
+        "pico_lote": 44808,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_cambios_frecuentes",
+      "alternativa": "individual_produccion_recalculo",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 18713300,
+      "p95": 20566700,
+      "maximo": 20566700,
+      "minimo": 17099400,
+      "muestras": [
+        20566700,
+        17601400,
+        18732900,
+        17099400,
+        18713300,
+        20088100,
+        18037300,
+        18922400,
+        18037500
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 59000,
+          "p95": 89400,
+          "maximo": 89400,
+          "minimo": 54700,
+          "muestras": [
+            64500,
+            63100,
+            58000,
+            54700,
+            55700,
+            59000,
+            60100,
+            89400,
+            56300
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 18645900,
+          "p95": 20486900,
+          "maximo": 20486900,
+          "minimo": 17036200,
+          "muestras": [
+            20486900,
+            17514000,
+            18662600,
+            17036200,
+            18645900,
+            20000700,
+            17964200,
+            18805300,
+            17969800
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "consultas": 60,
+        "salas_fijadas": 2026,
+        "salas_descubiertas": 2038,
+        "salidas_examinadas": 4045,
+        "entradas_insertadas": 2206,
+        "frontera_maxima": 6,
+        "obsoletas_extraidas": 128,
+        "frontera_final_limpiada": 52
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "4bc90cd94103226affb53b74d38152cee2c14c434943a1ceaaed6f568ef7d831",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 123821,
+        "pico_lote": 154664,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_cambios_frecuentes",
+      "alternativa": "inversa_compartida_recalculo_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 662300,
+      "p95": 772300,
+      "maximo": 772300,
+      "minimo": 577400,
+      "muestras": [
+        772300,
+        684700,
+        665600,
+        772100,
+        581000,
+        592900,
+        577400,
+        662300,
+        587400
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 55300,
+          "p95": 61000,
+          "maximo": 61000,
+          "minimo": 49600,
+          "muestras": [
+            57100,
+            55300,
+            61000,
+            55800,
+            50500,
+            49800,
+            49600,
+            56400,
+            52700
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 136900,
+          "p95": 275600,
+          "maximo": 275600,
+          "minimo": 132000,
+          "muestras": [
+            152400,
+            143200,
+            135800,
+            275600,
+            135500,
+            132000,
+            135800,
+            137500,
+            136900
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 277200,
+          "p95": 390800,
+          "maximo": 390800,
+          "minimo": 257000,
+          "muestras": [
+            390800,
+            318400,
+            298500,
+            270800,
+            259500,
+            277200,
+            257000,
+            285400,
+            261700
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 138400,
+          "p95": 160000,
+          "maximo": 160000,
+          "minimo": 115400,
+          "muestras": [
+            148000,
+            143400,
+            143700,
+            138400,
+            115400,
+            115900,
+            118000,
+            160000,
+            117900
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "limpieza": {
+          "mediana": 11400,
+          "p95": 14100,
+          "maximo": 14100,
+          "minimo": 9300,
+          "muestras": [
+            12400,
+            12500,
+            12400,
+            14100,
+            9900,
+            9300,
+            9300,
+            11400,
+            9900
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 389,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 389,
+        "entradas_insertadas": 217,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 25,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 124,
+        "frontera_limpiada": 0,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "4bc90cd94103226affb53b74d38152cee2c14c434943a1ceaaed6f568ef7d831",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 22557,
+        "pico_lote": 51968,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    },
+    {
+      "medicion": "rutas_ac014_matriz",
+      "escenario": "ac014_h20_grande_cambios_frecuentes",
+      "alternativa": "inversa_compartida_reutilizada_benchmark",
+      "n": 64,
+      "carga": {
+        "salas": 64,
+        "salidas": 186,
+        "cazadores": 20,
+        "rango": 640,
+        "rango_tipo": "grande",
+        "puertas": "cambios_frecuentes",
+        "ciclos": 3,
+        "objetivo": 0,
+        "huella_fixture": "b2bc39e80d3cdee3359c614c5d9711207b83fa8d66d8ecd339c2aa50b56615dc"
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 586800,
+      "p95": 835500,
+      "maximo": 835500,
+      "minimo": 570600,
+      "muestras": [
+        598500,
+        593100,
+        578900,
+        570600,
+        586800,
+        621200,
+        582900,
+        835500,
+        575600
+      ],
+      "fases": {
+        "mantenimiento_puertas": {
+          "mediana": 51100,
+          "p95": 59900,
+          "maximo": 59900,
+          "minimo": 49600,
+          "muestras": [
+            51800,
+            51100,
+            50000,
+            49600,
+            52000,
+            57700,
+            50000,
+            59900,
+            50000
+          ]
+        },
+        "construccion_inicial": {
+          "mediana": 131500,
+          "p95": 334600,
+          "maximo": 334600,
+          "minimo": 129700,
+          "muestras": [
+            131500,
+            135400,
+            136000,
+            129700,
+            130200,
+            138200,
+            131500,
+            334600,
+            131100
+          ]
+        },
+        "reconstruccion": {
+          "mediana": 260700,
+          "p95": 283500,
+          "maximo": 283500,
+          "minimo": 253500,
+          "muestras": [
+            269000,
+            267600,
+            255100,
+            253500,
+            260700,
+            283500,
+            257600,
+            262000,
+            255100
+          ]
+        },
+        "consultas_recalculo": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consultas_iniciales": {
+          "mediana": 121400,
+          "p95": 150600,
+          "maximo": 150600,
+          "minimo": 117700,
+          "muestras": [
+            124700,
+            119400,
+            117700,
+            118500,
+            123600,
+            121400,
+            124000,
+            150600,
+            118700
+          ]
+        },
+        "consultas_reutilizadas": {
+          "mediana": 0,
+          "p95": 0,
+          "maximo": 0,
+          "minimo": 0,
+          "muestras": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "invalidacion": {
+          "mediana": 600,
+          "p95": 1000,
+          "maximo": 1000,
+          "minimo": 500,
+          "muestras": [
+            700,
+            700,
+            500,
+            600,
+            500,
+            500,
+            700,
+            1000,
+            500
+          ]
+        },
+        "limpieza": {
+          "mediana": 10000,
+          "p95": 12300,
+          "maximo": 12300,
+          "minimo": 9400,
+          "muestras": [
+            10300,
+            9400,
+            9700,
+            9400,
+            10300,
+            10100,
+            10000,
+            12300,
+            9900
+          ]
+        }
+      },
+      "trabajo": {
+        "ciclos": 3,
+        "cazadores": 20,
+        "cambios_puerta": 307,
+        "construcciones": 3,
+        "salas_fijadas": 192,
+        "salas_descubiertas": 192,
+        "salidas_examinadas": 389,
+        "conexiones_examinadas_construccion": 558,
+        "salidas_examinadas_grafo": 558,
+        "aristas_inversas": 389,
+        "aristas_relajadas": 389,
+        "entradas_insertadas": 217,
+        "frontera_maxima": 5,
+        "obsoletas_extraidas": 25,
+        "frontera_final_limpiada": 0,
+        "frontera_final": 0,
+        "consultas": 60,
+        "salidas_seleccion": 124,
+        "frontera_limpiada": 0,
+        "invalidaciones": 2,
+        "distancias_limpiadas": 192
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "campos": [
+          "alcanzable",
+          "costo_total",
+          "primera_vecina_id",
+          "costo_primera_salida"
+        ],
+        "oraculo": "relajacion_completa_benchmark_independiente",
+        "huella_resultados": "4bc90cd94103226affb53b74d38152cee2c14c434943a1ceaaed6f568ef7d831",
+        "salidas_dirigidas": true,
+        "accion_derivada_comparada": true,
+        "contadores_internos_comparados": false
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 0,
+        "final_actual": 22653,
+        "pico_lote": 52000,
+        "incluida_en_tiempo": false
+      },
+      "alcance": "sintetico_no_demuestra_pr_001"
+    }
+  ]
+}

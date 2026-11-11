@@ -1,21 +1,43 @@
 # Acuerdo condicionado con Joshua: cambios reversibles y reconstrucción
 
-**Estado**: ACEPTACIÓN CONDICIONADA DOCUMENTADA POR 004. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción, y que la línea no llama al cazador. Las interfaces nuevas, v10 y las pruebas siguen pendientes; este documento no modifica archivos de Joshua ni de Steven.
+**Estado**: ACEPTACIÓN CONDICIONADA; INTERFAZ BASE INTEGRADA Y REVISADA LOCALMENTE; LÍNEA COMPLETA PENDIENTE. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. El checkout `Sofia` contiene y T005 verificó deshacer temporal/rehacer, el gancho para cambios nuevos y el enlace del historial. La clase completa `LineaTiempo` publicada después, el guardado coordinado y las pruebas conjuntas con cambios nuevos de 001 siguen pendientes. Este documento no modifica archivos de Joshua ni de Steven.
 
 ## 1. Objetivo
 
 Permitir que retroceso y línea de tiempo restauren exactamente el estado introducido o afectado por 001, sin copiar el estado completo por acción y sin conservar cálculos de ruta obsoletos (`FR-014`, `FR-016`; spec 004 FR-022).
 
-## Estado comprobado tras integrar `origin/joshua`
+## Estado comprobado local y remoto
 
-El merge incorporó plan, investigación, modelo, contratos y tareas de 004, pero no código de línea de tiempo. La interfaz real sigue siendo:
+**Checkout local consultado**: revisión del 2026-11-09 sobre `Sofia@b046f8820d33ff9a20dedf0e37db90f850d5f30a` (para T005 del 2026-11-08 se consultó `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`), descendiente de la integración `3df43c63c68a33f692148b737c12b0c0a4208569` con `joshua@927d8860639f3efa6260172d3e03cae61f74301b`. Contiene la implementación introducida en `972af5421d628171a4464709858275b100151c1e`. Su interfaz disponible en `logica/cambios.py` incluye:
 
-- `CambioReversible.deshacer(estado)`;
-- `TransaccionAccion.registrar(cambio)` y `revertir(estado)`; `revertir` vacía y marca la transacción;
-- `HistorialReversible.deshacer_ultimo(estado) -> bool`; elimina la transacción después de revertirla;
-- no existe una operación de rehacer ni una interfaz implementada de consulta histórica.
+- `TransaccionAccion.registrar_solo_linea(cambio)`;
+- `TransaccionAccion.deshacer_mientras(estado, condicion, inversos: list) -> None`, sin vaciar ni marcar la transacción;
+- `TransaccionAccion.rehacer(estado, inversos: list) -> None`;
+- extensión para cualquier cambio nuevo mediante `fotografiar_para_rehacer(inverso, estado)`; si falta, falla antes de deshacer;
+- pruebas en `tests/test_logica/test_cambios_linea.py`.
 
-004 propone ampliar `TransaccionAccion` para deshacer temporalmente mientras se cumpla una condición, devolver inversos, no vaciar la transacción y rehacer en `finally`; también propone vincular la línea al historial. Los documentos no fijan nombres ni firmas para esos métodos y las tareas están sin marcar. 001 los consumirá cuando existan, sin inventar otra interfaz.
+Además, `logica/historial_reversible.py` publica localmente `HistorialReversible.vincular_linea(linea)`, avisa `registrar_accion` al cerrar y `recortar(1)` al retroceder, y tiene pruebas en `tests/test_logica/test_historial_linea.py`.
+
+La disponibilidad local es un hecho del checkout y T005 ya cerró su revisión cruzada de proceso. La punta observada de Joshua pasó a `origin/joshua@f4da930dbdbf951609894a1501bfca2c4ea9264a` y acumula cuatro commits propios no integrados: `d055563` (estructura de la línea y búsqueda binaria), `b039b8b` (creación al iniciar y resumen), `5b67c08` (consulta `historia <t>`) y `4cbac6d` (consultas `historia #k`, recorte por pergamino y R6). Ninguno es ancestro de `HEAD`: la clase completa `LineaTiempo` no está integrada localmente y **G4b permanece abierta**; su existencia remota no la cierra. 001 consume la interfaz base y no copia ni reedita código de Joshua.
+
+### Revisión del análisis cruzado (2026-11-09)
+
+- **A2 — firma y restauración de eventos**: la firma `TransaccionAccion.deshacer_mientras(estado, condicion, inversos: list) -> None` no cambió, pero el **protocolo de la condición sí**: con `927d886` la condición se invocaba como `condicion(estado)`; en la punta remota `f4da930` se invoca como `condicion(estado, cambio)` (diff en `logica/cambios.py`). La restauración de eventos posteriores al instante consultado está publicada solo en remoto: `LineaTiempo.consultar_instante(t)` reconstruye con `_reconstruir(..., hasta_instante=t)` y la condición `_hasta(instante)` sigue deshaciendo los `CambioAgenda` de eventos con `evento.tiempo > instante` incluso después de cruzar el reloj, y el `finally` los devuelve con `TransaccionAccion.rehacer`. T040/T056 se redactan contra este protocolo.
+- **M1 — hashes y disponibilidad local**: consultados `Sofia@e89574d` (2026-11-08), `Sofia@b046f882` (2026-11-09), merge base `joshua@927d8860639f3efa6260172d3e03cae61f74301b` y la punta remota `origin/joshua@f4da930` con `d055563`, `b039b8b`, `5b67c08`, `4cbac6d`. La disponibilidad real local sigue siendo la interfaz base; G4b no se cierra por existencia remota y requiere integración por el flujo del equipo antes de ejecutar T056.
+- **M2 — enlaces técnicos y derivados fuera de copias y guardado**: los enlaces técnicos no son estado del juego y no se copian ni persisten: `HistorialReversible.__getstate__` ya omite `_linea` (local) y la punta remota añade `Inventario.__getstate__` que omite `historial_linea`; la línea los reconecta al restaurar. Los cálculos derivados (índice de mapa, cachés, fronteras de búsqueda) conservan su regla del §2: se reconstruyen desde el estado canónico y jamás se registran como estado. 001 no añade enlaces técnicos; si un cambio de 001 necesitara uno, su exclusión en `deepcopy`/`pickle`/guardado se documentará allí antes de implementarlo.
+- **B1 — cambios de pergaminos «solo línea»**: documentados en §5 con el mecanismo de la punta remota; forman parte de 004/006 y 001 solo los consume; los cambios nuevos de 001 no se marcan «solo línea» salvo decisión explícita.
+
+Este análisis no marca tareas; T040/T056/T041/T055 permanecen abiertas.
+
+### Evidencia de T005
+
+- `TransaccionAccion.registrar` exige `CambioReversible`; `revertir` valida primero, deshace en orden inverso, omite `CambioSoloLinea`, vacía la transacción y evita una segunda reversión.
+- `deshacer_mientras` fotografía antes de tocar estado, no vacía ni marca la transacción e incorpora cambios solo-línea; `rehacer` consume los inversos en orden contrario.
+- `_fotografiar` reconoce por tipo exacto los cambios existentes y ofrece la extensión `fotografiar_para_rehacer(inverso, estado)`; un tipo nuevo sin extensión falla antes de `deshacer`.
+- `logica/mutaciones.py` registra antes de mutar y sus helpers `atributo`, `dato`, `agregar`, `quitar` y `quitar_identidad` producen `CambioAtributo`, `CambioDato` o `CambioLista`, todos cubiertos por `_fotografiar`.
+- `HistorialReversible.vincular_linea` entrega cada transacción cerrada mediante `registrar_accion`, notifica `recortar(1)` tras retroceso y excluye `_linea` de `deepcopy`/`pickle` mediante `__getstate__`.
+- Pruebas ejecutadas: `tests/test_logica/test_cambios_linea.py`, `test_historial_linea.py`, `test_cambios.py`, `test_historial_reversible.py` y `test_cambio_soltar_objeto.py` → **44 passed in 0.76s**.
+- Alcance: esta evidencia valida la interfaz base y su compatibilidad estructural con futuros cambios de 001; no prueba cambios de terreno/cazador aún inexistentes, `LineaTiempo` completa, T056 ni persistencia conjunta.
 
 El guardado real es **v9** (`GuardadoBinario.VERSION = 9`). El **v10** de `specs/004-linea-de-tiempo/contracts/guardado-v10.md` es una propuesta para Steven: serializar en una sola operación el estado vivo y la línea como bytes opacos. No está implementado y debe coordinarse con la incorporación de costo/rango.
 
@@ -61,9 +83,9 @@ Una acción rechazada aborta sus cambios y no se publica a la línea de tiempo.
 
 No se introducen observadores de cambios de atributos. Cada mutación canónica se registra en el punto que ya conoce la operación y antes de modificarla.
 
-## 4. Invalidación acordada para 001
+## 4. Derivados y posible invalidación
 
-001 invalida explícitamente sus derivados:
+La producción inicial de 001 recalcula desde cero y no retiene resultados de ruta; en ese caso **no existe caché que invalidar**. Solo si una decisión posterior a `--bench` adopta reutilización, 001 deberá invalidar explícitamente esos derivados:
 
 - después de que `HistorialReversible.deshacer_ultimo(estado)` devuelve `True` en `RETROCEDER`;
 - al enlazar cualquier estado nuevo o cargado mediante `MotorJuego.iniciar(estado)`.
@@ -72,7 +94,7 @@ El propietario puede ser el motor o el servicio de rutas. El nombre interno no s
 
 `historia` **no requiere invalidación**: no pasa por el motor, no ejecuta decisiones de 001 y deshace/rehace temporalmente en `try/finally`, dejando idéntico el estado vivo. Como las cachés están fuera del estado y de las transacciones, 004 no las alcanza. El recorte de la línea tras un pergamino tampoco necesita un segundo aviso: el retroceso exitoso ya invalidó.
 
-La invalidación puede ser O(1) por cambio de generación, pero la memoria pendiente de liberar se mide. No se usan observadores generales ni se registran mutaciones de caché como cambios reversibles.
+Una invalidación condicional puede ser O(1) por cambio de generación, pero la memoria pendiente de liberar se mide. No se implementan ganchos, observadores ni generaciones productivas mientras la estrategia siga siendo recálculo sin estado retenido.
 
 ## 5. Pergaminos
 
@@ -80,6 +102,8 @@ La línea de tiempo y 001 conservan la excepción heredada:
 
 - el pergamino utilizado queda consumido;
 - la cantidad de pergaminos no forma parte de la reversión, incluidos recogidos/soltados en el intervalo;
+- los movimientos de pergaminos (recoger/soltar con `reversible=False`) se anotan «solo línea» mediante `HistorialReversible.registrar_solo_linea` en la punta remota de Joshua; la lista de cambios de `ResultadoAccion` sigue vacía, como en la Parte I;
+- el consumo del pergamino se guarda aparte con `anotar_para_linea` y la línea lo publica con `anotar_solo_linea` justo después del `recortar`, para que `historia <t>` anterior al consumo lo muestre disponible en el inventario y las consultas posteriores lo muestren consumido;
 - el resto del estado reversible de terreno, cazadores, agenda y puertas sí vuelve al punto anterior.
 
 001 no implementa una segunda política de inventario; consume el contrato existente y verifica el resultado de punta a punta.
@@ -92,7 +116,7 @@ La regla de producción documentada por 004 es **hacia atrás desde el punto de 
 2. para consultar antes de la acción `k`, se toma el primer punto `m >= k-1` y se deshacen sobre el paquete las transacciones `m…k`;
 3. si la consulta cae después del último punto, se deshace temporalmente sobre el estado vivo;
 4. antes de cada deshacer se captura el inverso y se aplican los inversos en orden contrario dentro de `finally`;
-5. para un instante entre decisiones se puede deshacer parcialmente la transacción mientras el reloj sea mayor que `t`;
+5. para un instante entre decisiones se deshace parcialmente la transacción mientras el reloj sea mayor que `t` y, en la punta remota de Joshua (`f4da930`), se devuelven a la agenda los eventos posteriores extraídos usando la condición `condicion(estado, cambio)` de `deshacer_mientras`;
 6. nunca se ejecuta el comportamiento del cazador ni se consulta una caché de rutas.
 
 Re-simular hacia adelante permanece únicamente como alternativa medida en `--bench`, sobre datos sintéticos con todo el contenido cargado. No es la regla de producción.
@@ -124,8 +148,12 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 - [x] 004 confirma que la línea no llama al cazador ni necesita una interfaz nueva de 001.
 - [x] Se acuerda que las cachés no observables viven fuera del estado/transacciones y no forman parte de puntos de control o guardado.
 - [x] Se delimita que `historia` no invalida y que 001 invalida tras retroceso exitoso e inicio/carga.
-- [ ] 004 implementa y publica las interfaces nuevas de deshacer temporal/rehacer y enlace del historial, sin cambiar firmas existentes.
-- [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados y los dos puntos de invalidación.
+- [x] 004 publica deshacer temporal/rehacer y `fotografiar_para_rehacer(inverso, estado)` en `972af5421d628171a4464709858275b100151c1e`.
+- [x] Esa interfaz base y `HistorialReversible.vincular_linea` están integrados en `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` mediante `972af542…`/`927d886…`.
+- [x] T005 completa la revisión cruzada de proceso sobre interfaces y pruebas locales; disponibilidad y revisión no se confunden.
+- [ ] Se integra y verifica la clase completa `LineaTiempo` publicada posteriormente; no se asume disponible por existir en `origin/joshua@5b67c08…`.
+- [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados; cada tipo nuevo declara `fotografiar_para_rehacer` si lo exige la interfaz integrada.
+- [ ] Si la evidencia adopta reutilización productiva, se planifican y prueban entonces sus puntos de invalidación; con recálculo sin estado retenido no se añaden.
 - [ ] Los cambios nuevos pasan pruebas de `deepcopy`, `pickle`, deshacer/rehacer exacto y ausencia de referencias a motor/cachés.
 - [ ] Se prueba la excepción de pergaminos, la continuación determinista y que `historia` no altera cachés.
-- [ ] Steven implementa/acuerda v10 coordinado con costo/rango; hasta entonces el formato real continúa en v9.
+- [ ] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real; hasta entonces el formato ejecutable consultado continúa en v9.

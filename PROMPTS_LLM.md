@@ -450,6 +450,11 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 34 | Impacto de integrar `origin/Steve` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 35 | Impacto de integrar `origin/joshua` sobre la planificación 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
 | 36 | Compatibilidad de copia y serialización de salas | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 37 | Respuesta de Steven al contrato de rutas y datos 001 | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 38 | `/speckit.tasks` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 07/11/2026 |
+| 39 | `/speckit.analyze` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
+| 40 | Remediación de la planificación 001 con ramas remotas | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
+| 54 | Implementación coherente de US1/US2: terreno, rutas y cazador | Tema 12. Parte II dirigida por especificaciones | 09/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -1429,6 +1434,744 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Solución.** No se usó `__reduce__`. `_ListaEnemigosSala.__deepcopy__` registra primero la nueva lista en `memo`, copia el dueño y los enemigos preservando ciclos y usa `list.append` durante la construcción. Para pickle, `append` tolera únicamente la fase previa a restaurar `_sala`. `Sala.__getstate__` omite los dos índices derivados y `Sala.__setstate__` restablece el ciclo con la lista y reconstruye ambos índices una sola vez al final. Las operaciones ordinarias conservan las actualizaciones O(1) esperadas y las firmas reversibles existentes.
 
 **Regresiones y resultado.** Se añadieron pruebas con la fixture real de `cripta-04` para `deepcopy` y la ida y vuelta de `pickle`: cantidad/orden/IDs, alias `sala_actual`, identidad de índices, independencia y extracción/restauración posterior. La ejecución final del archivo nuevo terminó en `2 passed`; la suite completa con `.venv/Scripts/python.exe -m pytest -q -rs --tb=short` terminó en `1073 passed` en 100.85 s.
+
+## Prompt 37 — Respuesta de Steven al contrato de rutas y datos 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Actualiza la planificación de 001 con la respuesta de Steven,
+> sin generar todavía tasks.md ni implementar código.
+>
+> Steven confirmó:
+> - Él implementará la validación estricta de costo y rango.
+> - El único default de costo es 100 cuando el campo está ausente;
+>   los valores presentes inválidos se rechazan.
+> - Propone validar simetría en el recorrido existente posterior a
+>   vincular_salidas(), comparando (origen, destino) con su inverso.
+> - Acepta contiene_sala y salidas_transitables.
+> - Él construirá la vista de «ir a» desde el mapa conocido y su
+>   prueba de independencia frente al estado real oculto.
+> - Esa vista solo enumera salidas desde salas exploradas y permite
+>   rutas únicamente entre salas exploradas mediante puertas
+>   recordadas abiertas.
+> - Los costos no cambian la alcanzabilidad de resolubilidad.
+>
+> Todavía NO están confirmados por ambos:
+> - Firmas Python y representación exacta del resultado del buscador.
+> - Resultado para origen igual a destino y ausencia de ruta.
+> - Mecanismo de reutilización de cálculos para «ir a».
+> - Quién integra todos los campos de persistencia y qué versión
+>   final acuerdan Steven y Joshua.
+>
+> Incorpora como propuesta de Sofía, pendiente de respuesta:
+> - proximo_paso devuelve solo el siguiente paso.
+> - Cada paso de «ir a» se decide de nuevo según §3.4, con origen,
+>   destino y conocimiento vigentes.
+> - Se empieza con cálculo individual y se mide el límite de 5 ms
+>   en colaboración con 003. La reutilización es una alternativa
+>   condicionada a demostrar equivalencia y medir su costo completo.
+> - Origen igual a destino: costo total 0, sin paso.
+> - Sin ruta: resultado explícito y distinto del anterior.
+> - Atacar o esperar corresponde al comportamiento, no al buscador.
+> - Steven coordinaría con Joshua una actualización conjunta del
+>   guardado; no reservar unilateralmente v10 ni otra versión.
+>
+> Revisa el código y los contratos locales actuales antes de editar.
+> No supongas que existen campos, interfaces o versiones futuras.
+>
+> Actualiza coherentemente:
+> - contracts/propuesta-steven-rutas-datos.md
+> - plan.md, research.md, data-model.md y quickstart.md, si procede.
+> - Mi apartado de PROMPTS_LLM.md con este prompt y el resultado.
+>
+> Separa acuerdos confirmados, propuestas y verificaciones futuras.
+> No marques pruebas como realizadas ni acuerdos como aceptados
+> por falta de respuesta.
+>
+> No cambies spec.md, la constitución, documentos de compañeros,
+> código ni pruebas. No hagas commit, push, merge o cambio de rama.
+>
+> Devuelve los archivos modificados y una lista breve de las
+> dependencias que deberán bloquear tareas de integración.
+
+**Código y contratos revisados.** `Puerta` todavía no almacena costo; `DecodificadorDatos` no valida costo/rango; `MapaCripta.obtener_sala()` y `vincular_salidas()` siguen recorriendo la lista; el inicializador ya dispone de un recorrido posterior al enlace antes de 002; y `GuardadoBinario.VERSION` continúa en 9 sin esos campos. No se supuso ninguna interfaz o versión futura.
+
+**Acuerdos registrados.** Steven asume la validación estricta —default 100 solo por ausencia—, la simetría posterior a `vincular_salidas()`, las capacidades `contiene_sala`/`salidas_transitables`, la vista restringida al mapa conocido y su prueba futura de independencia. También se registró que los costos no alteran la alcanzabilidad de 002. Estas responsabilidades no se presentaron como implementadas.
+
+**Propuesta y bloqueos.** Quedó como propuesta de Sofía devolver un solo paso, recalcular en cada paso, separar buscador de comportamiento, distinguir destino alcanzado de ausencia de ruta, comenzar con cálculo individual y medir con 003 el costo completo frente a 5 ms. Firmas/resultado exacto, casos terminales, reutilización y persistencia/versionado conjunto Steven–Joshua siguen pendientes. V9 es la única versión real; v10 no se reservó. Se actualizaron únicamente los cinco artefactos permitidos de 001 y esta entrada; no se creó `tasks.md`, no se modificó código/pruebas y no se ejecutaron pruebas por tratarse de documentación.
+
+## Prompt 38 — `/speckit.tasks` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 07/11/2026
+
+> **Prompt**
+>
+> Genera exclusivamente tasks.md para specs/001-terreno-y-cazador,
+> en la rama Sofia, usando el spec aclarado y el plan actualizado.
+>
+> Lee la constitución, spec.md, plan.md, research.md, data-model.md,
+> quickstart.md y ambos contratos de 001. Revisa el código actual
+> para no crear tareas que dupliquen funcionalidades existentes.
+>
+> Requisitos de las tareas:
+> 1. Cada tarea tiene ID estable, archivo concreto, resultado
+>    verificable y referencias a los FR/PR que atiende.
+> 2. Organiza por dependencias e historias de usuario. Marca como
+>    paralelas solo tareas que realmente puedan ejecutarse sin
+>    conflictos de archivos o dependencias.
+> 3. Incluye pruebas para los 30 escenarios del spec y una matriz
+>    que permita recorrer AC → FR/PR → tareas → pruebas previstas.
+> 4. Separa:
+>    - tareas propias de Sofía;
+>    - entregas de Steven/Joshua que se verifican como dependencias;
+>    - tareas conjuntas que requieren coordinación.
+>    No asignes a Sofía cambios de compañeros sin acuerdo.
+> 5. Identifica con precisión las tareas bloqueadas por firmas del
+>    buscador, semántica de resultados, datos validados, persistencia
+>    o interfaces históricas pendientes.
+> 6. No conviertas la reutilización de rutas en condición obligatoria:
+>    «ir a» puede recalcular en cada paso si cumple §3.4 y los 5 ms.
+>    La reutilización es una alternativa que se compara y adopta
+>    únicamente si las mediciones la justifican.
+> 7. Incluye comparación individual/compartida, puertas estables/
+>    inestables, costo completo y las seis operaciones de agenda.
+>    Conecta la evidencia a --bench.
+> 8. Distingue mediciones sintéticas de la validación final con la
+>    referencia oficial. Su publicación pendiente bloquea esa
+>    validación final, no todas las tareas de desarrollo.
+> 9. Incluye verificaciones de deepcopy/pickle y alias de cambios
+>    nuevos, coherencia de índices, retroceso e invalidación explícita.
+>    Reutiliza las regresiones existentes cuando cubran el caso.
+> 10. Incluye documentación final de decisiones con resultados reales,
+>     revisión de restricciones y suite completa.
+> 11. Deja todas las tareas de implementación sin marcar. No presentes
+>     cobertura planificada como pruebas ejecutadas.
+>
+> Si detectas una contradicción que impide descomponer el plan,
+> infórmala; no inventes reglas ni aceptaciones de contratos.
+>
+> Registra el prompt y resultado en mi apartado de PROMPTS_LLM.md.
+> No implementes tareas, no generes código ni pruebas.
+> No cambies la constitución ni documentos de compañeros.
+> No hagas commit, push, merge o cambio de rama.
+>
+> Devuelve número de tareas, fases, dependencias bloqueantes,
+> cobertura de requisitos y archivos modificados.
+
+**Resultado.** Se generó `specs/001-terreno-y-cazador/tasks.md` con 63 tareas sin marcar en ocho fases: 8 para US1, 12 para US2, 12 para US3, 10 para US4 y 21 de preparación, fundamento, coordinación y cierre. Las 23 oportunidades `[P]` usan archivos distintos y no dependen de trabajo incompleto de la misma fase.
+
+**Trazabilidad y fronteras.** La matriz contiene exactamente los 30 AC, incluidos AC-B01–AC-B07, y enlaza FR/PR, tareas y pruebas previstas. Se separaron tareas de Sofía, dependencias verificables de Steven/Joshua y tareas conjuntas. Las puertas G1–G6 delimitan firma/resultado, datos validados, vista conocida, interfaces históricas, persistencia y referencia oficial; esta última bloquea solo la validación final de PR-001.
+
+**Reutilización y código existente.** El cálculo individual por paso permanece suficiente si cumple §3.4 y 5 ms; compartir/reutilizar es una alternativa medida con costo completo. Se reutilizan `calcular_intervalo`, agenda/reprogramación, transacciones, `MonticuloMinimo`, `TablaHashImpl`, los benchmarks existentes y las regresiones de copia/serialización de `Sala`. No se detectó una contradicción normativa que impidiera descomponer el plan. No se implementó código ni pruebas y no se ejecutó la suite.
+
+## Prompt 39 — `/speckit.analyze` para terreno y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Analiza la consistencia de specs/001-terreno-y-cazador antes de
+> implementar. Esta ejecución es de análisis, no de corrección.
+>
+> Lee la constitución, PDF oficial, spec, plan, research, data-model,
+> quickstart, tasks y contratos actuales. Contrasta también las
+> interfaces existentes y dependencias documentadas de 002/004.
+>
+> Comprueba especialmente:
+> - T042/T043 comparten archivo pese a sus marcas de paralelismo.
+> - T031 depende de una alternativa experimental desarrollada después,
+>   en T046, y puede existir una dependencia circular entre fases.
+> - T037 parece situar experimentos en producción, aunque el plan
+>   reserva alternativas para --bench hasta decidir con evidencia.
+> - Faltan tareas explícitas de DECISIONES.md para §5.1, §5.2 y la
+>   parte de agenda de §5.6, e instrucciones de aceptación en README.
+> - T003 no debe ampliar unilateralmente el acuerdo de Steven a
+>   archivos compartidos cuya responsabilidad no está confirmada.
+> - Diferenciar escribir pruebas antes de implementar de poder
+>   ejecutarlas satisfactoriamente.
+> - Dependencias transitivas, bloqueos excesivos, duplicaciones,
+>   requisitos sin prueba concreta y firmas todavía no acordadas.
+> - Que las alternativas medidas y los trabajos de compañeros no
+>   autoricen al agente a editar sus clases.
+>
+> Devuelve hallazgos con identificador, gravedad, ubicación,
+> requisito afectado y corrección propuesta. Distingue dependencias
+> externas conocidas de contradicciones reales.
+>
+> No cambies spec, plan, tasks, contratos, código ni pruebas.
+> Únicamente registra esta invocación real y un resumen fiel de su
+> resultado en mi apartado de PROMPTS_LLM.md, sin alterar entradas
+> anteriores. No marques tareas de implementación como completadas.
+>
+> No hagas commit, push, merge ni cambio de rama.
+> No ejecutes speckit.implement.
+
+**Resultado del análisis.** Se identificaron 16 hallazgos: 2 críticos, 5 altos, 8 medios y 1 bajo. Los críticos son fronteras de propiedad/contrato: T003 atribuye a Steven cambios en DTO e inicialización más allá de la responsabilidad confirmada en su frontera de datos, y T049 asigna unilateralmente a Sofía la edición del punto compartido `main.py` pese a que el plan exige coordinación. Ambos contradicen el principio VIII y deben corregirse antes de implementar.
+
+**Orden, experimentos y pruebas.** Se confirmó que T042/T043 no son paralelas porque comparten archivo; T031 depende de la alternativa que T046 crea en una fase posterior; y T036–T038 convierten infraestructura de reutilización experimental en trabajo de producción antes de que `--bench` justifique adoptarla. T001 mezcla el análisis de solo lectura con su corrección. También se debe separar «prueba escrita» de «prueba que ya puede pasar», aclarar los solapamientos T040/T056 y T041/T055, y añadir una comprobación automatizada explícita para AC-013/PR-001 y otra para la ausencia del sentido inverso en la simetría confirmada.
+
+**Documentación y dependencias.** Faltan tareas concretas para `DECISIONES.md` §5.1, §5.2 y la revisión de agenda de §5.6, además de instrucciones de aceptación en `README.md`. T057 bloquea conjuntamente dos decisiones separables —estrategia del cazador e integración de «ir a»— y T047 no identifica la alternativa de agenda con suficiente precisión. Las firmas del buscador, la vista de 003, las interfaces de 004, el guardado coordinado y la referencia oficial siguen siendo dependencias externas conocidas, no contradicciones. La cobertura nominal enlaza los 24 FR/PR y los 8 SC con tareas, pero esos enlaces no eliminan los huecos de prueba/documentación anteriores.
+
+**Alcance y fuentes.** Se revisaron los dos PDF presentes (`distribucion_cripta.pdf` y el documento de decisiones de Parte I), `docs/enunciado.md`, los artefactos de 001, contratos/dependencias de 002/004 y las interfaces reales. El repositorio no contiene un PDF normativo de Parte II con las secciones §5.1, §5.2 y §5.6 citadas por 001; esa ausencia limita la comprobación textual directa y se reporta como dependencia documental externa, no como contradicción inventada. No se corrigió ningún artefacto, no se ejecutaron pruebas ni benchmarks y ninguna tarea fue marcada.
+
+## Prompt 40 — Remediación de la planificación 001 con ramas remotas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Todavía no he integrado los últimos commits de Steven y Joshua.
+> Consulta sus archivos remotos en modo lectura y registra el hash
+> de cada versión consultada.
+>
+> Distingue expresamente:
+> - lo que está disponible en mi checkout local;
+> - lo publicado por mis compañeros, pendiente de integrar;
+> - los acuerdos comunicados, pendientes de implementación.
+>
+> No marques una dependencia como disponible localmente solo porque
+> exista en otra rama. No hagas merge ni descartes mis cambios.
+>
+> Corrige la planificación de 001 a partir del informe de analyze
+> del Prompt 39. No implementes código.
+>
+> Antes de editar:
+> - Lee el PDF oficial de Parte II en la ruta externa ya utilizada.
+>   Si no está accesible, informa la limitación sin sustituirlo por
+>   el reparto interno.
+> - Consulta en modo lectura el código publicado por Joshua que
+>   incorpora fotografiar_para_rehacer(inverso, estado).
+>   No hagas merge ni cambies de rama.
+>
+> Actualiza los acuerdos con evidencia:
+> - Steven acepta validación estricta de costo/rango y simetría,
+>   identificación de sentidos por origen/destino y detección de
+>   ambigüedad entre salidas múltiples.
+> - Acepta vista conocida solo de salas exploradas, recálculo por
+>   paso, origen=destino con costo 0 y sin paso, y sin ruta distinguible.
+> - Steven toma persistencia de costo/rango/mapa conocido coordinada
+>   con Joshua. No fijar versión implementada sin comprobarla.
+> - Las firmas Python y los archivos compartidos todavía requieren
+>   asignación concreta.
+> - No está confirmado que deba rechazarse toda salida sin inversa:
+>   contrasta las fuentes y deja la pregunta pendiente si no lo definen.
+>
+> Remedia los hallazgos:
+> 1. K001/K002: separar entregas de compañeros de tareas propias;
+>    main.py requiere integración conjunta acordada.
+> 2. I001: quitar paralelismo entre T042/T043 y revisar todas las
+>    marcas [P], dependencias y ejemplos.
+> 3. I002: eliminar el ciclo entre US3 y la alternativa de US4.
+> 4. I003: mantener experimentos en benchmarks. Cachés productivas
+>    e invalidación solo son necesarias si se adopta reutilización;
+>    no exigirlas para una búsqueda sin estado retenido.
+> 5. C001/C002: añadir tareas de DECISIONES.md para §5.1, §5.2 y
+>    agenda de §5.6, y README con aceptación y mediciones.
+> 6. I004: separar el análisis ya realizado de su remediación y de
+>    la revisión posterior. No marcar implementación como completada.
+> 7. I005/D001/D002: distinguir escribir pruebas de ejecutarlas,
+>    cerrar cada historia y eliminar duplicaciones de integraciones.
+> 8. C003: añadir prueba del esquema/salida del ciclo real;
+>    la ejecución con referencia oficial sigue pendiente.
+> 9. I006: separar decisiones de estrategia del cazador y de «ir a».
+> 10. A001: concretar la alternativa lineal de agenda, local al benchmark.
+> 11. I007: actualizar la descripción documental del plan.
+>
+> Conserva los IDs existentes cuando sea posible, agrega nuevos sin
+> reutilizarlos y actualiza matrices, dependencias y recuentos.
+> No rebajes requisitos para eliminar hallazgos.
+>
+> Modifica solo los documentos de 001 necesarios y mi apartado de
+> PROMPTS_LLM.md. No cambies spec.md sin señalar primero cualquier
+> cambio normativo necesario. No edites documentos de compañeros,
+> constitución, código o pruebas.
+>
+> Devuelve una tabla de los 16 hallazgos: corregido, desactualizado,
+> no confirmado o pendiente, con evidencia y archivos afectados.
+> No hagas commit, push, merge ni ejecutes implement.
+
+**Fuentes y estado de ramas.** Se leyó el PDF oficial accesible en `C:\Users\sophie\OneDrive - Universidad Nacional de Costa Rica\Estruc. Datos\Cripta - Parte II.pdf`; confirma §§3.1–3.4, 5.1, 5.2, 5.6, 6.1–6.3 y 7.1–7.2. El checkout local permaneció en `Sofia@f89b7b53722e92c1337fe57c7bebf5528c1ec53e`. Se consultaron sin checkout ni merge `Steve@757d747b461cdb755705ca5cdd90391090112782` y `joshua@112cd78ab85a5b0f9a580353e5824f4aeb517889`. Joshua publica la interfaz en `972af5421d628171a4464709858275b100151c1e`: `registrar_solo_linea`, `deshacer_mientras`, `rehacer` y `fotografiar_para_rehacer(inverso, estado)`; todavía no está disponible localmente. La punta de Steve conserva `GuardadoBinario.VERSION = 9` y no publica aún costo/rango/003/persistencia.
+
+**Acuerdos frente a implementación.** Se registró como acuerdo comunicado —no código disponible— la validación estricta de Steven, identificación de sentidos por origen/destino, detección de ambigüedad, vista solo de exploradas, recálculo por paso, casos terminales y persistencia coordinada con Joshua. Firmas y archivos compartidos siguen abiertos. El PDF y `spec.md` no exigen expresamente rechazar toda salida sin inversa; la pregunta quedó pendiente y no se cambió `spec.md`.
+
+**Remediación.** `tasks.md` pasó a 71 tareas T001–T071, 21 `[P]` reales y cero marcadas; US1=9, US2=12, US3=12 y US4=12. T042→T043 quedó secuencial; AC-009 pasó a T046/T065 sin ciclo; reutilización e invalidación quedaron solo en benchmarks hasta decisión posterior; T040/T041 escriben pruebas y T055/T056 las ejecutan; se añadieron cierres de historias, prueba de esquema AC-013, decisiones separadas para cazador/«ir a», tareas de `DECISIONES.md` §§5.1/5.2/5.6 y README. T003/T049 ya no asignan unilateralmente archivos de compañeros. La matriz conserva los 30 AC y todos los FR/PR.
+
+**Resultado de los 16 hallazgos.** Quince quedaron corregidos en la planificación. C004 quedó **no confirmado**: la ausencia de sentido inverso no tiene política definida en las fuentes consultadas y no se convirtió en requisito. La ejecución oficial de AC-013 permanece externamente pendiente, aunque su prueba de esquema/salida ya está planificada. No se implementó código, no se editaron pruebas, no se ejecutó la suite y no se hizo commit, push, merge ni cambio de rama.
+
+## Prompt 41 — Reanálisis de 001 después de integrar Joshua
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Repite el análisis de `specs/001-terreno-y-cazador` sobre el checkout
+> actual de Sofia, después de integrar `origin/joshua` y los cambios
+> de Steven incluidos en esa rama. La suite local terminó con
+> `1101 passed`, sin fallos ni omisiones; no vuelvas a ejecutarla.
+>
+> Lee constitución, PDF oficial, spec, plan, tasks y contratos de 001.
+> Comprueba las interfaces locales actuales de cambios e historial,
+> incluido `fotografiar_para_rehacer`, sin asumir que toda 004 o el
+> guardado futuro están implementados. Revisa los 16 hallazgos del
+> Prompt 39 frente a la remediación del Prompt 40 e informa cierres,
+> pendientes y hallazgos nuevos con gravedad y evidencia.
+>
+> Distingue errores reales, acuerdos pendientes, entregas externas no
+> implementadas y validación pendiente con la referencia oficial.
+> Comprueba propiedad de archivos, dependencias sin ciclos, paralelismo,
+> alternativas limitadas a benchmarks y tareas de `DECISIONES.md`/README.
+>
+> No modifiques los artefactos analizados, código ni pruebas. Solo
+> registra la invocación y su resultado real en el apartado de Sofía de
+> `PROMPTS_LLM.md`, sin marcar tareas ni hacer commit, push, merge o
+> `/speckit.implement`. Termina indicando qué tareas propias podrían
+> comenzar tras la revisión cruzada y cuáles permanecen bloqueadas.
+
+**Checkout e interfaces comprobadas.** El análisis se hizo sobre `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569`, merge de `c67e2aa4ef1f31bb6cd8ab7d68f3ce78c036bbcc` con `joshua@927d8860639f3efa6260172d3e03cae61f74301b`; contiene `972af5421d628171a4464709858275b100151c1e` y `Steve@757d747b461cdb755705ca5cdd90391090112782`. Están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. La punta actual `origin/joshua@d055563` no es ancestro del checkout: no está local su clase completa `LineaTiempo`. `GuardadoBinario.VERSION` continúa en 9 y no están implementados costo, rango, rutas ponderadas, vista 003 ni persistencia conjunta. Se aceptó como evidencia comunicada `1101 passed`, sin fallos ni omisiones; la suite no se volvió a ejecutar.
+
+**Revisión de Prompt 39/40.** Los quince hallazgos remediados en Prompt 40 continúan cerrados: propiedad de T003/T049, secuencia T042→T043, ciclo US3/US4, experimentos solo en benchmarks, tareas de `DECISIONES.md` §§5.1/5.2/5.6 y README, separación análisis/remediación, escritura frente a ejecución de pruebas, solapamientos de integraciones, esquema AC-013, decisiones separadas de cazador/«ir a», alternativa lineal de agenda y actualización descriptiva original. C004 continúa abierto y no confirmado: PDF, spec y acuerdo de Steven no definen si una salida sin sentido inverso debe rechazarse. La planificación conserva 71 tareas únicas, 21 marcas `[P]`, 30 AC trazados, todos los FR/PR cubiertos, cero tareas marcadas y ninguna dependencia circular detectada.
+
+**Hallazgos nuevos.** Se detectaron dos incumplimientos constitucionales críticos antes de implementar. Primero, `DECISIONES.md` §5.4 identifica `MapaCripta` como componente compartido que exige acordar el cambio e identificar consumidores, pero `plan.md` lo declara archivo de Sofía y T007/T008 asignan su contrato e implementación sin una tarea de coordinación ni inventario de consumidores; contradice el Principio VIII. Segundo, T007–T009 prueban estructura y restricciones, pero ninguna tarea/medición compara explícitamente el acceso por ID del índice frente a una alternativa lineal conectada a `--bench`, verificación exigida por el Principio II. También hay un hallazgo alto de estado documental: plan, research, data-model, quickstart, contrato de Joshua y G4 aún afirman que la interfaz base y el enlace del historial no están locales, aunque sí lo están. Como hallazgo bajo, plan/quickstart aún registran `1071 passed` en vez del resultado comunicado actual `1101 passed`. No se modificaron esos artefactos por la restricción de solo lectura.
+
+**Dependencias y siguiente trabajo.** G1 (firmas/representación y archivos compartidos), G2 (costo/rango/simetría), G3 (vista conocida 003), G5 (persistencia coordinada) y G6 (carga oficial para AC-013) siguen abiertos; G4 ya no es una entrega remota para la interfaz base, pero requiere revisión cruzada y actualización documental, y no equivale a toda 004. Antes de código deben remediarse y revisarse los dos hallazgos constitucionales. Después podrían comenzar T010–T015 y el oráculo T042; T005 puede verificarse contra lo ya integrado. T007–T009 requieren primero acordar la frontera compartida de `MapaCripta` y añadir su medición. T016–T029 siguen bloqueadas por G1/G2 y la fase del índice según corresponda; T040/T056 esperan el cierre revisado de T005 y el trabajo nuevo de 001; T041/T055 esperan G5; T052–T054/T066 esperan G1/G3; T051 espera G6. No se ejecutaron pruebas ni benchmarks, no se marcaron tareas y no se hizo commit, push, merge, cambio de rama ni implementación.
+
+## Prompt 42 — Remediación focalizada posterior al reanálisis de 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> Remedia únicamente K003, C005, I008 y E001 del Prompt 41.
+>
+> Para K003, documenta que Sofía implementa el índice de `MapaCripta`
+> por solicitud expresa de Steven, conservando firmas, orden e identidad,
+> e identifica consumidores reales mediante búsquedas en código. No
+> conviertas la condición de componente compartido en una prohibición
+> automática y reporta cualquier acuerdo explícito contradictorio.
+>
+> Para C005, añade al final tareas de benchmark del mapa conectadas a
+> `--bench`: búsqueda por ID frente a alternativa lineal y vinculación
+> antes/después, con varios tamaños/cargas equivalentes; separa
+> construcción, consultas y vinculación y comprueba resultados e
+> identidad antes de tiempos. La alternativa vive solo en benchmarks.
+>
+> Para I008, refleja las interfaces de Joshua presentes en `HEAD`,
+> incluidos `rehacer` y `vincular_linea`, distinguiéndolas de
+> `LineaTiempo` completa, integración pendiente y pruebas conjuntas no
+> realizadas. Para E001, conserva `1071 passed` como histórico y registra
+> la corrida comunicada de `1101 passed` sin atribuirla a esta ejecución.
+>
+> No añadas rechazo de salidas sin inversa ni permitas que esa pregunta
+> bloquee las pruebas independientes del índice. Actualiza solo documentos
+> de 001 y este apartado; no cambies `spec.md`, constitución, código o
+> pruebas, ni hagas merge, commit, push o implementación. Devuelve diff,
+> tareas agregadas y pendientes reales.
+
+**K003 remediado.** Se registró la solicitud expresa de Steven para que Sofía implemente el índice de su `MapaCripta`. La búsqueda de código confirmó consumidores en construcción/restauración (`main.py`, inicializador, restaurador y `PartidaService`), simulación/verificación (motor, resolubilidad, rastro y efectos), servicios/datos, vista, benchmarks y pruebas. El contrato conserva firmas, orden, sustitución e identidad/alias de salas. No apareció un acuerdo explícito contradictorio: `DECISIONES.md` §5.4, dedicado a Resolubilidad, registró históricamente la necesidad de identificar consumidores y acordar el cambio, no una prohibición; la solicitud de Steven aporta ese acuerdo. DTO, inicialización, persistencia y `main.py` mantienen sus fronteras separadas.
+
+**C005 remediado en planificación.** Se agregaron T072–T076 sin reutilizar IDs: prueba de conexión/esquema, construcción separada del índice, consulta por ID frente a recorrido lineal benchmark-local, vinculación lineal frente a indexada y documentación final en una subsección propia **«Índice por ID de MapaCripta (evidencia complementaria de 001)»**, separada de §5.4 y enlazada desde la revisión de decisiones de §5.6. T049/T050/T062/T071, dependencias, paralelismo y matrices se actualizaron para conectar las filas una sola vez a `main.py --bench`. Cada variante usa varios tamaños/densidades y cargas equivalentes, verifica resultados, orden e identidad canónica antes de medir, y separa generación, construcción, consultas y enlace. El plan queda en 76 tareas, 22 `[P]`, cero marcadas y US4=17.
+
+**I008 y E001 remediados.** En `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`; T005 conserva la revisión cruzada de proceso. La punta observada `origin/joshua@b039b8b871d40984aa0e4bd74e8dd57b85e6224a` contiene `LineaTiempo` completa y su creación al iniciar, pero no es ancestro de `HEAD`; G4 se separó entre revisión de base local y entrega completa necesaria para ejecutar T056. Se preservó `1071 passed` como línea histórica y se añadió la corrida posterior comunicada de `1101 passed`, sin fallos ni omisiones, indicando que esta remediación no ejecutó la suite.
+
+**Pendientes reales.** Continúan abiertas las firmas/representación de rutas y los demás archivos compartidos (G1), costo/rango/simetría (G2), vista conocida 003 (G3), revisión cruzada T005 y `LineaTiempo` completa para T056 (G4a/G4b), persistencia coordinada v9→formato futuro (G5) y referencia oficial (G6). La política de una salida sin inversa permanece no confirmada y no bloquea T007–T009/T072–T075. Se modificaron solo documentos de `specs/001-terreno-y-cazador/` y esta entrada; no se cambió `spec.md`, constitución, código o pruebas, no se ejecutaron pruebas/benchmarks y no se hizo commit, push, merge ni implementación.
+
+## Prompt 43 — Verificación de la interfaz base de Joshua (T005)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> En la rama Sofia, realiza únicamente T005 de
+> `specs/001-terreno-y-cazador/tasks.md`. Revisa las interfaces locales
+> de cambios e historial de Joshua y comprueba su compatibilidad con 001:
+> transacciones, deshacer y rehacer, `fotografiar_para_rehacer` y uso de
+> los helpers de `logica/mutaciones.py`.
+>
+> Contrasta el código con el contrato de 001. Distingue las interfaces
+> disponibles de la integración con `LineaTiempo` que todavía esté
+> pendiente. Ejecuta las pruebas existentes relevantes. No implementes
+> terreno, cazadores ni rutas; no modifiques código de compañeros ni
+> interfaces compartidas. No cierres G4b por verificar solamente la
+> interfaz base.
+>
+> Actualiza únicamente la evidencia de T005, el contrato si corresponde
+> y mi apartado de `PROMPTS_LLM.md`. Marca T005 solo si cumple sus
+> criterios completos. Informa archivos, pruebas y pendientes. Sin
+> commit, push ni merge.
+
+**Checkout y revisión.** T005 se ejecutó sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`. Se inspeccionaron sin modificar `logica/cambios.py`, `logica/historial_reversible.py` y `logica/mutaciones.py`. La rama contiene `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. Las transacciones normales omiten cambios solo-línea al retroceder; la consulta temporal fotografía antes de deshacer y rehace en orden contrario; un tipo nuevo sin fotografía falla antes de mutar.
+
+**Compatibilidad con 001.** Los helpers `atributo`, `dato`, `agregar`, `quitar` y `quitar_identidad` registran antes de mutar y producen `CambioAtributo`, `CambioDato` o `CambioLista`, tipos reconocidos por la fotografía base. Esto permite que 001 reutilice esos helpers. Si 001 introduce un tipo de cambio nuevo, ese tipo deberá declarar `fotografiar_para_rehacer`; T005 no afirma que cambios todavía inexistentes ya estén probados. El historial entrega transacciones cerradas, notifica recortes y no arrastra la línea al copiar/serializar el historial.
+
+**Pruebas y cierre.** Se ejecutó `./.venv/Scripts/python.exe -m pytest -q tests/test_logica/test_cambios_linea.py tests/test_logica/test_historial_linea.py tests/test_logica/test_cambios.py tests/test_logica/test_historial_reversible.py tests/test_logica/test_cambio_soltar_objeto.py`: **44 passed in 0.76s**. T005 cumplió sus criterios y quedó marcada. G4a queda cerrada; G4b permanece abierta porque `logica/linea_tiempo.py` no está en `HEAD`. La punta observada `origin/joshua@5b67c081c4af25e0bf77fcfa27d3dacc8a06728e` sí contiene la línea completa y `historia`, pero no es ancestro de `HEAD`. También siguen pendientes T040/T056, los cambios nuevos de 001 y la persistencia conjunta.
+
+**Archivos modificados.** Solo `specs/001-terreno-y-cazador/tasks.md`, `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md` y este apartado. No se modificaron código, pruebas, interfaces compartidas, terreno, cazadores o rutas; no se hizo commit, push ni merge.
+
+## Prompt 44 — Preparación de las pruebas de T007 (índice de MapaCripta)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 08/11/2026
+
+> **Prompt**
+>
+> En Sofia, prepara únicamente las pruebas de T007 correspondientes al
+> índice por ID de MapaCripta. Reutiliza la cobertura de
+> `tests/test_logica/test_mapa_cripta.py` y añade solo los casos
+> faltantes: salas existentes e inexistentes, orden de recorrido,
+> identidad de salas y destinos vinculados, sustitución en la misma
+> posición sin duplicar, y coherencia de referencias tras revincular.
+> No modifiques producción ni implementes el índice; no añadas
+> mediciones de tiempo. Ejecuta las pruebas relevantes, distingue las
+> que ya pasan de las que requieren la implementación futura y no
+> cambies expectativas para ocultar fallos. Marca T007 solo si cumple
+> todos sus criterios. Registra el trabajo en este apartado.
+
+**Cobertura reutilizada.** Se conservaron íntactos los tres casos previos de `tests/test_logica/test_mapa_cripta.py` (`test_ids_de_sala_invalidos_no_se_convierten`, `test_agregar_y_obtener_sala`, `test_vecinos_abiertos`) y se ejecutó también `test_mapa_reemplaza_sala_y_no_expone_arreglo` de `tests/test_logica/test_adaptacion_compartida.py` como regresión de sustitución vigente, sin tocar dichos archivos.
+
+**Casos añadidos.** Seis pruebas nuevas en la misma clase: identidad canónica y `None` de `obtener_sala`; `contiene_sala` existente/ausente/rechazo de `"1"`; orden de llegada e identidad de referencias en `obtener_salas()` con independencia de la copia devuelta; sustitución por ID reutilizando posición sin duplicar ni desplazar; destino canónico tras `vincular_salidas()` y en `vecinos_abiertos`; y revinculación que actualiza puertas entrantes de origen y salientes de la sala sustituta. Sin mediciones de tiempo: esas filas quedan reservadas a T072–T076.
+
+**Ejecución y fase roja.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=long tests/test_logica/test_mapa_cripta.py tests/test_logica/test_adaptacion_compartida.py::test_mapa_reemplaza_sala_y_no_expone_arreglo` produce **9 passed, 1 failed in 0.12s**. El único fallo es `AttributeError: 'MapaCripta' object has no attribute 'contiene_sala'` en `test_contiene_sala_existente_ausente_y_rechaza_id_invalido`: la prueba exige un contrato que T008 implementará, y se dejó fallar en vez de atenuar la expectativa. Con la implementación linear actual pasan 9 de 10, incluyendo identidad y sustitución.
+
+**Cierre de T007.** No se marcó: T007 exige que lista e índice señalen siempre a la misma `Sala` con acceso O(1) esperado a través del índice propio, y eso solo es verificable después de T008 (y T009 para las restricciones). Las pruebas quedan listas como fase roja controlada.
+
+**Archivos modificados.** Solo `tests/test_logica/test_mapa_cripta.py` y este apartado. `specs/001-terreno-y-cazador/tasks.md` no fue tocado y T007 permanece sin marcar. Sin cambios en producción ni en código de compañeros; sin commit, push ni merge.
+
+## Prompt 45 — Revisión del análisis cruzado de Joshua (A1, A2, M1–M3, B1, B2)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Revisa los siete hallazgos del análisis cruzado de Joshua sobre
+> `e89574d` (A1, A2, M1, M2, M3, B1, B2). Ejecuta `/speckit.clarify`
+> para A1 contrastando el PDF oficial §§3.1/§4.1 con FR-001, FR-002 y
+> AC-020 y distinguiendo cuatro casos; si queda decisión normativa,
+> pregunta y espera respuesta. Revisa A2 contra el código publicado
+> por Joshua (firma de `deshacer_m_while` y restauración de eventos
+> posteriores al instante consultado), distinguiendo local y remoto.
+> Remedia M1 (hashes y disponibilidad real, sin cerrar G4b), M2
+> (enlaces técnicos y derivados fuera de copias y guardado), M3
+> (propuesta coordinada v10 con costo, rango, mapa conocido y línea,
+> pendiente de confirmación; T041/T055 comprueban el mismo formato),
+> B1 (cambios de pergaminos «solo línea») y B2 (prioriza índice, US1 y
+> US2). Registra el análisis en este apartado; no atribuyas como
+> propias las 1139 pruebas comunicadas por Joshua. Sin commit, push ni
+> merge.
+
+**A1 resuelto con decisión del equipo.** El PDF se extrajo a texto (13 páginas): §3.1 establece «Cada salida puede declarar un campo costo, entero mayor o igual que 1. Si no lo declara, su costo es 100. El costo es el mismo en ambos sentidos» y §4.1 declara `costo` por sentido. Resultados: ambos sentidos omiten → 100 y 100 (expreso); uno declara 100 y otro omite → 100 frente a 100, sin contradicción; uno declara distinto de 100 y otro omite → decisión normativa elegida en consulta del 09/11: default 100 en el omitido y, por diferir del declarado, AC-020 de 001 rechaza la salida identificando ambos valores, **sin herencia**; salida sin sentido inverso → decisión de dejarla **sin definir**: sin regla de rechazo ni aceptación y sin bloquear índice, benchmarks, US1 ni cazador. La lectura es consistente con FR-001/FR-002 ya escritas, por lo que `spec.md` no se modificó; la regla quedó registrada en el contrato de Steven.
+
+**A2 verificado contra código remoto.** La firma `deshacer_mientras(estado, condicion, inversos: list) -> None` es la misma en local (`Sofia@b046f882`) y en remoto, pero el **protocolo de la condición cambió en remoto**: la punta `origin/joshua@f4da930dbdbf951609894a1501bfca2c4ea9264a` invoca `condicion(estado, cambio)` (diff desde `927d886`). La restauración de eventos posteriores al instante consultado también vive solo en remoto: `consultar_instante(t)` usa `_reconstruir(..., hasta_instante=t)` con `_hasta`, que continúa deshaciendo `CambioAgenda` de eventos con `tiempo > t` aun después de cruzar el reloj y devuelve todo con `TransaccionAccion.rehacer` en `finally`. T040/T056 ahora se redactan contra ese protocolo; la clase completa sigue sin integrarse localmente y no se implementó la línea.
+
+**M1 — hashes y disponibilidad real.** Consultados: `Sofia@e89574d` (día 08), `Sofia@b046f882` (hoy), merge base `joshua@927d886` y cuatro commits remotos `d055563`, `b039b8b`, `5b67c08`, `4cbac6d`. La disponibilidad local real continúa siendo la interfaz base (con `registrar_solo_linea`, `rehacer`, fotografía y `vincular_linea`); **G4b permanece abierta** y la existencia remota no la cierra.
+
+**M2 y B1.** Contractualizado que los enlaces técnicos (`HistorialReversible._linea`, `Inventario.historial_linea`) y los derivados (índice de mapa, cachés, fronteras) **no se copian ni persisten**: se reconstruyen y los enlaces se excluyen vía `__getstate__` (el de inventario es nuevo en remoto). B1 quedó documentado en §5 «Pergaminos» del contrato: recoger/soltar con `reversible=False` queda anotado «solo línea» sin añadir cambios a la lista pública, y el consumo se traslada a la línea tras `recortar` mediante `anotar_para_linea`/`anotar_solo_linea`; 001 no marca sus cambios nuevos como «solo línea» salvo decisión explícita.
+
+**M3 y B2.** En el contrato de Steven quedó registrada como **propuesta no confirmada** una entrega coordinada v10 única con costo, rango, mapa conocido y línea de tiempo, con invalidación de v9 por P1 §4.10; T041/T055 se reescribieron para comprobar ese mismo formato cuando exista la entrega. B2 añadió en `tasks.md` la prioridad de avance acordada: índice (Phase 2) → US1 → US2, y después US3/US4 según sus puertas, conservando todos los requisitos obligatorios y dependencias.
+
+**Pruebas comunicadas de Joshua.** Las **1139 aprobadas** figuran en su propio `PROMPTS_LLM.md` (entrada de Fases 4–5) y corresponden a la suite de su punta remota; **no se ejecutaron en esta revisión ni se atribuyen a Sofía**, y ningún cierre de puerta se basa en esa cifra.
+
+**Archivos modificados.** `specs/001-terreno-y-cazador/tasks.md` (B2, T040, T041, T055, T056 — solo evidencia, sin marcar), `specs/001-terreno-y-cazador/contracts/propuesta-steven-rutas-datos.md` (A1 + propuesta v10), `specs/001-terreno-y-cazador/contracts/propuesta-joshua-cambios-reversibles.md` (A2, M1, M2, B1) y este apartado. No se tocaron `spec.md`, constitución, código ni pruebas; las pruebas preparatorias de T007 de ayer y su registro se conservan íntegros. Sin commit, push, merge ni cambio de rama.
+
+---
+
+## Prompt 46 — Implementación de T007–T009: índice por ID de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Trabaja únicamente en T007–T009 de `specs/001-terreno-y-cazador/tasks.md`, en Sofia. Implementa el índice de `MapaCripta` usando `TablaHashImpl` existente: `obtener_sala` y `contiene_sala` O(1) esperado, preservando validación, firmas, orden e identidad; mantén lista e índice coherentes en altas/sustituciones y revincula destinos canónicos mediante el índice. Conserva las pruebas preparatorias, completa solo cobertura necesaria para `deepcopy`/`pickle` y restricciones, ejecuta pruebas focalizadas, consumidores y suite completa, marca T007–T009 solo si cumplen y deja T072–T076 pendientes. Sin rutas, terreno, cazadores, benchmarks, cambios de compañeros, commit, push, merge o cambio de rama.
+
+**Precondiciones.** La ejecución inició en `Sofia@51ae583c39c1db53d8da736cf9659cd1225fe2bf`, un commit delante de `origin/Sofia`, con un único cambio local previo: las pruebas preparatorias de T007 en `tests/test_logica/test_mapa_cripta.py`. Se conservaron íntegramente. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 24/24. No había `.specify/extensions.yml`, hooks ni configuración de ignores pendiente.
+
+**T007–T008.** La fase roja inicial fue `8 passed, 1 failed`: solo faltaba `MapaCripta.contiene_sala`. Se añadió `_salas_por_id = TablaHashImpl()` sin reemplazar `_salas`; la lista sigue siendo la única fuente del orden de recorrido. `agregar_sala` valida el ID, actualiza lista e índice en altas y sustituye la referencia en la misma posición; `obtener_sala` y `contiene_sala` validan y consultan la tabla. Toda alta/sustitución invalida `_enlaces_listos`; `vecinos_abiertos` fuerza `vincular_salidas`, que resuelve cada destino canónico mediante el `obtener_sala` indexado. No se recorrió la tabla para ordenar el mapa.
+
+**Cobertura añadida.** Se conservaron los seis casos preparatorios de T007 y se añadió un único caso con subpruebas para `copy.deepcopy` y `pickle`, comprobando que la lista, `_salas_por_id`, `obtener_sala`, `Puerta.destino_sala` y `vecinos_abiertos` comparten exactamente las instancias copiadas/reconstruidas. T009 añadió en `tests/test_restricciones_enunciado.py` la comprobación de que el índice es `TablaHashImpl` y contiene las mismas instancias; la prueba AST existente siguió revisando producción completa contra `dict`/`set`, `heapq`, `bisect`, `collections`, ordenamientos y bibliotecas de grafos prohibidos.
+
+**Resultados ejecutados.** Mapa + restricciones: **65 passed, 2 subtests passed in 0.85s**; tras añadir la comprobación AST explícita contra `dict`, el foco final de mapa/copia/restricciones terminó en **67 passed, 2 subtests passed in 0.44s**. Consumidores relevantes —adaptación compartida, inicialización, restauración, carga gradual/BFS, resolubilidad, rastro, salas pendientes, guardado, copia/serialización—: **209 passed, 2 subtests passed in 8.25s**. Suite completa final con `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short`: **1109 passed, 2 subtests passed in 101.44s**. No hubo omitidas ni fallos reportados.
+
+**Cierre y alcance.** T007, T008 y T009 cumplieron y quedaron marcadas; T072–T076 permanecen abiertas porque no se implementaron ni ejecutaron benchmarks. Archivos modificados: `logica/mapa_cripta.py`, `tests/test_logica/test_mapa_cripta.py`, `tests/test_restricciones_enunciado.py`, `specs/001-terreno-y-cazador/tasks.md` y este apartado. No se tocaron rutas, terreno, cazadores, `TablaHashImpl`, clases de compañeros, formato de guardado o benchmarks; sin commit, push, merge ni cambio de rama.
+
+---
+
+## Prompt 47 — T072–T075: benchmark aislado del índice de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en T072–T075. Comparar construcción de lista/índice, consultas por ID frente a búsqueda lineal y vinculación indexada frente a resolución lineal, con varias cargas deterministas y alternativas lineales exclusivas del benchmark. Separar operaciones, incluir todo su trabajo medido, excluir fixtures/red/render/impresión, informar entorno y estadísticas, conectar por el mecanismo de `--bench` sin editar unilateralmente `main.py`, probar esquema/equivalencia/conexión, no tocar producción ni T076 y marcar solo criterios cumplidos.
+
+**Precondiciones.** La ejecución inició limpia en `Sofia@7ec8d84f1e0c2a519d7383e798d4cd1ce623a1da`, alineada con `origin/Sofia`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25. No existía `.specify/extensions.yml`. Se leyeron T072–T075 y `plan.md` §7 antes de editar. El plan y T049 reservan a una integración conjunta el registro en `main.py`, por lo que no se modificó ese archivo.
+
+**Fase roja y proveedor.** `tests/test_bench_mapa_cripta.py` inició con **4 failed, 1 skipped** por ausencia de `benchmarks.mapa_cripta_integrante1`. El nuevo proveedor usa semilla 1729 y densidades 1/4. Genera salas, puertas, consultas y mapas equivalentes fuera del cronómetro; mide con `perf_counter_ns`, un calentamiento descartado y repeticiones configurables. Cada fila informa carga, semilla, Python/plataforma/procesador/reloj, calentamiento, repeticiones, `ns_por_lote`, mediana, p95, máximo, mínimo, muestras y trabajo. Construcción añade memoria superficial separada para lista e índice, excluyendo instancias compartidas.
+
+**Equivalencia previa.** La construcción indexada y la alternativa lineal benchmark-local reciben las mismas instancias en el mismo orden. Las consultas repiten aciertos al inicio/medio/final y dos ausencias, comprobando la identidad o `None` de toda la secuencia antes de medir. La vinculación construye grafos equivalentes para varios `V/E`, compara orden de salas y puertas, IDs y destinos, y verifica que cada `Puerta.destino_sala` sea la instancia canónica. Construcción, consultas y vinculación se cronometran en filas independientes; no se incluyeron red, renderizado, impresión ni generación de fixtures.
+
+**Conexión y pruebas.** `PROVEEDORES = (medir_mapa_cripta,)` cumple la interfaz de `benchmarks.integrante3.ejecutar`. El contrato aislado terminó en **4 passed, 1 skipped**; benchmark común + proveedor previo en **17 passed, 1 skipped**; pruebas relevantes de benchmark/mapa/copia/restricciones en **84 passed, 1 skipped, 2 subtests in 2.24s**; suite completa final con `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short` en **1113 passed, 1 skipped, 2 subtests in 99.41s**. La única omisión es la prueba que exige filas del mapa en el `main.py --bench` real y declara su dependencia de T049.
+
+**Medición ejecutada.** Se invocó `benchmarks.integrante3.ejecutar(repeticiones=9, tamanos=(32, 128, 512), proveedores=PROVEEDORES)` y se obtuvieron 30 filas en Windows 11, Python 3.12.10, Intel64 Family 6 Model 154, reloj `perf_counter_ns`; cada fila descartó un calentamiento y usó semilla 1729. En la ejecución final, para 512 salas: búsqueda indexada mediana **486100 ns** frente a lineal **13630700 ns**; vinculación con 2048 salidas mediana **376700 ns** frente a lineal **9146900 ns**; construcción con 512 salidas mediana **675400 ns** para lista+índice frente a **3887900 ns** lineal. La memoria superficial de contenedores para 512 salas fue lista **4216 B** + índice **114888 B**, frente a lista **4216 B** sin índice; incluye contenedores, buckets y tuplas de entradas, pero excluye las instancias/IDs compartidos. El resultado temporal completo quedó fuera del repositorio en `%TEMP%\mapa_cripta_t072_t075.json`; el primer intento de escribir `/tmp/opencode` falló únicamente por traducción de ruta del Python de Windows y se repitió correctamente.
+
+**Cierre y pendientes.** T073–T075 cumplieron y quedaron marcadas. T072 permanece abierta: esquema, equivalencia y conexión por la interfaz estándar pasan, pero `main.py --bench` aún no registra el proveedor; completarlo corresponde a T049 con el propietario. T076 no se modificó. No se editaron producción de mapa, rutas, cazadores, guardado, estructuras compartidas ni proveedores ajenos. Los tiempos son evidencia sintética complementaria y **no** demuestran cumplimiento del ciclo de 20 ms. Sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 48 — Revisión de cierre del benchmark de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> Revisar únicamente el cierre del benchmark de `MapaCripta`: inspeccionar las muestras de construcción de 512 salas y el cálculo de p95, comprobar equivalencia y que memoria quede fuera del tiempo, repetir con 5 calentamientos/30 repeticiones sin eliminar extremos, guardar ambos resultados en `benchmarks/resultados/`, revisar el skip de T072 e identificar —sin implementar— la integración necesaria en `main.py`. Mantener T072/T076 abiertas, no repetir la suite completa y no hacer commit/push/merge.
+
+**Auditoría del resultado original.** Se preservó byte por byte el JSON temporal previo como `benchmarks/resultados/mapa_cripta_original_c1_r9_32-128-512.json` (36190 bytes, SHA-256 `c81ecc5a6514b529e844a3d996f155e442b4c33001df88a32c0301c9f7c98af9`). Para construcción con 512 salas/512 salidas, las nueve muestras indexadas fueron `[647100, 655200, 33018900, 661100, 675400, 692500, 645600, 1168900, 932200]` ns y las lineales `[4211300, 3684000, 3818400, 3887900, 3948400, 3742000, 3612900, 3961800, 4040000]` ns. `_percentil_95` usa nearest-rank: `ceil(0.95 × 9) = 9`, así que con nueve repeticiones p95 siempre es la novena muestra ordenada, es decir, el máximo. Por eso el p95 indexado original es `33018900 ns`; no se descartó esa muestra.
+
+**Equivalencia y frontera temporal comprobadas.** Para cada repetición, `fixtures_construccion` entrega exactamente el mismo objeto lista y las mismas 512 instancias, en el mismo orden, a `_construir_indexado` y `_construir_lineal`; ambas ejecutan 512 altas y la validación previa confirma la misma huella de IDs e identidad. La equivalencia es lógica, no de operaciones internas: una alternativa mantiene lista+tabla hash y la otra busca duplicados linealmente. Ambas usan la misma envoltura `_operacion_construccion`, incluida su comprobación final de longitud. Las funciones `_memoria_indice`/`_memoria_lineal` se evalúan al preparar los argumentos de `_fila`, antes de que `_medir_operaciones` abra cada ventana `perf_counter_ns`; la inspección de memoria es distinta por estructura, pero no entra en los tiempos de ninguna alternativa.
+
+**Repetición ampliada.** Se estableció `benchmarks.mapa_cripta_integrante1.CALENTAMIENTO = 5` y se ejecutó `medir_mapa_cripta(repeticiones=30, tamanos=(512,))`, conservando todas las muestras en `benchmarks/resultados/mapa_cripta_repeticion_c5_r30_512.json`. Entorno: Python 3.12.10, Windows 11 `10.0.26200`, Intel64 Family 6 Model 154, `perf_counter_ns`, semilla 1729. Para lista+índice: mínimo `597400`, mediana `639950`, p95 `685600`, máximo `718600` ns. Para lista lineal: mínimo `4039600`, mediana `4484950`, p95 `4737100`, máximo `4995200` ns. Con 30 muestras, nearest-rank selecciona `ceil(28.5) = 29`, la penúltima muestra ordenada; el máximo permanece informado aparte. El archivo declara cinco calentamientos, 30 repeticiones, método de percentil y política de no eliminar extremos.
+
+**Observaciones frente a causas.** Está observado que la corrida original contiene una muestra indexada de `33018900 ns`, muy por encima de sus otras ocho, y que la repetición ampliada no reproduce un extremo comparable. Está comprobado que ese extremo se conservó y que, por nearest-rank con nueve muestras, determina el p95 original. No se instrumentaron pausas del sistema, recolector, cambios de frecuencia ni otros eventos externos, por lo que la causa de esa muestra no está establecida y no se atribuye a GC, planificación del sistema o hardware. También está comprobado que la memoria no fue medida dentro del cronómetro; no se afirma que el orden secuencial de las alternativas elimine todo posible efecto ambiental.
+
+**T072 y conexión pendiente.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short tests/test_bench_mapa_cripta.py` produjo **4 passed, 1 skipped in 0.18s**. El único skip es `test_main_bench_incluye_filas_del_mapa`, con razón explícita T049; esquema, equivalencia y conexión por la interfaz estándar pasan. `main.py` actualmente concatena solo `benchmarks.integrante2.PROVEEDORES + benchmarks.bench_ampliado.PROVEEDORES`. El cambio pendiente es importar `benchmarks.mapa_cripta_integrante1.PROVEEDORES` con alias y concatenarlo exactamente una vez en la tupla entregada a `benchmarks.integrante3.ejecutar`, conservando los proveedores actuales; después se habilita la prueba omitida. T049 exige coordinación de Sofía con el propietario de `main.py`; el historial del archivo y de su integración `--bench` identifica a Steven Moya Porras como mantenedor actual. No se modificó `main.py`.
+
+**Cierre.** Solo se añadieron los dos JSON de resultados y este registro. T072 y T076 siguen abiertas. No se modificaron producción, proveedor, pruebas, `tasks.md` ni `main.py`; no se repitió la suite completa y no hubo commit, push o merge.
+
+---
+
+## Prompt 49 — Pruebas preparatorias desbloqueadas de US1 (T010–T015)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en las pruebas preparatorias T010–T015 de US1. Leer criterios/dependencias, ejecutar solo tareas desbloqueadas, no sustituir la entrega de Steven, cubrir costos de movimiento, fórmula temporal, costos no MOVER, rechazos atómicos y reversión cuando las interfaces actuales lo permitan; clasificar aprobadas, fallos esperados y bloqueos. No modificar producción, compañeros, benchmarks o guardado; no usar skips, no ejecutar suite completa, actualizar evidencia real y no avanzar a T016.
+
+**Precondiciones y dependencia.** La ejecución inició limpia y alineada en `Sofia@dad27eddde8fd6dc913146e0a3075913c95980d6`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron Phase 3, sus dependencias, `plan.md`, `spec.md` y ambos contratos. G2 continúa abierta: ni `dto/sala.py` ni `datos/decodificador_datos.py` contienen costo, y el contrato de Steven conserva sin asignar la representación/archivos compartidos. T010 y T014 dependen directamente de esa entrega; T011 y T015 necesitan obtener `ResultadoAccion.costo` desde una salida ponderada real. Escribirlas ahora habría exigido inventar campo, constructor o adaptador, por lo que permanecen abiertas sin pruebas falsas ni skips.
+
+**T012 — compatibilidad y rechazo.** Se creó `tests/test_logica/test_terreno_compatibilidad.py`. Una matriz verifica que ATACAR/ESPERAR=100, USAR/EQUIPAR/ABRIR=50 y RECOGER/SOLTAR=25 siguen produciendo, mediante las interfaces existentes `costo_base` y `calcular_intervalo`, `max(1, costo*100//velocidad)` para velocidades 50/100/250. Tres escenarios públicos de `MotorJuego.ejecutar_accion` rechazan salida inexistente, puerta cerrada y destino inexistente; antes/después comparan reloj, secuencia, contadores, identidad/estado del jugador, puerta y destino canónico, agenda y su contador, historial abierto/cerrado, cantidad de intervalos y azar. Cada rechazo conserva todo, devuelve costo 0 y cambios vacíos. Las regresiones existentes de inventario, equipo, consumibles, combate y puertas se reutilizaron en la ejecución relevante en vez de duplicar sus montajes.
+
+**T013 — AC-B07 sin inventar DTO.** `tests/test_logica/test_velocidad.py` conserva su caso previo y añade subpruebas para jugador y enemigo. Cada escenario prepara con interfaces actuales un evento posterior a una salida sintética válida de costo 350 usando `calcular_intervalo`; no pretende probar de dónde viene el costo, responsabilidad de T011/G2. Al cambiar velocidad 100→250 verifica reloj inalterado, tiempo restante `max(1, restante*100//250)`, mismo objeto `Evento`, secuencia estrictamente mayor y una sola entrada en agenda. `HistorialReversible.deshacer_ultimo` restaura velocidad, reloj, tiempo/secuencia del evento, secuencia estatal, identidad y agenda exactas.
+
+**Resultados clasificados.** Base relevante antes de editar (`test_velocidad`, integración Sofía/Joshua y efectos): **85 passed in 0.34s**. Foco T012/T013: **26 passed, 2 subtests in 0.10s**. Regresiones relevantes finales —incluidos movimiento rechazado/pendiente, rastro, inventario, apertura/cierre de puertas, combate y velocidad—: **170 passed, 2 subtests in 1.17s**. Aprobadas: T012 y T013. Fallos esperados por implementación pendiente ejecutados: **0**, porque no se materializaron contratos inexistentes. Bloqueos externos: T010/T011/T014/T015 por G2. No se añadieron skips ni se debilitó ninguna expectativa; no se ejecutó la suite completa.
+
+**Cierre.** Solo cambiaron `tests/test_logica/test_terreno_compatibilidad.py`, `tests/test_logica/test_velocidad.py`, la evidencia de `tasks.md` y este registro. T012/T013 quedaron marcadas; T010/T011/T014/T015 y T016 permanecen abiertas. No se modificaron producción, clases de compañeros, benchmarks, guardado, commit, push, merge o rama.
+
+---
+
+## Prompt 50 — T042: oráculo independiente para comparaciones de rutas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar únicamente en T042. Preparar un oráculo independiente y esquema de resultados para rutas con grafos sintéticos deterministas: enumeración exhaustiva de rutas simples en pequeños, distancia/primera vecina/costo del paso, casos terminales, rango, ciclos, cerradas e invariancia al orden. Separar observables de trabajo interno, mantener auxiliares aislados si G1 sigue abierta, no implementar producción ni avanzar T043; ejecutar pruebas focalizadas y registrar evidencia.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@73ee345f49d6ba4c361e92d0ef6ce7db44fa7c4a`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron T042, las puertas y Phase 6: G1 no bloquea oráculos sintéticos, G2 permite su escritura desacoplada y G6 bloquea solo la referencia oficial. T043 sigue secuencialmente después y quedó fuera.
+
+**Auxiliares aislados.** Se creó `tests/test_bench_terreno_cazador.py` sin importar DTO, `logica/rutas_ponderadas.py`, cazadores, terreno, proveedores ni `main.py`. `ConexionPrueba`, `ResultadoRutaPrueba` y `TrabajoOraculo` son clases locales explícitamente documentadas como no API. El esquema observable separa `estado`, `accion_ruta`, `alcanzable`, `dentro_rango`, `costo_total`, `primera_vecina_id` y `costo_primer_paso`; los contadores de rutas completas, expansiones, salidas examinadas, relajaciones y pases viven en otro objeto y nunca se comparan como requisito de equivalencia. Esto no fija ni cierra G1.
+
+**Oráculos y casos.** `oraculo_rutas_simples` enumera recursivamente todas las rutas simples y elige por `(costo_total, primera_vecina_id)`, sin reutilizar relajación ni un futuro algoritmo productivo. `oraculo_relajacion_completa` realiza hasta `|V|-1` pases sobre todas las conexiones abiertas como referencia independiente para un grafo mayor de 20 salas; no es Dijkstra ni producción. Las pruebas cubren origen=destino con costo 0, destino inaccesible, conexión cerrada, límite exacto, ruta fuera de rango, ciclos, empate entre vecinas 2 y 10 resuelto numéricamente, costo del primer paso e invariancia para las 24 permutaciones de cuatro conexiones. En un grafo pequeño ambos oráculos coinciden en observables aunque sus contadores difieren.
+
+**Validación previa al tiempo.** `validar_equivalencia_antes_de_cronometrar` compara exclusivamente los siete campos observables y produce un fallo descriptivo antes de cualquier cronómetro. Una matriz parametrizada altera por separado estado/acción, alcance, rango, costo total, primera vecina y costo del paso y confirma que cada divergencia falla. No se añadió medición temporal ni se exigió igualdad de orden interno o trabajo.
+
+**Resultado y cierre.** `./.venv/Scripts/python.exe -m pytest -q -rs --tb=short tests/test_bench_terreno_cazador.py` terminó en **17 passed in 0.05s**; `py_compile` también pasó. T042 quedó marcada. T043, G1 y todas las implementaciones posteriores permanecen abiertas. No se modificaron producción, clases de compañeros, benchmarks, `main.py`, terreno, cazadores o Dijkstra; sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 51 — Bloque preparatorio desbloqueado de US2 (T018–T023)
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, preparar en un único bloque las pruebas desbloqueadas T018–T023. Reutilizar oráculos de T042 y cobertura existente para rutas/cazadores, respetar G1/G2, no inventar firmas/campos/sustitutos ni usar skips, distinguir oráculo de cazador productivo, ejecutar foco/regresiones, marcar solo criterios cumplidos y entregar tareas completadas/preparadas/bloqueadas.
+
+**Precondiciones y clasificación.** La ejecución inició limpia y alineada en `Sofia@8eab2213f2d24f4b436107c33d532ffd5091666f`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `checklists/requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron los seis criterios, Phase 4, plan y contratos. El checkout aún no contiene `rango` en `Enemigo`, costo en `Puerta`, `logica/rutas_ponderadas.py` ni firmas acordadas. Por ello T018 depende de G2; T020 de G2/T027; T021 de costo, resultado y T027–T028; T022 explícitamente de G1/T002. T019 puede cerrarse con el oráculo sintético; de T023 solo está desbloqueada la regresión de conductas anteriores.
+
+**T019 completada sin producción.** Se creó `tests/test_logica/test_rutas_ponderadas.py`, que importa los auxiliares locales de T042 desde `tests.test_bench_terreno_cazador` y declara expresamente que no prueba al cazador. Los casos verifican: una ruta de tres pasos/costo 9 frente a una directa/costo 20; dos rutas de costo 5 con primeras vecinas 2 y 10, eligiendo 2 al cambiar el orden; ciclos con salida final cerrada y destino inaccesible; límite exacto 9; límites 8 y 0 fuera de rango. Cada caso comprueba estado, alcance/rango, costo total, primera vecina y costo del primer paso cuando corresponde. No se fijó firma productiva ni se importó un algoritmo futuro.
+
+**T023 preparada y abierta.** Se amplió `tests/test_logica/test_comportamiento_enemigos.py` usando clases actuales: un guardián separado conserva `ESPERAR`, un errante con única salida abierta conserva `MOVER`, y un rastreador con rastros empatados en salas 2/10 conserva `SEGUIR_RASTRO` hacia ID 2. Esto protege comportamientos existentes, pero no se marca T023 porque `cazador` aún no existe para comprobar que permanezca separado. No se usó el retorno del oráculo como decisión de enemigo.
+
+**Bloqueos concretos.** T018 espera validación estricta/identificación de ficha para `rango` de Steven. T020 espera rango 0 materializado y el comportamiento T027 para probar prioridad de ataque sin sustituirlo con la rama genérica actual. T021 espera T027–T028 y costos de salida para comprobar un solo paso, no atacar en el mismo evento e independencia real de contenido descargado/conocimiento del jugador. T022 espera la representación y firma acordadas en T002 para origen=destino, sin ruta, límite e inmutabilidad; no se creó un contrato imaginario.
+
+**Resultados.** Base relacionada antes de editar (`T042`, comportamientos y rastro): **49 passed in 0.12s**. Foco T019/T042/comportamientos: **27 passed in 0.10s**. Regresiones relacionadas de rutas auxiliares, comportamiento, rastro, integración, motor y movimientos rechazados: **106 passed in 0.23s**. Sin skips, xfails ni suite completa. T019 quedó marcada; T018/T020/T021/T022/T023 permanecen abiertas.
+
+**Cierre.** Solo cambiaron `tests/test_logica/test_rutas_ponderadas.py`, `tests/test_logica/test_comportamiento_enemigos.py`, evidencia en `tasks.md` y este registro. No se modificaron producción, clases de compañeros, DTO, cazadores, terreno, guardado, benchmarks o `main.py`; sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 52 — T047: medición aislada de AgendaEventos
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, trabajar solo el bloque de medición de `AgendaEventos` de T047/PR-005: comparar insertar, extraer, cancelar por ID/actor, reprogramar y empates frente a una lista lineal manual benchmark-local; validar equivalencia antes de medir, separar fixtures y memoria del tiempo, conservar muestras/esquema reproducible, añadir pruebas sin umbrales, ejecutar el benchmark y dejar abierta cualquier parte que dependa de cazadores/costos o `--bench`.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@87d00dbb16975fd3b205c9bc3dafd5681fde170e`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se revisaron T047, AC-015, PR-004–PR-006, el diseño de complejidad, `AgendaEventos`, sus índices/montículo y los proveedores previos. No se modificaron producción, estructuras compartidas, `main.py` ni clases de compañeros.
+
+**Proveedor y alternativa.** Se creó el subbloque de agenda de `benchmarks/terreno_cazador_integrante1.py`. `medir_agenda` queda publicado mediante `PROVEEDORES`; `_AgendaLinealBenchmark` permanece privada y usa recorridos para buscar/retirar. Conserva las validaciones pertinentes, prioridad `(tiempo, secuencia)`, orden de cancelación por actor y secuencia nueva al reprogramar. La semilla 2609 genera bases idénticas para ambas alternativas. Cada una de las seis operaciones tiene filas separadas y cargas 256/512/1024; insertar, extraer, cancelar ID y reprogramar operan sobre un cuarto de la base, cancelar actor sobre cuatro actores y empates extrae toda la base con tiempo común.
+
+**Corrección antes del reloj.** En una corrida independiente se comparan evento por evento el estado inicial, resultados extraídos/cancelados, tiempos, secuencias, estado final y orden completo de empates. Reprogramar verifica específicamente secuencias nuevas consecutivas desde `n`. Las huellas de fixture, antes, resultado y después quedan en cada pareja. La creación de base y de objetos por insertar ocurre fuera del reloj; dentro permanecen búsquedas, validación, mantenimiento de índices/montículo o lista y construcción del resultado exigido. `tracemalloc` mide base, preparación, final y pico de operación en una corrida separada marcada `incluida_en_tiempo=false`.
+
+**Evidencia real.** `benchmarks/resultados/agenda_t047_c1_r9_256-512-1024.json` contiene 36 filas, 324 muestras, entorno Windows/Python 3.12.10, un calentamiento y nueve repeticiones en `ns_por_lote`, con mediana, p95 de rango más cercano, máximo, mínimo, trabajo y memoria. Todas las filas declaran equivalencia. Para 1024 eventos, medianas agenda/lineal: insertar 5 138 200/20 509 300 ns; extraer 4 594 200/17 663 600; cancelar ID 4 125 400/3 628 100; cancelar actor 2 180 900/1 756 700; reprogramar 9 816 700/24 942 300; resolver empates 15 826 100/39 401 700. Estos datos no imponen umbrales ni adoptan una alternativa.
+
+**Pruebas y estado.** `tests/test_bench_agenda_t047.py` cubre equivalencia de las seis operaciones, secuencia nueva, desempate, esquema, muestras, cargas, memoria separada y proveedor. La ejecución focalizada y regresiones de agenda/integración terminó en **82 passed in 0.94s**; `py_compile` pasó. Una orden previa inválida que nombraba un archivo inexistente no ejecutó pruebas y no se usa como evidencia. T047 permanece abierta porque PR-005 todavía exige carga equivalente con costos variables/cazadores activos y registro por T049 en `main.py --bench`; la medición aislada no prueba el ciclo oficial de 20 ms. Sin commit, push, merge ni cambio de rama.
+
+---
+
+## Prompt 53 — T076: decisión documental del índice de MapaCripta
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, realizar únicamente T076: documentar en `DECISIONES.md` la subsección «Índice por ID de MapaCripta (evidencia complementaria de 001)», enlazarla desde §5.6, preservar §5.4 y decisiones ajenas, usar solo resultados existentes —incluida la muestra extrema y su repetición sin causa inventada—, no ejecutar mediciones/código/pruebas y dejar T076 abierta si depende de la conexión pendiente.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@2882b85cb68d1b0e2a48655a02172342ba63cd04`. `check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` identificó `specs/001-terreno-y-cazador`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se leyeron T076, plan, implementación/benchmark del mapa, §5.4 y los dos JSON ya conservados. No se ejecutaron benchmarks, código ni pruebas y no se modificaron producción o pruebas.
+
+**Documento.** Se añadió §5.6 con el enlace explícito requerido, sin completar la revisión de agenda reservada a T069, y una subsección independiente titulada exactamente **«Índice por ID de MapaCripta (evidencia complementaria de 001)»**. §5.4 quedó byte por byte sin edición. La subsección identifica consumidores de carga, restauración, simulación, resolubilidad, servicios y vista; justifica conservar `_salas` para orden/sustitución y añadir `_salas_por_id: TablaHashImpl`; describe `_MapaLinealBenchmark`; y registra complejidad esperada/peor caso para construcción, consulta, sustitución, vinculación y sustitución más revinculación.
+
+**Evidencia existente.** Se transcribieron cargas, entorno y medianas/p95 de construcción, 160/640/2 560 consultas y vinculación con densidades 1/4 para 32/128/512 salas desde `mapa_cripta_original_c1_r9_32-128-512.json`. También se enlazó y resumió `mapa_cripta_repeticion_c5_r30_512.json` (cinco calentamientos, treinta repeticiones). La muestra original de **33 018 900 ns** se conserva como p95/máximo de construcción indexada de 512 salas/densidad 1; la repetición correspondiente registró mediana 639 950, p95 685 600 y máximo 718 600 ns. Solo se afirma que el extremo no reapareció en esas treinta muestras, sin atribuir causa ni eliminarlo.
+
+**Estado.** T076 permanece abierta: T049/T050/T071 aún deben conectar el proveedor una sola vez a `main.py --bench`, ejecutar las filas conectadas y validar el cierre. La subsección dice expresamente que los datos aislados no demuestran el ciclo completo de 20 ms ni vuelven a medir la decisión de Resolubilidad de 002. Se añadió evidencia preparatoria a `tasks.md`; sin commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 54 — Implementación coherente de US1/US2: terreno, rutas y cazador
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, implementar un bloque coherente de US1 y US2: verificar contratos sobre `Steve@5000d1f`, registrar `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`, aceptar salidas sin inversa y comprobar simetría cuando existen ambos sentidos; completar movimiento ponderado, buscador con estructuras propias y cazador reversible. Validar por etapas, ejecutar restricciones, contrato real y suite completa. No avanzar benchmarks/003/004, no tocar clases/guardado de Steven y conservar código sin commit; solo se autoriza un commit documental separado si cambia `spec.md`.
+
+**Precondiciones y enmienda.** El checkout inició limpio en `Sofia@5000d1f`, exactamente la base indicada. Los **1204 passed y 4 subtests passed** se registraron como validación comunicada por Sofía, no como ejecución propia. `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. El código integrado confirmó costo/rango/v10 y el proveedor de mapa en `main.py --bench`; rutas/ciclo de T049 siguen pendientes. Tras confirmación explícita, FR-002 quedó enmendada para aceptar sentidos únicos y comparar costos cuando ambos existen. G1/G2 y la parte real de T049 se registraron en el commit exclusivamente documental autorizado `f74f3e8`; no contiene código.
+
+**US1.** `MotorJuego._aplicar_accion(MOVER)` devuelve `Puerta.costo`; `_turno_enemigo` conserva la puerta abierta concreta elegida y usa su costo para errante/rastreador/cazador. Ataque, espera e inventario conservan sus costos. Se añadieron pruebas de default/validación/simetría condicional, rango, fórmula temporal, rechazos sin mutación, reprogramación reversible, dos paquetes offline con pesos diferentes y dos ejecuciones ponderadas idénticas. Resolubilidad permanece igual al variar solo pesos válidos.
+
+**US2.** `logica/rutas_ponderadas.py` publica `ResultadoRuta`, métricas, entradas inmutables y `proximo_paso`. Usa `MonticuloMinimo`/`TablaHashImpl`, entradas duplicadas, descarte de obsoletas, auxiliares perezosos y limpieza final. La vista del cazador solo lee esqueleto, puertas abiertas y costos. El cazador ataca primero al compartir sala; de otro modo mueve un paso dentro del rango o espera con costo 100. Movimiento/ataque son excluyentes y las mutaciones pasan por helpers reversibles.
+
+**Validación ejecutada.** Foco inicial heredado: **75 passed**. Pruebas nuevas de datos/movimiento/rutas/cazador: **40 passed**. Oráculo productivo + contrato: **17 passed**. Foco ampliado previo: **150 passed, 2 subtests**. T064: **133 passed, 2 subtests in 4.71s**. T029 final: **30 passed in 0.15s**. Regresiones relacionadas: **505 passed, 4 subtests in 7.20s**. Restricciones finales: **56 passed in 0.59s**. Contrato offline completo: **41 passed**. Suite final posterior al ajuste de instrumentación: **1251 passed, 4 subtests passed in 104.16s**. `py_compile` y `git diff --check` pasaron; solo aparecieron avisos informativos LF/CRLF.
+
+**Cierre y límites.** Se marcaron T010–T011, T014–T018, T020–T029, T058, T061 y T064; US1/US2 quedan cerradas. Los cambios de implementación permanecen sin commit para revisión. Siguen abiertas la vista conocida T004/G3, `LineaTiempo` completa G4b, persistencia conjunta T006/G5, T049 para rutas/ciclo y la referencia oficial G6. No se ejecutaron benchmarks ni se afirma cumplimiento de 20 ms. Sin push, merge o cambio de rama.
+
+---
+
+## Prompt 55 — US3 vigente, determinista, reversible y sin estado de rutas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, completar el bloque desbloqueado de US3 sin avanzar benchmarks ni código de 003/004. Comparar buscador y cazador con cálculo independiente tras cambios de puertas, jugador, velocidad, otros actores, retroceso e inicio/enlace de estado; validar determinismo con empates y orden permutado; comprobar retroceso/copia de estado canónico, excepciones de pergaminos y cambios solo de línea, `deepcopy`/`pickle` conjuntos y ausencia de motor, servicios o cálculos derivados. Mantener recálculo sin cachés, usar helpers reversibles, corregir solo defectos demostrados de 001 y dejar abiertas las integraciones que requieren `LineaTiempo` completa. Sin commit, push, merge ni cambio de rama.
+
+**Precondiciones y alcance.** La ejecución inició limpia y alineada en `Sofia@21c234248d4f9b7bcdeb3c9c299e40498a2d131a`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. La interfaz base de `HistorialReversible` está disponible, pero no existe `logica/linea_tiempo.py`. Se limitaron los cambios a pruebas y documentos de 001; no se tocaron producción, clases de compañeros, `main.py`, benchmarks, 003 ni 004.
+
+**Vigencia y determinismo.** `test_cazador_vigencia.py` usa una enumeración independiente de rutas simples en cada comparación. Cubre abrir/cerrar, cierre automático despachado por agenda, movimiento real del jugador, cambio reversible de velocidad y reprogramación, y movimiento/muerte de otro actor. `test_cazador_determinismo.py` ejecuta dos partidas de igual semilla/acciones con orden de salas y conexiones permutado; un empate exacto de costo 5 elige la primera vecina numérica 2 y conserva decisiones, notificaciones, reloj, secuencias, agenda, azar y bytes de `partida.log`.
+
+**Retroceso, copia y ausencia de estado retenido.** Un intervalo real incluye espera, dos movimientos del cazador, ataque, vencimiento de velocidad con reprogramación y cierre automático. El pergamino real restaura salas, actores, vida, reloj, agenda, secuencias, puertas y azar, dejando fuera su propio consumo y un cambio `registrar_solo_linea`; la continuación vuelve a coincidir. Un fallo inducido tras mover aborta sin residuos. Las copias conjuntas `(estado, transacciones)` por `deepcopy` y `pickle` conservan alias de entidades, listas e inversos y no alcanzan motor, servicio, caché o DTO de rutas. Referencias débiles demuestran que cada consulta libera un montículo y dos tablas. Retroceso, reinicio y enlace de un estado deserializado vuelven a calcular sin caché, generación, instantánea ni observador.
+
+**Validación y cierre.** T031: **13 passed in 1.48s**; foco incluyendo copia DTO: **15 passed in 0.67s**; regresiones relacionadas: **493 passed, 4 subtests passed in 3.52s**; restricciones: **56 passed in 0.51s**; contrato offline: **41 passed in 5.06s**. `py_compile` y `git diff --check` pasaron. No se encontró un defecto de producción, por lo que no se cambió producción ni se ejecutó la suite completa. Se cerraron T030–T039. T040/T056 siguen abiertas por G4b (`LineaTiempo` completa); T041/T055 siguen abiertas por T006/G5. No se ejecutaron benchmarks y no hubo commit, push, merge ni cambio de rama.
+
+---
+
+## Prompt 56 — Benchmarks sintéticos de rutas compartidas y reutilizadas
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 09/11/2026
+
+> **Prompt**
+>
+> En `Sofia`, implementar el bloque desbloqueado de benchmarks de rutas de US4: individual productiva frente a inversa compartida, uno/decenas de cazadores, rangos pequeños/grandes, región fija con exterior creciente, puertas estables/inestables y recálculo frente a reutilización experimental con invalidación explícita. Mantener alternativas solo en benchmarks, validar observables con oráculos independientes antes de medir, respetar sentidos dirigidos, incluir costo completo/fases/memoria/muestras y guardar resultados. Integrar solo por el acuerdo vigente de T049, sin afirmar PR-001/20 ms, decidir estrategia ni avanzar 003/004. Sin commit, push, merge ni cambio de rama.
+
+**Precondiciones y límites.** La ejecución comenzó limpia en `Sofia@5aca2b0abc961349d54294e1852266445745802f`; `requirements.md` pasó 25/25 y no existía `.specify/extensions.yml`. Se confirmó que `main.py --bench` registra hoy el proveedor de mapa, pero el texto vigente de T049 reserva rutas/ciclo a una integración conjunta posterior a T044–T048. Por ello no se editó `main.py`: se publicó y probó `PROVEEDORES_RUTAS` mediante la interfaz estándar de `benchmarks.integrante3.ejecutar`, dejando el registro real pendiente.
+
+**Implementación benchmark-local.** `benchmarks/terreno_cazador_integrante1.py` conserva la agenda existente y añade generadores deterministas, un oráculo de relajación completa, cálculo inverso compartido y reutilización con invalidación explícita. La inversa se construye únicamente desde aristas dirigidas reales (`u → v` se recorre como `v → u`) y una prueba demuestra que una salida única no crea el sentido opuesto. Producción sigue llamando `proximo_paso` por cazador y no recibió cachés ni cambios. La equivalencia previa compara alcanzabilidad contractual, costo, primera vecina y costo del primer paso; los contadores se reportan, no se igualan.
+
+**Medición.** AC-012 mantiene cinco salas alcanzables al crecer el total a 32/128/512; producción conservó `F=5`, `D=5`, `E=6`, `P=5`, `Q=2`, mientras la compartida contabiliza separadamente construir el inverso completo. AC-014 produce 24 combinaciones de tres alternativas, 1/20 cazadores, rango pequeño/grande y puertas estables/cambios frecuentes durante tres ciclos. Las filas separan mantenimiento, construcción inicial, reconstrucción, consultas recalculadas/iniciales/reutilizadas, invalidación, limpieza y total. `tracemalloc` usa otra corrida. El JSON `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json` conserva **30 filas/270 muestras**, entorno, semilla 2609, calentamiento, nueve repeticiones, cargas, mediana, p95, máximo/mínimo y trabajo.
+
+**Resultados y validación.** Para 20 cazadores/rango grande, las medianas sintéticas estable individual/compartida/reutilizada fueron 26 813 300/587 200/301 700 ns; con cambios frecuentes, 18 713 300/662 300/586 800 ns. En AC-012 el recálculo individual conservó 42 900/48 600/139 900 ns con trabajo regional constante (`F=5, D=5, E=6, P=5, Q=2`) y la construcción inversa compartida creció 38 500/107 800/417 300 ns de 32 a 512 salas. No se extrae una decisión productiva de estos datos. Pruebas de equivalencia, esquema y conexión: **55 passed in 6.89s**; rutas relacionadas: **21 passed in 0.21s**; restricciones: **56 passed in 1.31s**; `py_compile` pasó. Se cerraron T044–T046 y T065. T043, T047–T051 y T071 continúan abiertas según sus dependencias; en particular T049 espera acuerdo/propietario de `main.py` y T051 la referencia oficial. No se afirma PR-001 ni 20 ms, no se avanzó a T057/decisión final ni a 003/004, y no hubo commit, push, merge o cambio de rama.
 
 ---
 

@@ -129,7 +129,7 @@ class ControladorJuego:
 
     def _iniciar_consola(self, estado) -> None:
         self._vista.mostrar_mensaje(
-            "Motor con turnos e historial integrados. Guardado binario v9; al cargar se inicia un historial vacío. "
+            "Motor con turnos e historial integrados. Guardado binario v10; al cargar se inicia un historial vacío. "
             "Consultar comandos: ayuda."
         )
         if self._fuente is not None:

@@ -1,4 +1,5 @@
 from dto.sala import Sala, validar_id_sala
+from estructuras.tabla_hash import TablaHashImpl
 
 #SOFIA
 class MapaCripta:
@@ -14,26 +15,34 @@ class MapaCripta:
 
     def __init__(self):
 
-        # Arreglo de salas: búsqueda O(n), sin índice hash. Permite recorrer
-        # el mapa para guardado y precarga conservando el orden de llegada.
+        # La lista conserva el orden de llegada para recorrido, guardado y
+        # precarga. La tabla propia resuelve las consultas frecuentes por ID.
         self._salas = []
+        self._salas_por_id = TablaHashImpl()
         self._enlaces_listos = False
 
 
     def agregar_sala(self, sala) -> None:
         self._enlaces_listos = False
-        for i in range(len(self._salas)):
-            if self._salas[i].id_sala == sala.id_sala:
-                self._salas[i] = sala
-                return
+        validar_id_sala(sala.id_sala)
+        if self._salas_por_id.contiene(sala.id_sala):
+            # La sustitución es infrecuente: se recorre solo para conservar
+            # exactamente la posición observable de la sala existente.
+            for i in range(len(self._salas)):
+                if self._salas[i].id_sala == sala.id_sala:
+                    self._salas[i] = sala
+                    self._salas_por_id.insertar(sala.id_sala, sala)
+                    return
         self._salas.append(sala)
+        self._salas_por_id.insertar(sala.id_sala, sala)
 
     def obtener_sala(self, id_sala: int):
         validar_id_sala(id_sala)
-        for sala in self._salas:
-            if sala.id_sala == id_sala:
-                return sala
-        return None
+        return self._salas_por_id.obtener(id_sala)
+
+    def contiene_sala(self, id_sala: int) -> bool:
+        validar_id_sala(id_sala)
+        return self._salas_por_id.contiene(id_sala)
 
     def obtener_salas(self) -> list:
         # Copia las referencias, para no exponer el arreglo interno.

@@ -43,9 +43,18 @@ def _comprobar_aliases_e_indices(original, reconstruido):
     for sala_original in original.mapa.obtener_salas():
         sala = reconstruido.mapa.obtener_sala(sala_original.id_sala)
         assert sala is not sala_original
+        assert [(puerta.id_puerta, puerta.costo) for puerta in sala.puertas] == [
+            (puerta.id_puerta, puerta.costo) for puerta in sala_original.puertas
+        ]
+        assert all("costo" in vars(puerta) for puerta in sala.puertas)
+        for puerta in sala.puertas:
+            assert puerta.destino_sala is reconstruido.mapa.obtener_sala(
+                puerta.destino_sala_id)
         for posicion, enemigo in enumerate(sala.enemigos):
             cantidad += 1
             assert enemigo is not sala_original.enemigos[posicion]
+            assert "rango" in vars(enemigo)
+            assert enemigo.rango == sala_original.enemigos[posicion].rango
             assert enemigo.sala_actual is sala
             assert sala.contiene_enemigo(enemigo)
             assert sala._enemigos_por_id.obtener(enemigo.id_actor) is enemigo

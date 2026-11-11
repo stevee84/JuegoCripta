@@ -1,121 +1,159 @@
-# Propuesta pendiente con Steven: datos ponderados y rutas para «ir a»
+# Respuesta parcial con Steven: datos ponderados y rutas para «ir a»
 
-**Estado**: PROPUESTA PENDIENTE DE ACUERDO. Este documento no modifica ni sustituye specs 002/003, archivos de Steven ni un contrato ya aceptado.
+**Estado**: G1 y G2 CERRADAS para 001 en `Sofia@5000d1fe8af268987206827e4c524c05bd599357`. Steven aceptó la firma y representación de §4.1; su entrega integrada publica costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de costo/rango. El equipo confirmó que una salida sin inversa es válida y enmendó FR-002 antes del código. Siguen abiertas la vista conocida de 003, la línea de tiempo completa y la persistencia conjunta de todos esos componentes. Este documento no modifica ni sustituye specs 002/003, clases de Steven ni un contrato de Joshua.
 
-**Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven ofrece adaptación de datos y la vista del mapa conocido.
+**Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven adapta los datos, construye la vista del mapa conocido y asume la persistencia de costo/rango/mapa conocido en coordinación con Joshua. Steven solicitó expresamente que Sofía implemente el índice por ID de `MapaCripta`, componente de Sofía, conservando firmas, orden e identidad. Ese acuerdo específico no autoriza a Sofía a editar clases de Steven ni fija quién modifica DTO, inicialización u otros archivos compartidos.
+
+**Evidencia integrada verificada el 2026-11-09**:
+
+- checkout local `Sofia`: `5000d1fe8af268987206827e4c524c05bd599357` (`Steve@5000d1f`);
+- `dto/sala.py` publica `Puerta.costo` con default 100; `dto/actor.py` publica `Enemigo.rango`;
+- `DecodificadorDatos` valida costo/rango estrictos y `InicializadorPartida` compara costos por `(origen, destino)`, acepta sentidos únicos y rechaza contradicciones entre sentidos existentes;
+- `GuardadoBinario.VERSION = 10` persiste costo/rango. La validación `1204 passed, 4 subtests passed` fue comunicada por Sofía para esa integración y no se presenta aquí como ejecución de este bloque;
+- `main.py --bench` registra el proveedor de mapa de T049, pero aún no los proveedores de rutas/ciclo de 001.
 
 ## 1. Objetivo
 
 Acordar dos fronteras:
 
 1. entregar al modelo costos y rangos ya validados conforme a `FR-001`, `FR-002`, `FR-009` y `FR-011` de 001;
-2. permitir que «ir a» reutilice el cálculo ponderado de 001 sin acceder al esqueleto completo ni al estado real de puertas que el jugador desconoce.
+2. permitir que «ir a» use el cálculo ponderado de 001 sin acceder al esqueleto completo ni al estado real de puertas que el jugador desconoce.
 
-## Estado del código observado tras integrar `origin/Steve`
+## 2. Estado del código revisado
 
-El merge aporta puntos concretos de integración, pero **no constituye aceptación** de esta propuesta y todas las casillas de la sección 7 siguen pendientes:
+La entrega integrada constituye implementación local de G2:
 
-- `DecodificadorDatos.convertir_sala()` adapta `salidas` del API y `puertas` del guardado, pero hoy no lee ni valida `costo` y `Puerta` no lo almacena.
-- `DecodificadorDatos._adaptar_contenido_externo()` resuelve la ficha antes de crear cada enemigo; hoy toma `comportamiento`, pero no valida ni materializa `rango`. `convertir_contenido()` es el camino interno usado al reconstruir.
-- `InicializadorPartida._construir()` reúne todas las páginas, rechaza IDs repetidos, vincula destinos y llama a 002 antes de cargar contenido. La simetría de costos necesita el esqueleto completo y debe ocurrir antes de que 002 o el juego lo consuman; el lugar y responsable exactos se acuerdan.
-- `GuardadoBinario.VERSION` es **9**. `_escribir_sala()` y `_leer_sala_datos()` no incluyen costo/rango y el lector exige versión exacta, por lo que añadirlos requiere acordar representación, nueva versión y compatibilidad.
-- `RestauradorPartida._reconstruir_mapa()` reutiliza el decodificador para registros internos y `_completar_v5()` vuelve a vincular fichas. Son consumidores directos del contrato de persistencia.
-- `verificador_resolubilidad.verificar()` usa destino, apertura y llaves, no pesos. Debe seguir obteniendo el mismo resultado de 002 después de incorporar costos.
+- `DecodificadorDatos.convertir_sala()` lee/valida `costo`; `Puerta` lo materializa.
+- `_adaptar_contenido_externo()` valida/materializa `rango` solo para `comportamiento == "cazador"`.
+- `InicializadorPartida._construir()` valida multiplicidad y simetría después de `mapa.vincular_salidas()` y antes de 002.
+- `MapaCripta` publica índice por ID; la vista de cazador se implementa en 001 sin requerir la vista conocida de 003.
+- `GuardadoBinario.VERSION` es **10** e incluye costo/rango. Persistir mapa conocido y línea de tiempo completa continúa coordinado y pendiente.
+- `verificador_resolubilidad.verificar()` usa destino, apertura y llaves, no pesos. Incorporar costos no cambia su alcanzabilidad.
 
-## 2. Propuesta de datos entregados a 001
+Steven solicitó a Sofía resolver el cuello de botella lineal mediante el índice de `MapaCripta`. No se encontró un acuerdo explícito contradictorio: la anotación previa de que era un componente compartido exigía identificar consumidores y acordar el cambio. El plan enumera esos consumidores y T007–T009/T072–T076 conservan contrato y aportan pruebas/mediciones. La solicitud no resuelve las asignaciones todavía abiertas de DTO, inicialización, vista conocida o persistencia.
 
-### Salida validada
+## 3. Acuerdos confirmados
 
-Cada salida que llega al modelo ofrece:
+### 3.1 Validación de costo y rango
 
-- origen y destino con ID de sala entero estricto;
-- costo entero estricto `>= 1`;
-- costo 100 solo cuando el campo estaba ausente;
-- estado actual de apertura y metadatos heredados.
+Steven implementará la validación estricta en su frontera de datos:
 
-`bool`, cadena, fracción y entero `<1` se rechazan. No se convierten ni sustituyen. La validación del esqueleto completo confirma que los dos sentidos tienen el mismo costo; una contradicción rechaza la cripta con un error que identifica la salida y ambos valores.
+- cada costo presente debe cumplir `type(costo) is int` y `costo >= 1`;
+- el único valor predeterminado es 100 y se aplica exclusivamente cuando el campo `costo` está ausente;
+- un campo presente con booleano, cadena, fracción, cero o negativo se rechaza, sin conversión ni sustitución por 100;
+- una ficha con `comportamiento == "cazador"` exige `type(rango) is int` y `rango >= 0`; ausencia, booleano, cadena, fracción o negativo se rechazan.
 
-### Ficha de cazador validada
+Sofía consume esos valores ya validados y conserva defensas de contrato en sus límites públicos; no vuelve a reinterpretar datos inválidos.
 
-Si `comportamiento == "cazador"`, la ficha entrega `rango` con `type(rango) is int` y `rango >= 0`. Ausencia, booleano, cadena, fracción o negativo rechazan la ficha con un error que la identifica. No hay valor predeterminado.
+### 3.2 Simetría, identificación y resolubilidad
 
-### Responsabilidad por acordar
+La validación de simetría se ubicará después de `mapa.vincular_salidas()`, cuando el esqueleto completo ya está reunido. Los sentidos se identifican por `(origen_id, destino_id)`, no por posición ni dirección textual. Si hay varias salidas entre el mismo par, la validación debe detectar la ambigüedad en vez de emparejarlas arbitrariamente. Una contradicción de costos rechaza la cripta de forma descriptiva antes de que 002 o el juego la consuman.
 
-| Tema | Propuesta |
-|---|---|
-| Decodificación y mensajes | Steven, como propietario de datos, valida forma y dominio. |
-| Uso en simulación | Sofía consume valores ya validados y mantiene defensas de contrato en límites públicos. |
-| Simetría | validación después de reunir el esqueleto completo y antes de iniciar. |
-| Persistencia | Propuesta: conservar `costo`/`rango` con la versión correspondiente, sin reinterpretarlos. El formato vigente es v9 y el cambio de esquema requiere acuerdo. |
-| Pruebas | fixtures de Steven prueban rechazo; pruebas de Sofía confirman que el motor no convierte y usa los valores. |
+El equipo acordó aceptar una salida sin sentido inverso. La validación compara costos únicamente cuando existen ambos sentidos; no rechaza la ausencia ni crea una conexión implícita. Esta decisión quedó confirmada y registrada en FR-002 antes de implementar rutas/cazador.
 
-La asignación anterior requiere aceptación explícita; hasta entonces es solo propuesta.
+**A1 del PDF oficial — verificación del 2026-11-09 (hallazgo del análisis cruzado de Joshua sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`)**. El texto oficial fue extraído de `Cripta - Parte II.pdf`: §3.1 dice «Cada salida puede declarar un campo costo, entero mayor o igual que 1. Si no lo declara, su costo es 100. El costo es el mismo en ambos sentidos» y §4.1 declara `costo` por sentido de la salida. Casos:
 
-## 3. Propuesta de vista de grafo
+1. **Ambos sentidos omiten `costo`**: resuelto por §3.1 de forma expresa — 100 y 100; coincide con AC-001.
+2. **Un sentido declara 100 y el otro omite**: 100 frente a 100; los efectos coinciden y no hay contradicción, AC-020 no aplica.
+3. **Un sentido declara un costo distinto de 100 y el otro omite** (decisión normativa del equipo, elegida en la consulta del 2026-11-09): se aplica el default 100 al lado omitido y, como el efectivo 100 difiere del valor declarado en el otro sentido, AC-020 de 001 rechaza la salida de forma descriptiva identificando ambos valores; no existe herencia del costo del lado declarado.
+4. **Una salida carece de sentido inverso** (decisión normativa confirmada): se acepta como conexión dirigida válida. No se rechaza ni se inventa el sentido ausente; si ambos sentidos existen, sí deben compartir costo efectivo.
 
-El buscador de Sofía no recibe `MapaCripta` directamente. Recibe una vista de solo lectura con estas operaciones conceptuales:
+Estas aclaraciones están integradas en la validación de Steven y en FR-002; no existe herencia de costo entre sentidos.
 
-```text
-contiene_sala(sala_id: int) -> bool
-salidas_transitables(sala_id: int) -> iterable de (destino_id: int, costo: int)
-```
+Los costos ponderan movimiento y rutas, pero no cambian qué salas son alcanzables para la verificación de resolubilidad. El recorrido de 002 conserva sus reglas de puertas y llaves.
 
-No se exige un nombre de clase ni una firma Python definitiva; el acuerdo debe preservar esa capacidad mínima.
+### 3.3 Capacidad mínima de la vista
 
-### Vista para cazador
-
-- contiene todas las salas del esqueleto;
-- enumera solo puertas realmente abiertas en ese instante;
-- usa costos reales;
-- no consulta contenido descargado ni niebla.
-
-### Vista para «ir a»
-
-Steven construye la vista exclusivamente desde el mapa conocido:
-
-- solo contiene salas exploradas permitidas por su spec;
-- solo enumera salidas que el jugador recuerda abiertas;
-- usa los costos conocidos/recordados por el jugador;
-- nunca delega una consulta que pueda revelar salas desconocidas, una puerta real distinta de la recordada o el esqueleto completo.
-
-La separación se comprueba con dos estados reales distintos que produzcan el mismo mapa conocido: «ir a» debe devolver la misma ruta en ambos.
-
-## 4. Propuesta de consulta de ruta
+Steven acepta las operaciones conceptuales:
 
 ```text
-proximo_paso(vista, origen_id, objetivo_id, limite_costo=None)
-    -> alcanzable, costo_total, primera_vecina_id, costo_primera_salida
+contiene_sala(sala_id)
+salidas_transitables(sala_id)
 ```
 
-Semántica compartida:
+`salidas_transitables` entrega destino y costo de las salidas permitidas por la vista. Esto confirma la capacidad, no una firma Python, protocolo, clase ni tipo de retorno definitivos.
 
-- minimiza suma de costos positivos;
-- entre rutas mínimas elige la primera vecina de menor ID numérico;
-- no muta la vista ni el juego;
-- no descarga datos;
-- no abre puertas;
-- con límite, no examina deliberadamente más allá de la región necesaria para decidir dentro del límite.
+### 3.4 Vista de «ir a» desde conocimiento del jugador
 
-Uso de 001: pasa `limite_costo=rango`. Uso de «ir a»: acuerda con su spec si usa límite; 001 no introduce esa regla.
+Steven construirá la vista y su prueba de independencia frente al estado real oculto. La vista:
 
-## 5. Errores de contrato
+- contiene únicamente salas exploradas;
+- enumera salidas solo desde salas exploradas;
+- permite rutas únicamente entre salas exploradas mediante puertas recordadas abiertas;
+- usa el conocimiento recordado, nunca el estado real oculto ni el esqueleto completo.
 
-- IDs no enteros, costos/rangos inválidos y referencias inexistentes se rechazan antes de buscar.
-- Una vista que cambia durante una consulta no se comparte; el llamador obtiene una vista coherente del instante o repite la consulta.
-- Un origen/objetivo no visible para «ir a» se resuelve según la spec 003, no según 001.
+La verificación futura construirá estados reales distintos con el mismo mapa conocido y exigirá el mismo resultado de «ir a». Este criterio está acordado, pero la prueba todavía no se ha implementado ni ejecutado.
+
+### 3.5 Consulta por paso y casos terminales
+
+Steven acepta que:
+
+- cada paso de «ir a» vuelve a calcularse con origen, destino y conocimiento vigentes; no se conserva una secuencia como compromiso futuro;
+- origen igual a destino produce costo total 0 y ningún paso;
+- ausencia de ruta es un resultado explícito, distinguible del caso anterior;
+- el buscador devuelve semánticamente un paso, no decide `ATACAR` ni `ESPERAR`.
+
+Esto cierra la semántica, pero no fija nombres, firma Python, clase/protocolo, campos ni tipo de retorno.
+
+## 4. Decisiones de integración todavía abiertas
+
+### 4.1 Firma y representación aceptadas (G1)
+
+- Firma aceptada por Steven: `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`.
+- `ResultadoRuta` es inmutable y publica `alcanzable`, `costo_total`, `primera_vecina_id` y `costo_primera_salida`, además de instrumentación separada conforme al plan.
+- Paso disponible: `alcanzable=True`, costo positivo, vecina y costo de primera salida presentes.
+- Origen igual a objetivo: `alcanzable=True`, `costo_total=0` y ningún paso/costo de primera salida.
+- Ausencia de ruta (incluido un límite insuficiente): `alcanzable=False` y ningún costo/paso.
+- La búsqueda minimiza la suma de costos positivos y, entre rutas mínimas, elige la primera vecina de menor ID numérico.
+- `limite_costo` es inclusivo; `None` significa sin límite. IDs y límite se validan estrictamente, sin conversiones.
+- El buscador solo lee las capacidades `contiene_sala(id)` y `salidas_transitables(id)` de la vista. No decide `ATACAR`/`ESPERAR`, no descarga contenido y no muta el juego.
+- Sofía implementa `logica/rutas_ponderadas.py`, sus pruebas y la vista del cazador. DTO, decodificación, inicialización y guardado de Steven no se modifican.
+
+La vista conocida de 003 continúa pendiente; este contrato permite desarrollar el buscador y la vista de esqueleto completo del cazador sin fingir esa entrega.
+
+### 4.2 Estrategia inicial y reutilización
+
+La primera integración usa cálculo individual desde cero. En colaboración con 003 se medirá el costo completo de cada decisión de «ir a» frente a su límite de **5 ms**, incluyendo toda preparación auxiliar requerida por la consulta.
+
+La reutilización de cálculos permanece como alternativa, no como requisito ni optimización asumida. Solo podrá habilitarse si:
+
+1. demuestra equivalencia observable con el cálculo individual desde cero para origen, destino y conocimiento vigentes;
+2. mide su costo completo, incluida construcción, consulta, invalidación y limpieza;
+3. respeta la independencia del mapa conocido y el límite aplicable.
+
+El mecanismo y propietario concretos de esa reutilización siguen sin acuerdo.
+
+### 4.3 Persistencia coordinada
+
+Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y línea de tiempo completa aún requieren la entrega coordinada con Joshua; G2 no cierra por sí sola T004/T006/T055/T056.
+
+**Estado de M3**: `5000d1f` materializa v10 para costo/rango y mantiene incompatibilidad explícita con v9. Ampliar ese formato con mapa conocido y línea de tiempo completa sigue pendiente de confirmación/entrega conjunta; T041/T055 no se cierran con la parte ya integrada.
+
+## 5. Puntos todavía no confirmados por ambos
+
+- mecanismo, claves, invalidación y propietario de reutilización para «ir a»;
+- vista conocida y su integración con 003;
+- compatibilidad y entrega conjunta de mapa conocido y línea de tiempo completa.
 
 ## 6. Consumidores y compatibilidad
 
-- 001: cazador y benchmarks de rutas.
-- 002: puede conservar sus propios recorridos de resolubilidad; el índice de salas mantiene orden e identidad.
-- 003: «ir a» puede reutilizar el buscador mediante su vista restringida.
-- guardado: persiste datos canónicos, nunca resultados de ruta.
+- **001**: cazador, movimiento ponderado y benchmarks de rutas.
+- **002**: conserva su recorrido de resolubilidad; los costos no cambian alcanzabilidad.
+- **003**: consume la vista restringida construida por Steven y vuelve a pedir un paso con conocimiento vigente.
+- **004/guardado**: persiste estado canónico según el acuerdo futuro; nunca resultados ni cachés de ruta.
 
-## 7. Criterios para considerar acordado el contrato
+## 7. Criterios de cierre e integración
 
-- [ ] Steven acepta responsabilidad y ubicación de validación de costo/rango.
-- [ ] Ambos acuerdan cómo identificar los dos sentidos para validar simetría.
-- [ ] Ambos acuerdan la interfaz mínima de vista de grafo.
-- [ ] Una prueba demuestra que «ir a» no observa información fuera del mapa conocido.
-- [ ] Se identifican las firmas públicas que deben conservarse.
-- [ ] El acuerdo se refleja en los planes de las partes antes de generar tareas de integración.
+- [x] Steven acepta implementar validación estricta de costo/rango y el default solo por ausencia.
+- [x] Se acuerda identificar sentidos por origen/destino, comparar costos y detectar ambigüedad entre salidas múltiples.
+- [x] Steven acepta la capacidad `contiene_sala`/`salidas_transitables`.
+- [x] Steven asume la vista del mapa conocido y su futura prueba de independencia.
+- [x] Se acuerda que los costos no cambian la alcanzabilidad de 002.
+- [x] Steven acepta recálculo por paso, origen=destino con costo 0 sin paso y ausencia de ruta distinguible.
+- [x] Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua.
+- [x] Ambos fijan firma Python y `ResultadoRuta` sin confundir «sin ruta» con «ya en destino».
+- [x] Steven solicita a Sofía implementar el índice de `MapaCripta` conservando firmas, orden e identidad; el plan identifica sus consumidores reales.
+- [x] Sofía recibe rutas/vista del cazador y se acepta una salida sin inversa; clases de Steven permanecen fuera de su asignación.
+- [ ] 003 y 001 demuestran equivalencia y miden el límite de 5 ms con costo completo.
+- [ ] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta; costo/rango v10 ya están integrados en `5000d1f`.
+- [ ] Implementación y pruebas futuras verifican los acuerdos; ninguna se considera realizada por este documento.

@@ -96,7 +96,10 @@ def test_forma_de_generales_salas_y_contenido(cripta_id):
         assert type(sala["id"]) is int and isinstance(sala["salidas"], dict)
         for direccion, salida in sala["salidas"].items():
             assert direccion in ("N", "S", "E", "O") and type(salida["sala"]) is int
-            assert set(salida) <= {"sala", "cerrada", "llave", "cierre_automatico"}
+            assert set(salida) <= {
+                "sala", "cerrada", "llave", "cierre_automatico", "costo"}
+            if "costo" in salida:
+                assert type(salida["costo"]) is int and salida["costo"] >= 1
     contenido = _contenido_real(cripta_id)
     assert set(contenido) == {s["id"] for s in salas}
     for registro in contenido.values():
@@ -118,6 +121,44 @@ def test_forma_del_catalogo():
             assert {"vida_max", "ataque", "defensa", "velocidad", "comportamiento"} <= set(ficha)
         for suelta in ficha.get("suelta", []):
             assert (API_REAL / "catalogo" / f"{suelta}.json").exists()
+
+
+def test_dos_criptas_offline_materializan_pesos_del_fixture_sin_cambiar_resolubilidad(
+        tmp_path):
+    """T014: el peso llega de la fuente y no interviene en el oráculo de 002."""
+    raiz_ponderada = tmp_path / "api_ponderada"
+    shutil.copytree(API_REAL, raiz_ponderada)
+    costos_por_cripta = {"cripta-01": 37, "cripta-02": 211}
+    for cripta_id, costo in costos_por_cripta.items():
+        for ruta in (raiz_ponderada / cripta_id).glob("pagina_*.json"):
+            pagina = _leer(ruta)
+            for sala in pagina["salas"]:
+                for salida in sala["salidas"].values():
+                    salida["costo"] = costo
+            ruta.write_text(json.dumps(pagina), encoding="utf-8")
+
+    def cargar(raiz, cripta_id):
+        fuente = FuenteOffline(str(raiz))
+        inicializador = InicializadorPartida()
+        inicializador.forzar = True
+        inicializador.preparar(cripta_id, fuente)
+        estado, _ = inicializador(
+            cripta_id, 19, fuente, CacheCatalogo(25))
+        return estado
+
+    observados = {}
+    for cripta_id, costo in costos_por_cripta.items():
+        original = cargar(API_REAL, cripta_id)
+        ponderada = cargar(raiz_ponderada, cripta_id)
+        observados[cripta_id] = {
+            puerta.costo for sala in ponderada.mapa.obtener_salas()
+            for puerta in sala.puertas
+        }
+        assert observados[cripta_id] == {costo}
+        assert ponderada.informe_resolubilidad.a_dato() == \
+            original.informe_resolubilidad.a_dato()
+
+    assert observados["cripta-01"] != observados["cripta-02"]
 
 
 # ── Fuente offline sobre el formato real ──────────────────────────────

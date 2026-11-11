@@ -135,8 +135,11 @@ def main() -> None:
         import json
         from benchmarks.integrante2 import PROVEEDORES
         from benchmarks.bench_ampliado import PROVEEDORES as PROVEEDORES_ADICIONALES
+        # T049 de 001: el índice de MapaCripta se mide desde aquí. Un benchmark que
+        # ningún punto de entrada ejecuta no cuenta como evidencia (Principio IX).
+        from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as PROVEEDORES_MAPA
         from benchmarks.integrante3 import ejecutar
-        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES), ensure_ascii=False, indent=2))
+        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES + PROVEEDORES_MAPA), ensure_ascii=False, indent=2))
         return
 
     fuente = _crear_fuente(config)

@@ -141,6 +141,29 @@ def test_movimiento_rastros_visitas_y_eventos_se_revierten_juntos():
     assert huella(estado) == antes
 
 
+def test_dos_ejecuciones_del_mismo_movimiento_ponderado_son_identicas():
+    """T015: costo, reloj, agenda y salida observable son deterministas."""
+    observados = []
+    for _ in range(2):
+        motor, estado, origen, _, _ = partida()
+        origen.puertas[0].costo = 275
+        resultado = motor.ejecutar_accion(Accion("MOVER", direccion="NORTE"))
+        observados.append((
+            resultado.costo,
+            tuple(resultado.notificaciones),
+            estado.reloj,
+            estado.evento_decision_id,
+            tuple(sorted(
+                (evento.id_evento, evento.tiempo, evento.secuencia,
+                 evento.tipo, evento.destinatario_id)
+                for evento in estado.agenda.recorrer()
+            )),
+            tuple(estado.salas_visitadas),
+        ))
+    assert observados[0] == observados[1]
+    assert observados[0][0] == observados[0][2] == 275
+
+
 def veneno(estado, valor=3, duracion=200):
     return {"id": "v", "tipo": "VENENO", "duracion": duracion,
             "valor": valor, "objetivo": estado.jugador}
