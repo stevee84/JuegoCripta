@@ -1,0 +1,422 @@
+{
+  "benchmark": "ciclo_real_entre_decisiones",
+  "origen_carga": "criptas_reales_disponibles",
+  "referencia_oficial": "pendiente_publicacion_g6",
+  "afirma_pr001": false,
+  "alcance_resultado_requisito": "solo_criptas_disponibles; no demuestra PR-001 ni permite cerrar T051 sin la referencia oficial",
+  "generado_utc": "2026-11-10T15:50:15.708082+00:00",
+  "entorno": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "reloj": "perf_counter_ns"
+  },
+  "fuente": {
+    "tipo": "offline",
+    "ruta": "C:\\Users\\sophie\\VS code projects\\JuegoCripta\\tests\\fixtures\\api_real"
+  },
+  "criptas_disponibles": [
+    "cripta-01",
+    "cripta-02",
+    "cripta-03",
+    "cripta-04"
+  ],
+  "semilla": 20240517,
+  "muestras_por_cripta": 3,
+  "calentamientos_por_cripta": 1,
+  "exclusiones_cronometro": [
+    "red_y_disco",
+    "carga_e_inicializacion",
+    "reinicio_de_partida",
+    "copia_del_estado",
+    "preparacion_de_accion",
+    "renderizado",
+    "impresion_y_serializacion"
+  ],
+  "resultados": [
+    {
+      "cripta_id": "cripta-01",
+      "semilla": 20240517,
+      "escenarios": [
+        {
+          "nombre": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "incluye_enemigos": true,
+          "incluye_efectos": false,
+          "detalle": "entrada a sala 2 con 2 enemigo(s) y 1 trampa(s)"
+        },
+        {
+          "nombre": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "incluye_enemigos": false,
+          "incluye_efectos": true,
+          "detalle": "procesa evento de efecto en t=2025; acción parte de t=1975"
+        }
+      ],
+      "calentamientos": 1,
+      "muestras_solicitadas": 3,
+      "ciclos_completos": 3,
+      "acciones_rechazadas": 0,
+      "ciclos_con_muerte": 0,
+      "ciclos_con_victoria": 0,
+      "terminales_otros": 0,
+      "ciclos_incompletos": 0,
+      "errores": 0,
+      "mediana_ns": 225000,
+      "p95_ns": 236500,
+      "maximo_ns": 236500,
+      "mediana_ms": 0.225,
+      "p95_ms": 0.2365,
+      "maximo_ms": 0.2365,
+      "ciclos_20ms_o_mas": 0,
+      "umbral_ns": 20000000,
+      "comparacion_estricta": "duracion_ns < 20000000",
+      "resultado_requisito": "CUMPLE",
+      "mediciones": [
+        {
+          "indice": 1,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 225000,
+          "duracion_ms": 0.225,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 100,
+          "notificaciones": 4,
+          "eventos_enemigo": 2,
+          "eventos_efecto": 0
+        },
+        {
+          "indice": 2,
+          "fase": "medicion",
+          "escenario": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "duracion_ns": 55200,
+          "duracion_ms": 0.0552,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "ESPERAR ejecutado.",
+          "reloj_final": 2075,
+          "notificaciones": 1,
+          "eventos_enemigo": 0,
+          "eventos_efecto": 1
+        },
+        {
+          "indice": 3,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 236500,
+          "duracion_ms": 0.2365,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 100,
+          "notificaciones": 4,
+          "eventos_enemigo": 2,
+          "eventos_efecto": 0
+        }
+      ],
+      "carga_previa": {
+        "salas_cargadas": 6,
+        "fichas_cargadas": 10,
+        "enemigos_cargados": 3,
+        "objetos_cargados": 8,
+        "trampas_cargadas": 1
+      },
+      "clasificaciones_calentamiento": {
+        "completo": 1
+      }
+    },
+    {
+      "cripta_id": "cripta-02",
+      "semilla": 20240517,
+      "escenarios": [
+        {
+          "nombre": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "incluye_enemigos": true,
+          "incluye_efectos": false,
+          "detalle": "entrada a sala 7 con 1 enemigo(s) y 0 trampa(s)"
+        },
+        {
+          "nombre": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "incluye_enemigos": false,
+          "incluye_efectos": true,
+          "detalle": "procesa evento de efecto en t=2025; acción parte de t=1975"
+        }
+      ],
+      "calentamientos": 1,
+      "muestras_solicitadas": 3,
+      "ciclos_completos": 3,
+      "acciones_rechazadas": 0,
+      "ciclos_con_muerte": 0,
+      "ciclos_con_victoria": 0,
+      "terminales_otros": 0,
+      "ciclos_incompletos": 0,
+      "errores": 0,
+      "mediana_ns": 102400,
+      "p95_ns": 120300,
+      "maximo_ns": 120300,
+      "mediana_ms": 0.1024,
+      "p95_ms": 0.1203,
+      "maximo_ms": 0.1203,
+      "ciclos_20ms_o_mas": 0,
+      "umbral_ns": 20000000,
+      "comparacion_estricta": "duracion_ns < 20000000",
+      "resultado_requisito": "CUMPLE",
+      "mediciones": [
+        {
+          "indice": 1,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 120300,
+          "duracion_ms": 0.1203,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        },
+        {
+          "indice": 2,
+          "fase": "medicion",
+          "escenario": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "duracion_ns": 66700,
+          "duracion_ms": 0.0667,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "ESPERAR ejecutado.",
+          "reloj_final": 2075,
+          "notificaciones": 1,
+          "eventos_enemigo": 0,
+          "eventos_efecto": 1
+        },
+        {
+          "indice": 3,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 102400,
+          "duracion_ms": 0.1024,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        }
+      ],
+      "carga_previa": {
+        "salas_cargadas": 20,
+        "fichas_cargadas": 10,
+        "enemigos_cargados": 6,
+        "objetos_cargados": 13,
+        "trampas_cargadas": 1
+      },
+      "clasificaciones_calentamiento": {
+        "completo": 1
+      }
+    },
+    {
+      "cripta_id": "cripta-03",
+      "semilla": 20240517,
+      "escenarios": [
+        {
+          "nombre": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "incluye_enemigos": true,
+          "incluye_efectos": false,
+          "detalle": "entrada a sala 7 con 1 enemigo(s) y 0 trampa(s)"
+        },
+        {
+          "nombre": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "incluye_enemigos": false,
+          "incluye_efectos": true,
+          "detalle": "procesa evento de efecto en t=2025; acción parte de t=1975"
+        }
+      ],
+      "calentamientos": 1,
+      "muestras_solicitadas": 3,
+      "ciclos_completos": 3,
+      "acciones_rechazadas": 0,
+      "ciclos_con_muerte": 0,
+      "ciclos_con_victoria": 0,
+      "terminales_otros": 0,
+      "ciclos_incompletos": 0,
+      "errores": 0,
+      "mediana_ns": 115100,
+      "p95_ns": 318500,
+      "maximo_ns": 318500,
+      "mediana_ms": 0.1151,
+      "p95_ms": 0.3185,
+      "maximo_ms": 0.3185,
+      "ciclos_20ms_o_mas": 0,
+      "umbral_ns": 20000000,
+      "comparacion_estricta": "duracion_ns < 20000000",
+      "resultado_requisito": "CUMPLE",
+      "mediciones": [
+        {
+          "indice": 1,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 115100,
+          "duracion_ms": 0.1151,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        },
+        {
+          "indice": 2,
+          "fase": "medicion",
+          "escenario": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "duracion_ns": 59000,
+          "duracion_ms": 0.059,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "ESPERAR ejecutado.",
+          "reloj_final": 2075,
+          "notificaciones": 1,
+          "eventos_enemigo": 0,
+          "eventos_efecto": 1
+        },
+        {
+          "indice": 3,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 318500,
+          "duracion_ms": 0.3185,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        }
+      ],
+      "carga_previa": {
+        "salas_cargadas": 40,
+        "fichas_cargadas": 10,
+        "enemigos_cargados": 16,
+        "objetos_cargados": 19,
+        "trampas_cargadas": 1
+      },
+      "clasificaciones_calentamiento": {
+        "completo": 1
+      }
+    },
+    {
+      "cripta_id": "cripta-04",
+      "semilla": 20240517,
+      "escenarios": [
+        {
+          "nombre": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "incluye_enemigos": true,
+          "incluye_efectos": false,
+          "detalle": "entrada a sala 7 con 1 enemigo(s) y 0 trampa(s)"
+        },
+        {
+          "nombre": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "incluye_enemigos": false,
+          "incluye_efectos": true,
+          "detalle": "procesa evento de efecto en t=2025; acción parte de t=1975"
+        }
+      ],
+      "calentamientos": 1,
+      "muestras_solicitadas": 3,
+      "ciclos_completos": 3,
+      "acciones_rechazadas": 0,
+      "ciclos_con_muerte": 0,
+      "ciclos_con_victoria": 0,
+      "terminales_otros": 0,
+      "ciclos_incompletos": 0,
+      "errores": 0,
+      "mediana_ns": 106700,
+      "p95_ns": 136600,
+      "maximo_ns": 136600,
+      "mediana_ms": 0.1067,
+      "p95_ms": 0.1366,
+      "maximo_ms": 0.1366,
+      "ciclos_20ms_o_mas": 0,
+      "umbral_ns": 20000000,
+      "comparacion_estricta": "duracion_ns < 20000000",
+      "resultado_requisito": "CUMPLE",
+      "mediciones": [
+        {
+          "indice": 1,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 136600,
+          "duracion_ms": 0.1366,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        },
+        {
+          "indice": 2,
+          "fase": "medicion",
+          "escenario": "ciclo_con_evento_de_efecto",
+          "accion": "ESPERAR",
+          "duracion_ns": 58000,
+          "duracion_ms": 0.058,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "ESPERAR ejecutado.",
+          "reloj_final": 2075,
+          "notificaciones": 1,
+          "eventos_enemigo": 0,
+          "eventos_efecto": 1
+        },
+        {
+          "indice": 3,
+          "fase": "medicion",
+          "escenario": "entrada_sala_con_enemigos",
+          "accion": "MOVER",
+          "duracion_ns": 106700,
+          "duracion_ms": 0.1067,
+          "clasificacion": "completo",
+          "exito": true,
+          "mensaje": "MOVER ejecutado.",
+          "reloj_final": 600,
+          "notificaciones": 2,
+          "eventos_enemigo": 1,
+          "eventos_efecto": 0
+        }
+      ],
+      "carga_previa": {
+        "salas_cargadas": 50,
+        "fichas_cargadas": 10,
+        "enemigos_cargados": 21,
+        "objetos_cargados": 19,
+        "trampas_cargadas": 1
+      },
+      "clasificaciones_calentamiento": {
+        "completo": 1
+      }
+    }
+  ]
+}

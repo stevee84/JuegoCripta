@@ -455,6 +455,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 39 | `/speckit.analyze` para terreno y cazador | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
 | 40 | Remediación de la planificación 001 con ramas remotas | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
 | 54 | Implementación coherente de US1/US2: terreno, rutas y cazador | Tema 12. Parte II dirigida por especificaciones | 09/11/2026 |
+| 57 | Ciclo real sintético y agenda equivalente con costos variables | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2172,6 +2173,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Medición.** AC-012 mantiene cinco salas alcanzables al crecer el total a 32/128/512; producción conservó `F=5`, `D=5`, `E=6`, `P=5`, `Q=2`, mientras la compartida contabiliza separadamente construir el inverso completo. AC-014 produce 24 combinaciones de tres alternativas, 1/20 cazadores, rango pequeño/grande y puertas estables/cambios frecuentes durante tres ciclos. Las filas separan mantenimiento, construcción inicial, reconstrucción, consultas recalculadas/iniciales/reutilizadas, invalidación, limpieza y total. `tracemalloc` usa otra corrida. El JSON `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json` conserva **30 filas/270 muestras**, entorno, semilla 2609, calentamiento, nueve repeticiones, cargas, mediana, p95, máximo/mínimo y trabajo.
 
 **Resultados y validación.** Para 20 cazadores/rango grande, las medianas sintéticas estable individual/compartida/reutilizada fueron 26 813 300/587 200/301 700 ns; con cambios frecuentes, 18 713 300/662 300/586 800 ns. En AC-012 el recálculo individual conservó 42 900/48 600/139 900 ns con trabajo regional constante (`F=5, D=5, E=6, P=5, Q=2`) y la construcción inversa compartida creció 38 500/107 800/417 300 ns de 32 a 512 salas. No se extrae una decisión productiva de estos datos. Pruebas de equivalencia, esquema y conexión: **55 passed in 6.89s**; rutas relacionadas: **21 passed in 0.21s**; restricciones: **56 passed in 1.31s**; `py_compile` pasó. Se cerraron T044–T046 y T065. T043, T047–T051 y T071 continúan abiertas según sus dependencias; en particular T049 espera acuerdo/propietario de `main.py` y T051 la referencia oficial. No se afirma PR-001 ni 20 ms, no se avanzó a T057/decisión final ni a 003/004, y no hubo commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 57 — Ciclo real sintético y agenda equivalente con costos variables
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 10/11/2026
+
+> **Prompt**
+>
+> En la rama `Sofia`, implementar T048 y el subbloque pendiente de T047: medir una llamada real a `MotorJuego.ejecutar_accion()` desde una decisión hasta la siguiente con 1/decenas de cazadores, rangos pequeños/grandes, costos variables y puertas estables/inestables; comparar recálculo productivo con retención experimental solo del benchmark, validando observables antes de medir e incluyendo creación/invalidación/limpieza. Repetir las seis operaciones de agenda con cientos de eventos, costos variables y cazadores activos. Conservar muestras y metadatos, separar sintéticos, criptas reales disponibles y referencia oficial pendiente; cerrar T043 si se satisface el esquema. No modificar `main.py`, producción ni código de compañeros; no cerrar PR-001/T051 sin referencia oficial; sin commit, push, merge ni cambio de rama.
+
+**Implementación y equivalencia.** `benchmarks/terreno_cazador_integrante1.py` añade `medir_agenda_ciclo` con `EFECTO`, `CERRAR_PUERTA`, `ENEMIGO`, `JUGADOR_DISPONIBLE` y `VENCER_EFECTO`, 28 destinatarios cazador y demoras variables. Reutiliza las seis operaciones T047 y compara `AgendaEventos` con `_AgendaLinealBenchmark` antes de cada reloj. `benchmarks/benchmark_ciclo_real_integrante1.py` añade 32/64 salas, 1/28 cazadores reales, rango 300/grande, salidas dirigidas de costo 100..130 y cierre automático dentro del intervalo. Cada muestra cronometra una única `ejecutar_accion`; copia, motor y acción quedan fuera. La variante retenida sustituye temporalmente el símbolo que usa el comportamiento cazador, restaura en `finally` y paga construcción, consultas, invalidación, reconstrucción y limpieza dentro del intervalo. La huella compara reloj, secuencia, agenda, salas, enemigos, puertas, jugador, azar, resultado y orden de notificaciones; no iguala contadores internos.
+
+**Resultados conservados.** `agenda_ciclo001_t047_c1_r9_256-512-1024.json` guarda **36 filas/324 muestras**; en 1024 eventos, resolver empates obtuvo 15.341 ms para `AgendaEventos` y 39.694 ms para la lista lineal. Se conservaron las 24 muestras lineales `>=20 ms` de insertar, reprogramar y resolver empates. `ciclo_sintetico_t048_t047_c1_r9_32-64.json` guarda **32 filas/288 muestras** y todas clasificaron `completo`. En 64 salas/28 cazadores/rango grande, el recálculo productivo estable dio mediana 20.545 ms, p95 36.826 ms y 7/9 muestras `>=20 ms` con 28 decisiones/notificaciones; el inestable dio 17.964 ms, 33.234 ms y otras 2/9 con 24 decisiones/notificaciones y un cierre. Se conservaron las nueve muestras lentas. La retención experimental estable dio 3.127 ms, sin convertirse en decisión productiva. `ciclo_real_criptas_disponibles.json` guarda 12/12 ciclos completos de cuatro criptas locales, medianas 0.102..0.225 ms, y declara que no es la referencia oficial.
+
+**Pruebas y estado.** Las pruebas de escenario, equivalencia, clasificación, fases, memoria, esquema AC-013/AC-015, catálogo vivo y proveedores terminaron en **52 passed in 4.45s**; los seis módulos de benchmark terminaron en **70 passed in 7.58s** y `py_compile` pasó. Se cerraron T043, T047 y T048. T049 queda abierta por el acuerdo del propietario de `main.py`; T050/T071 dependen de esa integración; T051/PR-001 siguen bloqueados por G6. No se añadieron cachés ni optimizaciones a producción, no se modificó `main.py` y no hubo commit, push, merge o cambio de rama.
 
 ---
 

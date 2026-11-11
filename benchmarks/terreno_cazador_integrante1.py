@@ -52,6 +52,22 @@ FASES_RUTAS = (
     "limpieza",
 )
 
+#SOFIA
+# AC-015: la segunda carga repite las seis operaciones con la mezcla que produce
+# el ciclo real entre decisiones del jugador (PR-005): decenas de cazadores
+# activos, costos de salida variables como demoras y eventos simultáneos.
+TIPOS_CICLO001 = (
+    "ENEMIGO",
+    "JUGADOR_DISPONIBLE",
+    "CERRAR_PUERTA",
+    "EFECTO",
+    "VENCER_EFECTO",
+)
+CARGAS_AGENDA_CICLO = (256, 512, 1024)
+CAZADORES_CICLO001 = 28
+CARGA_T047 = "t047"
+CARGA_CICLO001 = "ciclo001"
+
 
 @dataclass(frozen=True)
 class _EspecificacionEvento:
@@ -244,6 +260,67 @@ def _especificaciones_empate(n):
     return tuple(especificaciones)
 
 
+#SOFIA
+def _destinatario_ciclo001(indice, tipo=None):
+    """Destinatarios como en el ciclo real: cazadores activos por turnos,
+    puertas con cierre automático, efectos y la decisión del jugador."""
+    tipo = tipo or TIPOS_CICLO001[indice % len(TIPOS_CICLO001)]
+    if tipo == "ENEMIGO":
+        return f"cazador-{indice % CAZADORES_CICLO001:02d}"
+    if tipo == "CERRAR_PUERTA":
+        return f"puerta-{indice % 32:02d}"
+    if tipo == "JUGADOR_DISPONIBLE":
+        return "jugador"
+    return f"actor-{indice % 32:02d}"
+
+
+def _especificaciones_ciclo001_base(n):
+    """Mezcla del ciclo real (AC-015/PR-005): decenas de cazadores activos y
+    demoras derivadas de costos de salida variables, sin azar en los tiempos."""
+    especificaciones = [
+        _EspecificacionEvento(
+            f"evento-{indice:06d}",
+            50 + ((indice * 37 + 11) % 64) * 5 + 100 * (indice // 64),
+            indice,
+            TIPOS_CICLO001[indice % len(TIPOS_CICLO001)],
+            _destinatario_ciclo001(indice),
+        )
+        for indice in range(n)
+    ]
+    random.Random(SEMILLA + 7_000_000 + n).shuffle(especificaciones)
+    return tuple(especificaciones)
+
+
+def _especificaciones_ciclo001_nuevas(n, cantidad):
+    return tuple(
+        _EspecificacionEvento(
+            f"nuevo-{indice:06d}",
+            60 + ((indice * 41 + 7) % 72) * 5,
+            n + indice,
+            "ENEMIGO" if indice % 2 == 0 else "CERRAR_PUERTA",
+            _destinatario_ciclo001(
+                indice,
+                "ENEMIGO" if indice % 2 == 0 else "CERRAR_PUERTA"),
+        )
+        for indice in range(cantidad)
+    )
+
+
+def _especificaciones_ciclo001_empate(n):
+    especificaciones = [
+        _EspecificacionEvento(
+            f"empate-{indice:06d}",
+            500,
+            indice,
+            TIPOS_CICLO001[indice % len(TIPOS_CICLO001)],
+            _destinatario_ciclo001(indice),
+        )
+        for indice in range(n)
+    ]
+    random.Random(SEMILLA + 8_000_000 + n).shuffle(especificaciones)
+    return tuple(especificaciones)
+
+
 def _construir(clase_agenda, especificaciones):
     agenda = clase_agenda()
     for especificacion in especificaciones:
@@ -251,22 +328,34 @@ def _construir(clase_agenda, especificaciones):
     return agenda
 
 
-def _datos_operacion(operacion, n, base):
+def _datos_operacion(operacion, n, base, carga=CARGA_T047):
     cantidad = max(8, n // 4)
     ids_ordenados = sorted(especificacion.id_evento for especificacion in base)
     rng = random.Random(SEMILLA + 1000 * n + OPERACIONES.index(operacion))
     rng.shuffle(ids_ordenados)
     if operacion == "insertar":
-        return _especificaciones_nuevas(n, cantidad)
+        if carga == CARGA_T047:
+            return _especificaciones_nuevas(n, cantidad)
+        return _especificaciones_ciclo001_nuevas(n, cantidad)
     if operacion in ("extraer", "resolver_empates"):
         return cantidad if operacion == "extraer" else n
     if operacion == "cancelar_id":
         return tuple(ids_ordenados[:cantidad])
     if operacion == "cancelar_actor":
-        return ("actor-03", "actor-11", "actor-19", "actor-27")
-    if operacion == "reprogramar":
+        if carga == CARGA_T047:
+            return ("actor-03", "actor-11", "actor-19", "actor-27")
         return tuple(
-            (evento_id, 8 * n + posicion)
+            f"cazador-{actor:02d}" for actor in (3, 11, 19, 27))
+    if operacion == "reprogramar":
+        if carga == CARGA_T047:
+            return tuple(
+                (evento_id, 8 * n + posicion)
+                for posicion, evento_id in enumerate(ids_ordenados[:cantidad])
+            )
+        # Reprogramación como en el ciclo: el siguiente turno se programa con
+        # un costo de salida variable (100..130) según la sala que se cruza.
+        return tuple(
+            (evento_id, 100 + ((posicion * 13 + 5) % 7) * 5)
             for posicion, evento_id in enumerate(ids_ordenados[:cantidad])
         )
     raise ValueError(f"Operación de agenda desconocida: {operacion}")
@@ -309,10 +398,17 @@ def _normalizar_resultado(resultado):
     return tuple(_firma_evento(evento) for evento in resultado)
 
 
-def _preparar(clase_agenda, operacion, n):
-    base = (_especificaciones_empate(n) if operacion == "resolver_empates"
-            else _especificaciones_base(n))
-    datos = _datos_operacion(operacion, n, base)
+def _preparar(clase_agenda, operacion, n, carga=CARGA_T047):
+    if carga == CARGA_T047:
+        base = (_especificaciones_empate(n) if operacion == "resolver_empates"
+                else _especificaciones_base(n))
+    elif carga == CARGA_CICLO001:
+        base = (_especificaciones_ciclo001_empate(n)
+                if operacion == "resolver_empates"
+                else _especificaciones_ciclo001_base(n))
+    else:
+        raise ValueError(f"Carga de agenda desconocida: {carga}")
+    datos = _datos_operacion(operacion, n, base, carga)
     agenda = _construir(clase_agenda, base)
     datos_ejecucion = (
         tuple(especificacion.crear() for especificacion in datos)
@@ -321,11 +417,11 @@ def _preparar(clase_agenda, operacion, n):
     return agenda, _ejecutor(agenda, operacion, datos_ejecucion), base, datos
 
 
-def _validar_equivalencia(operacion, n):
+def _validar_equivalencia(operacion, n, carga=CARGA_T047):
     agenda, ejecutar_agenda, base, datos = _preparar(
-        AgendaEventos, operacion, n)
+        AgendaEventos, operacion, n, carga)
     lineal, ejecutar_lineal, base_lineal, datos_lineales = _preparar(
-        _AgendaLinealBenchmark, operacion, n)
+        _AgendaLinealBenchmark, operacion, n, carga)
     if base != base_lineal or datos != datos_lineales:
         raise ValueError("Las alternativas no recibieron el mismo fixture.")
 
@@ -376,11 +472,11 @@ def _validar_equivalencia(operacion, n):
     }
 
 
-def _medir_memoria_separada(clase_agenda, operacion, n):
+def _medir_memoria_separada(clase_agenda, operacion, n, carga=CARGA_T047):
     """Mide asignaciones en una corrida que nunca aporta muestras de tiempo."""
     gc.collect()
     tracemalloc.start()
-    agenda, ejecutar, _, _ = _preparar(clase_agenda, operacion, n)
+    agenda, ejecutar, _, _ = _preparar(clase_agenda, operacion, n, carga)
     base_actual, pico_preparacion = tracemalloc.get_traced_memory()
     tracemalloc.reset_peak()
     resultado = ejecutar()
@@ -400,9 +496,9 @@ def _medir_memoria_separada(clase_agenda, operacion, n):
     }
 
 
-def _medir_tiempo(clase_agenda, operacion, n, repeticiones):
+def _medir_tiempo(clase_agenda, operacion, n, repeticiones, carga=CARGA_T047):
     operaciones = [
-        _preparar(clase_agenda, operacion, n)[1]
+        _preparar(clase_agenda, operacion, n, carga)[1]
         for _ in range(repeticiones + CALENTAMIENTO)
     ]
     muestras = []
@@ -423,20 +519,34 @@ def _cantidad_trabajo(operacion, n, validacion):
     return {"operaciones": cantidad, "eventos_base": n}
 
 
-def _fila(operacion, alternativa, clase_agenda, n, repeticiones, validacion):
+def _fila(operacion, alternativa, clase_agenda, n, repeticiones,
+          validacion, carga=CARGA_T047):
     muestras = _medir_tiempo(
-        clase_agenda, operacion, n, repeticiones)
+        clase_agenda, operacion, n, repeticiones, carga)
     trabajo = _cantidad_trabajo(operacion, n, validacion)
+    if carga == CARGA_T047:
+        medicion = f"agenda_{operacion}"
+        patron = "determinista_t047"
+        extras = {}
+    else:
+        medicion = f"agenda_ciclo001_{operacion}"
+        patron = "ciclo001_cientos_costos_variables_decenas_cazadores"
+        extras = {
+            "tipos": TIPOS_CICLO001,
+            "actores_cazador": CAZADORES_CICLO001,
+            "demoras_costos_salida_variables": True,
+        }
     return {
-        "medicion": f"agenda_{operacion}",
+        "medicion": medicion,
         "alternativa": alternativa,
         "n": n,
         "carga": {
             "eventos_base": n,
             "actores": 32,
             "operaciones": trabajo["operaciones"],
-            "patron": "determinista_t047",
+            "patron": patron,
             "huella_fixture": validacion["huella_fixture"],
+            **extras,
         },
         "semilla": SEMILLA,
         "entorno": _entorno(),
@@ -452,7 +562,7 @@ def _fila(operacion, alternativa, clase_agenda, n, repeticiones, validacion):
         "fixture_fuera": True,
         "validacion": validacion,
         "memoria": _medir_memoria_separada(
-            clase_agenda, operacion, n),
+            clase_agenda, operacion, n, carga),
     }
 
 
@@ -462,11 +572,26 @@ def medir_agenda(repeticiones=9, tamanos=CARGAS_AGENDA):
         raise ValueError("Se requiere al menos una repetición medida.")
     if not tamanos or any(type(n) is not int or n < 32 for n in tamanos):
         raise ValueError("Las cargas de agenda deben ser enteros de al menos 32.")
+    return _mediciones_agenda(repeticiones, tamanos, CARGA_T047)
 
+
+#SOFIA
+def medir_agenda_ciclo(repeticiones=9, tamanos=CARGAS_AGENDA_CICLO):
+    """AC-015 (PR-005): repite las seis operaciones con cientos de eventos,
+    costos variables y cazadores activos, siempre contra la lista lineal local
+    del benchmark y validando equivalencia observable antes de cronometrar."""
+    if repeticiones < 1:
+        raise ValueError("Se requiere al menos una repetición medida.")
+    if not tamanos or any(type(n) is not int or n < 32 for n in tamanos):
+        raise ValueError("Las cargas de agenda deben ser enteros de al menos 32.")
+    return _mediciones_agenda(repeticiones, tamanos, CARGA_CICLO001)
+
+
+def _mediciones_agenda(repeticiones, tamanos, carga):
     filas = []
     for n in tamanos:
         for operacion in OPERACIONES:
-            validacion = _validar_equivalencia(operacion, n)
+            validacion = _validar_equivalencia(operacion, n, carga)
             filas.append(_fila(
                 operacion,
                 ALTERNATIVA_AGENDA,
@@ -474,6 +599,7 @@ def medir_agenda(repeticiones=9, tamanos=CARGAS_AGENDA):
                 n,
                 repeticiones,
                 validacion,
+                carga,
             ))
             filas.append(_fila(
                 operacion,
@@ -482,6 +608,7 @@ def medir_agenda(repeticiones=9, tamanos=CARGAS_AGENDA):
                 n,
                 repeticiones,
                 validacion,
+                carga,
             ))
     return filas
 
@@ -1185,7 +1312,11 @@ def medir_rutas_matriz(repeticiones=9, tamanos=(32, 64)):
 
 
 PROVEEDORES_RUTAS = (medir_rutas_region, medir_rutas_matriz)
-PROVEEDORES = (medir_agenda,) + PROVEEDORES_RUTAS
+#SOFIA
+# T047/AC-015: la carga tipo ciclo entra junto a la agenda aislada; T049 la
+# registrará en main.py --bench por concatenación de alias de módulo.
+PROVEEDORES_AGENDA = (medir_agenda, medir_agenda_ciclo)
+PROVEEDORES = PROVEEDORES_AGENDA + PROVEEDORES_RUTAS
 
 
 if __name__ == "__main__":

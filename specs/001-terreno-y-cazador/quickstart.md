@@ -79,7 +79,31 @@ El archivo conservado contiene **30 filas y 270 muestras** con semilla 2609, un 
 
 Como referencia descriptiva, no decisoria, para 20 cazadores y rango grande las medianas de lote estable fueron 26 813 300 ns (individual), 587 200 ns (compartida recalculada) y 301 700 ns (reutilizada); con cambios frecuentes fueron 18 713 300, 662 300 y 586 800 ns. En AC-012 el recálculo individual mantuvo medianas de 42 900/48 600/139 900 ns (32/128/512 salas; trabajo `F=5, D=5, E=6, P=5, Q=2` constante), mientras la construcción inversa compartida creció 38 500/107 800/417 300 ns al barrer el grafo total. Son cargas sintéticas: no cierran PR-001, no prueban 20 ms oficiales y no autorizan una estrategia productiva.
 
-Validación: **55 pruebas de benchmark/conexión**, **21 pruebas de rutas relacionadas** y **56 restricciones** aprobadas. `PROVEEDORES_RUTAS` conecta correctamente por `benchmarks.integrante3.ejecutar`; no se modificó `main.py` porque el acuerdo vigente de T049 solo cubre el mapa y T048 sigue pendiente.
+Validación: **55 pruebas de benchmark/conexión**, **21 pruebas de rutas relacionadas** y **56 restricciones** aprobadas. `PROVEEDORES_RUTAS` conecta correctamente por `benchmarks.integrante3.ejecutar`; no se modificó `main.py` porque rutas/ciclo siguen reservados a la integración conjunta T049.
+
+### Agenda equivalente y ciclo completo T047/T048
+
+Los productores se ejecutan directamente —todavía no desde `main.py --bench`— con:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q `
+  tests/test_bench_ciclo_real.py `
+  tests/test_bench_agenda_t047.py `
+  tests/test_bench_terreno_cazador.py
+
+.\.venv\Scripts\python.exe benchmarks/benchmark_ciclo_real_integrante1.py `
+  --datos-offline tests/fixtures/api_real `
+  --muestras 3 --calentamiento 1 `
+  --resultados benchmarks/resultados/ciclo_real_criptas_disponibles.json
+```
+
+La ejecución focalizada terminó en **52 passed in 4.45s**, incluida una carga real con catálogo vivo reconectado fuera del intervalo; los seis módulos de benchmark terminaron en **70 passed in 7.58s**. Los artefactos conservados son:
+
+- `agenda_ciclo001_t047_c1_r9_256-512-1024.json`: **36 filas/324 muestras**, seis operaciones, 256/512/1024 eventos, mezcla de eventos del ciclo, 28 destinatarios cazador y demoras variables. En 1024 eventos, resolver empates obtuvo medianas de **15.341 ms** (`AgendaEventos`) y **39.694 ms** (lista lineal). Se conservaron las 24 muestras lineales `>=20 ms`: insertar 256 eventos (6/9), reprogramar 256 (9/9) y resolver 1024 empates (9/9).
+- `ciclo_sintetico_t048_t047_c1_r9_32-64.json`: **32 filas/288 muestras**, 32/64 salas, 1/28 cazadores, rango pequeño/grande y puertas estables/inestables. Todas las muestras fueron ciclos completos; no hubo rechazos, muertes, victorias, terminales, incompletos ni errores.
+- `ciclo_real_criptas_disponibles.json`: cuatro criptas locales reales, **12/12 ciclos completos**, medianas de **0.102 a 0.225 ms** y cero muestras de 20 ms o más. El archivo dice explícitamente `referencia_oficial=pendiente_publicacion_g6` y `afirma_pr001=false`.
+
+La mayor carga sintética fue 64 salas, 28 cazadores, rango grande y puertas estables con recálculo productivo: mediana **20.545 ms**, p95 **36.826 ms** y **7/9** muestras de al menos 20 ms; cada muestra reporta 28 decisiones/notificaciones de enemigo. La variante inestable equivalente conservó otras **2/9** muestras lentas (mediana 17.964 ms, p95 33.234 ms), 24 decisiones/notificaciones y un cierre. En total se conservan las **9 muestras `>=20 ms`** sin reducir trabajo. La alternativa retenida estable dio 3.127 ms de mediana, pero es experimental, incluye creación/consultas/invalidación/limpieza dentro del intervalo y no autoriza un cambio de producción. PR-001/T051 continúan bloqueados hasta publicar la referencia oficial.
 
 ## Oráculos independientes
 
@@ -160,9 +184,9 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Los proveedores de rutas y ciclo de 001 aún requieren integración conjunta, sin reemplazar ni registrar dos veces los existentes.
+`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Los proveedores de rutas, agenda ampliada y ciclo de 001 aún requieren integración conjunta, sin reemplazar ni registrar dos veces los existentes.
 
-El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` todavía necesita un adaptador para aparecer en el informe estándar. La agenda común actual reporta extracción; las otras cinco operaciones exigidas por `PR-005` siguen siendo parte del proveedor de 001.
+El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` publica ahora `PROVEEDORES = (medir_ciclos_sinteticos,)`, pero aún no aparece en el informe estándar. `benchmarks/terreno_cazador_integrante1.py` publica `PROVEEDORES_AGENDA = (medir_agenda, medir_agenda_ciclo)` con las seis operaciones exigidas por PR-005; su registro real sigue pendiente de T049.
 
 ### Rutas
 
@@ -178,7 +202,7 @@ El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchm
 
 ### Ciclo real
 
-Se adapta `benchmarks/benchmark_ciclo_real_integrante1.py`. La carga e inicialización común se hacen antes; el cronómetro incluye acción, agenda, decisiones de cazadores y auxiliares de ruta hasta la próxima decisión. Invalidación/limpieza se incluye solo para variantes experimentales con estado retenido. Sintéticos y referencia oficial se etiquetan por separado.
+`benchmarks/benchmark_ciclo_real_integrante1.py` mide ya una llamada real a `MotorJuego.ejecutar_accion()`: la copia/inicialización queda antes y el cronómetro incluye acción, agenda, decisiones de cazadores y creación, consultas, invalidación y limpieza de auxiliares hasta la próxima decisión. La retención solo existe en el benchmark mediante sustitución temporal restaurada en `finally`; producción conserva recálculo individual. Cargas sintéticas, criptas reales disponibles y referencia oficial pendiente se etiquetan por separado.
 
 ### Agenda
 
@@ -191,7 +215,7 @@ Para `N` de cientos y al menos un tamaño superior:
 5. reprogramar;
 6. resolver empates por tiempo/secuencia.
 
-Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/manual permitida solo en benchmark. Para inserción se incluye construir la agenda vacía; para las demás operaciones la carga común queda fuera, pero las búsquedas, cambios de índices y limpieza propios de la operación quedan dentro. Un ciclo mixto mide la carga de punta a punta.
+Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/manual permitida solo en benchmark. Para inserción se incluye construir la agenda vacía; para las demás operaciones la carga común queda fuera, pero las búsquedas, cambios de índices y limpieza propios de la operación quedan dentro. `medir_agenda_ciclo` repite las seis operaciones con la mezcla `EFECTO/CERRAR_PUERTA/ENEMIGO/JUGADOR_DISPONIBLE/VENCER_EFECTO`, costos variables y cazadores activos.
 
 ### Mapa e índice por ID
 

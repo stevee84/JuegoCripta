@@ -520,3 +520,63 @@ def test_benchmark_rutas_no_impone_umbral_temporal_variable():
     assert all("umbral" not in fila for fila in filas)
     assert all(fila["alcance"] == "sintetico_no_demuestra_pr_001"
                for fila in filas)
+
+
+# T043/AC-015: el esquema debe quedar cubierto en este archivo, además de las
+# pruebas específicas del productor T047.
+def test_ac015_agenda_ciclo001_conserva_filas_equivalentes_y_muestras():
+    from benchmarks.terreno_cazador_integrante1 import (
+        ALTERNATIVA_AGENDA,
+        ALTERNATIVA_LINEAL,
+        OPERACIONES,
+        TIPOS_CICLO001,
+        medir_agenda_ciclo,
+    )
+
+    filas = medir_agenda_ciclo(repeticiones=1, tamanos=(64,))
+    assert len(filas) == len(OPERACIONES) * 2
+    assert {fila["alternativa"] for fila in filas} == {
+        ALTERNATIVA_AGENDA, ALTERNATIVA_LINEAL}
+    for fila in filas:
+        assert fila["medicion"].startswith("agenda_ciclo001_")
+        assert fila["carga"]["tipos"] == TIPOS_CICLO001
+        assert fila["carga"]["actores_cazador"] == 28
+        assert fila["carga"]["demoras_costos_salida_variables"] is True
+        assert fila["validacion"]["equivalencia_observable"] is True
+        assert fila["repeticiones"] == len(fila["muestras"]) == 1
+        assert fila["memoria"]["incluida_en_tiempo"] is False
+
+
+# T043/AC-013: el productor de T048 conserva una fila identificable por ciclo
+# y una muestra completa; las clases de resultado se reportan por separado.
+def test_ac013_esquema_identifica_ciclo_muestra_y_origen_sintetico():
+    from benchmarks.benchmark_ciclo_real_integrante1 import (
+        medir_ciclos_sinteticos,
+    )
+
+    filas = medir_ciclos_sinteticos(repeticiones=1, tamanos=(24,))
+    campos_fila = {
+        "medicion", "alternativa", "n", "escenario", "carga", "semilla",
+        "entorno", "calentamiento", "repeticiones", "unidad", "mediana",
+        "p95", "maximo", "minimo", "muestras", "clasificaciones", "fases",
+        "trabajo", "fixture_fuera", "validacion", "memoria", "origen_carga",
+        "referencia_oficial", "afirma_pr001",
+    }
+    campos_muestra = {
+        "indice", "fase", "escenario", "alternativa", "accion",
+        "duracion_ns", "duracion_ms", "clasificacion", "exito", "mensaje",
+        "reloj_final", "notificaciones", "eventos_enemigo", "eventos_puerta",
+        "huella_intervalo", "trabajo", "fases",
+    }
+    assert len(filas) == 16
+    for fila in filas:
+        assert campos_fila <= fila.keys()
+        assert fila["medicion"] == "ciclo_real_intervalo"
+        assert fila["unidad"] == "ns_por_intervalo"
+        assert fila["origen_carga"] == "sintetico"
+        assert fila["referencia_oficial"] == "pendiente_publicacion_g6"
+        assert fila["afirma_pr001"] is False
+        assert fila["repeticiones"] == len(fila["muestras"]) == 1
+        assert campos_muestra <= fila["muestras"][0].keys()
+        assert fila["clasificaciones"]["completo"] == 1
+        assert sum(fila["clasificaciones"].values()) == 1

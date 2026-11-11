@@ -6,11 +6,15 @@ from benchmarks.terreno_cazador_integrante1 import (
     ALTERNATIVA_AGENDA,
     ALTERNATIVA_LINEAL,
     CARGAS_AGENDA,
+    CARGAS_AGENDA_CICLO,
     OPERACIONES,
     PROVEEDORES,
     PROVEEDORES_RUTAS,
+    TIPOS_CICLO001,
+    _especificaciones_ciclo001_nuevas,
     _validar_equivalencia,
     medir_agenda,
+    medir_agenda_ciclo,
 )
 
 
@@ -90,9 +94,43 @@ def test_cargas_por_defecto_son_cientos_de_eventos_y_varias_cargas():
 
 def test_proveedor_queda_disponible_para_integracion_posterior():
     assert PROVEEDORES[0] is medir_agenda
-    assert PROVEEDORES[1:] == PROVEEDORES_RUTAS
+    assert PROVEEDORES[1] is medir_agenda_ciclo
+    assert PROVEEDORES[2:] == PROVEEDORES_RUTAS
 
 
 def test_no_hay_umbral_temporal_en_el_contrato():
     filas = medir_agenda(repeticiones=1, tamanos=(32,))
     assert all("umbral" not in fila for fila in filas)
+
+
+def test_agenda_ciclo001_repite_seis_operaciones_con_cazadores_y_costos():
+    filas = medir_agenda_ciclo(repeticiones=1, tamanos=(64,))
+
+    assert len(filas) == len(OPERACIONES) * 2
+    assert {fila["medicion"] for fila in filas} == {
+        f"agenda_ciclo001_{operacion}" for operacion in OPERACIONES
+    }
+    assert {fila["alternativa"] for fila in filas} == {
+        ALTERNATIVA_AGENDA, ALTERNATIVA_LINEAL
+    }
+    for fila in filas:
+        assert CAMPOS_FILA <= fila.keys()
+        assert fila["carga"]["tipos"] == TIPOS_CICLO001
+        assert fila["carga"]["actores_cazador"] == 28
+        assert fila["carga"]["demoras_costos_salida_variables"] is True
+        assert fila["validacion"]["equivalencia_observable"] is True
+        assert fila["repeticiones"] == len(fila["muestras"]) == 1
+
+
+def test_cargas_ciclo001_por_defecto_son_cientos_de_eventos():
+    assert CARGAS_AGENDA_CICLO == (256, 512, 1024)
+
+
+def test_eventos_nuevos_ciclo001_asignan_destinatario_segun_tipo():
+    eventos = _especificaciones_ciclo001_nuevas(64, 16)
+    for evento in eventos:
+        if evento.tipo == "ENEMIGO":
+            assert evento.destinatario_id.startswith("cazador-")
+        else:
+            assert evento.tipo == "CERRAR_PUERTA"
+            assert evento.destinatario_id.startswith("puerta-")

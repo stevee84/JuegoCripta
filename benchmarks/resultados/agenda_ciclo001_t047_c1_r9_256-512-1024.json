@@ -1,0 +1,2864 @@
+{
+  "entorno_ejecutor": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "plataforma": "Windows-11-10.0.26200-SP0",
+    "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "reloj": "perf_counter_ns"
+  },
+  "semilla": 2609,
+  "calentamiento": 1,
+  "repeticiones": 9,
+  "tamanos": [
+    256,
+    512,
+    1024
+  ],
+  "alcance": "carga_ciclo001_sintetica_ac015_no_referencia_oficial",
+  "integracion_main_bench": "pendiente_t049_acuerdo_propietario_main",
+  "mediciones": [
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1264300,
+      "p95": 6081000,
+      "maximo": 6081000,
+      "minimo": 1065800,
+      "muestras": [
+        1343900,
+        1264300,
+        1278800,
+        1103100,
+        1065800,
+        1085200,
+        1404500,
+        6081000,
+        1146600
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 320,
+          "huella": "953b59f9e5ef28c3976a34d0a599abd5112a33f8cf6148dcda0141e27b384b21"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 220368,
+        "pico_preparacion": 256694,
+        "final_actual": 273248,
+        "pico_operacion": 273296,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1357700,
+      "p95": 1742100,
+      "maximo": 1742100,
+      "minimo": 1238900,
+      "muestras": [
+        1238900,
+        1290300,
+        1503700,
+        1742100,
+        1350600,
+        1357700,
+        1381600,
+        1349800,
+        1544200
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 320,
+          "huella": "953b59f9e5ef28c3976a34d0a599abd5112a33f8cf6148dcda0141e27b384b21"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 91576,
+        "pico_preparacion": 120448,
+        "final_actual": 92392,
+        "pico_operacion": 92520,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 970500,
+      "p95": 1042100,
+      "maximo": 1042100,
+      "minimo": 826200,
+      "muestras": [
+        965800,
+        1042100,
+        977300,
+        999300,
+        826200,
+        970500,
+        953600,
+        869400,
+        998400
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "274fa2682d86a847c4cbefeac843f1d19ea08facf70e6ef61c917d69d3e772af"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "d00bac6800a3b339dd1c2614d95864d9c84c959a39c8c56707f013922da803dc"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 191440,
+        "pico_preparacion": 241550,
+        "final_actual": 195048,
+        "pico_operacion": 232094,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1013000,
+      "p95": 1229700,
+      "maximo": 1229700,
+      "minimo": 973500,
+      "muestras": [
+        1044900,
+        1009500,
+        988300,
+        1012800,
+        1013000,
+        1229700,
+        1047400,
+        973500,
+        1036600
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "274fa2682d86a847c4cbefeac843f1d19ea08facf70e6ef61c917d69d3e772af"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "d00bac6800a3b339dd1c2614d95864d9c84c959a39c8c56707f013922da803dc"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 65944,
+        "pico_preparacion": 94656,
+        "final_actual": 66792,
+        "pico_operacion": 67116,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 858300,
+      "p95": 1098100,
+      "maximo": 1098100,
+      "minimo": 747500,
+      "muestras": [
+        774000,
+        747500,
+        910000,
+        1098100,
+        939500,
+        786200,
+        775800,
+        878900,
+        858300
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "020f0b7ed7ef77cb1b48b7b1ce603671636280ffc65181fd260c57dc45550811"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "48056998e3229b8aef190ba7e4a39652e23cc77645cddae09a6e417f3d7e99da"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 192016,
+        "pico_preparacion": 242126,
+        "final_actual": 195128,
+        "pico_operacion": 232630,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 266000,
+      "p95": 307200,
+      "maximo": 307200,
+      "minimo": 249400,
+      "muestras": [
+        307200,
+        297000,
+        278900,
+        274800,
+        253300,
+        263700,
+        251400,
+        266000,
+        249400
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 192,
+          "huella": "020f0b7ed7ef77cb1b48b7b1ce603671636280ffc65181fd260c57dc45550811"
+        },
+        "resultado": {
+          "cantidad": 64,
+          "huella": "48056998e3229b8aef190ba7e4a39652e23cc77645cddae09a6e417f3d7e99da"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 66528,
+        "pico_preparacion": 95240,
+        "final_actual": 67096,
+        "pico_operacion": 67264,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 8,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 127900,
+      "p95": 217500,
+      "maximo": 217500,
+      "minimo": 110900,
+      "muestras": [
+        127900,
+        131700,
+        136700,
+        217500,
+        129900,
+        122300,
+        114600,
+        110900,
+        111500
+      ],
+      "trabajo": {
+        "operaciones": 8,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 248,
+          "huella": "7fc54bd20cb3b0dd9facf133997579bb318839cd956720615319bec609939d1f"
+        },
+        "resultado": {
+          "cantidad": 8,
+          "huella": "8bb974cc6ffc85c8fe8d97f4054ed635d1e2b18fb7ccc065c5ec30a9e182f94f"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 191684,
+        "pico_preparacion": 241794,
+        "final_actual": 200420,
+        "pico_operacion": 200652,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 8,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 87100,
+      "p95": 318500,
+      "maximo": 318500,
+      "minimo": 55200,
+      "muestras": [
+        318500,
+        278600,
+        189400,
+        87900,
+        87100,
+        81100,
+        67100,
+        61700,
+        55200
+      ],
+      "trabajo": {
+        "operaciones": 8,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 248,
+          "huella": "7fc54bd20cb3b0dd9facf133997579bb318839cd956720615319bec609939d1f"
+        },
+        "resultado": {
+          "cantidad": 8,
+          "huella": "8bb974cc6ffc85c8fe8d97f4054ed635d1e2b18fb7ccc065c5ec30a9e182f94f"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 66196,
+        "pico_preparacion": 94908,
+        "final_actual": 66484,
+        "pico_operacion": 67052,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2323600,
+      "p95": 2504000,
+      "maximo": 2504000,
+      "minimo": 1994400,
+      "muestras": [
+        1994400,
+        2024900,
+        2405600,
+        2324300,
+        2450400,
+        2504000,
+        2175400,
+        2214900,
+        2323600
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 256,
+          "huella": "e957e937040ac354e8259632d0d26ad5771820aa672682ab389523c36eb6ec7f"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 198800,
+        "pico_preparacion": 243870,
+        "final_actual": 243800,
+        "pico_operacion": 244278,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 64,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1710100,
+      "p95": 1887800,
+      "maximo": 1887800,
+      "minimo": 1501400,
+      "muestras": [
+        1587300,
+        1730400,
+        1710100,
+        1533800,
+        1545500,
+        1501400,
+        1743000,
+        1887800,
+        1780300
+      ],
+      "trabajo": {
+        "operaciones": 64,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "465b0571ae90b6d0b1e92618e9dfa41e91b9026c248785db8d94b2fc32ef6a2e"
+        },
+        "despues": {
+          "eventos": 256,
+          "huella": "e957e937040ac354e8259632d0d26ad5771820aa672682ab389523c36eb6ec7f"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "83ba3b233e0083c01d5e75034da65b283981d221b254b699dd21de49e13660cd"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 70112,
+        "pico_preparacion": 98824,
+        "final_actual": 70768,
+        "pico_operacion": 70936,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "a90d114394c607d5fd19eab2daecc0ba0eb0546319ea03654761f1d923e15b6f",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3177200,
+      "p95": 5219800,
+      "maximo": 5219800,
+      "minimo": 2909800,
+      "muestras": [
+        2995400,
+        3177200,
+        3089100,
+        3214300,
+        3469800,
+        3356800,
+        3065000,
+        5219800,
+        2909800
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "b5890fa91ed178f276e4e995bdca3c0a1d2a6fc7d3c51d67796e275e80256950"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "b5890fa91ed178f276e4e995bdca3c0a1d2a6fc7d3c51d67796e275e80256950"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "a90d114394c607d5fd19eab2daecc0ba0eb0546319ea03654761f1d923e15b6f"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 185328,
+        "pico_preparacion": 235438,
+        "final_actual": 111648,
+        "pico_operacion": 225982,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 256,
+      "carga": {
+        "eventos_base": 256,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "a90d114394c607d5fd19eab2daecc0ba0eb0546319ea03654761f1d923e15b6f",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2314000,
+      "p95": 2777700,
+      "maximo": 2777700,
+      "minimo": 2114600,
+      "muestras": [
+        2595500,
+        2114600,
+        2272600,
+        2777700,
+        2252900,
+        2315000,
+        2295500,
+        2377800,
+        2314000
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 256
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 256,
+          "huella": "b5890fa91ed178f276e4e995bdca3c0a1d2a6fc7d3c51d67796e275e80256950"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "b5890fa91ed178f276e4e995bdca3c0a1d2a6fc7d3c51d67796e275e80256950"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "a90d114394c607d5fd19eab2daecc0ba0eb0546319ea03654761f1d923e15b6f"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 59840,
+        "pico_preparacion": 88552,
+        "final_actual": 60176,
+        "pico_operacion": 61524,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2263100,
+      "p95": 2833500,
+      "maximo": 2833500,
+      "minimo": 2173600,
+      "muestras": [
+        2833500,
+        2620200,
+        2207300,
+        2213100,
+        2186100,
+        2173600,
+        2263100,
+        2718000,
+        2713300
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 640,
+          "huella": "df8717633126b120228ef9be49cfc39f5013835e7bdb3073b4dcf3141d074115"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 440357,
+        "pico_preparacion": 497981,
+        "final_actual": 513453,
+        "pico_operacion": 513533,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 5181800,
+      "p95": 5363900,
+      "maximo": 5363900,
+      "minimo": 4885400,
+      "muestras": [
+        5143800,
+        5234200,
+        5204800,
+        5363900,
+        4885400,
+        5181800,
+        5343900,
+        4964300,
+        4986100
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 640,
+          "huella": "df8717633126b120228ef9be49cfc39f5013835e7bdb3073b4dcf3141d074115"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 192021,
+        "pico_preparacion": 249573,
+        "final_actual": 193349,
+        "pico_operacion": 193477,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 2080400,
+      "p95": 3030300,
+      "maximo": 3030300,
+      "minimo": 1996800,
+      "muestras": [
+        2658600,
+        1996800,
+        3030300,
+        2794900,
+        2063100,
+        2021900,
+        2087100,
+        2028100,
+        2080400
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "4a873760f4afdcd0750e0e3fd3d481700a7c4998d61eab1935703b84e444d20c"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "2a591cb5ee3026f4fb0d2264002b5e492df90be8bb35293f87789038ccb2d8f6"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 383317,
+        "pico_preparacion": 460435,
+        "final_actual": 374717,
+        "pico_operacion": 422499,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4497100,
+      "p95": 4725600,
+      "maximo": 4725600,
+      "minimo": 4438500,
+      "muestras": [
+        4463700,
+        4507600,
+        4438500,
+        4497100,
+        4528900,
+        4725600,
+        4543200,
+        4476100,
+        4455500
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "4a873760f4afdcd0750e0e3fd3d481700a7c4998d61eab1935703b84e444d20c"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "2a591cb5ee3026f4fb0d2264002b5e492df90be8bb35293f87789038ccb2d8f6"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 141061,
+        "pico_preparacion": 198445,
+        "final_actual": 142421,
+        "pico_operacion": 142857,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 1808700,
+      "p95": 2153300,
+      "maximo": 2153300,
+      "minimo": 1687100,
+      "muestras": [
+        1808700,
+        1970900,
+        1797600,
+        1960200,
+        2153300,
+        1745500,
+        1946700,
+        1689000,
+        1687100
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "9976640dd5d2c1f72ffc78ce58c035d9f4f06d9a518557b70093f277b8590427"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "d54c4d7aa356d6beab41518366db920d121abf66b026cc140fe7a27a4b72c3e8"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 384757,
+        "pico_preparacion": 461643,
+        "final_actual": 376221,
+        "pico_operacion": 423971,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 852000,
+      "p95": 993900,
+      "maximo": 993900,
+      "minimo": 812200,
+      "muestras": [
+        859600,
+        840200,
+        846500,
+        993900,
+        871200,
+        852000,
+        812200,
+        823100,
+        917200
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 384,
+          "huella": "9976640dd5d2c1f72ffc78ce58c035d9f4f06d9a518557b70093f277b8590427"
+        },
+        "resultado": {
+          "cantidad": 128,
+          "huella": "d54c4d7aa356d6beab41518366db920d121abf66b026cc140fe7a27a4b72c3e8"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 142181,
+        "pico_preparacion": 199565,
+        "final_actual": 143261,
+        "pico_operacion": 143485,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 14,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 291900,
+      "p95": 561700,
+      "maximo": 561700,
+      "minimo": 236000,
+      "muestras": [
+        243500,
+        374200,
+        540200,
+        291900,
+        266000,
+        561700,
+        284600,
+        236000,
+        372800
+      ],
+      "trabajo": {
+        "operaciones": 14,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 498,
+          "huella": "9f66b8da00972d5227b96e9eb17b9ef581ae77badea9a8e4a2c33c41ce5177b9"
+        },
+        "resultado": {
+          "cantidad": 14,
+          "huella": "16085d58e7b57ef3279609efe302d76c79c8ef0aca282f568161c4426f0f1c09"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 383913,
+        "pico_preparacion": 460799,
+        "final_actual": 397449,
+        "pico_operacion": 397617,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 14,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 169200,
+      "p95": 673200,
+      "maximo": 673200,
+      "minimo": 152000,
+      "muestras": [
+        673200,
+        173300,
+        169200,
+        171000,
+        188000,
+        162500,
+        157700,
+        160600,
+        152000
+      ],
+      "trabajo": {
+        "operaciones": 14,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 498,
+          "huella": "9f66b8da00972d5227b96e9eb17b9ef581ae77badea9a8e4a2c33c41ce5177b9"
+        },
+        "resultado": {
+          "cantidad": 14,
+          "huella": "16085d58e7b57ef3279609efe302d76c79c8ef0aca282f568161c4426f0f1c09"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 141337,
+        "pico_preparacion": 198721,
+        "final_actual": 141721,
+        "pico_operacion": 142225,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4448500,
+      "p95": 5264000,
+      "maximo": 5264000,
+      "minimo": 3930300,
+      "muestras": [
+        4726700,
+        4316000,
+        4673900,
+        5264000,
+        4666700,
+        3998200,
+        4257500,
+        3930300,
+        4448500
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 512,
+          "huella": "781ec1833ddcd5dd224b191aa361b813cab4d9030678eb8b2cfc9d4a552ca1b8"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 397685,
+        "pico_preparacion": 465307,
+        "final_actual": 427133,
+        "pico_operacion": 443251,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 128,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 6425500,
+      "p95": 7145800,
+      "maximo": 7145800,
+      "minimo": 6181100,
+      "muestras": [
+        6181100,
+        6687400,
+        6398100,
+        7145800,
+        6222900,
+        6588000,
+        6425500,
+        6298700,
+        6671100
+      ],
+      "trabajo": {
+        "operaciones": 128,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "4707ab6c6b3263f95223fdd7d24b1e92c599e6f95885d300b0157f1f327ebbbc"
+        },
+        "despues": {
+          "eventos": 512,
+          "huella": "781ec1833ddcd5dd224b191aa361b813cab4d9030678eb8b2cfc9d4a552ca1b8"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "12ebcdffd5eec0addaa76a0990a0334299f39aada018d95a99225b8032fa3b5d"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 149349,
+        "pico_preparacion": 206733,
+        "final_actual": 147669,
+        "pico_operacion": 149629,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 512,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "7e3a9b870569a3a560ef0333410205436593461a387b1a1ca4036469ab8867c0",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 7827700,
+      "p95": 10322900,
+      "maximo": 10322900,
+      "minimo": 6877300,
+      "muestras": [
+        6877300,
+        8319800,
+        7144500,
+        7474000,
+        8246700,
+        7752300,
+        7827700,
+        10322900,
+        8674300
+      ],
+      "trabajo": {
+        "operaciones": 512,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "00249df04426dd5b1e139c200b2fa44943be994d54480df897a430759ad54762"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 512,
+          "huella": "00249df04426dd5b1e139c200b2fa44943be994d54480df897a430759ad54762"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "7e3a9b870569a3a560ef0333410205436593461a387b1a1ca4036469ab8867c0"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 369045,
+        "pico_preparacion": 446163,
+        "final_actual": 202813,
+        "pico_operacion": 408171,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 512,
+      "carga": {
+        "eventos_base": 512,
+        "actores": 32,
+        "operaciones": 512,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "7e3a9b870569a3a560ef0333410205436593461a387b1a1ca4036469ab8867c0",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 10040600,
+      "p95": 10370100,
+      "maximo": 10370100,
+      "minimo": 9642600,
+      "muestras": [
+        10370100,
+        9642600,
+        10202400,
+        10040600,
+        10025600,
+        9851800,
+        9661100,
+        10359700,
+        10280800
+      ],
+      "trabajo": {
+        "operaciones": 512,
+        "eventos_base": 512
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 512,
+          "huella": "00249df04426dd5b1e139c200b2fa44943be994d54480df897a430759ad54762"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 512,
+          "huella": "00249df04426dd5b1e139c200b2fa44943be994d54480df897a430759ad54762"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "7e3a9b870569a3a560ef0333410205436593461a387b1a1ca4036469ab8867c0"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 126789,
+        "pico_preparacion": 184173,
+        "final_actual": 127125,
+        "pico_operacion": 129673,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4955600,
+      "p95": 11665900,
+      "maximo": 11665900,
+      "minimo": 4631700,
+      "muestras": [
+        6016200,
+        4711900,
+        11665900,
+        5858800,
+        6401800,
+        4863300,
+        4631700,
+        4955600,
+        4828000
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 1280,
+          "huella": "a9739b02e97113d3d272a689035cc19854e4b82814c74c64a01dba06ad18961d"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 863890,
+        "pico_preparacion": 998384,
+        "final_actual": 992490,
+        "pico_operacion": 1010696,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_insertar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 20079700,
+      "p95": 21529400,
+      "maximo": 21529400,
+      "minimo": 19366200,
+      "muestras": [
+        20043800,
+        19366200,
+        20161100,
+        19864000,
+        19791200,
+        20747900,
+        20679700,
+        21529400,
+        20079700
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 1280,
+          "huella": "a9739b02e97113d3d272a689035cc19854e4b82814c74c64a01dba06ad18961d"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 393922,
+        "pico_preparacion": 509162,
+        "final_actual": 396466,
+        "pico_operacion": 396594,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4648900,
+      "p95": 14305300,
+      "maximo": 14305300,
+      "minimo": 4262100,
+      "muestras": [
+        4410600,
+        4622700,
+        4961100,
+        5492900,
+        4648900,
+        14305300,
+        4706900,
+        4262100,
+        4360900
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "631cbd2cacbaf0bff75dc7b8e7db223779ff9ecaf1c34d5af77d26ded9908f5f"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "4b6e363274f8a9f186ef3cf1b5eed40169086f2ee326fc6ce413d63f0c20400a"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 771298,
+        "pico_preparacion": 902672,
+        "final_actual": 688298,
+        "pico_operacion": 810544,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 17355000,
+      "p95": 19874800,
+      "maximo": 19874800,
+      "minimo": 16529500,
+      "muestras": [
+        19874800,
+        17138700,
+        17409000,
+        16529500,
+        18462700,
+        17340200,
+        16666100,
+        17794800,
+        17355000
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "631cbd2cacbaf0bff75dc7b8e7db223779ff9ecaf1c34d5af77d26ded9908f5f"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "4b6e363274f8a9f186ef3cf1b5eed40169086f2ee326fc6ce413d63f0c20400a"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 292050,
+        "pico_preparacion": 406778,
+        "final_actual": 294530,
+        "pico_operacion": 294966,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 4609200,
+      "p95": 14332400,
+      "maximo": 14332400,
+      "minimo": 3601400,
+      "muestras": [
+        5524600,
+        4133200,
+        4694500,
+        5584300,
+        4044300,
+        14332400,
+        3755900,
+        3601400,
+        4609200
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "dfcf316f92abfd1f95067370edaedaab3eec79e5f3c085701bffe942b9674135"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "0992f0ceb9e97b69e196eab4808490d91ae0f00f659e1096beb5e73e7b7a7612"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 773442,
+        "pico_preparacion": 904816,
+        "final_actual": 690386,
+        "pico_operacion": 812648,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_id",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 3968700,
+      "p95": 4764800,
+      "maximo": 4764800,
+      "minimo": 3586900,
+      "muestras": [
+        3968700,
+        4569600,
+        4764800,
+        3827900,
+        3734800,
+        3586900,
+        3862900,
+        4180900,
+        4279500
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 768,
+          "huella": "dfcf316f92abfd1f95067370edaedaab3eec79e5f3c085701bffe942b9674135"
+        },
+        "resultado": {
+          "cantidad": 256,
+          "huella": "0992f0ceb9e97b69e196eab4808490d91ae0f00f659e1096beb5e73e7b7a7612"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 294194,
+        "pico_preparacion": 408922,
+        "final_actual": 296394,
+        "pico_operacion": 296618,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 28,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 776000,
+      "p95": 2115500,
+      "maximo": 2115500,
+      "minimo": 552000,
+      "muestras": [
+        602400,
+        776000,
+        702300,
+        552000,
+        854600,
+        950600,
+        2115500,
+        839900,
+        674400
+      ],
+      "trabajo": {
+        "operaciones": 28,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 996,
+          "huella": "46f25179308852333bc1bbdba63e5fc5e96e57c07c668ccd705f42bb4dbe72b2"
+        },
+        "resultado": {
+          "cantidad": 28,
+          "huella": "91ba32478dc58e5fcb15b8abed870ffa906c8be284bb16c179e838929e2ff70b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 771574,
+        "pico_preparacion": 902948,
+        "final_actual": 797294,
+        "pico_operacion": 797606,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_cancelar_actor",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 28,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 466700,
+      "p95": 579000,
+      "maximo": 579000,
+      "minimo": 435800,
+      "muestras": [
+        522500,
+        579000,
+        521500,
+        481000,
+        466700,
+        458900,
+        447900,
+        444100,
+        435800
+      ],
+      "trabajo": {
+        "operaciones": 28,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 996,
+          "huella": "46f25179308852333bc1bbdba63e5fc5e96e57c07c668ccd705f42bb4dbe72b2"
+        },
+        "resultado": {
+          "cantidad": 28,
+          "huella": "91ba32478dc58e5fcb15b8abed870ffa906c8be284bb16c179e838929e2ff70b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 292326,
+        "pico_preparacion": 407054,
+        "final_actual": 292774,
+        "pico_operacion": 293342,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 10086000,
+      "p95": 18041500,
+      "maximo": 18041500,
+      "minimo": 9278500,
+      "muestras": [
+        10400600,
+        18041500,
+        9532000,
+        10086000,
+        9852400,
+        9278500,
+        10289100,
+        9736800,
+        10212900
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 1024,
+          "huella": "ded476e2bbfd35f490bbff0d3d7af127155fd8d18893372c1208e674207ebf04"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 799226,
+        "pico_preparacion": 913954,
+        "final_actual": 796122,
+        "pico_operacion": 845080,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_reprogramar",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 256,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 24937600,
+      "p95": 25266800,
+      "maximo": 25266800,
+      "minimo": 24145900,
+      "muestras": [
+        25266800,
+        25048700,
+        24773300,
+        25051200,
+        25263200,
+        24145900,
+        24588400,
+        24937600,
+        24388600
+      ],
+      "trabajo": {
+        "operaciones": 256,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "3a33b2c65040146089e31968eb1ac7e2a6c49af05c48190bda41b2f6ba294b2e"
+        },
+        "despues": {
+          "eventos": 1024,
+          "huella": "ded476e2bbfd35f490bbff0d3d7af127155fd8d18893372c1208e674207ebf04"
+        },
+        "resultado": {
+          "cantidad": 0,
+          "huella": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": null,
+        "secuencia_nueva_reprogramar": true,
+        "huella_fixture": "329f281cef65bb1d36039d06c57ed3512c81d6c6954ed739a2468e50cf535e10"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 308530,
+        "pico_preparacion": 423258,
+        "final_actual": 302882,
+        "pico_operacion": 308802,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "agenda_eventos_indices_avl_monticulo",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 1024,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "acd061be643d05a29e9016d2978c2032539139cfb31ac70cc11988f241f2f9de",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 15341200,
+      "p95": 16388000,
+      "maximo": 16388000,
+      "minimo": 14744500,
+      "muestras": [
+        15341200,
+        15076000,
+        15639700,
+        15818100,
+        14856900,
+        15623100,
+        14959900,
+        16388000,
+        14744500
+      ],
+      "trabajo": {
+        "operaciones": 1024,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "c1cf58f2787de8a6e9a37843a97e4ae184f91e4ac641ef686dc94a76d56d4799"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 1024,
+          "huella": "c1cf58f2787de8a6e9a37843a97e4ae184f91e4ac641ef686dc94a76d56d4799"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "acd061be643d05a29e9016d2978c2032539139cfb31ac70cc11988f241f2f9de"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 740642,
+        "pico_preparacion": 872016,
+        "final_actual": 443170,
+        "pico_operacion": 779888,
+        "incluida_en_tiempo": false
+      }
+    },
+    {
+      "medicion": "agenda_ciclo001_resolver_empates",
+      "alternativa": "lista_lineal_manual_benchmark",
+      "n": 1024,
+      "carga": {
+        "eventos_base": 1024,
+        "actores": 32,
+        "operaciones": 1024,
+        "patron": "ciclo001_cientos_costos_variables_decenas_cazadores",
+        "huella_fixture": "acd061be643d05a29e9016d2978c2032539139cfb31ac70cc11988f241f2f9de",
+        "tipos": [
+          "ENEMIGO",
+          "JUGADOR_DISPONIBLE",
+          "CERRAR_PUERTA",
+          "EFECTO",
+          "VENCER_EFECTO"
+        ],
+        "actores_cazador": 28,
+        "demoras_costos_salida_variables": true
+      },
+      "semilla": 2609,
+      "entorno": {
+        "python": "3.12.10",
+        "plataforma": "Windows-11-10.0.26200-SP0",
+        "procesador": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "reloj": "perf_counter_ns"
+      },
+      "calentamiento": 1,
+      "repeticiones": 9,
+      "unidad": "ns_por_lote",
+      "mediana": 39693900,
+      "p95": 40704300,
+      "maximo": 40704300,
+      "minimo": 39455200,
+      "muestras": [
+        40704300,
+        39475700,
+        40020400,
+        39951700,
+        40034700,
+        39677500,
+        39535800,
+        39693900,
+        39455200
+      ],
+      "trabajo": {
+        "operaciones": 1024,
+        "eventos_base": 1024
+      },
+      "fixture_fuera": true,
+      "validacion": {
+        "equivalencia_observable": true,
+        "antes": {
+          "eventos": 1024,
+          "huella": "c1cf58f2787de8a6e9a37843a97e4ae184f91e4ac641ef686dc94a76d56d4799"
+        },
+        "despues": {
+          "eventos": 0,
+          "huella": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "resultado": {
+          "cantidad": 1024,
+          "huella": "c1cf58f2787de8a6e9a37843a97e4ae184f91e4ac641ef686dc94a76d56d4799"
+        },
+        "tiempos_y_secuencias": true,
+        "orden_empates": true,
+        "secuencia_nueva_reprogramar": null,
+        "huella_fixture": "acd061be643d05a29e9016d2978c2032539139cfb31ac70cc11988f241f2f9de"
+      },
+      "memoria": {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": 261394,
+        "pico_preparacion": 376122,
+        "final_actual": 261730,
+        "pico_operacion": 266358,
+        "incluida_en_tiempo": false
+      }
+    }
+  ]
+}
