@@ -138,8 +138,12 @@ def main() -> None:
         # T049 de 001: el índice de MapaCripta se mide desde aquí. Un benchmark que
         # ningún punto de entrada ejecuta no cuenta como evidencia (Principio IX).
         from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as PROVEEDORES_MAPA
+        # Spec 004 (T046): línea de tiempo, retroceso, replay e inventario.
+        import benchmarks.linea_tiempo as bench_linea
+        bench_linea.K_CONFIGURADO = getattr(config, "checkpoint_cada", None)
         from benchmarks.integrante3 import ejecutar
-        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES + PROVEEDORES_MAPA), ensure_ascii=False, indent=2))
+        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES + PROVEEDORES_MAPA
+                                  + bench_linea.PROVEEDORES), ensure_ascii=False, indent=2))
         return
 
     fuente = _crear_fuente(config)

@@ -115,11 +115,12 @@ def test_bench_desde_main_no_inicializa_fuente_ni_vista(monkeypatch, capsys):
     from benchmarks.integrante2 import PROVEEDORES
     from benchmarks.bench_ampliado import PROVEEDORES as ADICIONALES
     from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as MAPA
-    # Una sola vía de registro: originales + complementarios + el mapa de 001 (T049),
-    # sin el agregador `adicionales`.
+    from benchmarks.linea_tiempo import PROVEEDORES as LINEA
+    # Una sola vía de registro: originales + complementarios + el mapa de 001 (T049)
+    # + la línea de tiempo de 004 (T046), sin el agregador `adicionales`.
     assert json.loads(capsys.readouterr().out) == {
         "prueba_modo": True,
-        "proveedores": len(PROVEEDORES) + len(ADICIONALES) + len(MAPA)}
+        "proveedores": len(PROVEEDORES) + len(ADICIONALES) + len(MAPA) + len(LINEA)}
 
 
 def test_pergamino_por_controlador_delega_una_vez_al_motor_sin_tiempo(tmp_path, monkeypatch):

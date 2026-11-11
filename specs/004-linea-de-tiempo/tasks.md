@@ -29,7 +29,7 @@ métodos nuevos, sin cambiar firmas existentes (constitución VIII).
 estado exacto.
 
 - [X] T001 Medir en `benchmarks/linea_tiempo.py` (archivo nuevo), para K = 10, 50 y 200, el costo de deshacer K transacciones reales anotando inversos y de rehacerlas, sobre el estado de la cripta offline más grande disponible, con calentamiento y repeticiones; medir también, como alternativa descartada, `copy.deepcopy` del estado con esas transacciones. Comprobar que después de rehacer el estado es idéntico al de antes. Anotar el resultado en `specs/004-linea-de-tiempo/research.md` (R3). Si no cabe en el presupuesto, se corrige primero el plan en un commit separado (§2.6) (FR-005, FR-018, SC-001). **Hecho el 2026-11-07**: rehacer se estimó con el costo de deshacer porque los inversos llegan con T004; la comprobación exacta de rehacer pasa a T003 (ver research R3)
-- [ ] T002 Crear en `benchmarks/linea_tiempo.py` un generador de partidas largas determinista por semilla: cripta sintética con todo el contenido cargado y una secuencia de N acciones válidas (mover, esperar, atacar) ejecutadas con el motor existente, sin red. Lo usan las pruebas y `--bench` (FR-024, constitución IX)
+- [X] T002 Crear en `benchmarks/linea_tiempo.py` un generador de partidas largas determinista por semilla: cripta sintética con todo el contenido cargado y una secuencia de N acciones válidas (mover, esperar, atacar) ejecutadas con el motor existente, sin red. Lo usan las pruebas y `--bench` (FR-024, constitución IX)
 
 ---
 
@@ -152,12 +152,12 @@ partida original.
 
 ## Fase 11: Mediciones (`--bench`)
 
-- [ ] T041 [P] En `benchmarks/linea_tiempo.py`, medir tiempo de consulta (peor caso y promedio), memoria retenida por la línea con `tracemalloc` y el costo de la acción que crea un punto de control frente al límite de 20 ms por ciclo (riesgo de T001), con 5 000 acciones, para K = 10, 50 y 200 y sin puntos de control; y memoria con 2 500 frente a 5 000 acciones (FR-024, SC-001, SC-004, SC-005)
-- [ ] T042 [P] En `benchmarks/linea_tiempo.py`, medir reconstrucción hacia atrás frente a hacia adelante re-simulando, sobre la cripta sintética de T002 con todo el contenido cargado. La variante hacia adelante restaura el estado del azar desde el punto de control y comprueba que la re-simulación produce exactamente el mismo estado (FR-020, FR-024, research R1)
-- [ ] T043 [P] En `benchmarks/linea_tiempo.py`, medir un retroceso con pergamino de punta a punta (reloj, agenda, rastro, puertas, trampas, inventario) frente a restaurar una copia completa del estado, con la carga de la Parte II (FR-025)
-- [ ] T044 [P] En `benchmarks/linea_tiempo.py`, medir una reproducción completa de `partida.log` y el rechazo de un log con versión incompatible (FR-026)
-- [ ] T045 [P] En `benchmarks/linea_tiempo.py`, medir la vista ordenada del inventario por peso, valor y nombre, comprobando que el orden real no cambia, y el rechazo de recoger con el inventario lleno (FR-027)
-- [ ] T046 Conectar `benchmarks/linea_tiempo.py` como proveedor de `main.py --bench`, y escribir `tests/test_bench_linea_tiempo.py` que comprueba que la salida de `--bench` incluye cada medición de T041 a T045 (constitución IX)
+- [X] T041 [P] En `benchmarks/linea_tiempo.py`, medir tiempo de consulta (peor caso y promedio), memoria retenida por la línea con `tracemalloc` y el costo de la acción que crea un punto de control frente al límite de 20 ms por ciclo (riesgo de T001), con 5 000 acciones, para K = 10, 50 y 200 y sin puntos de control; y memoria con 2 500 frente a 5 000 acciones (FR-024, SC-001, SC-004, SC-005)
+- [X] T042 [P] En `benchmarks/linea_tiempo.py`, medir reconstrucción hacia atrás frente a hacia adelante re-simulando, sobre la cripta sintética de T002 con todo el contenido cargado. La variante hacia adelante restaura el estado del azar desde el punto de control y comprueba que la re-simulación produce exactamente el mismo estado (FR-020, FR-024, research R1)
+- [X] T043 [P] En `benchmarks/linea_tiempo.py`, medir un retroceso con pergamino de punta a punta (reloj, agenda, rastro, puertas, trampas, inventario) frente a restaurar una copia completa del estado, con la carga de la Parte II (FR-025)
+- [X] T044 [P] En `benchmarks/linea_tiempo.py`, medir una reproducción completa de `partida.log` y el rechazo de un log con versión incompatible (FR-026)
+- [X] T045 [P] En `benchmarks/linea_tiempo.py`, medir la vista ordenada del inventario por peso, valor y nombre, comprobando que el orden real no cambia, y el rechazo de recoger con el inventario lleno (FR-027)
+- [X] T046 Conectar `benchmarks/linea_tiempo.py` como proveedor de `main.py --bench`, y escribir `tests/test_bench_linea_tiempo.py` que comprueba que la salida de `--bench` incluye cada medición de T041 a T045 (constitución IX)
 
 ---
 
