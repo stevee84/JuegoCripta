@@ -155,7 +155,11 @@ def main() -> None:
         servicio.conectar_inicializador(InicializadorPartida())
         replay.conectar_servicio(servicio)
         try:
-            replay.reproducir(config.replay)
+            hasta = getattr(config, "hasta", None)
+            if hasta is None:
+                replay.reproducir(config.replay)
+            else:  # --hasta (spec 004, FR-009): imprime el resumen sin instanciar la vista
+                print("\n".join(replay.reproducir(config.replay, hasta=hasta)))
         except FileNotFoundError:
             print(f"Error: no existe el archivo de replay {config.replay}.")
             raise SystemExit(1) from None

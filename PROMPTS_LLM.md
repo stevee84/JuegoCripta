@@ -2785,6 +2785,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 39 | Implementación de la Fase 3 (T012 a T017): historia <t> en la consola | 09/11/2026 |
 | 40 | Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino | 09/11/2026 |
 | 41 | `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d) | 09/11/2026 |
+| 42 | Implementación de la Fase 6 (T025 a T028): `--replay --hasta` | 10/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3040,6 +3041,18 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** Informe sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`, sin modificar archivos de Sofía ni hacer merge de su rama (los archivos se leyeron con `git show`). Resultado: 0 críticos, 2 altos, 3 medios y 2 bajos. Cobertura: los 18 FR y 6 PR tienen tareas, y los 7 casos de terreno y cazador del Apéndice B (AC-B01 a AC-B07) son escenarios con tareas y pruebas previstas. No se encontraron dependencias prohibidas ni nombres de estructuras en `spec.md`. Los altos: (1) no está definido qué pasa si una salida declara `costo` en un sentido y lo omite en el otro (FR-002 lo trata como contradicción y rechazaría la cripta), y los fixtures actuales no traen costos para comprobarlo; (2) la condición de `deshacer_mientras` ahora recibe `(estado, cambio)` desde `5b67c08`, y el contrato de 001 la describe con la semántica anterior.
 
 **Qué hubo que corregir.** El script `check-prerequisites.ps1` apunta a la spec activa de Joshua (004), así que el análisis se hizo sobre la copia extraída de la 001 en lugar de usar las rutas del script; queda anotado para que el hallazgo no se confunda con un análisis de la 004.
+
+## Prompt 42 — Implementación de la Fase 6 (T025 a T028): `--replay --hasta`
+
+> **Prompt**
+>
+> revisa si ya quedo todo, si es asi, sigamos con nuestro trabajo, cuanto tenemos avanzado en %?
+
+(Continuación de `/speckit-implement`, Fase 6 de `specs/004-linea-de-tiempo/tasks.md`, después de integrar `origin/Sofia` con terreno, cazadores y guardado v10 de costo y rango.)
+
+**Qué se obtuvo.** `--hasta T` en `configuracion.py` (solo junto con `--replay`, entero ≥ 0; si no, error antes de reproducir). `EjecutorReplay.reproducir(ruta, hasta=None)` se detiene cuando el reloj llega a T y devuelve las líneas de `historia T`; si T es posterior al final, el estado final y «La partida terminó en t=…, antes del instante pedido (…).». Sin `--hasta` devuelve None y se comporta como en la Parte I. `main.py` imprime el resumen sin instanciar la vista. Pruebas en `tests/test_controller/test_replay_hasta.py` (6): mismo texto que `historia t` en la partida original, t posterior al final (Apéndice B), sin `--hasta`, versión incompatible, validación de la bandera y un proceso aparte que comprueba que no se cargan las vistas. Suite: 1316 aprobadas.
+
+**Qué hubo que corregir.** (1) Al insertar el código se coló un salto de línea real dentro de un `print` de `main.py`; lo atrapó la prueba del proceso aparte. (2) Una prueba existente reemplaza `reproducir` por una función que no acepta `hasta`; `main.py` ahora solo pasa `hasta` cuando la bandera se usa, así la llamada de la Parte I no cambia. (3) `tests/test_configuracion.py` (mayormente de Steven) compara la lista exacta de argumentos por defecto; se agregó `hasta=None`, igual que se hizo al incorporar `--verificar` y `--forzar`.
 
 # Steven Moya Porras — Parte II
 

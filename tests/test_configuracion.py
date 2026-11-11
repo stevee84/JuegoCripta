@@ -8,7 +8,8 @@ from configuracion import Configuracion, parsear_argumentos
 
 def argumentos(cache_size=25):
     return Namespace(offline=False, cache_size=cache_size, replay=None, bench=False, vista="pygame",
-                     semilla=None, demo=False, log_nivel="WARNING", verificar=None, forzar=False)
+                     semilla=None, demo=False, log_nivel="WARNING", verificar=None, forzar=False,
+                     hasta=None)
 
 
 def test_argumentos_predeterminados_y_rutas_se_conservan(monkeypatch):

@@ -103,10 +103,10 @@ con los estados observados.
 **Prueba independiente**: con un `partida.log` conocido, el resumen coincide con `historia t` en la
 partida original.
 
-- [ ] T025 [P] [US4] Escribir `tests/test_controller/test_replay_hasta.py`: el resumen del replay es idéntico, línea por línea, al de `historia t`; con t posterior al final imprime el estado final y el aviso «terminó antes»; sin `--hasta` el replay es el de la Parte I; un log con versión incompatible se rechaza igual que antes; no se instancia la vista (US4-1 a US4-4; **Apéndice B: --replay --hasta más allá del final**) (FR-009, FR-010, FR-011)
-- [ ] T026 [US4] Agregar la bandera `--hasta t` en `configuracion.py`: entero ≥ 0 y solo junto con `--replay`; si no, error antes de reproducir. Prueba en `tests/test_configuracion.py` (FR-009)
-- [ ] T027 [US4] Agregar el parámetro `hasta` a `EjecutorReplay.reproducir` en `controller/ejecutor_replay.py`: reproducir con la línea vinculada y detenerse antes de la primera acción cuyo instante de decisión sea > t; luego consultar t en la línea o, si t supera el final, imprimir el estado final y el aviso (FR-009, FR-010, FR-011)
-- [ ] T028 [US4] En `main.py`, pasar `--hasta` al replay e imprimir el resumen sin instanciar la vista (FR-009, constitución IV)
+- [X] T025 [P] [US4] Escribir `tests/test_controller/test_replay_hasta.py`: el resumen del replay es idéntico, línea por línea, al de `historia t`; con t posterior al final imprime el estado final y el aviso «terminó antes»; sin `--hasta` el replay es el de la Parte I; un log con versión incompatible se rechaza igual que antes; no se instancia la vista (US4-1 a US4-4; **Apéndice B: --replay --hasta más allá del final**) (FR-009, FR-010, FR-011)
+- [X] T026 [US4] Agregar la bandera `--hasta t` en `configuracion.py`: entero ≥ 0 y solo junto con `--replay`; si no, error antes de reproducir. Prueba en `tests/test_configuracion.py` (FR-009)
+- [X] T027 [US4] Agregar el parámetro `hasta` a `EjecutorReplay.reproducir` en `controller/ejecutor_replay.py`: reproducir con la línea vinculada y detenerse antes de la primera acción cuyo instante de decisión sea > t; luego consultar t en la línea o, si t supera el final, imprimir el estado final y el aviso (FR-009, FR-010, FR-011)
+- [X] T028 [US4] En `main.py`, pasar `--hasta` al replay e imprimir el resumen sin instanciar la vista (FR-009, constitución IV)
 
 ---
 
