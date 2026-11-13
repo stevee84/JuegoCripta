@@ -1,0 +1,17 @@
+{
+ "pagina": 1, "total_paginas": 1,
+ "salas": [
+  { "id": 1, "nombre": "Bifurcacion", "salidas": {
+      "N": { "sala": 2, "costo": 100 },
+      "S": { "sala": 3, "costo": 100 } } },
+  { "id": 2, "nombre": "Ramal norte", "salidas": {
+      "S": { "sala": 1, "costo": 100 },
+      "E": { "sala": 4, "costo": 100 } } },
+  { "id": 3, "nombre": "Ramal sur", "salidas": {
+      "N": { "sala": 1, "costo": 100 },
+      "E": { "sala": 4, "costo": 100 } } },
+  { "id": 4, "nombre": "Confluencia", "salidas": {
+      "O": { "sala": 2, "costo": 100 },
+      "SO": { "sala": 3, "costo": 100 } } }
+ ]
+}

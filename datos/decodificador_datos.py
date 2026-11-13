@@ -126,6 +126,9 @@ class DecodificadorDatos:
         # nombres internos ``id_sala``/``puertas``. Ambos conservan IDs int.
         id_sala = datos["id"] if "id" in datos else datos["id_sala"]
         sala = Sala(id_sala)
+        # P2 §3.3: una sala explorada conoce su nombre. Se adjunta aquí, sin tocar el DTO
+        # compartido, porque es dato del esqueleto y esta capa es la que lo decodifica.
+        sala.nombre = datos.get("nombre")
 
         puertas = datos.get("puertas", [])
         _DIR_CORTA = {"N": "NORTE", "S": "SUR", "E": "ESTE", "O": "OESTE"}

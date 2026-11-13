@@ -1,0 +1,7 @@
+{ "contenido": [
+  { "sala": 1, "enemigos": [], "objetos": ["itm_antorcha", "itm_llave_negra"], "trampas": [] },
+  { "sala": 2, "enemigos": [], "objetos": [], "trampas": [] },
+  { "sala": 3, "enemigos": [], "objetos": ["itm_llave_bronce"], "trampas": [] },
+  { "sala": 4, "enemigos": [{"instancia": "e-401", "tipo": "ent_rata_gigante", "vida": 12}], "objetos": [], "trampas": [] },
+  { "sala": 5, "enemigos": [], "objetos": [], "trampas": [] },
+  { "sala": 6, "enemigos": [], "objetos": [], "trampas": [] } ] }
