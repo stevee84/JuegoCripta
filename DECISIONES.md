@@ -445,3 +445,140 @@ observación no demuestra por qué apareció y no autoriza a borrar el dato orig
 **Trazabilidad**: `logica/mapa_cripta.py`; `estructuras/tabla_hash.py`;
 `benchmarks/mapa_cripta_integrante1.py`; `tests/test_bench_mapa_cripta.py`;
 `specs/001-terreno-y-cazador/tasks.md` (T007–T009, T049–T050, T071–T076).
+
+---
+
+## 5.3 El mapa conocido
+
+**Especificación**: [specs/003-niebla-y-ir-a/spec.md](specs/003-niebla-y-ir-a/spec.md) ·
+**Plan**: [specs/003-niebla-y-ir-a/plan.md](specs/003-niebla-y-ir-a/plan.md) ·
+**Alternativas**: [specs/003-niebla-y-ir-a/research.md](specs/003-niebla-y-ir-a/research.md)
+
+**¿Coincide con el plan original?** Sí en lo esencial: las dos ideas del plan —no almacenar lo
+desconocido y reutilizar el buscador de 001 con otra vista— se implementaron tal cual. Lo que el
+plan no previó fue el choque con la línea de tiempo, descrito en *Límites conocidos*.
+
+### 1. Problema
+
+El jugador deja de ver la cripta entera y pasa a conocer solo lo que descubrió. Hay que mantener,
+por cada sala, uno de tres estados desde su punto de vista, y recordar el estado de cada puerta
+tal como la observó la última vez, aunque haya cambiado después.
+
+§5.3 fija tres exigencias que tiran en direcciones distintas:
+
+- **Consultar** si una sala está explorada, avistada o desconocida, y el estado recordado de una
+  puerta, son operaciones muy frecuentes: ocurren en cada dibujo de la vista, en cada paso de
+  «ir a» y en cada actualización por antorcha.
+- **Explorar** salas nuevas debe costar en proporción a las salas reveladas, no al tamaño del
+  mapa conocido.
+- **Registrar y deshacer** un cambio debe ser barato, porque el mapa se revierte con el pergamino
+  y se reconstruye en la línea de tiempo.
+
+Y una cuarta, de §3.4: calcular un paso del viaje por debajo de 5 ms.
+
+### 2. Alternativas consideradas
+
+**Marcar el estado en cada sala del mapa real.** Mezcla el conocimiento del jugador con el
+esqueleto, que §3.3 separa expresamente, y deja a la línea de tiempo sin forma de reconstruir el
+conocimiento de un instante pasado sin tocar el mapa.
+
+**Una lista de salas exploradas.** Consultar pasaría a recorrer la lista, justo lo que §5.3
+señala como operación frecuente y lo que el Principio II prohíbe. Se midió: ver más abajo.
+
+**Guardar también las desconocidas, con su estado.** Hace que explorar y consultar dependan del
+tamaño del mapa completo en vez de lo descubierto, y rompe la proporcionalidad.
+
+**Una copia del mapa recortada al conocimiento.** Habría que rehacerla en cada revelación y
+copiarla entera para el retroceso, que es lo que el Principio VII prohíbe.
+
+**Un buscador de caminos propio para «ir a».** §5.3 pide justificar si se comparte implementación
+con la búsqueda del cazador: **se comparte**. El buscador de 001 ya minimiza la suma de costos y
+desempata por la vecina de menor id, que es exactamente lo que §3.4 pide. Lo que se separa es el
+**dato**, no el algoritmo.
+
+### 3. Decisión
+
+**Lo desconocido no se almacena.** Tres tablas hash propias indexadas por id: salas exploradas,
+salas avistadas y puertas observadas. Una sala desconocida simplemente no está en ninguna.
+
+De ahí salen las tres exigencias de §5.3 sin trucos: consultar es una búsqueda por id; revelar
+`k` salas son `k` inserciones, independientemente de cuántas haya ya; y cada revelación es un
+hecho pequeño e independiente, así que deshacerla es quitar esos hechos y nada más.
+
+Para el viaje se construye una **vista** con la misma interfaz que ya consume el buscador de 001
+—`contiene_sala` y `salidas_transitables`— pero que responde solo con lo que el jugador sabe:
+`contiene_sala` solo por salas exploradas, y `salidas_transitables` solo por salidas que el mapa
+**recuerda** abiertas hacia salas exploradas.
+
+La separación la garantiza la vista y no la disciplina de quien la use: el buscador **no recibe
+el mapa real**, así que no puede observar lo que el jugador no sabe aunque el código cambiara.
+
+### 4. Análisis de complejidad
+
+Con `V` salas conocidas y `E` salidas conocidas:
+
+- Consultar el estado de una sala o de una puerta: **O(1)** promedio.
+- Entrar a una sala y revelar sus vecinas: **O(salidas de esa sala)**, no O(V).
+- Registrar o deshacer una revelación: **O(1)** por hecho revelado.
+- Un paso del viaje: lo que cueste el buscador de 001 sobre el subgrafo conocido.
+
+### 5. Evidencia empírica
+
+Consultar el estado de una sala, mediana de 5 repeticiones, sobre mallas deterministas por
+semilla:
+
+| SALAS | TABLA PROPIA | RECORRIENDO EL MAPA | VECES |
+|---|---|---|---|
+| 100 | 612 ns | 2 502 ns | 4× |
+| 400 | 628 ns | 9 181 ns | 15× |
+| 900 | 687 ns | 19 220 ns | 28× |
+| 1 600 | 671 ns | 34 189 ns | **51×** |
+
+La tabla propia se mantiene plana —de 612 a 671 ns entre 100 y 1 600 salas— mientras recorrer
+crece de forma lineal. Eso es `SC-002`.
+
+Explorar una sala, con mapas conocidos de distinto tamaño:
+
+| SALAS YA CONOCIDAS | POR REVELACIÓN |
+|---|---|
+| 100 | 14,9 µs |
+| 400 | 20,5 µs |
+| 900 | 20,1 µs |
+| 1 600 | 20,5 µs |
+
+Se estabiliza: revelar cuesta lo mismo sobre un mapa de 400 que sobre uno de 1 600. Eso es
+`SC-003`.
+
+Un paso de «ir a», contra el límite de 5 ms de §6.1:
+
+| SALAS | MEDIANA | LÍMITE |
+|---|---|---|
+| 9 | 0,242 ms | 5 ms |
+| 25 | 0,876 ms | 5 ms |
+| 49 | 1,971 ms | 5 ms |
+| 64 | 2,497 ms | 5 ms |
+
+Las criptas publicadas tienen entre 6 y 50 salas, así que el caso real queda en unos 2 ms, con
+algo más del doble de margen.
+
+### 6. Límites conocidos
+
+- **El paso de «ir a» se pasa de 5 ms en criptas mucho mayores que las publicadas.** Con 100
+  salas conocidas son 4,3 ms y con 1 600 son 89,9 ms. No se optimizó porque las criptas
+  publicadas llegan a 50 y §6.1 admite ajustar los valores cuando se publique la cripta de
+  referencia. Si esa cripta resultara mucho mayor, el camino sería reutilizar el cálculo entre
+  pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
+  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—, no cambiar la
+  estructura.
+- **El conocimiento todavía no se revierte ni se guarda.** `FR-022` está sin implementar: el
+  mecanismo de rehacer de la línea de tiempo (§5.5) solo sabe restaurar atributos, listas y
+  diccionarios, y el conocimiento vive en tablas propias que se modifican en su sitio, como exige
+  §6.2. Hace falta que esa capacidad ofrezca una forma de volver a aplicar un cambio; está
+  planteado al grupo. Mientras tanto el conocimiento avanza pero no retrocede.
+- **Las mediciones usan mallas regulares.** Validan el crecimiento, no cualquier topología.
+- Las mediciones son de un solo equipo y no caracterizan otras máquinas.
+
+**Trazabilidad**: `logica/mapa_conocido.py`; `logica/viaje.py`;
+`logica/rutas_ponderadas.py` (buscador de 001, no se modifica);
+`benchmarks/integrante2.py` (`medir_mapa_conocido`, `medir_paso_ir_a`);
+`tests/test_logica/test_mapa_conocido.py`; `tests/test_logica/test_viaje.py`.

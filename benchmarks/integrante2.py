@@ -598,6 +598,103 @@ def medir_resolubilidad_cripta_real(repeticiones, tamanos):
     return filas
 
 
+
+
+# ── Mapa conocido y «ir a» (§5.3, §6.1, §6.3) ────────────────────────────────
+
+def _cripta_malla(lado, semilla=0):
+    """Malla de `lado`×`lado` salas, determinista por semilla (§6.3).
+
+    Se elige una malla y no una cadena porque el mapa conocido se consulta sobre salas con
+    varias salidas, que es la carga real: cada sala tiene hasta cuatro vecinas.
+    """
+    import random
+
+    azar = random.Random(semilla)
+    decodificador, mapa = DecodificadorDatos(), MapaCripta()
+    registros = []
+    for fila in range(lado):
+        for columna in range(lado):
+            id_sala = fila * lado + columna + 1
+            salidas = {}
+            if columna + 1 < lado:
+                salidas["E"] = {"sala": id_sala + 1, "costo": azar.choice((100, 150, 250))}
+            if columna > 0:
+                salidas["O"] = {"sala": id_sala - 1, "costo": azar.choice((100, 150, 250))}
+            if fila + 1 < lado:
+                salidas["S"] = {"sala": id_sala + lado, "costo": azar.choice((100, 150, 250))}
+            if fila > 0:
+                salidas["N"] = {"sala": id_sala - lado, "costo": azar.choice((100, 150, 250))}
+            registros.append({"id": id_sala, "nombre": f"S{id_sala}", "salidas": salidas})
+    for registro in registros:
+        mapa.agregar_sala(decodificador.convertir_sala(registro))
+    mapa.vincular_salidas()
+    return mapa, lado * lado
+
+
+def _conocido_completo(mapa):
+    from logica.mapa_conocido import MapaConocido
+
+    conocido = MapaConocido()
+    for sala in mapa.obtener_salas():
+        conocido.explorar(sala)
+    return conocido
+
+
+def _estado_recorriendo(mapa, id_sala):
+    """Alternativa descartada: responder el estado de una sala recorriendo el mapa.
+
+    Es lo que haría una lista de salas exploradas, y lo que §5.3 señala como inaceptable
+    porque la consulta ocurre en cada dibujo de la vista y en cada paso del viaje.
+    """
+    for sala in mapa.obtener_salas():
+        if sala.id_sala == id_sala:
+            return True
+    return False
+
+
+def medir_mapa_conocido(repeticiones, tamanos):
+    """§5.3: consultar el estado y explorar, contra recorrer el mapa."""
+    filas = []
+    for n in tamanos:
+        lado = max(3, int(n ** 0.5))
+        mapa, salas = _cripta_malla(lado)
+        conocido = _conocido_completo(mapa)
+        ids = [s.id_sala for s in mapa.obtener_salas()]
+        filas.append(medir(
+            "mapa_conocido_estado_sala", salas, repeticiones,
+            lambda c=conocido, i=ids: (lambda: [c.esta_explorada(x) for x in i]),
+            estructura="tabla_hash_propia", consultas_por_lote=salas))
+        filas.append(medir(
+            "mapa_conocido_estado_recorriendo_alternativa", salas, repeticiones,
+            lambda m=mapa, i=ids: (lambda: [_estado_recorriendo(m, x) for x in i]),
+            estructura="recorrido_del_mapa", consultas_por_lote=salas))
+        filas.append(medir(
+            "mapa_conocido_explorar_una_sala", salas, repeticiones,
+            lambda m=mapa, s=salas: (
+                lambda c=_conocido_completo(m): c.explorar(m.obtener_sala(s // 2))),
+            estructura="revelacion_proporcional", salas_conocidas=salas))
+    return filas
+
+
+def medir_paso_ir_a(repeticiones, tamanos):
+    """§6.1: un paso de «ir a» por debajo de 5 ms con el mapa conocido completo."""
+    from logica.mapa_conocido import VistaMapaConocido
+    from logica.rutas_ponderadas import proximo_paso
+
+    filas = []
+    for n in tamanos:
+        lado = max(3, int(n ** 0.5))
+        mapa, salas = _cripta_malla(lado)
+        vista = VistaMapaConocido(_conocido_completo(mapa))
+        filas.append(medir(
+            "ir_a_un_paso", salas, repeticiones,
+            lambda v=vista, s=salas: (lambda: proximo_paso(v, 1, s)),
+            estructura="buscador_de_001_sobre_vista_conocida", limite_ms=5))
+    return filas
+
+
 PROVEEDORES = (medir_cache, medir_recuperacion, medir_guardado, medir_tabla_hash,
                medir_presupuesto_red, medir_cache_escritura, medir_catalogo, medir_version_guardado,
-               medir_resolubilidad, medir_resolubilidad_cripta_real)
+               medir_resolubilidad, medir_resolubilidad_cripta_real,
+               medir_mapa_conocido, medir_paso_ir_a)

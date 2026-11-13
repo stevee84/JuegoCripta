@@ -119,3 +119,53 @@ def test_el_incremental_le_gana_a_repetir_el_recorrido_por_llave():
     assert ingenua["mediana"] > 2 * incremental["mediana"], (
         f"con {incremental['llaves']} llaves el incremental solo fue "
         f"{ingenua['mediana'] / incremental['mediana']:.1f}x mejor")
+
+
+# ── Mapa conocido y «ir a» (P2 §5.3, §6.1, §6.3) ─────────────────────────────
+
+def test_bench_mide_el_mapa_conocido_contra_recorrer_el_mapa():
+    """SC-008 y §6.3, conectado a --bench (Principio IX)."""
+    from benchmarks.integrante2 import PROVEEDORES, medir_mapa_conocido
+
+    nombres = {f["medicion"] for f in medir_mapa_conocido(1, (100,))}
+    assert "mapa_conocido_estado_sala" in nombres
+    assert "mapa_conocido_estado_recorriendo_alternativa" in nombres
+    assert medir_mapa_conocido in PROVEEDORES
+
+
+def test_consultar_el_estado_no_crece_con_el_mapa_conocido():
+    """SC-002: la consulta es por identificador."""
+    from benchmarks.integrante2 import medir_mapa_conocido
+
+    por_tamano = {}
+    for n in (100, 900):
+        fila = [f for f in medir_mapa_conocido(5, [n])
+                if f["medicion"] == "mapa_conocido_estado_sala"][0]
+        por_tamano[fila["n"]] = fila["minimo"] / fila["consultas_por_lote"]
+    chico, grande = sorted(por_tamano)
+    assert por_tamano[grande] < 2 * por_tamano[chico], (
+        f"la consulta creció de {por_tamano[chico]:.0f} a {por_tamano[grande]:.0f} ns")
+
+
+def test_explorar_no_crece_con_el_mapa_ya_conocido():
+    """SC-003: revelar cuesta lo que cuesta lo revelado."""
+    from benchmarks.integrante2 import medir_mapa_conocido
+
+    costos = {}
+    for n in (400, 1600):
+        fila = [f for f in medir_mapa_conocido(7, [n])
+                if f["medicion"] == "mapa_conocido_explorar_una_sala"][0]
+        costos[fila["salas_conocidas"]] = fila["minimo"]
+    chico, grande = sorted(costos)
+    assert costos[grande] < 2 * costos[chico], (
+        f"revelar sobre {grande} salas costó {costos[grande] / costos[chico]:.1f}x "
+        f"lo que sobre {chico}")
+
+
+def test_un_paso_de_ir_a_cabe_en_5_ms_en_las_criptas_publicadas():
+    """SC-001 y §6.1. Las criptas publicadas llegan a 50 salas."""
+    from benchmarks.integrante2 import medir_paso_ir_a, PROVEEDORES
+
+    fila = medir_paso_ir_a(5, (49,))[0]
+    assert fila["mediana"] / 1e6 < 5, f"un paso tardó {fila['mediana'] / 1e6:.2f} ms"
+    assert medir_paso_ir_a in PROVEEDORES
