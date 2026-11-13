@@ -52,10 +52,38 @@ class Viaje:
         self.origen_id = origen_id
         self.motivo = None
         self.valido = True
+        # Para detectar el daño entre dos pasos. Se fija en el primer `evaluar_llegada`,
+        # porque empezar el viaje no es recibir daño.
+        self._vida_anterior = None
         if not conocido.esta_explorada(destino_id):
             self.valido = False
             self.motivo = (MOTIVOS.AVISTADA if conocido.esta_avistada(destino_id)
                            else MOTIVOS.DESCONOCIDA)
+
+    def evaluar_llegada(self, sala, vida_actual):
+        """Tras ejecutar un paso: ¿sigue el viaje, o se detiene y por qué? (§3.4, FR-016)
+
+        Se llama con la sala a la que el jugador acaba de entrar y su vida en ese momento.
+        Devuelve el motivo si el viaje debe detenerse, o None si puede seguir.
+
+        El daño se detecta comparando con la vida del paso anterior, así que detiene el viaje
+        tanto si llegó al moverse como si llegó entre dos pasos sin que el jugador se mueva
+        —un pulso de veneno, un enemigo que lo alcanzó— (FR-018).
+        """
+        if self._vida_anterior is not None and vida_actual < self._vida_anterior:
+            self._vida_anterior = vida_actual
+            self.motivo = MOTIVOS.RECIBIO_DANO
+            return self.motivo
+        self._vida_anterior = vida_actual
+        if sala is not None and self._hay_enemigos(sala):
+            self.motivo = MOTIVOS.HAY_ENEMIGOS
+            return self.motivo
+        return None
+
+    @staticmethod
+    def _hay_enemigos(sala) -> bool:
+        """§3.4: cuentan los enemigos vivos, estén activos o dormidos."""
+        return any(e.esta_vivo() for e in getattr(sala, "enemigos", ()))
 
     def siguiente_paso(self, sala_actual_id):
         """La sala a la que moverse ahora, o None si el viaje terminó.
@@ -63,7 +91,7 @@ class Viaje:
         Se vuelve a calcular en cada llamada con el conocimiento vigente: §3.4 lo exige y así
         una puerta que se descubrió cerrada queda descartada sin tratarla como excepción.
         """
-        if not self.valido:
+        if not self.valido or self.motivo is not None:
             return None
         if sala_actual_id == self.destino_id:
             self.motivo = MOTIVOS.LLEGO

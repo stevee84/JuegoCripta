@@ -131,3 +131,73 @@ def test_el_estado_de_una_sala_se_consulta_sin_recorrer_el_mapa():
     saber.esta_explorada(6)
     saber.puerta_recordada_abierta("2:NORTE")
     assert saber.consultas_recorridas == 0, "ninguna consulta debe recorrer el mapa"
+
+
+# ── La antorcha (§3.3) ───────────────────────────────────────────────────────
+
+def test_la_antorcha_explora_todas_las_vecinas():
+    """Caso obligatorio de §3.4: por cualquier salida, abierta o cerrada (FR-023)."""
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    saber = MapaConocido()
+    saber.explorar(mapa.obtener_sala(1))
+    saber.explorar_con_antorcha(mapa.obtener_sala(2))
+    # la 2 tiene cinco salidas: 1, 3, 5 abiertas y 4, 6 tras puertas cerradas
+    for vecina in (1, 3, 4, 5, 6):
+        assert saber.esta_explorada(vecina), f"la sala {vecina} debía quedar explorada"
+
+
+def test_sin_antorcha_las_vecinas_quedan_solo_avistadas():
+    """FR-003."""
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    saber = MapaConocido()
+    saber.explorar(mapa.obtener_sala(1))
+    saber.explorar(mapa.obtener_sala(2))
+    for vecina in (3, 4, 5, 6):
+        assert saber.esta_avistada(vecina)
+        assert not saber.esta_explorada(vecina)
+
+
+def test_la_antorcha_revela_nombre_y_salidas_pero_no_contenido():
+    """FR-024: la sala 4 tiene una rata, y no debe asomar por ningún lado."""
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    saber = MapaConocido()
+    saber.explorar_con_antorcha(mapa.obtener_sala(2))
+    revelada = saber.sala(4)
+    assert revelada.nombre == "Vecina tras puerta cerrada"
+    assert [s.destino_id for s in revelada.salidas] == [2]
+    assert not hasattr(revelada, "enemigos")
+    assert not hasattr(revelada, "objetos")
+    assert not hasattr(revelada, "trampas")
+
+
+def test_la_antorcha_no_activa_nada_del_contenido():
+    """FR-024: revelar no es entrar."""
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    sala_con_rata = mapa.obtener_sala(4)
+    activos_antes = [e for e in sala_con_rata.enemigos if getattr(e, "activo", False)]
+    MapaConocido().explorar_con_antorcha(mapa.obtener_sala(2))
+    activos_despues = [e for e in sala_con_rata.enemigos if getattr(e, "activo", False)]
+    assert activos_antes == activos_despues == []
+
+
+def test_una_vecina_revelada_por_la_antorcha_es_destino_valido():
+    """FR-024 y FR-010: una explorada lo es, sin importar cómo se exploró."""
+    from logica.viaje import Viaje
+
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    saber = MapaConocido()
+    saber.explorar(mapa.obtener_sala(1))
+    saber.explorar_con_antorcha(mapa.obtener_sala(2))
+    assert Viaje(saber, origen_id=2, destino_id=5).valido
+
+
+def test_la_antorcha_deshace_igual_que_una_exploracion_normal():
+    """Las revelaciones por antorcha también son hechos reversibles (FR-021)."""
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    saber = MapaConocido()
+    saber.explorar(mapa.obtener_sala(1))
+    antes = (sorted(saber.exploradas()), sorted(saber.avistadas()))
+    hechos = saber.explorar_con_antorcha(mapa.obtener_sala(2))
+    assert sorted(saber.exploradas()) != antes[0]
+    saber.deshacer(hechos)
+    assert (sorted(saber.exploradas()), sorted(saber.avistadas())) == antes

@@ -113,6 +113,20 @@ class MapaConocido:
         hechos += self.observar_puertas(sala)
         return hechos
 
+    def explorar_con_antorcha(self, sala) -> list:
+        """Entrar a `sala` con la antorcha encendida (P2 §3.3, FR-023, FR-024).
+
+        Además de la sala, quedan exploradas **todas** sus vecinas, por cualquier salida, esté
+        abierta o cerrada. De esas vecinas se revela el nombre y las salidas, nunca su
+        contenido, y no se activa nada de lo que haya dentro: esta capa no lo toca siquiera.
+        """
+        hechos = self.explorar(sala)
+        for puerta in sala.puertas:
+            vecina = puerta.destino_sala
+            if vecina is not None:
+                hechos += self.explorar(vecina)
+        return hechos
+
     def observar_puertas(self, sala) -> list:
         """Estando en `sala`, se observa el estado real de cada puerta que la conecta (§3.3)."""
         hechos = []

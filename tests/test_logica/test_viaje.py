@@ -148,3 +148,86 @@ def test_sin_camino_conocido_el_viaje_se_detiene():
     viaje = Viaje(saber, origen_id=2, destino_id=4)
     assert viaje.siguiente_paso(2) is None
     assert viaje.motivo == MOTIVOS.SIN_CAMINO
+
+
+# ── Condiciones de parada (§3.4) ─────────────────────────────────────────────
+
+class _Enemigo:
+    def __init__(self, vivo=True):
+        self._vivo = vivo
+
+    def esta_vivo(self):
+        return self._vivo
+
+
+class _Sala:
+    def __init__(self, enemigos=()):
+        self.enemigos = list(enemigos)
+
+
+def viaje_de_prueba():
+    saber, _ = explorado("cripta-rutas", [1, 2, 3, 4])
+    return Viaje(saber, origen_id=1, destino_id=4)
+
+
+def test_una_sala_con_enemigos_detiene_el_viaje():
+    """FR-016."""
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala([_Enemigo()]), 30) == MOTIVOS.HAY_ENEMIGOS
+    assert viaje.siguiente_paso(2) is None
+
+
+def test_un_enemigo_dormido_tambien_detiene_el_viaje():
+    """Caso obligatorio de §3.4: activos o dormidos, da igual.
+
+    El viaje no mira si el enemigo está activo: mira si está vivo, que es lo que §3.4 dice.
+    """
+    dormido = _Enemigo()          # vivo pero sin activar
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala([dormido]), 30) == MOTIVOS.HAY_ENEMIGOS
+
+
+def test_un_enemigo_muerto_no_detiene_el_viaje():
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala([_Enemigo(vivo=False)]), 30) is None
+
+
+def test_una_sala_vacia_no_detiene_el_viaje():
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala(), 30) is None
+    assert viaje.motivo is None
+
+
+def test_recibir_dano_al_moverse_detiene_el_viaje():
+    """FR-016."""
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala(), 30) is None
+    assert viaje.evaluar_llegada(_Sala(), 26) == MOTIVOS.RECIBIO_DANO
+
+
+def test_el_dano_entre_dos_pasos_tambien_detiene_el_viaje():
+    """FR-018: un pulso de veneno o un ataque que lo alcanzó, sin haberse movido."""
+    viaje = viaje_de_prueba()
+    viaje.evaluar_llegada(_Sala(), 30)
+    assert viaje.evaluar_llegada(_Sala(), 28) == MOTIVOS.RECIBIO_DANO
+    assert viaje.explicacion(2) == "recibiste daño"
+
+
+def test_empezar_el_viaje_no_cuenta_como_recibir_dano():
+    viaje = viaje_de_prueba()
+    assert viaje.evaluar_llegada(_Sala(), 12) is None, "la primera lectura solo fija la base"
+
+
+def test_estar_ya_en_una_sala_con_enemigos_no_impide_empezar():
+    """FR-017: la parada se dispara al ENTRAR, y quien ya está allí no entra."""
+    saber, _ = explorado("cripta-rutas", [1, 2, 3, 4])
+    viaje = Viaje(saber, origen_id=1, destino_id=4)
+    assert viaje.valido
+    assert viaje.siguiente_paso(1) == 2, "el viaje empieza aunque haya enemigos aquí"
+
+
+def test_un_viaje_detenido_no_da_mas_pasos():
+    viaje = viaje_de_prueba()
+    viaje.evaluar_llegada(_Sala([_Enemigo()]), 30)
+    assert viaje.siguiente_paso(2) is None
+    assert viaje.motivo == MOTIVOS.HAY_ENEMIGOS, "el motivo no se pisa con otro"
