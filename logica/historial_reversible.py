@@ -35,6 +35,21 @@ class HistorialReversible:
 
         # Línea de tiempo (spec 004) a la que se avisa cada acción cerrada y cada retroceso.
         self._linea = None
+        # Consumo del pergamino en curso, para la línea (research R6).
+        self._para_linea = None
+
+    def registrar_solo_linea(self, cambio) -> None:
+        """Un cambio que el pergamino no deshace pero la línea sí (spec 004, R6)."""
+        if not self.hay_intervalo_abierto():
+            raise ValueError("Debes iniciar un intervalo antes de registrar cambios.")
+        self._actual.registrar_solo_linea(cambio)
+
+    def anotar_para_linea(self, cambio) -> None:
+        """El servicio de inventario anota el consumo del pergamino antes de deshacer.
+
+        No entra al historial: se le pasa a la línea después del recorte (spec 004, R6).
+        """
+        self._para_linea = cambio
 
     def vincular_linea(self, linea) -> None:
         """Conecta la línea de tiempo (spec 004, research R5).
@@ -151,6 +166,7 @@ class HistorialReversible:
 
         nodo = self._intervalos.primero
         transaccion = nodo.valor
+        consumo, self._para_linea = getattr(self, "_para_linea", None), None
 
         # Retira la transacción después de revertir sus cambios.
         transaccion.revertir(estado)
@@ -158,6 +174,8 @@ class HistorialReversible:
         linea = getattr(self, "_linea", None)
         if linea is not None:
             linea.recortar(1)
+            if consumo is not None:
+                linea.anotar_solo_linea(consumo)
 
         return True
 

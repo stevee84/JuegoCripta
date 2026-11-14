@@ -2845,6 +2845,17 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 34 | Implementación de T003 y T004: deshacer y rehacer para la línea de tiempo | 08/11/2026 |
 | 35 | Implementación de T036 a T038: resolubilidad en la interfaz (002-T049 y 002-T050) | 09/11/2026 |
 | 36 | Implementación de T005 y T006: el historial avisa a la línea de tiempo | 09/11/2026 |
+| 37 | Implementación de T007 a T009: estructura de la línea de tiempo | 09/11/2026 |
+| 38 | Implementación de T010 y T011: la línea en el servicio y el resumen | 09/11/2026 |
+| 39 | Implementación de la Fase 3 (T012 a T017): historia <t> en la consola | 09/11/2026 |
+| 40 | Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino | 09/11/2026 |
+| 41 | `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d) | 09/11/2026 |
+| 42 | Implementación de la Fase 6 (T025 a T028): `--replay --hasta` | 10/11/2026 |
+| 43 | Implementación de la Fase 7 (T029 a T031): `--checkpoint-cada K` | 10/11/2026 |
+| 44 | Mediciones de la línea de tiempo en `--bench` (T002, T041 a T046) | 10/11/2026 |
+| 45 | Optimizar el punto de control, fijar K y documentar §5.5 (T047 a T049) | 10/11/2026 |
+| 46 | Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050) | 11/11/2026 |
+| 47 | Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios | 13/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3009,9 +3020,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> ok, continuemos
-
-(Continuación de `/speckit-implement` del Prompt 33, sobre la Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Continúa con /speckit-implement en specs/004-linea-de-tiempo, solo las tareas T003 y T004. Primero escribe tests/test_logica/test_cambios_linea.py con pruebas que citen FR-001, FR-005 y FR-012: un cambio marcado «solo línea» no lo deshace el pergamino; deshacer mientras se cumpla una condición, del más reciente al más antiguo, sin vaciar la transacción; y que deshacer y rehacer deje el estado idéntico para cada tipo de cambio, también si algo falla a la mitad, usando una partida real offline de cripta-04. Después implementa en logica/cambios.py registrar_solo_linea, deshacer_mientras y rehacer, con el inverso de cada tipo de cambio. No cambies revertir ni ninguna firma existente, y no toques código de Steven ni de Sofía. Corre la suite completa y marca las tareas en tasks.md.
 
 **Qué se obtuvo.** T003: `tests/test_logica/test_cambios_linea.py`, con 8 pruebas que citan FR-001, FR-005 y FR-012; la principal juega 120 acciones reales en `cripta-04` (moverse, atacar, recoger, soltar, equipar, usar) y comprueba que cada transacción queda idéntica después de deshacer y rehacer. T004: en `logica/cambios.py` (archivo de Joshua), `CambioSoloLinea`, `TransaccionAccion.registrar_solo_linea`, `deshacer_mientras` (no vacía la transacción) y `rehacer`, más un inverso por cada uno de los 13 tipos de cambio. `revertir` salta los cambios «solo línea» y no cambió en lo demás. Suite: 1083 aprobadas.
 
@@ -3021,9 +3030,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> revisa si ya se hizo bien el merge, si es asi continua
-
-(Continuación de `/speckit-implement`. Steven pidió terminar las dos tareas pendientes de su spec 002, que tocan `controller/` y `vista/`.)
+> Verifica que el merge de origin/Steve en mi rama joshua haya quedado bien y que no falte nada de Steven ni de Sofía. Si está bien, implementa T036 a T038 de specs/004-linea-de-tiempo/tasks.md, que corresponden a 002-T049 y 002-T050 de la spec de Steven: al iniciar una partida muestra una línea con el resultado de la resolubilidad (tiene solución, sin solución o no se pudo verificar), y agrega el comando resolubilidad que muestra el informe completo, en consola y en pygame. Usa JuegoService.obtener_informe_resolubilidad() y el formato de specs/002-resolubilidad/contracts/cli-verificar.md, sin modificar main.py ni otros archivos de Steven; si una cripta no tiene solución, la partida no debe iniciar y debe mostrarse el informe. Escribe las pruebas primero, citando FR-013 y FR-014 de la 002.
 
 **Qué se obtuvo.** `controller/resumen_resolubilidad.py` (nuevo) con `linea_inicio` (las tres líneas distinguibles de FR-013 de la 002) y `lineas_informe` (el informe completo). En `controller/controlador_juego.py`: al iniciar una partida se muestra la línea de resolubilidad; si la cripta no tiene solución o no se pudo verificar, la partida no inicia y se muestra el informe; y el comando nuevo `resolubilidad` muestra el informe de antes de empezar. En `vista/vista_pygame.py`, un botón «Resolubilidad». Pruebas en `tests/test_controller/test_resolubilidad_interfaz.py` (9, citan FR-013 y FR-014 de la 002). Suite: 1095 aprobadas.
 
@@ -3033,13 +3040,123 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 
 > **Prompt**
 >
-> Sí, sigue
-
-(Continuación de `/speckit-implement`, Fase 2 de `specs/004-linea-de-tiempo/tasks.md`.)
+> Implementa T005 y T006 de specs/004-linea-de-tiempo/tasks.md. Escribe tests/test_logica/test_historial_linea.py: con una línea vinculada, el historial le entrega cada transacción cerrada y le avisa el recorte al usar un pergamino; un intento abortado no llega a la línea; sin línea vinculada el historial se comporta igual que antes y el límite del pergamino sigue en 5. Después agrega vincular_linea en logica/historial_reversible.py sin cambiar firmas existentes. Cuida que copiar o guardar el historial no arrastre la línea, porque los puntos de control copian el estado completo.
 
 **Qué se obtuvo.** En `logica/historial_reversible.py` (archivo de Joshua): `vincular_linea`; al cerrar una acción el historial le entrega la transacción a la línea y al retroceder le avisa el recorte. Sin línea vinculada se comporta igual que antes y el límite de 5 del pergamino no cambia. Pruebas en `tests/test_logica/test_historial_linea.py` (6, citan FR-013, FR-014 y FR-021). Suite: 1101 aprobadas.
 
 **Qué hubo que corregir.** Antes de implementar se vio que, si el historial guarda la línea, copiar el estado para un punto de control copiaría también la línea con todos sus puntos de control, y la copia crecería sin fin. El historial excluye la línea al copiarse o serializarse (`__getstate__`), y hay una prueba para eso.
+
+## Prompt 37 — Implementación de T007 a T009: estructura de la línea de tiempo
+
+> **Prompt**
+>
+> Implementa T007 a T009 de specs/004-linea-de-tiempo/tasks.md. Crea logica/linea_tiempo.py con la clase LineaTiempo según el data-model: los instantes de cada decisión en un arreglo no decreciente, un punto de control cada K acciones copiando en una sola operación el estado y las transacciones de su ventana, y la cola de referencias vivas a las acciones recientes. Agrega una búsqueda binaria propia para encontrar el instante, sin dict, set ni bisect. Escribe pruebas que citen FR-017, FR-019 y FR-021 con partidas reales offline. Si encuentras algo del plan que no funciona, corrígelo primero en el plan en un commit aparte.
+
+**Qué se obtuvo.** `logica/linea_tiempo.py` (nuevo): `LineaTiempo` con los instantes de decisión en un arreglo no decreciente, un punto de control cada K acciones (una sola copia profunda del estado y de las transacciones de su ventana) y la cola de referencias vivas; `buscar_ultimo_menor_o_igual`, búsqueda binaria propia sin `bisect`. Pruebas en `tests/test_logica/test_linea_tiempo.py` (10, citan FR-001, FR-015, FR-017, FR-019 y FR-021), sobre partidas reales en `cripta-04`. Suite: 1112 aprobadas. También quedó escrito `recortar`, que es T023; no se marca como hecha hasta tener sus pruebas (T021 y T022).
+
+**Qué hubo que corregir.** El plan decía que la cola conserva las últimas 2K acciones; con K chico eso no alcanza para recortar después de un pergamino que revierte 5 acciones (con K = 1 serían 2). Se corrigió a max(2K, K + 5) en research, data-model y tasks, en un commit anterior al código (`169d211`).
+
+## Prompt 38 — Implementación de T010 y T011: la línea en el servicio y el resumen
+
+> **Prompt**
+>
+> Implementa T010 y T011 de specs/004-linea-de-tiempo/tasks.md. En service/juego_service.py crea y vincula la línea de tiempo al iniciar una partida nueva, con K = 10 provisional y un método para configurarlo, tocando lo mínimo porque es un archivo compartido con Steven. Crea controller/resumen_historia.py con el resumen de FR-004 en el orden fijo del data-model (reloj, sala, jugador con sus estadísticas efectivas, inventario, efectos, enemigos de la sala y mapa conocido, que por ahora dice «no disponible»), reutilizando los ayudantes de texto de vista/presentacion_juego.py. Agrega las pruebas y corre la suite completa.
+
+**Qué se obtuvo.** T010: `service/juego_service.py` crea la línea de tiempo al final de `iniciar_partida` (partida nueva) y la vincula al historial; `configurar_checkpoint_cada(k)` y `obtener_linea_tiempo()`; K = 10 por omisión (`LineaTiempo.K_POR_DEFECTO`). T011: `controller/resumen_historia.py` (nuevo), `lineas_resumen(estado, titulo)` con el orden fijo del data-model, usando los ayudantes de texto de `vista/presentacion_juego.py`. Pruebas: 2 en `tests/test_logica/test_linea_tiempo.py` y 4 en `tests/test_controller/test_resumen_historia.py` (citan FR-004, FR-005, FR-015 y FR-016). Suite: 1119 aprobadas.
+
+**Qué hubo que corregir.** (1) Las salas no tienen nombre en el modelo actual; el resumen muestra el id y el nombre solo si existe (lo agregaría la spec 003, §3.3). (2) Al cargar una partida o usar un estado externo, la línea de la partida anterior quedaba en el servicio; ahora se limpia. (3) La línea no se crea para estados externos (demo y pruebas), porque esa ruta no es una partida jugada desde el inicio; queda anotado para revisarlo con T034. `service/juego_service.py` es compartido con Steven: solo se agregaron métodos y dos líneas de limpieza.
+
+## Prompt 39 — Implementación de la Fase 3 (T012 a T017): historia <t> en la consola
+
+> **Prompt**
+>
+> Revisa que todo esté subido a GitHub y, si es así, implementa la Fase 3 de specs/004-linea-de-tiempo/tasks.md (T012 a T017), que es el MVP. En logica/linea_tiempo.py agrega la consulta por instante: elegir el punto de control, deshacer en sitio como máximo K transacciones (parcialmente la última si t cae entre dos decisiones), armar el resumen y rehacer en un finally. Agrega el comando historia <t> en controller/controlador_juego.py y en la ayuda de la consola. Las pruebas deben comparar cada instante contra estados grabados al jugar una partida real con turnos de enemigos, y cubrir los casos del Apéndice B: t futuro, varios eventos en el mismo instante y que historia no consume tiempo, no se registra en partida.log ni toca el historial del pergamino.
+
+**Qué se obtuvo.** En `logica/linea_tiempo.py`: `consultar_instante` y `consultar_accion`, que eligen el punto de control, deshacen en sitio como máximo K transacciones (parcialmente la última cuando t cae entre dos decisiones), arman el resumen y rehacen en un `finally`. En `controller/resumen_historia.py`, `consultar_historia` con los títulos y los mensajes de rechazo del contrato. En `controller/controlador_juego.py`, el comando `historia <t>` (también acepta `#k`) y su línea en `ayuda`. Pruebas: T012 compara cada instante de una partida real de 60 acciones en `cripta-01` (con turnos de enemigos y varios eventos en el mismo instante, caso del Apéndice B) contra el estado grabado al jugar; T013 los rechazos (t futuro, Apéndice B); T014 dos partidas iguales, una con consultas entre acción y acción: mismo estado final, mismo `partida.log`, mismo reloj, azar e historial del pergamino (Apéndice B). Suite: 1129 aprobadas.
+
+**Qué hubo que corregir.** (1) La primera grabación de la prueba tomaba el estado de después de la acción en el instante de la decisión; §3.6 dice «justo antes de tomarla» y la acción no es un evento. Se corrigió la prueba, no la línea. (2) Fallaban los instantes justo después de una decisión: el motor saca un evento de la agenda antes de adelantar el reloj, así que deshacer «mientras el reloj sea > t» dejaba ese evento fuera. La condición de `deshacer_mientras` ahora también recibe el cambio y sigue deshaciendo extracciones de eventos posteriores a t; research R4 y el data-model se corrigieron en un commit anterior al código. (3) La comparación de estados reportaba diferencias que no lo son: rehacer reconstruye el índice por id de las salas y la agenda guarda en cada evento su posición en el montículo; la prueba compara esos dos por contenido, como ya se hacía con la agenda.
+
+## Prompt 40 — Implementación de las Fases 4 y 5 (T018 a T024): historia #k y el pergamino
+
+> **Prompt**
+>
+> Implementa las Fases 4 y 5 de specs/004-linea-de-tiempo/tasks.md (T018 a T024). Para historia #k, prueba con una partida real de 1 000 acciones que cada #k coincida con el estado de antes de esa acción, el rango válido y la partida terminada. Para el pergamino, recorta la línea al retroceder y haz que los pergaminos recogidos, soltados y consumidos se vean bien en el pasado usando cambios «solo línea», sin modificar el motor de Sofía ni romper las pruebas de la Parte I. Cubre el caso del Apéndice B de historia después de un pergamino, dos pergaminos seguidos y que el recorte no dependa del largo de la partida.
+
+**Qué se obtuvo.** Fase 4: pruebas de `historia #k` sobre una partida real de 1 000 acciones en `cripta-01` (cada #k coincide con el estado de antes de esa acción, nunca se tocan más de K transacciones), rango válido y partida terminada; prueba del comando en la consola. Fase 5: al recoger o soltar un pergamino, el inventario anota el cambio como «solo línea» en el historial (la lista de cambios devuelta sigue vacía, como en la Parte I); al consumirlo, el historial le pasa el consumo a la línea después del recorte, sin tocar el motor de Sofía; «antes de #(n+1)» siempre sale del estado vivo. Pruebas: lo revertido deja de existir con K = 1, 3, 4 y 10 (Apéndice B), el pergamino aparece antes y consumido después, dos pergaminos seguidos, límite de 5, y el recorte cuesta lo mismo con 1 000 que con 5 000 acciones. Suite: 1139 aprobadas.
+
+**Qué hubo que corregir.** (1) La primera versión devolvía el cambio del pergamino en la lista de cambios de recoger y soltar; rompía 21 pruebas de la Parte I (algunas compartidas con Steven y Sofía) que exigen esa lista vacía. Se cambió para que el inventario lo anote directamente en el historial mediante el enlace `historial_linea`, que no entra en las copias ni en el archivo (`Inventario.__getstate__`). (2) Si n coincidía con un punto de control, «antes de #(n+1)» salía del punto de control, que es de antes de consumir el pergamino; ahora sale siempre del estado vivo. (3) Errores de la prueba: el segundo pergamino copiado perdía su catálogo de fichas, y en la partida terminada la vida se cambiaba después de crear la línea. (4) Deshacer una recogida no baja el contador interno `_orden_frente` del inventario (también pasa con el pergamino de la Parte I); no cambia el orden visible y la línea nunca sigue jugando desde un estado reconstruido, así que la prueba lo excluye de la comparación y se documenta aquí. Se tocó también `logica/inventario.py` (de Joshua), que no estaba en la tabla de componentes del plan.
+
+## Prompt 41 — `/speckit-analyze` cruzado de la spec 001 de Sofía (commit e89574d)
+
+> **Prompt**
+>
+> /speckit-analyze Analyze cruzado de specs/001-terreno-y-cazador de Sofía en el commit e89574d (spec.md, plan.md, tasks.md, data-model.md, research.md y contratos), extraídos en solo lectura a una carpeta temporal. Contra la constitución v1.0.0 y el enunciado de la Parte II (§3.1, §3.2, §5.1, §5.2, §5.6, §6, Apéndice B, terreno y cazador) y contra los contratos de la spec 004. No modificar ningún archivo. Informe en español con gravedad y el hash revisado.
+
+(Sofía pidió el analyze cruzado que exige el reparto: cada spec la revisa otro integrante.)
+
+**Qué se obtuvo.** Informe sobre `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`, sin modificar archivos de Sofía ni hacer merge de su rama (los archivos se leyeron con `git show`). Resultado: 0 críticos, 2 altos, 3 medios y 2 bajos. Cobertura: los 18 FR y 6 PR tienen tareas, y los 7 casos de terreno y cazador del Apéndice B (AC-B01 a AC-B07) son escenarios con tareas y pruebas previstas. No se encontraron dependencias prohibidas ni nombres de estructuras en `spec.md`. Los altos: (1) no está definido qué pasa si una salida declara `costo` en un sentido y lo omite en el otro (FR-002 lo trata como contradicción y rechazaría la cripta), y los fixtures actuales no traen costos para comprobarlo; (2) la condición de `deshacer_mientras` ahora recibe `(estado, cambio)` desde `5b67c08`, y el contrato de 001 la describe con la semántica anterior.
+
+**Qué hubo que corregir.** El script `check-prerequisites.ps1` apunta a la spec activa de Joshua (004), así que el análisis se hizo sobre la copia extraída de la 001 en lugar de usar las rutas del script; queda anotado para que el hallazgo no se confunda con un análisis de la 004.
+
+## Prompt 42 — Implementación de la Fase 6 (T025 a T028): `--replay --hasta`
+
+> **Prompt**
+>
+> Revisa que todo esté subido y dime cuánto llevamos de la spec 004 en porcentaje. Después implementa la Fase 6 de specs/004-linea-de-tiempo/tasks.md (T025 a T028): la bandera --hasta t en configuracion.py, válida solo junto con --replay y como entero mayor o igual que 0; el parámetro hasta en EjecutorReplay.reproducir para detenerse en ese instante y devolver el mismo resumen que historia t; y en main.py imprimir ese resumen sin instanciar la vista. Si t es posterior al final, muestra el estado final e indica que la partida terminó antes. Sin --hasta el replay debe comportarse igual que en la Parte I. Las pruebas deben comparar contra historia t de la partida original y comprobar en un proceso aparte que no se carga la vista.
+
+**Qué se obtuvo.** `--hasta T` en `configuracion.py` (solo junto con `--replay`, entero ≥ 0; si no, error antes de reproducir). `EjecutorReplay.reproducir(ruta, hasta=None)` se detiene cuando el reloj llega a T y devuelve las líneas de `historia T`; si T es posterior al final, el estado final y «La partida terminó en t=…, antes del instante pedido (…).». Sin `--hasta` devuelve None y se comporta como en la Parte I. `main.py` imprime el resumen sin instanciar la vista. Pruebas en `tests/test_controller/test_replay_hasta.py` (6): mismo texto que `historia t` en la partida original, t posterior al final (Apéndice B), sin `--hasta`, versión incompatible, validación de la bandera y un proceso aparte que comprueba que no se cargan las vistas. Suite: 1316 aprobadas.
+
+**Qué hubo que corregir.** (1) Al insertar el código se coló un salto de línea real dentro de un `print` de `main.py`; lo atrapó la prueba del proceso aparte. (2) Una prueba existente reemplaza `reproducir` por una función que no acepta `hasta`; `main.py` ahora solo pasa `hasta` cuando la bandera se usa, así la llamada de la Parte I no cambia. (3) `tests/test_configuracion.py` (mayormente de Steven) compara la lista exacta de argumentos por defecto; se agregó `hasta=None`, igual que se hizo al incorporar `--verificar` y `--forzar`.
+
+## Prompt 43 — Implementación de la Fase 7 (T029 a T031): `--checkpoint-cada K`
+
+> **Prompt**
+>
+> Implementa la Fase 7 de specs/004-linea-de-tiempo/tasks.md (T029 a T031): la bandera --checkpoint-cada K en configuracion.py, entero mayor o igual que 1 y rechazada al arrancar si no lo es; pásala a la partida interactiva y al replay. Prueba con K = 1, 7, 50 y un K mayor que la partida que todas las consultas den exactamente lo mismo y que ninguna deshaga más de K transacciones. Lo de --bench déjalo para T046.
+
+**Qué se obtuvo.** `--checkpoint-cada K` en `configuracion.py` (entero ≥ 1; 0, negativos o no enteros se rechazan al arrancar). `main.py` lo pasa a la partida interactiva (`ControladorJuego.configurar_checkpoint_cada`) y al replay (`JuegoService.configurar_checkpoint_cada`); la copia de servicio que usa el replay conserva el K. Pruebas: con K = 1, 7, 50 y un K mayor que la partida, 120 acciones reales en `cripta-01` dan exactamente las mismas consultas por acción y por instante, y ninguna toca más de K transacciones; con K mayor que la partida solo existe el punto inicial; validación de la bandera; el replay y la partida interactiva usan el K pedido. Suite: 1321 aprobadas.
+
+**Qué hubo que corregir.** Nada en el comportamiento. `tests/test_configuracion.py` volvió a necesitar el argumento nuevo (`checkpoint_cada=None`) en la lista de valores por defecto. El paso de K a `--bench` queda para T046, porque todavía no existe el proveedor de mediciones de la línea; así quedó anotado en T031.
+
+## Prompt 44 — Mediciones de la línea de tiempo en `--bench` (T002, T041 a T046)
+
+> **Prompt**
+>
+> Implementa las mediciones de la spec 004 en benchmarks/linea_tiempo.py: T002, un generador de partidas largas deterministas por semilla sin red; T041, tiempo de historia (mediana, p95 y máximo) y memoria retenida por la línea con 5 000 acciones para K = 10, 50 y 200 y sin puntos de control, más el costo de la acción que crea un punto de control frente al límite de 20 ms; T042, reconstruir hacia atrás frente a re-simular hacia adelante comprobando que llegan al mismo estado; T043, un retroceso de punta a punta frente a guardar una copia completa por acción; T044, una reproducción completa de partida.log y el rechazo por versión incompatible; T045, la vista ordenada del inventario sin alterar el orden real y el rechazo al llegar al máximo. Conecta todo una sola vez a main.py --bench pasando el K de --checkpoint-cada, con una prueba que lo verifique, y corre la medición completa con 5 000 acciones. No modifiques código de Steven ni de Sofía salvo para registrar el proveedor.
+
+**Qué se obtuvo.** `benchmarks/linea_tiempo.py` con `partida_sintetica` (una sola partida de `cripta-04` con una línea por cada K conectadas a la vez, para que todos los K midan lo mismo), `medir_consultas`, `medir_costo_punto`, `medir_adelante_atras`, `medir_retroceso`, `medir_replay`, `medir_inventario` y el proveedor `medir_linea_tiempo`, registrado en `main.py --bench` junto con `--checkpoint-cada`. Pruebas en `tests/test_bench_linea_tiempo.py`. Resultados con 5 000 acciones en `benchmarks/resultados/linea_tiempo_5000.json`: con K = 10, historia tarda 16 ms de mediana, 49 ms en el p95 y 52 ms en el máximo; con K = 50, 76 ms de mediana; con K = 200, 418 ms; sin puntos de control, hasta 112 s por consulta. Re-simular hacia adelante llega al mismo estado que reconstruir hacia atrás con los tres K. Un retroceso de punta a punta cuesta 3,1 ms frente a 82,8 ms de copiar el estado. El replay rechaza el log de otra versión y la vista ordenada no cambia el orden real del inventario. Suite: 1326 aprobadas.
+
+**Qué hubo que corregir.** (1) La primera medición con 5 000 acciones se cayó con `RecursionError`: en partidas largas una sola transacción tiene cientos de cambios, y `ListaDobleImpl` se copiaba y se serializaba de forma recursiva nodo por nodo. Se agregó `__getstate__`/`__setstate__` a `estructuras/lista_doble.py` (de Joshua), que entrega los nodos como lista plana y los vuelve a enlazar sin perder su identidad, con la prueba `tests/test_estructuras/test_lista_doble_copia.py`; research R2 se corrigió antes del código. También afectaba al guardado v10 con `pickle`. (2) Las copias excluyen el catálogo de fichas de cada entidad, así que re-simular sin reconectarlo no llegaba al mismo estado con K = 50 y 200; `historia` no lo necesita porque los nombres salen del catálogo de la partida. (3) Con varias líneas en la misma partida, el tiempo de una acción con punto de control mezclaba las copias de todas; se mide por separado la acción normal y la copia de cada K. (4) `tests/test_bloque3_conexiones.py` cuenta los proveedores registrados en `--bench` y se le sumó el de la línea, como se hizo con el del mapa. (5) `tracemalloc` infla mucho el tiempo de copia: sin él, copiar el estado cuesta unos 24 ms. Dos resultados no cumplen lo previsto y quedan para decidir antes de T047: la acción que crea un punto de control supera los 20 ms por ciclo, y la memoria de la línea llega a 506-780 MB con 5 000 acciones en esta carga.
+
+## Prompt 45 — Optimizar el punto de control, fijar K y documentar §5.5 (T047 a T049)
+
+> **Prompt**
+>
+> Con los resultados de --bench de la spec 004, intenta una optimización acotada del costo de crear un punto de control: mide qué parte del estado pesa al copiarse y, si hay partes que no son estado del juego o que son inmutables, compártelas en lugar de copiarlas, sin romper la equivalencia de las consultas; corrige la medición para que tracemalloc no infle los tiempos y vuelve a medir con 5 000 acciones, también con K = 10 en un proceso aparte. Con esos datos elige el K por defecto (T047) y anótalo en research R7; escribe la sección §5.5 de DECISIONES.md con problema, alternativas, decisión, complejidad, evidencia de --bench y límites conocidos, enlazando la spec y el plan y diciendo si coincide con el plan original, y agrega en §5.6 la medición del historial de retroceso con la carga nueva (T048); y agrega al README las banderas --checkpoint-cada y --hasta y los comandos historia y resolubilidad, sin tocar lo de Steven ni de Sofía (T049). Si algo del plan cambia, corrígelo primero en el plan.
+
+**Qué se obtuvo.** Medido sobre un estado de 1 500 acciones, copiar el historial del pergamino era casi todo el costo del punto de control (22 de 25 ms): guarda cientos de cambios y cada turno enemigo guarda una tupla de 625 enteros con el estado del azar. `LineaTiempo._memo_compartido` hace que el punto de control comparta el historial (solo sirve para seguir jugando) y esas tuplas inmutables; la copia del paquete bajó de 71,5 a 19,1 ms y todas las pruebas de equivalencia siguen pasando. La medición ahora toma el tiempo sin `tracemalloc` y la memoria por muestreo. Con 5 000 acciones y K = 10 medido solo: `historia` 16,3 ms de mediana, 59,7 ms en el p95 y 82,7 ms de máximo; crear un punto, 50,6 ms; memoria estimada, 647 MB. K = 50 y K = 200 pasan los 100 ms de mediana, y sin puntos de control una consulta llega a 97 s. Se fijó K = 10 (`LineaTiempo.K_POR_DEFECTO`, research R7). `DECISIONES.md` tiene la sección §5.5 completa y, en §5.6, el retroceso de punta a punta (3,1 ms frente a 82,8 ms de copiar el estado). El README tiene las banderas y comandos de la 004. Resultados en `benchmarks/resultados/linea_tiempo_5000.json` y `linea_tiempo_5000_k10.json`. Suite: 1326 aprobadas.
+
+**Qué hubo que corregir.** (1) Copiar un atributo del estado por separado falla por cómo se reconstruyen las salas; para encontrar qué pesaba se midió cuánto ahorra compartir cada atributo al copiar el estado completo. (2) La primera versión dejaba el historial en `None` dentro del punto de control; se cambió a compartirlo, que cuesta lo mismo y deja un estado válido. (3) Con las cuatro líneas en el mismo proceso la memoria pasaba de 1,5 GB y aparecían pausas de varios segundos que distorsionaban los máximos; K = 10 se midió de nuevo en un proceso aparte. (4) Con esta carga extrema ningún K cumple todos los límites: el p95 y el máximo de `historia` superan 50 ms y la acción que crea un punto de control supera los 20 ms por ciclo; quedó documentado en los límites de §5.5 con las mejoras posibles.
+
+## Prompt 46 — Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050)
+
+> **Prompt**
+>
+> Termina todas las tareas de specs/004-linea-de-tiempo/tasks.md que no dependen de Steven ni de Sofía: T032 y T033, exportar e importar la línea de tiempo en bytes según el contrato guardado-v10 (estado vivo y línea en una sola serialización, conservando el K guardado y avisando si se pide otro), con pruebas de ida y vuelta; T039, un botón Historia en la vista pygame que pida t o #k y muestre el resumen en un panel, agregando solo métodos nuevos en vista/vista_pygame.py; y T050, correr la suite completa y la guía de validación, informando aprobadas, omitidas y fallidas por separado. Deja marcadas como pendientes las que dependen del guardado v10 de Steven (T034, T035) y de la spec 003 (T040). Si el contrato cambia al implementarlo, actualízalo primero.
+
+**Qué se obtuvo.** `LineaTiempo.exportar_bytes`, `importar_bytes` (devuelve el estado y la línea y vuelve a conectar historial e inventario) y `aviso_k` en `logica/linea_tiempo.py`, con 5 pruebas: la ida y vuelta da las mismas consultas por acción y por instante, sin puntos de control extra; la línea sigue registrando acciones después de cargar; se conserva el K guardado; la infraestructura no viaja; y se rechazan bytes ajenos. En pygame: botón «Historia», diálogo de texto (`_dialogo_texto`) y panel de varias líneas (`mostrar_lineas`), que también usa el comando `resolubilidad`; el controlador usa el panel si la vista lo tiene y el mensaje de siempre en la consola. 4 pruebas en `tests/test_controller/test_historia_pygame.py`, sin ventana. Suite: 1335 aprobadas, 0 omitidas, 0 fallidas. Quedan pendientes T034, T035 y T040.
+
+**Qué hubo que corregir.** (1) El estado guarda la caché, el catálogo vivo y el cargador de contenido, que con el servicio web pueden tener el cliente de red; no viajan en los bytes y al cargar los vuelve a conectar el guardado. Se agregó al contrato `guardado-v10.md` antes del código. (2) La comparación por bytes de pickle daba diferencias falsas después de cargar: dos textos iguales pasan a ser objetos distintos, y `Sala` reconstruye su índice de enemigos en otra posición. Las pruebas de ida y vuelta comparan el estado por estructura y valores, sin depender de esas dos cosas.
+
+## Prompt 47 — Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios
+
+> **Prompt**
+>
+> Revisa lo que subió Steven en origin/Steve (spec 003, mapa conocido y viaje) y tráelo a mi rama joshua si no rompe nada, corriendo la suite completa. Steven pide que la línea de tiempo pueda volver a aplicar sus cambios de conocimiento, que modifican tablas hash propias en su sitio y no se pueden rehacer restaurando atributos: agrega en logica/cambios.py un gancho para que un cambio que defina rehacer(estado) se vuelva a aplicar con ese método después de deshacerlo, sin copias, con una prueba que use un cambio sobre una tabla hash propia. Documenta primero el gancho en el data-model y en contracts/dependencias.md. Después revisa qué tareas de la spec 003 me corresponden en la interfaz (mapa conocido e «ir a») y si ya se pueden hacer.
+
+**Qué se obtuvo.** `origin/Steve@74b63cd` entró por fast-forward (spec 003 con spec, plan y tareas, `logica/mapa_conocido.py`, `logica/viaje.py`, antorcha y mediciones de §5.3) y la suite pasó con 1380 aprobadas. En `logica/cambios.py`, `_Inverso.reaplicar` y la regla nueva de `_fotografiar`: si el cambio define `rehacer(estado)`, la línea lo llama para volver a aplicarlo; el orden queda `fotografiar_para_rehacer`, luego `rehacer`, luego los tipos conocidos, y si no hay ninguno la consulta falla antes de tocar el estado. Prueba en `tests/test_logica/test_cambios_linea.py` con un cambio sobre `TablaHashImpl` que se deshace y rehace tres veces. Las tareas de interfaz de la 003 que corresponden a Joshua son T016 (comando del mapa conocido) y T038 (comando «ir a» con el motivo de parada); dependen de que Steven exponga esos datos desde el servicio (sus T014, T015 y T028), que todavía no están hechas.
+
+**Qué hubo que corregir.** El `CambioConocimiento` de Steven no estaba publicado (lo tiene sin subir), así que el gancho se definió de forma general, por el nombre del método, y se probó con un cambio equivalente; falta comprobarlo con su clase real cuando la suba.
 
 # Steven Moya Porras — Parte II
 
@@ -3260,3 +3377,31 @@ cripta inexistente escupía un traceback, y el propio `quickstart.md` documentab
 entre llaves en una segunda pasada. §5.4 dice «del mismo recorrido», así que se fusionaron; el
 resultado fue más simple, no más complejo: desapareció una función de 35 líneas y una sola tabla
 sustituyó a dos.
+
+## Prompt 15 — `/speckit.specify` y `/speckit.clarify` de 003-niebla-y-ir-a
+
+El texto del `specify` se redactó a partir de §3.3, §3.4 y §5.3 del enunciado, releídas para la
+ocasión, y del contrato de rutas ya cerrado con Sofía. Cubre los tres estados de una sala, la
+memoria de puertas, la antorcha, la separación entre el mapa y el conocimiento, las reglas del
+viaje, las cuatro condiciones de parada, el registro, el retroceso, lo que la interfaz debe
+permitir y los límites de §5.3 y §6.1. Cierra prohibiendo nombrar estructuras, algoritmos, clases
+y módulos.
+
+**Qué se obtuvo.** `specs/003-niebla-y-ir-a/spec.md` con cinco historias priorizadas, 24
+requisitos `FR-001`…`FR-024` y ocho criterios `SC-001`…`SC-008`. Los seis casos obligatorios de
+§3.4 quedaron como escenarios de aceptación.
+
+**El clarify cerró dos preguntas**, las dos sobre cuándo se detiene el viaje y las dos con efecto
+observable:
+
+- *Si el jugador ya está en una sala con enemigos, ¿el viaje empieza?* **Sí.** §3.4 detiene el
+  viaje cuando el jugador **entra** a una sala con enemigos, y quien ya está allí no entra. Además
+  pedir irse de una sala con un enemigo al lado es justo lo razonable.
+- *¿El daño que llega entre dos pasos, sin moverse, detiene el viaje?* **Sí.** La regla existe
+  para devolverle el control cuando algo le pasa, y da igual si el daño llegó al moverse o estando
+  quieto.
+
+**Decisión heredada de 002.** `SC-005` recoge la prueba que pidió Sofía al cerrar el contrato de
+rutas: dos estados reales distintos que produzcan el mismo mapa conocido deben producir el mismo
+viaje. Es la garantía de que «ir a» no observa nada fuera del conocimiento del jugador, que es la
+frontera que ella y yo acordamos y que §3.3 exige.

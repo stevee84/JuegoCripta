@@ -9,6 +9,14 @@ class NodoDoble:
         self.anterior = None
         self.siguiente = None
 
+    def __getstate__(self):
+        # Spec 004 (research R2): los enlaces los reconstruye la lista al restaurarse. Copiarlos
+        # aquí haría que copiar o guardar un nodo recorriera toda la cadena de forma recursiva.
+        estado = self.__dict__.copy()
+        estado["anterior"] = None
+        estado["siguiente"] = None
+        return estado
+
 
 class ListaDobleImpl(ListaDoble):
     """
@@ -35,6 +43,39 @@ class ListaDobleImpl(ListaDoble):
         self.primero = None
         self.ultimo = None
         self.cantidad = 0
+
+    def __getstate__(self):
+        """Copiar o guardar sin recursión (spec 004, research R2).
+
+        La cadena de nodos se entrega como una lista plana en orden; los mismos nodos se
+        conservan (otros objetos, como el cursor del inventario, los referencian) y se vuelven
+        a enlazar en ``__setstate__``. Recorrerla cuesta O(n) iterativo.
+        """
+        estado = self.__dict__.copy()
+        nodos = []
+        nodo = self.primero
+        while nodo is not None:
+            nodos.append(nodo)
+            nodo = nodo.siguiente
+        estado["primero"] = None
+        estado["ultimo"] = None
+        estado["_nodos_en_orden"] = nodos
+        return estado
+
+    def __setstate__(self, estado):
+        nodos = estado.pop("_nodos_en_orden", None)
+        self.__dict__.update(estado)
+        if nodos is None:
+            return
+        anterior = None
+        for nodo in nodos:
+            nodo.anterior = anterior
+            nodo.siguiente = None
+            if anterior is not None:
+                anterior.siguiente = nodo
+            anterior = nodo
+        self.primero = nodos[0] if nodos else None
+        self.ultimo = anterior
 
     def insertar(self, valor):
         # Cada dato se almacena dentro de un nuevo nodo.

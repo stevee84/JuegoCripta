@@ -71,3 +71,15 @@ La salida JSON debe incluir la sección de la línea de tiempo con K = 10, 50 y 
 control, hacia adelante frente a hacia atrás, y las mediciones de punta a punta de retroceso, replay e
 inventario (FR-024 a FR-027). El peor caso de `historia` con 5 000 acciones y el K por defecto debe
 estar por debajo de 50 ms (SC-001).
+
+## Resultado de la verificación (T050, 2026-11-11)
+
+- `python -m pytest -q -rs`: **1335 aprobadas, 0 omitidas, 0 fallidas** (incluye la suite de las
+  specs 001 y 002 integradas hasta `origin/Sofia@5000d1f` y `Steve@5000d1f`).
+- Pasos 1 a 4 y 6: cubiertos por pruebas automáticas (`tests/test_controller/test_historia.py`,
+  `test_replay_hasta.py`, `test_historia_pygame.py`, `tests/test_logica/test_linea_tiempo.py`,
+  `tests/test_bench_linea_tiempo.py`), y `--replay --hasta` también en un proceso aparte sin vista.
+- Paso 5 (guardar y cargar con el archivo de partida): **pendiente** del guardado de Steven (T034 y
+  T035). La serialización propia de la línea ya está probada (T032 y T033).
+- Mapa conocido en el resumen: **pendiente** de la spec 003 (T040); hoy muestra «no disponible».
+- Casos del Apéndice B: 5 de 6 con prueba; falta el del archivo de la Parte I (T035).

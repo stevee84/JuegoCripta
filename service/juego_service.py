@@ -43,6 +43,23 @@ class JuegoService:
         self._limite_presupuesto = None
         self._base_cache = (None, None)
         self._cargador = None
+        # Línea de tiempo (spec 004): se crea al iniciar una partida nueva.
+        self._checkpoint_cada = None
+        self._linea_tiempo = None
+
+    def configurar_checkpoint_cada(self, k) -> None:
+        """K de --checkpoint-cada para las partidas que se inicien (spec 004, FR-015)."""
+        from logica.linea_tiempo import LineaTiempo
+        self._checkpoint_cada = LineaTiempo.validar_k(k)
+
+    def obtener_linea_tiempo(self):
+        return self._linea_tiempo
+
+    def _crear_linea_tiempo(self, estado):
+        from logica.linea_tiempo import LineaTiempo
+        k = self._checkpoint_cada or LineaTiempo.K_POR_DEFECTO
+        self._linea_tiempo = LineaTiempo(estado, k)
+        estado.historial.vincular_linea(self._linea_tiempo)
 
     def iniciar_partida(self, cripta_id: str, estado=None):
         if not isinstance(cripta_id, str) or not cripta_id.strip():
@@ -56,6 +73,7 @@ class JuegoService:
             self._inventario = estado.inventario
             self._operaciones_inventario = None
             self._estado_inicial = None  # No declara reproducible un estado externo.
+            self._linea_tiempo = None  # Spec 004: sin línea para un estado externo.
             self._ruta_registro = self._marca_registro = self._error_registro = None
             self._versiones = None
             self._acciones_coordinadas = 0
@@ -147,6 +165,8 @@ class JuegoService:
         if catalogo is not None:
             self.conectar_inventario(inventario, catalogo)
         self._sincronizar_fichas_en_uso()
+        # Spec 004, T010: el punto de control inicial se toma con la partida ya lista.
+        self._crear_linea_tiempo(estado)
         return estado
 
     def conectar_inventario(self, inventario, catalogo, historial=None, adaptador=None):
@@ -373,6 +393,7 @@ class JuegoService:
         self._versiones_exigidas = None
         self._semilla = estado.semilla
         self._estado_inicial = None  # Una carga no es el inicio de un replay.
+        self._linea_tiempo = None  # Spec 004: la carga con línea llega con el guardado v10.
         self._ruta_registro = self._marca_registro = self._error_registro = None
         self._acciones_coordinadas = 0
         # Cargar un final guardado no vuelve a anexar el mismo resultado.
@@ -746,6 +767,7 @@ class JuegoService:
             copia._cache = self._cache
         if self._inicializador is not None:
             copia.conectar_inicializador(self._inicializador)
+        copia._checkpoint_cada = self._checkpoint_cada  # Spec 004: mismo K que el original.
         return copia
 
     def obtener_estado(self):

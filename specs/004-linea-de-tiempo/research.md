@@ -17,7 +17,7 @@ cambian con las mediciones de `--bench` (FR-024) y el cambio, si lo hay, se docu
 | El reloj cambia solo con un cambio registrado, uno por evento con tiempo distinto. | `logica/motor_juego.py:686`, `logica/mutaciones.py` (`atributo`) | Se puede detener el deshacer dentro de una transacción justo cuando el reloj vuelve a ser ≤ t (R4). |
 | El historial del pergamino guarda solo 5 transacciones y descarta las antiguas. | `logica/historial_reversible.py` | La línea de tiempo necesita su propio registro; no puede leer del historial. |
 | Recoger o soltar un pergamino y consumir el pergamino al retroceder **no** se registran como cambio reversible (excepción de P1 §2.11). | `logica/motor_juego.py:507-528`, `logica/servicio_inventario.py:152-167` | Sin un registro adicional, la línea mostraría mal los pergaminos en el pasado (R6). |
-| `copy.deepcopy` y `pickle` funcionan sobre el estado de una partida real **desde `f89b7b5`** (Sofía). Antes fallaban en la lista de enemigos de cada sala; la primera versión de este documento afirmaba que ya funcionaban porque se comprobó con un estado más simple. Lo detectó T001. | `dto/sala.py`, `tests/test_dto/test_sala_copia_serializacion.py` | Los puntos de control pueden ser una copia profunda del estado, tomada una vez cada K acciones, y el guardado v10 puede usar `pickle`. Las consultas no copian (R3). |
+| `copy.deepcopy` y `pickle` funcionan sobre el estado de una partida real **desde `f89b7b5`** (Sofía). Antes fallaban en la lista de enemigos de cada sala; la primera versión de este documento afirmaba que ya funcionaban porque se comprobó con un estado más simple. Lo detectó T001. | `dto/sala.py`, `tests/test_dto/test_sala_copia_serializacion.py` | Los puntos de control pueden ser una copia profunda del estado, tomada una vez cada K acciones, y el guardado v10 puede usar `pickle`. Las consultas no copian (R3). **Hallado en T041**: en partidas largas una sola transacción llega a cientos de cambios, y la lista doble propia se copiaba de forma recursiva, nodo por nodo, hasta superar el límite de recursión de Python. Copiar y serializar la lista doble debe ser iterativo (lista plana de nodos que se vuelve a enlazar), sin perder la identidad de los nodos. |
 | El guardado binario ya está en v9 (Steven, spec 002). Al cargar, el historial del pergamino empieza vacío. | `datos/guardado_binario.py:21`, `controller/controlador_juego.py:129` | La línea de tiempo necesita la v10 (R8). El archivo es de Steven. |
 
 ## R1. ¿Reconstruir hacia adelante o hacia atrás?
@@ -58,6 +58,13 @@ queda en el paquete es la única copia de esa ventana (salvo R5).
 **Alternativas**: cambios con ids estables en lugar de referencias (reescribir todos los cambios y
 el motor de Sofía, descartado por la constitución VIII); copias del estado sin la ventana de
 cambios (no se podría deshacer sobre ellas).
+
+**Ajuste medido en T041** (estado de 1 500 acciones de `cripta-04`, ventana de 10 transacciones con
+1 122 cambios): copiar el paquete costaba 71,5 ms. El punto de control ahora **comparte en vez de
+copiar** dos cosas: el historial del pergamino (solo sirve para seguir jugando, y un punto de control
+solo se consulta; copiar sus 5 transacciones era la mayor parte del costo) y las tuplas del estado del
+azar que guarda cada turno enemigo (son inmutables). Con eso la copia baja a 19,1 ms. El resto del
+paquete se sigue copiando junto, así que las referencias entre estado y cambios se conservan.
 
 ## R3. ¿Cómo se consulta sin destruir el punto de control?
 
@@ -117,6 +124,10 @@ no decreciente. Para `historia <t>`:
    registran después del cambio de reloj de ese evento, así que al detenerse quedan aplicados
    exactamente los eventos con tiempo ≤ t (FR-001, FR-002). La transacción k es la única deshecha a
    medias: el total sigue ≤ K.
+   **Corregido al implementar T015**: el motor saca el evento de la agenda *antes* de adelantar el
+   reloj, así que cuando el reloj vuelve a ser ≤ t todavía hay que devolver a la agenda los eventos
+   con tiempo > t que ya se habían extraído. La condición mira también el cambio siguiente: se sigue
+   deshaciendo mientras sea la extracción de un evento posterior a t.
 
 **Alternativas**: buscar k recorriendo las acciones (O(n), viola FR-019); guardar un punto de
 control por evento (viola FR-017).
@@ -133,8 +144,10 @@ motor (archivo de Sofía):
   cantidad de acciones. Cuesta O(acciones revertidas), como máximo 5 (FR-013).
 
 Para que el recorte pueda volver a armar la cola viva cuando descarta un punto de control, la línea
-conserva las referencias vivas de las transacciones de las **últimas 2K acciones**. Es memoria de
-cambios (no de copias) acotada por 2K, compatible con FR-021.
+conserva las referencias vivas de las transacciones de las **últimas L = max(2K, K + 5) acciones**
+(K + 5 porque un pergamino puede revertir hasta 5 acciones y después hay que seguir teniendo la cola
+que va desde el punto de control anterior; con K = 1, 2K no alcanzaría). Es memoria de cambios (no de
+copias) acotada por L + K, compatible con FR-021.
 
 **Alternativas**: engancharse en `MotorJuego.ejecutar_accion` (archivo de Sofía, zona de choque
 según el reparto); leer el log y re-ejecutar (es R1 hacia adelante).
@@ -163,6 +176,12 @@ margen y el menor uso de memoria; se justifica con la tabla de `--bench` en `DEC
 
 **Cómo se mide la memoria**: `tracemalloc` (biblioteca estándar, solo en `--bench`), midiendo los
 bytes retenidos por la línea de tiempo después de 5 000 acciones, separado del estado de la partida.
+
+**Decisión final (T047, 2026-11-10)**: **K = 10**, con la medición de 5 000 acciones de `--bench`
+(`benchmarks/resultados/linea_tiempo_5000_k10.json`): mediana de `historia` 16,3 ms, p95 59,7 ms,
+máximo 82,7 ms; K = 50 y K = 200 quedan por encima de 100 ms de mediana. Ningún K cumple a la vez
+los 50 ms en el peor caso y los 20 ms por ciclo con esta carga extrema; los límites están en
+`DECISIONES.md` §5.5.
 
 ## R8. Persistencia y contrato con Steven (guardado v10)
 

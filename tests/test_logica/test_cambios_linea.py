@@ -13,6 +13,7 @@ import unittest
 from datos.fuente_offline import FuenteOffline
 from dto.accion import Accion
 from logica.cache_catalogo import CacheCatalogo
+from contratos.cambio_reversible import CambioReversible
 from logica.cambios import CambioAtributo, CambioAzar, CambioSoloLinea, TransaccionAccion
 from logica.motor_juego import MotorJuego
 from service.inicializador_partida import InicializadorPartida
@@ -99,7 +100,7 @@ class TestCambiosSoloLinea(unittest.TestCase):
         transaccion = TransaccionAccion()
         transaccion.registrar_solo_linea(CambioAtributo(caja, "valor"))
         caja.valor = 2
-        transaccion.deshacer_mientras(object(), lambda estado: True, [])
+        transaccion.deshacer_mientras(object(), lambda estado, cambio: True, [])
         self.assertEqual(caja.valor, 1)
         self.assertIsInstance(transaccion._cambios.primero.valor, CambioSoloLinea)
 
@@ -114,7 +115,7 @@ class TestDeshacerMientras(unittest.TestCase):
             transaccion.registrar(CambioAtributo(caja, "valor"))
             caja.valor = valor
         inversos = []
-        transaccion.deshacer_mientras(object(), lambda estado: caja.valor > 2, inversos)
+        transaccion.deshacer_mientras(object(), lambda estado, cambio: caja.valor > 2, inversos)
         self.assertEqual(caja.valor, 2)
         self.assertEqual(len(inversos), 2)
         self.assertEqual(transaccion.get_cantidad(), 4)
@@ -127,7 +128,7 @@ class TestDeshacerMientras(unittest.TestCase):
         caja.valor = 5
         for _ in range(3):
             inversos = []
-            transaccion.deshacer_mientras(object(), lambda estado: True, inversos)
+            transaccion.deshacer_mientras(object(), lambda estado, cambio: True, inversos)
             self.assertEqual(caja.valor, 0)
             TransaccionAccion.rehacer(object(), inversos)
             self.assertEqual(caja.valor, 5)
@@ -141,7 +142,7 @@ class TestDeshacerMientras(unittest.TestCase):
         transaccion.registrar(_SinInverso(caja, "valor"))
         caja.valor = 5
         with self.assertRaises(TypeError):
-            transaccion.deshacer_mientras(object(), lambda estado: True, [])
+            transaccion.deshacer_mientras(object(), lambda estado, cambio: True, [])
         self.assertEqual(caja.valor, 5)
 
 
@@ -165,12 +166,12 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
                 nodo = nodo.siguiente
             antes = huella(estado)
             inversos = []
-            transaccion.deshacer_mientras(estado, lambda e: True, inversos)
+            transaccion.deshacer_mientras(estado, lambda e, c: True, inversos)
             self.assertNotEqual(huella(estado), antes)
             TransaccionAccion.rehacer(estado, inversos)
             self.assertEqual(huella(estado), antes)
             # Deja la partida en el final de la transacción anterior para seguir.
-            transaccion.deshacer_mientras(estado, lambda e: True, [])
+            transaccion.deshacer_mientras(estado, lambda e, c: True, [])
         for esperado in ("CambioAtributo", "CambioLista", "CambioAgenda", "CambioRecogerObjeto",
                          "CambioSoltarObjeto", "CambioEquipo", "CambioConsumirObjeto"):
             self.assertIn(esperado, tipos)
@@ -183,7 +184,7 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
         azar.random()
         despues = azar.getstate()
         inversos = []
-        transaccion.deshacer_mientras(object(), lambda e: True, inversos)
+        transaccion.deshacer_mientras(object(), lambda e, c: True, inversos)
         self.assertNotEqual(azar.getstate(), despues)
         TransaccionAccion.rehacer(object(), inversos)
         self.assertEqual(azar.getstate(), despues)
@@ -193,7 +194,7 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
         antes = huella(estado)
         cuenta = [0]
 
-        def condicion(e):
+        def condicion(e, c):
             cuenta[0] += 1
             if cuenta[0] > 7:
                 raise RuntimeError("falla simulada a la mitad de la consulta")
@@ -207,6 +208,51 @@ class TestDeshacerYRehacerPartidaReal(unittest.TestCase):
         finally:
             TransaccionAccion.rehacer(estado, inversos)
         self.assertEqual(huella(estado), antes)
+
+
+
+class _CambioEnTabla(CambioReversible):
+    """Como el CambioConocimiento de la 003: modifica una tabla hash propia en su sitio."""
+
+    def __init__(self, tabla, clave, valor):
+        self.tabla, self.clave, self.valor = tabla, clave, valor
+        self.existia = tabla.contiene(clave)
+        self.anterior = tabla.obtener(clave) if self.existia else None
+
+    def aplicar(self):
+        self.tabla.insertar(self.clave, self.valor)
+
+    def deshacer(self, estado):
+        if self.existia:
+            self.tabla.insertar(self.clave, self.anterior)
+        else:
+            self.tabla.eliminar(self.clave)
+
+    def rehacer(self, estado):
+        self.aplicar()
+
+
+class TestGanchoRehacer(unittest.TestCase):
+    """Cambios de otras capacidades que saben volver a aplicarse (contracts/dependencias.md)."""
+
+    def test_fr022_un_cambio_con_rehacer_vuelve_exacto(self):
+        from estructuras.tabla_hash import TablaHashImpl
+        tabla = TablaHashImpl()
+        tabla.insertar("sala-1", "explorada")
+        transaccion = TransaccionAccion()
+        for clave, valor in (("sala-2", "avistada"), ("sala-1", "explorada-otra-vez"),
+                             ("sala-3", "explorada")):
+            cambio = _CambioEnTabla(tabla, clave, valor)
+            transaccion.registrar(cambio)
+            cambio.aplicar()
+        despues = sorted((c, tabla.obtener(c)) for c in tabla.claves())
+        for _ in range(3):
+            inversos = []
+            transaccion.deshacer_mientras(object(), lambda e, c: True, inversos)
+            self.assertEqual(sorted((c, tabla.obtener(c)) for c in tabla.claves()),
+                             [("sala-1", "explorada")])
+            TransaccionAccion.rehacer(object(), inversos)
+            self.assertEqual(sorted((c, tabla.obtener(c)) for c in tabla.claves()), despues)
 
 
 if __name__ == "__main__":

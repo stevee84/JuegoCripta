@@ -14,7 +14,7 @@ Una por partida. Vive junto al estado y se guarda en el archivo de partida (FR-0
 | `k` | Entero ≥ 1 | Fijo durante toda la partida; al cargar se conserva el guardado (FR-030). |
 | `instantes` | Arreglo contiguo; `instantes[i]` = reloj al decidir la acción i + 1 | No decreciente. Se agrega al final al cerrar cada acción. `instantes[0] = 0` en una partida nueva. Longitud n + 1: el último es el instante de la decisión pendiente. |
 | `puntos` | Arreglo contiguo de puntos de control; `puntos[j]` es el de la acción j·K | `puntos[0]` es el estado inicial (m = 0). Nunca más de uno cada K acciones (FR-017). |
-| `cola` | Referencias vivas a las transacciones de las últimas 2K acciones como máximo | No son copias. Sirven para armar el siguiente punto de control y para recortar (research R5). |
+| `cola` | Referencias vivas a las transacciones de las últimas L acciones, con L = max(2K, K + 5), más las posteriores al último punto de control (menos de K) | No son copias. Sirven para armar el siguiente punto de control y para recortar (research R5). |
 
 **Transiciones**:
 - *Acción cerrada* → agregar su transacción a `cola` e `instantes`; si n es múltiplo de K, crear
@@ -53,6 +53,13 @@ Operaciones nuevas:
 (atributo, dato de ficha, estado del azar, posición en una lista, evento de la agenda, objeto del
 inventario). Aplicarlo deja el dato como estaba antes de deshacer. Solo existe durante la consulta.
 
+**Cambios de otras capacidades** (pedido de Steven para la spec 003, 2026-11-13): un cambio que
+modifica en su sitio una estructura propia (por ejemplo, una tabla hash del mapa conocido) no se
+puede rehacer restaurando atributos. Si el cambio define `rehacer(estado)`, la línea lo usa para
+volver a aplicarlo después de deshacerlo; si define `fotografiar_para_rehacer(inverso, estado)`,
+usa eso; y si no define ninguno de los dos y no es un tipo conocido, la consulta falla antes de
+tocar nada. `rehacer` debe dejar el estado exactamente como estaba antes de deshacer, sin copias.
+
 ## Consulta
 
 | Campo | Contenido | Validación |
@@ -70,7 +77,8 @@ inventario). Aplicarlo deja el dato como estaba antes de deshacer. Solo existe d
 
 **Resolución de una consulta por instante t**: búsqueda binaria en `instantes` de la mayor posición
 i con `instantes[i]` ≤ t; k = i + 1. Si `instantes[i]` = t, responder «antes de #k». Si no,
-reconstruir «antes de #(k+1)» y deshacer la transacción k mientras el reloj sea > t (research R4).
+reconstruir «antes de #(k+1)» y deshacer la transacción k mientras el reloj sea > t o el cambio
+siguiente sea la extracción de un evento posterior a t (research R4).
 
 ## Resumen de estado
 

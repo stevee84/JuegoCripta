@@ -83,6 +83,8 @@ python main.py --vista consola       # vista de consola
 python main.py --offline             # lee las respuestas desde datos_offline/ (sin red)
 python main.py --demo                # partida de demostración, sin servicio web
 python main.py --replay partidas/logs/<bitacora>.log
+python main.py --replay partidas/logs/<bitacora>.log --hasta 400   # resumen en t=400, sin vista
+python main.py --checkpoint-cada 25  # punto de control de la línea de tiempo cada 25 acciones
 python main.py --bench               # mediciones por subsistema, sin interfaz
 ```
 
@@ -94,6 +96,8 @@ python main.py --bench               # mediciones por subsistema, sin interfaz
 | `--cache-size N` | Fichas del catálogo que se mantienen en memoria (por defecto, 25). |
 | `--semilla N` | Semilla del azar de la partida (por defecto, 0). La misma semilla repite el mismo azar. |
 | `--replay RUTA` | Reproduce una bitácora de partida sin vista ni entrada del usuario. |
+| `--hasta T` | Solo con `--replay`: reproduce hasta el instante `T` e imprime el mismo resumen que `historia T`. Si `T` es posterior al final, muestra el estado final y avisa que la partida terminó antes. |
+| `--checkpoint-cada K` | Acciones del jugador entre dos puntos de control de la línea de tiempo (entero ≥ 1, por defecto 10). Vale para la partida, `--replay` y `--bench`. |
 | `--bench` | Ejecuta cargas sintéticas y reporta tiempos en JSON. No crea ninguna vista. |
 | `--log-nivel {DEBUG,INFO,WARNING,ERROR}` | Detalle del registro de red, caché y persistencia en stderr. Por defecto, `WARNING`: una partida normal no imprime nada. |
 
@@ -129,6 +133,8 @@ Se maneja con el ratón:
 | `inventario [peso\|valor\|nombre]` | Vista ordenada del inventario. |
 | `usar [X]`, `equipar`, `soltar` | Operan sobre el objeto seleccionado (o sobre `X`). |
 | `retroceder [X]` | Usa un pergamino de retroceso; no consume tiempo. |
+| `historia T`, `historia #K` | Estado de la partida en el instante `T`, o justo antes de la acción número `K`. No consume tiempo, no se registra en la bitácora y no cambia el retroceso. |
+| `resolubilidad` | Informe de resolubilidad de la cripta, calculado antes de empezar. |
 | `criptas`, `cripta ID` | Lista las criptas e inicia una partida. |
 | `guardar [RUTA]`, `cargar [RUTA]` | Sin ruta usan `partidas/partida.bin`. |
 | `bitacora`, `puntajes [criterio]` | Mensajes del juego y tabla de puntajes. |

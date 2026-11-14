@@ -267,6 +267,141 @@ dentro del intervalo. Producción reporta 28 y 24 notificaciones enemigas, respe
 
 ---
 
+## 5.3 El mapa conocido
+
+**Especificación**: [specs/003-niebla-y-ir-a/spec.md](specs/003-niebla-y-ir-a/spec.md) ·
+**Plan**: [specs/003-niebla-y-ir-a/plan.md](specs/003-niebla-y-ir-a/plan.md) ·
+**Alternativas**: [specs/003-niebla-y-ir-a/research.md](specs/003-niebla-y-ir-a/research.md)
+
+**¿Coincide con el plan original?** Sí en lo esencial: las dos ideas del plan —no almacenar lo
+desconocido y reutilizar el buscador de 001 con otra vista— se implementaron tal cual. Lo que el
+plan no previó fue el choque con la línea de tiempo, descrito en *Límites conocidos*.
+
+### 1. Problema
+
+El jugador deja de ver la cripta entera y pasa a conocer solo lo que descubrió. Hay que mantener,
+por cada sala, uno de tres estados desde su punto de vista, y recordar el estado de cada puerta
+tal como la observó la última vez, aunque haya cambiado después.
+
+§5.3 fija tres exigencias que tiran en direcciones distintas:
+
+- **Consultar** si una sala está explorada, avistada o desconocida, y el estado recordado de una
+  puerta, son operaciones muy frecuentes: ocurren en cada dibujo de la vista, en cada paso de
+  «ir a» y en cada actualización por antorcha.
+- **Explorar** salas nuevas debe costar en proporción a las salas reveladas, no al tamaño del
+  mapa conocido.
+- **Registrar y deshacer** un cambio debe ser barato, porque el mapa se revierte con el pergamino
+  y se reconstruye en la línea de tiempo.
+
+Y una cuarta, de §3.4: calcular un paso del viaje por debajo de 5 ms.
+
+### 2. Alternativas consideradas
+
+**Marcar el estado en cada sala del mapa real.** Mezcla el conocimiento del jugador con el
+esqueleto, que §3.3 separa expresamente, y deja a la línea de tiempo sin forma de reconstruir el
+conocimiento de un instante pasado sin tocar el mapa.
+
+**Una lista de salas exploradas.** Consultar pasaría a recorrer la lista, justo lo que §5.3
+señala como operación frecuente y lo que el Principio II prohíbe. Se midió: ver más abajo.
+
+**Guardar también las desconocidas, con su estado.** Hace que explorar y consultar dependan del
+tamaño del mapa completo en vez de lo descubierto, y rompe la proporcionalidad.
+
+**Una copia del mapa recortada al conocimiento.** Habría que rehacerla en cada revelación y
+copiarla entera para el retroceso, que es lo que el Principio VII prohíbe.
+
+**Un buscador de caminos propio para «ir a».** §5.3 pide justificar si se comparte implementación
+con la búsqueda del cazador: **se comparte**. El buscador de 001 ya minimiza la suma de costos y
+desempata por la vecina de menor id, que es exactamente lo que §3.4 pide. Lo que se separa es el
+**dato**, no el algoritmo.
+
+### 3. Decisión
+
+**Lo desconocido no se almacena.** Tres tablas hash propias indexadas por id: salas exploradas,
+salas avistadas y puertas observadas. Una sala desconocida simplemente no está en ninguna.
+
+De ahí salen las tres exigencias de §5.3 sin trucos: consultar es una búsqueda por id; revelar
+`k` salas son `k` inserciones, independientemente de cuántas haya ya; y cada revelación es un
+hecho pequeño e independiente, así que deshacerla es quitar esos hechos y nada más.
+
+Para el viaje se construye una **vista** con la misma interfaz que ya consume el buscador de 001
+—`contiene_sala` y `salidas_transitables`— pero que responde solo con lo que el jugador sabe:
+`contiene_sala` solo por salas exploradas, y `salidas_transitables` solo por salidas que el mapa
+**recuerda** abiertas hacia salas exploradas.
+
+La separación la garantiza la vista y no la disciplina de quien la use: el buscador **no recibe
+el mapa real**, así que no puede observar lo que el jugador no sabe aunque el código cambiara.
+
+### 4. Análisis de complejidad
+
+Con `V` salas conocidas y `E` salidas conocidas:
+
+- Consultar el estado de una sala o de una puerta: **O(1)** promedio.
+- Entrar a una sala y revelar sus vecinas: **O(salidas de esa sala)**, no O(V).
+- Registrar o deshacer una revelación: **O(1)** por hecho revelado.
+- Un paso del viaje: lo que cueste el buscador de 001 sobre el subgrafo conocido.
+
+### 5. Evidencia empírica
+
+Consultar el estado de una sala, mediana de 5 repeticiones, sobre mallas deterministas por
+semilla:
+
+| SALAS | TABLA PROPIA | RECORRIENDO EL MAPA | VECES |
+|---|---|---|---|
+| 100 | 612 ns | 2 502 ns | 4× |
+| 400 | 628 ns | 9 181 ns | 15× |
+| 900 | 687 ns | 19 220 ns | 28× |
+| 1 600 | 671 ns | 34 189 ns | **51×** |
+
+La tabla propia se mantiene plana —de 612 a 671 ns entre 100 y 1 600 salas— mientras recorrer
+crece de forma lineal. Eso es `SC-002`.
+
+Explorar una sala, con mapas conocidos de distinto tamaño:
+
+| SALAS YA CONOCIDAS | POR REVELACIÓN |
+|---|---|
+| 100 | 14,9 µs |
+| 400 | 20,5 µs |
+| 900 | 20,1 µs |
+| 1 600 | 20,5 µs |
+
+Se estabiliza: revelar cuesta lo mismo sobre un mapa de 400 que sobre uno de 1 600. Eso es
+`SC-003`.
+
+Un paso de «ir a», contra el límite de 5 ms de §6.1:
+
+| SALAS | MEDIANA | LÍMITE |
+|---|---|---|
+| 9 | 0,242 ms | 5 ms |
+| 25 | 0,876 ms | 5 ms |
+| 49 | 1,971 ms | 5 ms |
+| 64 | 2,497 ms | 5 ms |
+
+Las criptas publicadas tienen entre 6 y 50 salas, así que el caso real queda en unos 2 ms, con
+algo más del doble de margen.
+
+### 6. Límites conocidos
+
+- **El paso de «ir a» se pasa de 5 ms en criptas mucho mayores que las publicadas.** Con 100
+  salas conocidas son 4,3 ms y con 1 600 son 89,9 ms. No se optimizó porque las criptas
+  publicadas llegan a 50 y §6.1 admite ajustar los valores cuando se publique la cripta de
+  referencia. Si esa cripta resultara mucho mayor, el camino sería reutilizar el cálculo entre
+  pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
+  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—, no cambiar la
+  estructura.
+- **El conocimiento todavía no se revierte ni se guarda.** `FR-022` está sin implementar: el
+  mecanismo de rehacer de la línea de tiempo (§5.5) solo sabe restaurar atributos, listas y
+  diccionarios, y el conocimiento vive en tablas propias que se modifican en su sitio, como exige
+  §6.2. Hace falta que esa capacidad ofrezca una forma de volver a aplicar un cambio; está
+  planteado al grupo. Mientras tanto el conocimiento avanza pero no retrocede.
+- **Las mediciones usan mallas regulares.** Validan el crecimiento, no cualquier topología.
+- Las mediciones son de un solo equipo y no caracterizan otras máquinas.
+
+**Trazabilidad**: `logica/mapa_conocido.py`; `logica/viaje.py`;
+`logica/rutas_ponderadas.py` (buscador de 001, no se modifica);
+`benchmarks/integrante2.py` (`medir_mapa_conocido`, `medir_paso_ir_a`);
+`tests/test_logica/test_mapa_conocido.py`; `tests/test_logica/test_viaje.py`.
+
 ## 5.4 Resolubilidad
 
 **Especificación**: [specs/002-resolubilidad/spec.md](specs/002-resolubilidad/spec.md) ·
@@ -438,7 +573,125 @@ a pedir nada (`SC-004`).
 
 ---
 
+## 5.5 Línea de tiempo y puntos de control
+
+**Especificación**: [specs/004-linea-de-tiempo/spec.md](specs/004-linea-de-tiempo/spec.md) ·
+**Plan**: [specs/004-linea-de-tiempo/plan.md](specs/004-linea-de-tiempo/plan.md) ·
+**Alternativas y mediciones previas**: [specs/004-linea-de-tiempo/research.md](specs/004-linea-de-tiempo/research.md) ·
+**Responsable**: Joshua Cabrera Bonilla
+
+**¿Coincide con el plan original?** En el mecanismo, sí: reconstruir hacia atrás desde el punto de
+control siguiente. Cambió en cuatro puntos, todos por mediciones o pruebas: (1) la primera versión
+del plan copiaba el estado en cada consulta; `/speckit-analyze` lo marcó contra el principio VII y
+se cambió a deshacer y rehacer en sitio; (2) el K por defecto pasó de 50 a 10 con la medición de
+T001; (3) la copia del estado real exigió arreglar la serialización de las salas (Sofía, `f89b7b5`)
+y de la lista doble, que se copiaba de forma recursiva; (4) el punto de control comparte el historial
+del pergamino y las tuplas del azar en lugar de copiarlos, lo que bajó la copia de 71,5 a 19,1 ms.
+
+### 1. Problema
+
+`historia <t>` e `historia #k` deben mostrar el estado de la partida en cualquier instante pasado
+sin modificarla (§3.6). Se permiten copias completas del estado, pero como máximo una cada K
+acciones del jugador, y una consulta no puede aplicar ni deshacer cambios de más de K acciones
+(§5.5). Ubicar el punto de control más cercano es frecuente y su costo importa en partidas largas.
+Al usar un pergamino la línea debe recortarse sin recorrer la historia. El límite es 50 ms con al
+menos 5 000 acciones y el K por defecto (§6.1).
+
+### 2. Alternativas consideradas
+
+| Alternativa | Resultado |
+|---|---|
+| Sin puntos de control: deshacer desde el estado actual | Viola «como máximo K». Medido: hasta 97 s por consulta con 5 000 acciones. |
+| Una copia completa por acción (K = 1) | Viola la memoria de §5.5 («acciones por tamaño del estado»). |
+| Copia de trabajo del punto de control en cada consulta | Choca con el principio VII. Medido en T001: de 8 a 14 veces más lenta que deshacer. |
+| Re-simular hacia adelante desde el punto de control anterior | Llega al mismo estado (comprobado). Con el contenido de todas las salas cargado salió más rápida (10 ms frente a 44 ms con K = 10). Se descartó para producción porque ejecuta las reglas del motor en cada consulta y, con salas descargadas después del punto de control, necesitaría volver a pedir contenido al servicio (presupuesto de solicitudes, principio VI). Las copias tampoco llevan el catálogo de fichas. |
+| **Hacia atrás desde el punto de control siguiente, deshaciendo y rehaciendo en sitio** | **Elegida.** |
+
+### 3. Decisión
+
+- **Instantes**: arreglo contiguo no decreciente con el reloj de cada decisión; el instante t se
+  traduce a una acción con una búsqueda binaria propia (sin `bisect`).
+- **Puntos de control**: arreglo contiguo; el de la acción j·K está en la posición j, así que se
+  ubica por aritmética, ⌈(k − 1) / K⌉. Cada punto es una sola copia profunda del estado y de las
+  transacciones de su ventana, hecha junta para que los cambios copiados apunten al estado copiado.
+  Comparte en vez de copiar el historial del pergamino y las tuplas inmutables del azar.
+- **Consulta**: deshace sobre el punto de control (o sobre el estado vivo si la acción está después
+  del último punto) como máximo K transacciones, la última a medias si t cae entre dos decisiones;
+  arma el resumen y rehace con los inversos en un `finally`. Nunca copia el estado.
+- **Pergamino**: la línea quita lo revertido del final de sus arreglos y descarta los puntos
+  posteriores. Recoger, soltar y consumir pergaminos se anotan como cambios «solo línea» para que el
+  pasado los muestre bien.
+- **K por defecto: 10** (`LineaTiempo.K_POR_DEFECTO`, configurable con `--checkpoint-cada`).
+- **Persistencia**: pendiente del guardado de Steven (contrato `specs/004-linea-de-tiempo/contracts/guardado-v10.md`).
+
+### 4. Análisis de complejidad
+
+| Operación | Costo |
+|---|---|
+| Registrar una acción | O(1) amortizado, más una copia del estado cada K acciones |
+| Ubicar el punto de control de #k | O(1) |
+| Ubicar la acción de un instante t | O(log n) |
+| `historia` | O(c · K) para deshacer y rehacer, con c cambios por acción, más armar el resumen |
+| Recorte por pergamino | O(r), con r ≤ 5 acciones revertidas |
+| Memoria | ⌈n / K⌉ copias del estado más los cambios de todas las acciones |
+
+### 5. Evidencia empírica
+
+Todo sale de `main.py --bench` (`benchmarks/linea_tiempo.py`, proveedor `medir_linea_tiempo`) y
+queda guardado en `benchmarks/resultados/linea_tiempo_5000.json` (los cuatro K en una partida) y
+`benchmarks/resultados/linea_tiempo_5000_k10.json` (K = 10 solo, en un proceso aparte). Carga:
+5 000 acciones de `cripta-04` (50 salas), semilla 7, jugador con vida muy alta solo en la medición
+para que la partida dure, lo que va activando enemigos de toda la cripta (unos 110 cambios por
+acción). Es un peor caso.
+
+| K | `historia`: mediana / p95 / máximo | Crear un punto (mediana) | Memoria de la línea | Máx. transacciones por consulta |
+|---|---|---|---|---|
+| **10 (solo)** | **16,3 / 59,7 / 82,7 ms** | **50,6 ms** | **647 MB** | 9 |
+| 50 | 128,7 / 473,0 / 482,4 ms | 294 ms | 518 MB | 48 |
+| 200 | 549,6 / 1 918 / 2 307 ms | 1 372 ms | 439 MB | 193 |
+| sin puntos | 22,9 s / — / 97,2 s | — | 0,3 MB | 3 932 |
+
+Las filas de 50 y 200 se midieron con las cuatro líneas en el mismo proceso (más de 1,5 GB), lo
+que agrega pausas del sistema; por eso K = 10 se midió también por separado. Otras mediciones:
+un retroceso de punta a punta cuesta 3,1 ms frente a 82,8 ms de copiar el estado; reconstruir hacia
+atrás y re-simular llegan al mismo estado con los tres K; el replay rechaza un log de otra versión.
+
+**Por qué K = 10.** Es el único de los tres que deja la mediana de `historia` muy por debajo de
+50 ms (16 ms). Con K = 50 la mediana ya pasa los 100 ms. La memoria baja poco al subir K (de 647 a
+439 MB), porque la mayor parte son los cambios de las acciones, que se guardan igual con cualquier K
+(eso es lo que pide §5.5: crecer con los cambios); por eso subir K no compensa.
+
+### 6. Límites conocidos
+
+- **`historia` no cumple 50 ms en todos los casos** con esta carga: el p95 es 60 ms y el máximo
+  83 ms. La mediana sí (16 ms). En una partida normal, con menos enemigos activos por acción, cada
+  transacción es más chica y las consultas son más rápidas (T001: 5,6 ms de mediana con 600 acciones).
+- **La acción que crea un punto de control pasa los 20 ms por ciclo** (unos 51 ms, una de cada 10
+  acciones). Mejoras posibles, no implementadas: tomar el punto de control fuera del ciclo de la
+  decisión, o una copia propia del estado más barata que `copy.deepcopy`.
+- **Memoria alta en partidas muy largas** (unos 650 MB con 5 000 acciones en esta carga).
+- **Guardar y cargar la línea** depende del guardado de Steven; mientras tanto, una partida cargada
+  empieza sin línea de tiempo.
+- **El mapa conocido** del resumen dice «no disponible» hasta que exista la spec 003.
+- `pickle` ejecuta código al cargar un archivo malicioso; se acepta porque el archivo de partida es
+  local y lo produce el propio juego.
+
+**Archivos**: `logica/linea_tiempo.py`, `logica/cambios.py`, `logica/historial_reversible.py`,
+`logica/servicio_inventario.py`, `logica/inventario.py`, `estructuras/lista_doble.py`,
+`controller/resumen_historia.py`, `controller/ejecutor_replay.py`, `controller/controlador_juego.py`,
+`benchmarks/linea_tiempo.py`.
+
+---
+
 ## 5.6 Revisión de decisiones con la carga nueva
+
+**Historial de retroceso (Joshua, spec 004, FR-025).** Con la carga nueva (cazadores, costos
+variables y la línea de tiempo vinculada), un retroceso con pergamino de punta a punta (reloj, agenda,
+rastro, puertas, trampas, inventario y azar) cuesta 3,1 ms de mediana, frente a 82,8 ms de guardar una
+copia completa del estado por acción (`benchmarks/resultados/linea_tiempo_5000.json`, fila
+`retroceso_punta_a_punta`). La decisión de la Parte I (cambios reversibles, sin copias) sigue siendo
+adecuada. Cambió un detalle: la lista doble que usa el historial se copiaba de forma recursiva y
+reventaba en partidas largas; ahora se copia y serializa de forma iterativa (ver §5.5).
 
 **Especificación**: [specs/001-terreno-y-cazador/spec.md](specs/001-terreno-y-cazador/spec.md) ·
 **Plan**: [specs/001-terreno-y-cazador/plan.md](specs/001-terreno-y-cazador/plan.md) ·
@@ -685,3 +938,5 @@ observación no demuestra por qué apareció y no autoriza a borrar el dato orig
 **Trazabilidad**: `logica/mapa_cripta.py`; `estructuras/tabla_hash.py`;
 `benchmarks/mapa_cripta_integrante1.py`; `tests/test_bench_mapa_cripta.py`;
 `specs/001-terreno-y-cazador/tasks.md` (T007–T009, T049–T050, T071–T076).
+
+---

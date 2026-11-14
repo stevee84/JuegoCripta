@@ -140,7 +140,10 @@ class TransaccionAccion:
         self.registrar(CambioSoloLinea(cambio))
 
     def deshacer_mientras(self, estado, condicion, inversos: list) -> None:
-        """Deshace del más reciente al más antiguo mientras ``condicion(estado)`` sea cierta.
+        """Deshace del más reciente al más antiguo mientras ``condicion(estado, cambio)`` sea cierta.
+
+        ``cambio`` es el próximo a deshacer: la línea lo usa para seguir deshaciendo la extracción
+        de un evento posterior al instante pedido, que el motor registra antes de adelantar el reloj.
 
         Para la línea de tiempo (spec 004, research R3 y R4): no vacía la transacción ni la
         marca como revertida, incluye los cambios «solo línea» y agrega a ``inversos`` lo
@@ -148,7 +151,7 @@ class TransaccionAccion:
         ``finally`` aunque algo falle a la mitad. Cuesta O(cambios deshechos).
         """
         nodo = self._cambios.primero
-        while nodo is not None and condicion(estado):
+        while nodo is not None and condicion(estado, nodo.valor):
             cambio = nodo.valor
             inverso = _fotografiar(cambio, estado)
             cambio.deshacer(estado)
@@ -772,6 +775,10 @@ class _Inverso:
     def azar(self, azar):
         self._partes.append(("azar", azar, azar.getstate()))
 
+    def reaplicar(self, cambio):
+        """El cambio sabe volver a aplicarse (cambios de otras capacidades, dependencias.md)."""
+        self._partes.append(("rehacer", cambio))
+
     def agenda(self, agenda, evento, insertado):
         # Deshacer un evento insertado lo cancela; rehacer lo vuelve a poner, y al revés.
         self._partes.append(("agenda", agenda, evento, insertado))
@@ -800,6 +807,8 @@ class _Inverso:
                     datos.pop(clave, None)
             elif tipo == "azar":
                 parte[1].setstate(parte[2])
+            elif tipo == "rehacer":
+                parte[1].rehacer(estado)
             elif tipo == "agenda":
                 _, agenda, evento, insertado = parte
                 if insertado:
@@ -841,9 +850,13 @@ def _fotografiar(cambio, estado) -> _Inverso:
     """
     inverso = _Inverso()
     propio = getattr(cambio, "fotografiar_para_rehacer", None)
+    sabe_rehacer = callable(getattr(cambio, "rehacer", None))
     tipo = type(cambio)
     if propio is not None:
         propio(inverso, estado)
+    elif sabe_rehacer:
+        # El cambio modifica en su sitio una estructura propia y sabe volver a aplicarse.
+        inverso.reaplicar(cambio)
     elif tipo is CambioSoloLinea:
         return _fotografiar(cambio.cambio, estado)
     elif tipo is CambioAtributo:
@@ -894,5 +907,6 @@ def _fotografiar(cambio, estado) -> _Inverso:
     else:
         raise TypeError(
             f"{tipo.__name__} no tiene inverso para la línea de tiempo; debe declarar "
-            "fotografiar_para_rehacer (contrato specs/004-linea-de-tiempo/contracts/dependencias.md).")
+            "rehacer(estado) o fotografiar_para_rehacer (contrato "
+            "specs/004-linea-de-tiempo/contracts/dependencias.md).")
     return inverso

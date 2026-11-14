@@ -1,0 +1,18 @@
+{
+ "pagina": 1, "total_paginas": 1,
+ "salas": [
+  { "id": 1, "nombre": "Vestibulo", "salidas": { "N": { "sala": 2, "costo": 100 } } },
+  { "id": 2, "nombre": "Cruce de cinco", "salidas": {
+      "S": { "sala": 1, "costo": 100 },
+      "N": { "sala": 3, "costo": 100 },
+      "E": { "sala": 4, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" },
+      "O": { "sala": 5, "costo": 100 },
+      "NE": { "sala": 6, "costo": 100, "cerrada": true, "llave": "itm_llave_bronce" } } },
+  { "id": 3, "nombre": "Vecina norte", "salidas": { "S": { "sala": 2, "costo": 100 } } },
+  { "id": 4, "nombre": "Vecina tras puerta cerrada", "salidas": {
+      "O": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_negra" } } },
+  { "id": 5, "nombre": "Vecina oeste", "salidas": { "E": { "sala": 2, "costo": 100 } } },
+  { "id": 6, "nombre": "Salida tras puerta", "salidas": {
+      "SO": { "sala": 2, "costo": 100, "cerrada": true, "llave": "itm_llave_bronce" } } }
+ ]
+}

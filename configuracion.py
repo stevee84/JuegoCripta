@@ -24,9 +24,21 @@ def parsear_argumentos():
                         help="Solo verifica si esa cripta se puede ganar y termina, sin abrir el juego")
     parser.add_argument("--forzar", action="store_true",
                         help="Inicia la partida aunque la cripta no tenga solución o no se haya podido verificar")
+    # Spec 004 (FR-009): resumen del estado en el instante t, solo junto con --replay.
+    parser.add_argument("--hasta", type=int, default=None, metavar="T",
+                        help="Con --replay: reproduce hasta el instante T e imprime su resumen")
+    # Spec 004 (FR-015): un punto de control como máximo cada K acciones del jugador.
+    parser.add_argument("--checkpoint-cada", type=int, default=None, metavar="K",
+                        help="Acciones del jugador entre dos puntos de control de la línea de tiempo")
     args = parser.parse_args()
+    if args.checkpoint_cada is not None and args.checkpoint_cada < 1:
+        parser.error("--checkpoint-cada debe ser un entero mayor o igual que 1")
     if args.cache_size <= 0:
         parser.error("--cache-size debe ser un entero positivo")
+    if args.hasta is not None and args.replay is None:
+        parser.error("--hasta solo se usa junto con --replay")
+    if args.hasta is not None and args.hasta < 0:
+        parser.error("--hasta debe ser un entero mayor o igual que 0")
     return args
 
 
@@ -46,6 +58,8 @@ class Configuracion:
         self.log_nivel: str = getattr(args, "log_nivel", "WARNING")
         self.verificar: str | None = getattr(args, "verificar", None)
         self.forzar: bool = getattr(args, "forzar", False)
+        self.hasta: int | None = getattr(args, "hasta", None)
+        self.checkpoint_cada: int | None = getattr(args, "checkpoint_cada", None)
         self.url_api: str = URL_API
         self.ruta_datos_offline: str = RUTA_DATOS_OFFLINE
         self.ruta_guardado: str = RUTA_GUARDADO

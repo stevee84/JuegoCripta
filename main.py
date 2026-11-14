@@ -138,8 +138,12 @@ def main() -> None:
         # T049 de 001: el índice de MapaCripta se mide desde aquí. Un benchmark que
         # ningún punto de entrada ejecuta no cuenta como evidencia (Principio IX).
         from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as PROVEEDORES_MAPA
+        # Spec 004 (T046): línea de tiempo, retroceso, replay e inventario.
+        import benchmarks.linea_tiempo as bench_linea
+        bench_linea.K_CONFIGURADO = getattr(config, "checkpoint_cada", None)
         from benchmarks.integrante3 import ejecutar
-        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES + PROVEEDORES_MAPA), ensure_ascii=False, indent=2))
+        print(json.dumps(ejecutar(proveedores=PROVEEDORES + PROVEEDORES_ADICIONALES + PROVEEDORES_MAPA
+                                  + bench_linea.PROVEEDORES), ensure_ascii=False, indent=2))
         return
 
     fuente = _crear_fuente(config)
@@ -153,9 +157,15 @@ def main() -> None:
         replay = EjecutorReplay()
         servicio = JuegoService(motor=MotorJuego(), fuente=fuente, cache=CacheCatalogo(config.cache_size))
         servicio.conectar_inicializador(InicializadorPartida())
+        if getattr(config, "checkpoint_cada", None) is not None:
+            servicio.configurar_checkpoint_cada(config.checkpoint_cada)  # spec 004, FR-015
         replay.conectar_servicio(servicio)
         try:
-            replay.reproducir(config.replay)
+            hasta = getattr(config, "hasta", None)
+            if hasta is None:
+                replay.reproducir(config.replay)
+            else:  # --hasta (spec 004, FR-009): imprime el resumen sin instanciar la vista
+                print("\n".join(replay.reproducir(config.replay, hasta=hasta)))
         except FileNotFoundError:
             print(f"Error: no existe el archivo de replay {config.replay}.")
             raise SystemExit(1) from None
@@ -176,6 +186,8 @@ def main() -> None:
         historial=HistorialReversible(),
     )
     controlador.configurar_arranque(semilla, CacheCatalogo(config.cache_size), config.ruta_guardado)
+    if getattr(config, "checkpoint_cada", None) is not None:
+        controlador.configurar_checkpoint_cada(config.checkpoint_cada)  # spec 004, FR-015
 
     estado = None
     if getattr(config, "demo", False):

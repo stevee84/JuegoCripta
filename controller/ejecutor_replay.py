@@ -28,7 +28,15 @@ class EjecutorReplay:
             raise ValueError("Se requiere un JuegoService conectado.")
         self._servicio = servicio
 
-    def reproducir(self, ruta: str) -> None:
+    def reproducir(self, ruta: str, hasta=None):
+        """Reproduce el log. Con ``hasta`` devuelve las líneas del resumen en ese instante.
+
+        Spec 004 (FR-009, FR-010): se detiene en cuanto el reloj llega al instante pedido y
+        consulta la línea de tiempo con el mismo texto que ``historia``. Sin ``hasta`` devuelve
+        None y se comporta como en la Parte I (FR-011).
+        """
+        if hasta is not None and (type(hasta) is not int or hasta < 0):
+            raise ValueError("--hasta debe ser un entero mayor o igual que 0.")
         cabecera, acciones = self._leer_log(ruta)
         servicio = getattr(self, "_servicio", None)
         if servicio is None:
@@ -71,6 +79,8 @@ class EjecutorReplay:
         finally:
             servicio._versiones_exigidas = versiones_anteriores
         for numero, registro in acciones:
+            if hasta is not None and servicio.obtener_estado().reloj >= hasta:
+                break
             try:
                 resultado = self._ejecutar_registro(servicio, registro)
                 if not resultado.exito:
@@ -78,6 +88,21 @@ class EjecutorReplay:
             except ValueError as error:
                 raise ValueError(f"Línea {numero}: acción imposible: {error}") from error
         self._servicio = servicio
+        if hasta is not None:
+            return self._resumen_hasta(servicio, hasta)
+        return None
+
+    @staticmethod
+    def _resumen_hasta(servicio, hasta):
+        from controller.resumen_historia import consultar_historia, lineas_resumen
+
+        estado = servicio.obtener_estado()
+        if hasta <= estado.reloj:
+            return consultar_historia(servicio.obtener_linea_tiempo(), str(hasta))
+        # FR-010: t después del final de la partida registrada.
+        lineas = lineas_resumen(estado, f"Historia en t={hasta} (final de la partida)")
+        lineas.append(f"La partida terminó en t={estado.reloj}, antes del instante pedido ({hasta}).")
+        return lineas
 
     def _ejecutar_registro(self, servicio, registro):
         if registro["tipo"].upper() != "EQUIPAR" or registro["objetivo"] is None:

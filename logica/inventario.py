@@ -51,9 +51,19 @@ class Inventario:
         # El cursor señala el nodo seleccionado.
         self._cursor = None
         self._cantidad = 0
+        # Historial al que se anotan los movimientos de pergaminos para la línea de tiempo
+        # (spec 004, R6). None mientras no haya una línea vinculada.
+        self.historial_linea = None
         # Marca de orden propia del inventario, no de la lista doble.
         # Los retiros no renumeran los nodos que siguen presentes.
         self._orden_frente = 0
+
+    def __getstate__(self):
+        # El enlace con el historial (spec 004) no es estado del juego: no entra en las copias
+        # de los puntos de control ni en el archivo; la línea lo vuelve a conectar.
+        estado = self.__dict__.copy()
+        estado.pop("historial_linea", None)
+        return estado
 
     def esta_vacio(self) -> bool:
         return self._cantidad == 0

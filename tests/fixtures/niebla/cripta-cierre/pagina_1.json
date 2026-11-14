@@ -1,0 +1,17 @@
+{
+ "pagina": 1, "total_paginas": 1,
+ "salas": [
+  { "id": 1, "nombre": "Entrada", "salidas": {
+      "N": { "sala": 2, "costo": 100 },
+      "S": { "sala": 3, "costo": 500 } } },
+  { "id": 2, "nombre": "Paso que se cierra", "salidas": {
+      "S": { "sala": 1, "costo": 100 },
+      "E": { "sala": 4, "costo": 100, "cierre_automatico": 300 } } },
+  { "id": 3, "nombre": "Rodeo largo", "salidas": {
+      "N": { "sala": 1, "costo": 500 },
+      "E": { "sala": 4, "costo": 500 } } },
+  { "id": 4, "nombre": "Fondo", "salidas": {
+      "O": { "sala": 2, "costo": 100, "cierre_automatico": 300 },
+      "SO": { "sala": 3, "costo": 500 } } }
+ ]
+}
