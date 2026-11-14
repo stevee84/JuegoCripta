@@ -25,6 +25,8 @@ from logica.rutas_ponderadas import SalidaTransitable, proximo_paso
 SEMILLA = 2609
 CALENTAMIENTO = 1
 CARGAS_AGENDA = (256, 512, 1024)
+CARGAS_RUTAS_REGION = (32, 128, 512)
+CARGAS_RUTAS_MATRIZ = (32, 64)
 ALTERNATIVA_AGENDA = "agenda_eventos_indices_avl_monticulo"
 ALTERNATIVA_LINEAL = "lista_lineal_manual_benchmark"
 OPERACIONES = (
@@ -1311,12 +1313,50 @@ def medir_rutas_matriz(repeticiones=9, tamanos=(32, 64)):
     return filas
 
 
+def medir_agenda_main(repeticiones, tamanos):
+    """Adapta la firma común conservando las cargas propias de agenda."""
+    return medir_agenda(repeticiones=repeticiones, tamanos=CARGAS_AGENDA)
+
+
+def medir_agenda_ciclo_main(repeticiones, tamanos):
+    """Adapta la firma común conservando las cargas de agenda del ciclo 001."""
+    return medir_agenda_ciclo(
+        repeticiones=repeticiones,
+        tamanos=CARGAS_AGENDA_CICLO,
+    )
+
+
+def medir_rutas_region_main(repeticiones, tamanos):
+    """Adapta la firma común conservando las cargas de AC-012."""
+    return medir_rutas_region(
+        repeticiones=repeticiones,
+        tamanos=CARGAS_RUTAS_REGION,
+    )
+
+
+def medir_rutas_matriz_main(repeticiones, tamanos):
+    """Adapta la firma común conservando las cargas de AC-014."""
+    return medir_rutas_matriz(
+        repeticiones=repeticiones,
+        tamanos=CARGAS_RUTAS_MATRIZ,
+    )
+
+
 PROVEEDORES_RUTAS = (medir_rutas_region, medir_rutas_matriz)
 #SOFIA
 # T047/AC-015: la carga tipo ciclo entra junto a la agenda aislada; T049 la
 # registrará en main.py --bench por concatenación de alias de módulo.
 PROVEEDORES_AGENDA = (medir_agenda, medir_agenda_ciclo)
 PROVEEDORES = PROVEEDORES_AGENDA + PROVEEDORES_RUTAS
+# T049: `integrante3.ejecutar` entrega tamaños globales que no representan las
+# cargas heterogéneas de 001. Estos adaptadores solo conservan su firma común;
+# cada fila sigue publicando la carga específica usada por su productor.
+PROVEEDORES_MAIN = (
+    medir_agenda_main,
+    medir_agenda_ciclo_main,
+    medir_rutas_region_main,
+    medir_rutas_matriz_main,
+)
 
 
 if __name__ == "__main__":
