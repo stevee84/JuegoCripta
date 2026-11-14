@@ -154,3 +154,34 @@ def test_el_archivo_no_guarda_resultados_de_ruta(avanzada, tmp_path):
     crudo = Path(ruta).read_bytes()
     for prohibido in (b"ResultadoRuta", b"SalidasTransitables", b"VistaMapaConocido", b"Viaje"):
         assert prohibido not in crudo, f"el archivo guardó {prohibido.decode()}"
+
+
+# ── El camino propio del restaurador ────────────────────────────────────────
+
+def test_el_restaurador_reconstruye_costo_y_rango_sin_la_seccion_de_la_linea(avanzada, tmp_path):
+    """T055 nombra `service/restaurador_partida.py`, y con línea solo actúa como validador.
+
+    Cuando el archivo trae la sección, el estado de la partida es el que devuelve la línea y lo
+    que el restaurador armó se descarta tras validar el archivo. Así que el costo y el rango que
+    él reconstruye por su cuenta hay que comprobarlos en el camino sin línea, que es el que de
+    verdad los lee de los registros de sala (v10).
+    """
+    servicio, estado = avanzada
+    esperado_costos, esperado_rangos = firma_costos(estado), firma_rangos(estado)
+    exploradas = sorted(estado.mapa_conocido.exploradas())
+
+    estado.historial._linea = None          # partida de prueba: sección en longitud 0
+    ruta = str(tmp_path / "sin_linea.bin")
+    servicio.guardar_partida(ruta)
+    assert GuardadoBinario().cargar(ruta)["linea_tiempo_bytes"] is None
+
+    otro, _ = partida(tmp_path)
+    with contextlib.chdir(tmp_path):
+        reanudado = otro.cargar_partida(ruta)
+
+    assert firma_costos(reanudado) == esperado_costos
+    assert firma_rangos(reanudado) == esperado_rangos
+    # El conocimiento no viaja por este camino: se reconstruye el mínimo y nada más.
+    sala = reanudado.jugador.sala_actual.id_sala
+    assert len(exploradas) > 1, "la partida guardada conocía más de una sala"
+    assert sorted(reanudado.mapa_conocido.exploradas()) == [sala]
