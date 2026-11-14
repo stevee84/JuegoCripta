@@ -1,6 +1,6 @@
 # Respuesta parcial con Steven: datos ponderados y rutas para «ir a»
 
-**Estado**: G1 y G2 CERRADAS para 001 en `Sofia@5000d1fe8af268987206827e4c524c05bd599357`. Steven aceptó la firma y representación de §4.1; su entrega integrada publica costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de costo/rango. El equipo confirmó que una salida sin inversa es válida y enmendó FR-002 antes del código. Siguen abiertas la vista conocida de 003, la línea de tiempo completa y la persistencia conjunta de todos esos componentes. Este documento no modifica ni sustituye specs 002/003, clases de Steven ni un contrato de Joshua.
+**Estado**: G1/G2 y la vista conocida están integradas en `integracion-parte2@d86819d`. Steven aceptó la firma y representación de §4.1; su entrega publica costo/rango estrictos, simetría entre sentidos existentes, persistencia v10 de costo/rango y la vista de conocimiento de 003. El equipo confirmó que una salida sin inversa es válida y enmendó FR-002 antes del código. La línea de tiempo completa también está integrada, pero la persistencia conjunta de mapa conocido y línea permanece abierta. Este documento no modifica ni sustituye specs 002/003, clases de Steven ni un contrato de Joshua.
 
 **Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven adapta los datos, construye la vista del mapa conocido y asume la persistencia de costo/rango/mapa conocido en coordinación con Joshua. Steven solicitó expresamente que Sofía implemente el índice por ID de `MapaCripta`, componente de Sofía, conservando firmas, orden e identidad. Ese acuerdo específico no autoriza a Sofía a editar clases de Steven ni fija quién modifica DTO, inicialización u otros archivos compartidos.
 
@@ -11,6 +11,7 @@
 - `DecodificadorDatos` valida costo/rango estrictos y `InicializadorPartida` compara costos por `(origen, destino)`, acepta sentidos únicos y rechaza contradicciones entre sentidos existentes;
 - `GuardadoBinario.VERSION = 10` persiste costo/rango. La validación `1204 passed, 4 subtests passed` fue comunicada por Sofía para esa integración y no se presenta aquí como ejecución de este bloque;
 - `main.py --bench` registra el proveedor de mapa de T049, pero aún no los proveedores de rutas/ciclo de 001.
+- `1bc5c6220a4a12f471f4e118ffdf4bf7117f2467` publica `logica/mapa_conocido.py`, `logica/viaje.py` y sus pruebas; `7a36ebe18c7c30f0f4364a2fa6f119e60285396f` completa las condiciones de parada/antorcha. Ambos son ancestros de `integracion-parte2@d86819d`.
 
 ## 1. Objetivo
 
@@ -75,14 +76,14 @@ salidas_transitables(sala_id)
 
 ### 3.4 Vista de «ir a» desde conocimiento del jugador
 
-Steven construirá la vista y su prueba de independencia frente al estado real oculto. La vista:
+Steven publicó la vista y su prueba de independencia frente al estado real oculto. La vista:
 
 - contiene únicamente salas exploradas;
 - enumera salidas solo desde salas exploradas;
 - permite rutas únicamente entre salas exploradas mediante puertas recordadas abiertas;
 - usa el conocimiento recordado, nunca el estado real oculto ni el esqueleto completo.
 
-La verificación futura construirá estados reales distintos con el mismo mapa conocido y exigirá el mismo resultado de «ir a». Este criterio está acordado, pero la prueba todavía no se ha implementado ni ejecutado.
+T052 construye dos `EstadoPartida`/`MapaCripta` reales distintos con el mismo mapa conocido, prohíbe cualquier consulta posterior al mapa real y exige el mismo paso de «ir a». También cubre recálculo al cambiar origen, destino y conocimiento. La ejecución focalizada del 2026-11-13 terminó en **10 passed in 0.29s**, sin omisiones.
 
 ### 3.5 Consulta por paso y casos terminales
 
@@ -93,7 +94,7 @@ Steven acepta que:
 - ausencia de ruta es un resultado explícito, distinguible del caso anterior;
 - el buscador devuelve semánticamente un paso, no decide `ATACAR` ni `ESPERAR`.
 
-Esto cierra la semántica, pero no fija nombres, firma Python, clase/protocolo, campos ni tipo de retorno.
+La semántica y la representación están implementadas por `proximo_paso(...) -> ResultadoRuta` en `21c234248d4f9b7bcdeb3c9c299e40498a2d131a`; T053 verificó su consumo desde `VistaMapaConocido` sin reglas de ataque/espera.
 
 ## 4. Decisiones de integración todavía abiertas
 
@@ -109,7 +110,7 @@ Esto cierra la semántica, pero no fija nombres, firma Python, clase/protocolo, 
 - El buscador solo lee las capacidades `contiene_sala(id)` y `salidas_transitables(id)` de la vista. No decide `ATACAR`/`ESPERAR`, no descarga contenido y no muta el juego.
 - Sofía implementa `logica/rutas_ponderadas.py`, sus pruebas y la vista del cazador. DTO, decodificación, inicialización y guardado de Steven no se modifican.
 
-La vista conocida de 003 continúa pendiente; este contrato permite desarrollar el buscador y la vista de esqueleto completo del cazador sin fingir esa entrega.
+La vista conocida de 003 está disponible en `1bc5c62` y consume este mismo protocolo. La vista de esqueleto completo del cazador permanece separada en 001.
 
 ### 4.2 Estrategia inicial y reutilización
 
@@ -125,14 +126,13 @@ El mecanismo y propietario concretos de esa reutilización siguen sin acuerdo.
 
 ### 4.3 Persistencia coordinada
 
-Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y línea de tiempo completa aún requieren la entrega coordinada con Joshua; G2 no cierra por sí sola T004/T006/T055/T056.
+Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y línea de tiempo ya están disponibles como estado, pero su persistencia conjunta todavía requiere la entrega coordinada con Joshua; G2 no cierra por sí sola T006/T055.
 
 **Estado de M3**: `5000d1f` materializa v10 para costo/rango y mantiene incompatibilidad explícita con v9. Ampliar ese formato con mapa conocido y línea de tiempo completa sigue pendiente de confirmación/entrega conjunta; T041/T055 no se cierran con la parte ya integrada.
 
 ## 5. Puntos todavía no confirmados por ambos
 
 - mecanismo, claves, invalidación y propietario de reutilización para «ir a»;
-- vista conocida y su integración con 003;
 - compatibilidad y entrega conjunta de mapa conocido y línea de tiempo completa.
 
 ## 6. Consumidores y compatibilidad
@@ -147,7 +147,7 @@ Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y l�
 - [x] Steven acepta implementar validación estricta de costo/rango y el default solo por ausencia.
 - [x] Se acuerda identificar sentidos por origen/destino, comparar costos y detectar ambigüedad entre salidas múltiples.
 - [x] Steven acepta la capacidad `contiene_sala`/`salidas_transitables`.
-- [x] Steven asume la vista del mapa conocido y su futura prueba de independencia.
+- [x] Steven publica la vista del mapa conocido; T052 verifica su independencia con estados reales integrados.
 - [x] Se acuerda que los costos no cambian la alcanzabilidad de 002.
 - [x] Steven acepta recálculo por paso, origen=destino con costo 0 sin paso y ausencia de ruta distinguible.
 - [x] Steven asume persistencia de costo/rango/mapa conocido coordinada con Joshua.
@@ -156,4 +156,4 @@ Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y l�
 - [x] Sofía recibe rutas/vista del cazador y se acepta una salida sin inversa; clases de Steven permanecen fuera de su asignación.
 - [ ] 003 y 001 demuestran equivalencia y miden el límite de 5 ms con costo completo.
 - [ ] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta; costo/rango v10 ya están integrados en `5000d1f`.
-- [ ] Implementación y pruebas futuras verifican los acuerdos; ninguna se considera realizada por este documento.
+- [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; la persistencia y la medición conjunta conservan sus tareas abiertas.

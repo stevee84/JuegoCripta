@@ -116,6 +116,16 @@ Ejecutada el 2026-11-10 con `.venv/Scripts/python.exe` desde la raíz:
 
 Una corrida intermedia falló solo en `tests/test_bench_integrante2.py::test_el_costo_crece_de_forma_aproximadamente_lineal` (factor 3.8 frente a 3.0). Esa prueba pasó 3/3 aislada y volvió a pasar en la corrida completa final; se registra como fluctuación de medición, no como regresión, y no se modificó. Las corridas usaron fixtures offline; no se ejecutaron pruebas contra el servicio en línea. Los conteos focalizados se solapan con la suite completa y no se suman. `main.py --bench` con las filas de rutas, agenda y ciclo sigue pendiente de T049/T062; el proveedor del mapa ya está conectado. Esta validación no demuestra PR-001 ni el límite oficial de 20 ms.
 
+### Validación de integraciones en `integracion-parte2@d86819d`
+
+Ejecutada el 2026-11-13 sin repetir la suite completa:
+
+- `tests/test_integracion_001_004.py` y `tests/test_integracion_ir_a_001_003.py`: **10 passed in 0.29s**, sin omisiones.
+- `tests/test_logica/test_mapa_conocido.py`, `tests/test_logica/test_viaje.py` y `tests/test_logica/test_rutas_ponderadas.py`: **45 passed in 0.30s**.
+- Evidencia aceptada de PowerShell posterior a la integración: **79 pruebas específicas aprobadas** y suite completa de **1402 pruebas, 4 subtests**, sin fallos ni omisiones.
+
+T004/T052/T053 verifican la frontera de mapa conocido y recálculo por paso; T056 ejecuta ya contra `LineaTiempo` integrada, incluidos punto K=2, restauración del estado vivo, inversos en `finally` y prohibición de llamar al cazador. Persistencia T006/T055 y benchmarks T049/T050 permanecen fuera de este cierre.
+
 ## Oráculos independientes
 
 1. **Grafos pequeños**: enumeración exhaustiva de rutas simples usando listas. Selecciona el mínimo `(costo_total, primera_vecina_id)` y sirve de referencia para acción, alcanzabilidad/rango, costo total, primera vecina y costo del paso.
@@ -156,16 +166,16 @@ Una diferencia en esos resultados observables falla antes de medir tiempos. El o
 | AC-017 | cambiar velocidad entre turnos | agenda cambia conforme FR-006; ruta solo si datos relevantes cambian; FR-014 |
 | AC-018 | mover/matar otro actor | comparar desde cero sin asumir invalidación idéntica; FR-014 |
 
-### Verificaciones cruzadas futuras con Steven/003
+### Verificaciones cruzadas con Steven/003
 
-Estos criterios están planificados; no se han implementado ni ejecutado en esta actualización:
+Los criterios 1–3 se cerraron en los bloques de datos anteriores. Los criterios 4–7 quedaron ejecutados en T004/T052/T053 sobre `integracion-parte2@d86819d`:
 
 1. **Default estricto**: omitir `costo` produce 100; presentar `True`, `False`, texto, fracción, cero o negativo rechaza el dato sin sustituirlo.
 2. **Simetría después del enlace**: identificar sentidos por origen/destino, rechazar costos distintos y detectar múltiples salidas ambiguas. Una salida sin inversa se acepta y no crea otro sentido.
 3. **Resolubilidad independiente del peso**: variar costos válidos sin cambiar puertas/llaves conserva el resultado de alcanzabilidad de 002.
 4. **Mapa conocido independiente**: dos estados reales distintos con las mismas salas exploradas y puertas recordadas abiertas producen el mismo siguiente paso.
 5. **Conocimiento vigente**: después de cada paso de «ir a», cambiar origen o conocimiento obliga a decidir otra vez y nunca continúa una secuencia precalculada.
-6. **Casos terminales aceptados**: origen=destino produce costo 0 sin paso; sin ruta produce un estado explícito distinto. La prueba de integración queda bloqueada por la representación/firma y la entrega de 003, no por la semántica.
+6. **Casos terminales aceptados**: origen=destino produce costo 0 sin paso; sin ruta produce un estado explícito distinto.
 7. **Separación de comportamiento**: el buscador no devuelve `ATACAR` ni `ESPERAR`; esas acciones se deciden fuera con el resultado geométrico.
 
 ## Matriz de rendimiento
@@ -176,7 +186,7 @@ Estos criterios están planificados; no se han implementado ni ejecutado en esta
 | AC-013 | ciclo real de referencia con decenas de cazadores | cada muestra válida `<20 ms`, sin red/render; PR-001 |
 | AC-014 | matriz individual/compartida, uno/muchos, pequeño/grande, reutilizar/cero, puertas estables/inestables | equivalencia primero; reporte de tiempo, trabajo y memoria; PR-003/PR-004/PR-006 |
 | AC-015 | seis operaciones de agenda con cientos de eventos | comparación por operación y ciclo mixto; PR-005 |
-| Integración 003 (pendiente) | una decisión de «ir a» desde cero y alternativas reutilizadas | equivalencia primero; costo completo frente a 5 ms, sin afirmar cumplimiento antes de medir |
+| Integración 003 (funcional cerrada; medición T054 pendiente) | una decisión de «ir a» desde cero y alternativas reutilizadas | equivalencia primero; costo completo frente a 5 ms, sin afirmar cumplimiento antes de medir |
 | Índice de `MapaCripta` — construcción | mismos IDs/instancias en varios tamaños | generación fuera; construcción de lista+índice y memoria separadas |
 | Índice de `MapaCripta` — búsqueda | aciertos inicio/medio/final y ausencias | índice propio frente a recorrido lineal benchmark-local; identidad primero |
 | Índice de `MapaCripta` — vinculación | mismos grafos y densidades antes/después | tiempo de enlace separado; orden, destinos y alias canónicos iguales antes de medir |
@@ -258,7 +268,7 @@ Además de la reversión funcional:
 5. Con la producción inicial de recálculo, comprobar que no se conserva caché/instantánea entre decisiones y que `historia`, `RETROCEDER` e `iniciar` no requieren ganchos de invalidación.
 6. Si una decisión posterior adopta reutilización, ejecutar entonces las pruebas planificadas de `historia`, retroceso e inicio/carga sobre la caché externa; no anticiparlas como requisito de la vía sin estado retenido.
 
-El checkout local ofrece `deshacer_ultimo`/`revertir`, `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. T005 conserva la revisión cruzada de estas interfaces como requisito de proceso. Esto no equivale a tener local la clase completa `LineaTiempo` de `origin/joshua@b039b8b…`, ni permite ejecutar todavía las pruebas conjuntas sobre cambios nuevos de 001 que no se han implementado.
+El checkout integrado ofrece `LineaTiempo`, puntos de control, `deshacer_mientras`, `rehacer`, el gancho `rehacer(estado)`/`fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. T056 ejecutó la integración local: el módulo propio cubre el protocolo y las 79 pruebas específicas aceptadas cubren además puntos de control y partidas reales. La persistencia conjunta conserva tareas separadas y no se considera cerrada por esta integración.
 
 ### Estado de persistencia
 

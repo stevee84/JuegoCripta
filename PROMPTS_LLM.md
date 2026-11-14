@@ -458,6 +458,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 57 | Ciclo real sintético y agenda equivalente con costos variables | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
 | 58 | Revisión posterior T001, pruebas T040, propuesta T049 y cierre documental T057/T059/T060/T063/T068/T069 | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
 | 59 | Preparación de commit y revisión remota sin integración | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
+| 60 | Cierre de integraciones T004/T052/T053/T056 | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2237,6 +2238,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Estado y contenido.** Git para Windows confirmó `Sofia@a2e248d`, un commit por delante de `origin/Sofia@7500aa4`; ese commit y los ocho archivos del árbol de trabajo siguen locales. Los seis archivos versionados contienen cambios reales de 001 y los dos nuevos son la propuesta T049 y las pruebas T040. No se encontraron duplicaciones ni archivos ajenos; `git diff --check` pasó. `DECISIONES.md` y `PROMPTS_LLM.md` conservan finales de línea mixtos en el árbol de trabajo, sin ser cambios exclusivamente de EOL y sin normalizarlos.
 
 **Referencias remotas.** `ls-remote` coincidió con las referencias locales: `origin/Steve@74b63cd` y `origin/joshua@a305be6`. Steven publicó en `1bc5c62` el mapa conocido y el viaje que pueden satisfacer T004 tras revisión/integración; también añadió proveedores de 003, pero no registró los proveedores de rutas/agenda/ciclo de 001. El contrato v10 de 004 continúa pendiente de aceptación/implementación en `GuardadoBinario`, por lo que T006 no queda resuelta. Joshua publicó `LineaTiempo` completa y el nuevo gancho `rehacer(estado)`, novedades relevantes para G4b/T056 una vez integradas por el flujo del equipo. No se integró ni publicó nada y no se ejecutaron pruebas o benchmarks.
+
+---
+
+## Prompt 60 — Cierre de integraciones T004/T052/T053/T056
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 13/11/2026
+
+> **Prompt**
+>
+> En `integracion-parte2@d86819d`, revisar únicamente las integraciones de 001 ya resolubles con Steven/Joshua: verificar mapa conocido, viaje y rutas para T004/T053; revisar y completar las pruebas de `LineaTiempo` para T056 usando como evidencia 79 pruebas específicas y la suite integrada de 1402 pruebas/4 subtests; redactar las pruebas cruzadas T052 con implementaciones reales. No modificar producción o archivos ajenos, no avanzar T049/T050/persistencia y no ejecutar operaciones Git que cambien el repositorio.
+
+**Mapa conocido y rutas.** `1bc5c62`/`7a36ebe` publican `VistaMapaConocido` y `Viaje`; `21c2342` publica la firma acordada `proximo_paso(...) -> ResultadoRuta`. La vista solo contiene salas exploradas y puertas recordadas abiertas, y `Viaje.siguiente_paso` recalcula mediante esa vista. No se modificó el algoritmo productivo. T004 y T053 se cerraron con **45 passed in 0.30s** en mapa conocido, viaje y rutas.
+
+**Integraciones cruzadas.** Se creó `tests/test_integracion_ir_a_001_003.py` con dos estados reales divergentes y conocimiento equivalente, acceso oculto prohibido, paso único, cambios de origen/destino/conocimiento y terminales diferenciados; T052 quedó cerrada. `tests/test_integracion_001_004.py` dejó de omitir `LineaTiempo` y añadió una consulta que cruza K=2 y restaura el estado vivo. Los dos módulos terminaron en **10 passed in 0.29s**, sin omisiones. T056 se cerró además con la evidencia de PowerShell aceptada: **79 pruebas específicas** y suite completa de **1402 pruebas, 4 subtests**, sin fallos ni omisiones.
+
+**Límites.** T006/T055 de persistencia y T049/T050 permanecen abiertas. No se tocó `main.py`, producción, specs 003/004, `controller/`, `service/` ni `datos/guardado_binario.py`; no hubo commit, push, checkout, merge, rebase, reset, restore ni stash.
 
 ---
 
