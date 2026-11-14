@@ -251,11 +251,23 @@ class RestauradorPartida:
         try:
             estado = self.restaurar(datos)
             self._completar_v5(estado, datos, catalogo)
+            self._completar_v11(estado)
             estado.reanudable = True
             estado.limitaciones_carga = ("historial",)
             return estado
         except (KeyError, TypeError, IndexError, AttributeError) as error:
             raise ValueError(f"Datos del guardado incompletos o inválidos: {error}") from error
+
+    def _completar_v11(self, estado):
+        """Un archivo sin sección de línea no trae el mapa conocido (FR-022, contrato v10).
+
+        Entonces el jugador reanuda sabiendo solo donde está, que es lo mínimo para que la vista
+        y «ir a» funcionen: una sala donde se está parado no puede estar desconocida. Cuando el
+        archivo sí trae la línea, el conocimiento viaja con el estado y esto no se usa.
+        """
+        conocido = getattr(estado, 'mapa_conocido', None)
+        if conocido is not None and estado.jugador.sala_actual is not None:
+            conocido.explorar(estado.jugador.sala_actual)
 
     def _completar_v9(self, estado, datos):
         """El informe de resolubilidad vuelve tal cual se guardó (FR-020).

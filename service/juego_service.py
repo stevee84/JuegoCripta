@@ -46,6 +46,7 @@ class JuegoService:
         # Línea de tiempo (spec 004): se crea al iniciar una partida nueva.
         self._checkpoint_cada = None
         self._linea_tiempo = None
+        self._aviso_checkpoint = None
 
     def configurar_checkpoint_cada(self, k) -> None:
         """K de --checkpoint-cada para las partidas que se inicien (spec 004, FR-015)."""
@@ -54,6 +55,45 @@ class JuegoService:
 
     def obtener_linea_tiempo(self):
         return self._linea_tiempo
+
+    def obtener_aviso_checkpoint(self):
+        """FR-030: si la partida cargada se guardó con otro K, el texto que lo explica.
+
+        Se produce al cargar, que es el único momento en que hay dos valores de K en juego.
+        Mostrarlo es de la interfaz.
+        """
+        return self._aviso_checkpoint
+
+    @staticmethod
+    def _marcar_cargado(estado, linea):
+        """Lo que describe la carga, no la partida, y por eso no viaja en los bytes.
+
+        El estado que trae la línea es el que estaba vivo al guardar, con su pergamino lleno. El
+        pergamino sigue siendo de la sesión: una carga no permite deshacer acciones de la sesión
+        anterior, y `limitaciones_carga` lo anuncia. La línea conserva su propia cola, que es
+        otra cosa (FR-029), así que estrenar pergamino no le quita nada.
+        """
+        from logica.historial_reversible import HistorialReversible
+
+        estado.historial = HistorialReversible()
+        estado.historial.vincular_linea(linea)
+        if estado.inventario is not None:
+            estado.inventario.historial_linea = estado.historial
+        estado.reanudable = True
+        estado.limitaciones_carga = ("historial",)
+
+    @staticmethod
+    def _linea_del_guardado(datos):
+        """La línea de tiempo del archivo como `(estado, linea)`, o None si no trae sección.
+
+        El estado viaja con la línea a propósito: la cola guarda cambios que apuntan a esos
+        objetos (contrato `004/contracts/guardado-v10.md`). Esta capa no interpreta los bytes,
+        solo se los entrega a la línea; si no se pueden leer, el error sube.
+        """
+        from logica.linea_tiempo import LineaTiempo
+
+        bytes_linea = datos.get("linea_tiempo_bytes") if datos else None
+        return LineaTiempo.importar_bytes(bytes_linea) if bytes_linea else None
 
     def _crear_linea_tiempo(self, estado):
         from logica.linea_tiempo import LineaTiempo
@@ -283,6 +323,9 @@ class JuegoService:
             datos = binario.cargar(str(temporal))
             try:
                 RestauradorPartida().restaurar_para_reanudar(datos, self._fichas_del_estado(estado))
+                # La sección de la línea también se valida antes de reemplazar el destino: un
+                # bloque que no se puede volver a leer dejaría una partida sin retroceso.
+                self._linea_del_guardado(datos)
             except (ValueError, TypeError) as error:
                 raise ValueError(f"Guardado completo bloqueado: datos parciales o inválidos: {error}") from error
             os.replace(temporal, destino)
@@ -364,6 +407,16 @@ class JuegoService:
         try:
             catalogo = self._catalogo_para_carga(datos)
             estado = RestauradorPartida().restaurar_para_reanudar(datos, catalogo)
+            desde_linea = self._linea_del_guardado(datos)
+            if desde_linea is not None:
+                # El estado vivo es el de la línea, no el que acaba de armar el guardado: su cola
+                # guarda cambios que apuntan a esos objetos y con otros no se podrían deshacer
+                # (004/contracts/guardado-v10.md). Lo reconstruido sirvió para validar el archivo,
+                # que es para lo que se lee, y la infraestructura se reconecta más abajo igual.
+                estado, linea = desde_linea
+                self._marcar_cargado(estado, linea)
+            else:
+                linea = None
         except (ValueError, TypeError, KeyError, IndexError, AttributeError) as error:
             raise ValueError(f"Carga bloqueada: datos parciales o inválidos: {error}") from error
         anterior = getattr(self._motor, "_servicio_inventario", None)
@@ -393,7 +446,13 @@ class JuegoService:
         self._versiones_exigidas = None
         self._semilla = estado.semilla
         self._estado_inicial = None  # Una carga no es el inicio de un replay.
-        self._linea_tiempo = None  # Spec 004: la carga con línea llega con el guardado v10.
+        if linea is not None:
+            self._linea_tiempo = linea
+            self._aviso_checkpoint = linea.aviso_k(self._checkpoint_cada)
+        else:
+            # Un guardado sin sección de línea (partida de prueba) estrena una (contrato v10).
+            self._crear_linea_tiempo(estado)
+            self._aviso_checkpoint = None
         self._ruta_registro = self._marca_registro = self._error_registro = None
         self._acciones_coordinadas = 0
         # Cargar un final guardado no vuelve a anexar el mismo resultado.
