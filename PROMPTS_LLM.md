@@ -3188,6 +3188,15 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | --- | --- | --- |
 | 11 | `/speckit.specify` de la resolubilidad | 05/11/2026 |
 | 12 | `/speckit.clarify` de la resolubilidad | 07/11/2026 |
+| 13 | `/speckit.plan`, `.tasks` y `.analyze` de la resolubilidad | 08/11/2026 |
+| 14 | `/speckit.implement` de la resolubilidad | 09/11/2026 |
+| 15 | `/speckit.specify` y `.clarify` de la niebla y «ir a» | 12/11/2026 |
+| 16 | `/speckit.plan` de la niebla y «ir a» | 12/11/2026 |
+| 17 | `/speckit.tasks` y `/speckit.analyze` de la niebla y «ir a» | 12/11/2026 |
+| 18 | `/speckit.implement`, fases 1 y 2 | 12/11/2026 |
+| 19 | `/speckit.implement`, fases 3 y 4 | 12/11/2026 |
+| 20 | Mediciones y documento de decisiones §5.3 | 13/11/2026 |
+| 21 | Guardado v11 y cierre de la 003 sobre la rama de integración | 14/11/2026 |
 
 ## Prompt 11 — `/speckit.specify` de la capacidad 002-resolubilidad
 
@@ -3426,3 +3435,84 @@ observable:
 rutas: dos estados reales distintos que produzcan el mismo mapa conocido deben producir el mismo
 viaje. Es la garantía de que «ir a» no observa nada fuera del conocimiento del jugador, que es la
 frontera que ella y yo acordamos y que §3.3 exige.
+
+## Prompt 16 — `/speckit-plan` de 003-niebla-y-ir-a
+
+Antes de ejecutarlo se acordaron dos recomendaciones mías sobre el `clarify`, y el plan se pidió
+en el mismo turno.
+
+> **Prompt**
+>
+> dale con tus dos recomendaciones y seguí con clarify y plan
+
+**Para qué se usó.** `specs/003-niebla-y-ir-a/plan.md` y `research.md`: la elección de estructuras
+—tablas hash propias indexadas por id para lo explorado, lo avistado y la memoria de puertas—, la
+decisión de **no** almacenar lo desconocido, y la de reutilizar el buscador de rutas de la 001 de
+Sofía a través de una vista que solo responde con lo que el jugador sabe, en vez de escribir un
+segundo buscador. El `plan` también dejó los contratos `contracts/vista-conocida.md` y
+`contracts/cli-ir-a.md`.
+
+## Prompt 17 — `/speckit-tasks` y `/speckit-analyze` de 003-niebla-y-ir-a
+
+> **Prompt**
+>
+> dale con tasks y analyze
+
+**Para qué se usó.** `tasks.md` con 59 tareas en cinco historias, y la lista de hallazgos del
+`analyze`. El análisis encontró dos cosas que se corrigieron antes de escribir código: `FR-020`
+estaba fuera de secuencia y una tarea citaba el requisito equivocado (`T037` apuntaba al pergamino
+donde iba la bitácora). Dos tareas, `T016` y `T038`, quedaron marcadas como dependientes de
+Joshua, porque `controller/` y `vista/` son suyos.
+
+## Prompt 18 — `/speckit-implement`, fases 1 y 2 de 003
+
+> **Prompt**
+>
+> ok , vamos a pushear , quiero que el codigo se escriba con el ponytail activo, la ultima vez
+> hiciste review y no escribiste con el
+
+**Para qué se usó.** `logica/mapa_conocido.py` y `logica/viaje.py` con sus pruebas (`T001` a
+`T028`). La instrucción sobre el ponytail cambió el método, no el resultado: la escala de
+simplicidad se aplicó al escribir cada archivo, no como una revisión posterior. De ahí salió, por
+ejemplo, que el viaje no guarde la ruta y pida un paso al buscador antes de cada movimiento, que
+es lo que `FR-014` necesita y además menos código.
+
+## Prompt 19 — `/speckit-implement`, fases 3 y 4 de 003
+
+> **Prompt**
+>
+> dale, seguí con las fases 3 y 4
+
+**Para qué se usó.** Las cuatro condiciones de parada, la antorcha y el conocimiento como estado
+reversible. Aquí apareció el bloqueo que paró la capacidad: el mecanismo de rehacer de la 004 solo
+sabía restaurar atributos, listas y diccionarios, y el conocimiento vive en tablas hash propias
+que se modifican en su sitio, como exige §6.2. Se le pidió a Joshua un gancho en su contrato en
+vez de copiar el mapa, que el Principio VII prohíbe.
+
+## Prompt 20 — Mediciones de la 003 y documento de decisiones §5.3
+
+> **Prompt**
+>
+> dale con los benchmarks y el documento de decisiones
+
+**Para qué se usó.** `benchmarks/integrante2.py` con la medición del mapa conocido contra la
+alternativa que recorre el mapa y la del paso de «ir a» (`T051` a `T054`), y la sección §5.3 de
+`DECISIONES.md`. La evidencia respondió lo que §5.3 pregunta —si conviene compartir la búsqueda
+con la del cazador o separarlas— y dejó anotado un límite conocido: el paso de «ir a» en criptas
+de cientos de salas, que no afecta a las criptas publicadas porque llegan a 50.
+
+## Prompt 21 — Guardado v11 y cierre de la 003 sobre la rama de integración
+
+Joshua publicó el gancho `rehacer(estado)` que destrabó `FR-022`, y Sofía integró las tres ramas
+en `integracion-parte2`. Se trabajó allí directamente.
+
+> **Prompt**
+>
+> nos mensjaes de johsua ys sofia de ayer
+
+**Para qué se usó.** Adoptar el gancho de Joshua en `CambioConocimiento` —los hechos de una
+revelación se volvieron bidireccionales con `aplicar()`, y se retiró la fotografía del mapa que
+había quedado del intento anterior— y subir el guardado a v11. La comprobación que más cambió el
+diseño fue leer `LineaTiempo.INFRAESTRUCTURA` antes de escribir: el mapa conocido no está en esa
+lista, así que ya viajaba dentro de los bytes de la línea y la segunda sección que el plan
+preveía sobraba.

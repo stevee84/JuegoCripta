@@ -201,3 +201,38 @@ def test_la_antorcha_deshace_igual_que_una_exploracion_normal():
     assert sorted(saber.exploradas()) != antes[0]
     saber.deshacer(hechos)
     assert (sorted(saber.exploradas()), sorted(saber.avistadas())) == antes
+
+
+# ── El cambio reversible (§5.3, SC-004) ──────────────────────────────────────
+
+def test_registrar_y_deshacer_una_revelacion_no_crecen_con_el_mapa_conocido():
+    """SC-004: el cambio pesa lo que pesa la revelación, no lo que pesa el mapa.
+
+    Se cuenta trabajo, no tiempo: un cambio guarda los hechos de su revelación y deshacerlo
+    recorre esos hechos y nada más. Lo que esta prueba vigila es que no aparezca una copia del
+    mapa dentro del cambio, que es la forma habitual de romper SC-004 y lo que el Principio VII
+    prohíbe.
+    """
+    from logica.mapa_conocido import CambioConocimiento
+
+    mapa, _ = cargar_mapa("cripta-antorcha")
+    pesos = {}
+    for conocidas in ([1], [1, 3, 4, 5, 6]):
+        saber = MapaConocido()
+        for id_sala in conocidas:
+            saber.explorar(mapa.obtener_sala(id_sala))
+        antes = (sorted(saber.exploradas()), sorted(saber.avistadas()))
+        cambio = CambioConocimiento(saber, saber.explorar(mapa.obtener_sala(2)))
+        pesos[len(conocidas)] = len(cambio.hechos)
+        assert cambio.conocido is saber, "el cambio no copia el mapa, lo referencia"
+        assert not any(isinstance(h, MapaConocido) for hecho in cambio.hechos for h in hecho)
+
+        cambio.deshacer(None)
+        assert (sorted(saber.exploradas()), sorted(saber.avistadas())) == antes
+        cambio.rehacer(None)   # y vuelve a aplicarse, que es lo que pide la línea de tiempo
+        assert saber.esta_explorada(2)
+
+    chico, grande = sorted(pesos)
+    assert pesos[grande] <= pesos[chico], (
+        f"con {grande} salas conocidas el cambio pesó {pesos[grande]} hechos y con "
+        f"{chico} pesó {pesos[chico]}")
