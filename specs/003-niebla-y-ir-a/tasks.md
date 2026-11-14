@@ -377,13 +377,14 @@ la línea de tiempo entre en el mismo salto de versión, en vez de provocar un v
 
 - `T016` y `T038` son de Joshua: los comandos de ver el mapa conocido y de «ir a» en `controller/`
   y `vista/`, que consumen lo que `T014`, `T015` y `T028` ya exponen desde el servicio.
-- `T037` está bloqueada por el mismo reparto. Anotar cada paso del viaje como un movimiento
-  individual sale gratis —cada paso ya es una acción `MOVER` del jugador y la bitácora la registra
-  sola—, pero anotar la orden de «ir a» **como comentario** necesita que el lector de
+- `T037` tiene su mitad escrita y la otra pedida. Anotar cada paso como un movimiento individual
+  sale gratis: cada paso ya es una acción `MOVER` del jugador y la bitácora la registra sola.
+  Anotar la orden de «ir a» **como comentario** necesita que el lector de
   `controller/ejecutor_replay.py` ignore las líneas que no son acciones, y hoy rechaza cualquier
   registro que no tenga los cuatro campos de una acción. Escribir comentarios sin ese cambio
-  dejaría sin reproducir toda partida que use «ir a», y §4.11 la exige. Está planteado como
-  petición de contrato a Joshua.
+  dejaría sin reproducir toda partida que use «ir a», y §4.11 la exige. El escritor
+  —`RegistroPartida.anexar_comentario` y `Viaje.comentario()`— está listo y probado; la petición
+  es [contracts/bitacora-comentarios.md](./contracts/bitacora-comentarios.md).
 - `T056` se ejecutó en los pasos que no dependen de la interfaz: 1, 2, 3, 7, 8, 9 y 10. Los pasos
   4, 5 y 6 escriben `ir a` en la consola y esperan a `T038`. La lógica que esos tres pasos
   ejercitan sí está cubierta por `tests/test_logica/test_viaje.py` y por
