@@ -20,6 +20,7 @@ lo permite expresamente. Lo que no puede salir de aquí es información que el j
 """
 from dto.sala import validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
+from logica.cambios import CambioReversible
 from logica.rutas_ponderadas import SalidaTransitable, SalidasTransitables
 
 EXPLORADA = "explorada"
@@ -29,8 +30,6 @@ DESCONOCIDA = "desconocida"
 
 class SalidaConocida:
     """Una salida tal como el jugador la recuerda."""
-
-    __slots__ = ("id_puerta", "destino_id", "direccion", "costo", "llave_requerida")
 
     def __init__(self, id_puerta, destino_id, direccion, costo, llave_requerida):
         self.id_puerta = id_puerta
@@ -42,8 +41,6 @@ class SalidaConocida:
 
 class SalaConocida:
     """Una sala explorada: nombre, salidas y costos. Nunca su contenido."""
-
-    __slots__ = ("id_sala", "nombre", "salidas")
 
     def __init__(self, id_sala, nombre, salidas):
         self.id_sala = id_sala
@@ -99,11 +96,10 @@ class MapaConocido:
         depende de las salidas de esta sala, no del tamaño del mapa conocido (§5.3).
         """
         hechos = []
+        conocida = self._conocer(sala)
         if not self._exploradas.contiene(sala.id_sala):
-            self._exploradas.insertar(sala.id_sala, self._conocer(sala))
-            hechos.append((EXPLORADA, sala.id_sala))
-        else:
-            self._exploradas.insertar(sala.id_sala, self._conocer(sala))
+            hechos.append((EXPLORADA, sala.id_sala, conocida))
+        self._exploradas.insertar(sala.id_sala, conocida)
         for puerta in sala.puertas:
             destino = puerta.destino_sala_id
             if destino is not None and not self._exploradas.contiene(destino) \
@@ -135,7 +131,7 @@ class MapaConocido:
                         if self._puertas.contiene(puerta.id_puerta) else None)
             if anterior != puerta.abierta:
                 self._puertas.insertar(puerta.id_puerta, puerta.abierta)
-                hechos.append(("puerta", puerta.id_puerta, anterior))
+                hechos.append(("puerta", puerta.id_puerta, anterior, puerta.abierta))
         return hechos
 
     def revelaciones_de(self, sala) -> int:
@@ -160,6 +156,20 @@ class MapaConocido:
                     self._puertas.eliminar(hecho[1])
                 else:
                     self._puertas.insertar(hecho[1], hecho[2])
+
+    def aplicar(self, hechos) -> None:
+        """Vuelve a aplicar revelaciones ya deshechas, en su orden original.
+
+        Es el inverso exacto de `deshacer` y cuesta lo mismo: O(1) por hecho, sin copiar el
+        mapa. Lo usa la línea de tiempo al rehacer (004, `contracts/dependencias.md`).
+        """
+        for hecho in hechos:
+            if hecho[0] == EXPLORADA:
+                self._exploradas.insertar(hecho[1], hecho[2])
+            elif hecho[0] == AVISTADA:
+                self._avistadas.insertar(hecho[1], True)
+            elif hecho[0] == "puerta":
+                self._puertas.insertar(hecho[1], hecho[3])
 
     @staticmethod
     def _conocer(sala):
@@ -208,3 +218,35 @@ class VistaMapaConocido:
                     and self._conocido.esta_explorada(salida.destino_id)):
                 salidas.append(SalidaTransitable(salida.destino_id, salida.costo))
         return SalidasTransitables(tuple(salidas), len(sala.salidas))
+
+
+class CambioConocimiento(CambioReversible):
+    """Lo que una revelación añadió al mapa conocido, para poder quitarlo (P2 §5.3).
+
+    Guarda solo los hechos de esa revelación —qué salas pasaron a explorada o avistada y qué
+    puertas cambiaron de estado recordado—, nunca una copia del mapa: el Principio VII prohíbe
+    las copias completas como mecanismo de retroceso, y §5.3 pide que registrar y deshacer sean
+    baratos. Un cambio pesa lo que pesa la revelación, no lo que pesa el mapa.
+
+    Se define aquí, heredando del contrato ya existente, para no modificar un archivo
+    compartido (Principio VIII).
+    """
+
+    def __init__(self, conocido, hechos):
+        self.conocido = conocido
+        self.hechos = hechos
+
+    def deshacer(self, estado):
+        self.conocido.deshacer(self.hechos)
+
+    def rehacer(self, estado):
+        """Vuelve a aplicar la revelación (camino 1 de `004/contracts/dependencias.md`).
+
+        El contrato lo recomienda justo para este caso: «cambios que modifican en su sitio una
+        estructura propia (tablas hash del mapa conocido)». Cuesta O(1) por hecho y no copia
+        nada, así que la línea de tiempo puede deshacer y rehacer sin fotografiar el mapa.
+        """
+        self.conocido.aplicar(self.hechos)
+
+    def objetos_referenciados(self):
+        return []

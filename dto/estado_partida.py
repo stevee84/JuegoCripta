@@ -1,4 +1,6 @@
 import random
+
+from logica.mapa_conocido import MapaConocido
 #SOFIA
 
 class EstadoPartida:
@@ -17,6 +19,10 @@ class EstadoPartida:
         # Entidades principales
         self.jugador = None
         self.mapa = None
+        # P2 §3.3: lo que el jugador sabe de la cripta. Es estado de la partida: se guarda,
+        # se revierte con el pergamino y se reconstruye en la línea de tiempo.
+        self.mapa_conocido = MapaConocido()
+        self.antorcha_encendida = False
         # Identificador que utiliza la cabecera del guardado.
         self.cripta_id = cripta_id
         self.version_cripta = ""

@@ -773,6 +773,59 @@ class JuegoService:
     def obtener_estado(self):
         return getattr(self._motor, "estado", None)
 
+    def obtener_mapa_conocido(self):
+        """Lo que el jugador sabe de la cripta (P2 §3.3, FR-007, FR-008).
+
+        Se entrega como dato, no como texto: quien lo muestre decide el formato. La vista
+        **no** recibe el esqueleto completo, que §3.3 reserva a la infraestructura.
+        """
+        estado = self.obtener_estado()
+        return getattr(estado, "mapa_conocido", None) if estado is not None else None
+
+    def describir_mapa_conocido(self):
+        """El mapa conocido en una forma lista para pintar (FR-008).
+
+        Cada sala explorada con su nombre y sus salidas, y el estado **recordado** de cada
+        puerta, que puede no ser el real. Más la lista de salas avistadas, de las que el
+        jugador solo sabe que existen.
+        """
+        from logica.ordenamiento import OrdenadorAdaptativo
+
+        conocido = self.obtener_mapa_conocido()
+        if conocido is None:
+            return {"exploradas": [], "avistadas": []}
+        exploradas = []
+        for id_sala in OrdenadorAdaptativo().ordenar(conocido.exploradas(), lambda s: s):
+            sala = conocido.sala(id_sala)
+            exploradas.append({
+                "id_sala": id_sala,
+                "nombre": sala.nombre,
+                "salidas": [{
+                    "direccion": salida.direccion,
+                    "destino": salida.destino_id,
+                    "abierta": conocido.puerta_recordada_abierta(salida.id_puerta),
+                    "costo": salida.costo,
+                    "llave": salida.llave_requerida,
+                } for salida in sala.salidas],
+            })
+        return {
+            "exploradas": exploradas,
+            "avistadas": OrdenadorAdaptativo().ordenar(conocido.avistadas(), lambda s: s),
+        }
+
+    def iniciar_viaje(self, destino_id):
+        """Prepara un viaje «ir a» (P2 §3.4, FR-009, FR-010).
+
+        Devuelve el viaje aunque el destino no sirva: `valido` y `motivo` dicen por qué, que es
+        lo que §7.3 pide poder mostrar.
+        """
+        from logica.viaje import Viaje
+
+        estado = self.obtener_estado()
+        if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
+            raise ValueError("No hay una partida en curso.")
+        return Viaje(estado.mapa_conocido, estado.jugador.sala_actual.id_sala, destino_id)
+
     def obtener_informe_resolubilidad(self):
         """El informe de la verificación hecha antes de empezar (P2 §3.5, FR-014).
 

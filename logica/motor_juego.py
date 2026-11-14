@@ -5,6 +5,8 @@ from dto.sala import Puerta, Trampa
 from logica.acciones import costo_base, calcular_intervalo
 from logica.agenda_eventos import AgendaEventos
 from logica.cambios import CambioAzar
+from logica.mapa_conocido import CambioConocimiento
+from logica.mutaciones import registrar
 from logica.comportamiento_enemigos import ComportamientoEnemigos
 from logica.gestor_efectos import GestorEfectos
 from logica.historial_reversible import HistorialReversible
@@ -186,6 +188,7 @@ class MotorJuego(MotorJuegoContrato):
                 sala_inicial = estado.jugador.sala_actual
 
                 self._registrar_presencia(sala_inicial)
+                self._revelar(estado, sala_inicial)
                 self.activar_enemigos_sala(sala_inicial)
 
             estado.iniciada = True
@@ -484,6 +487,7 @@ class MotorJuego(MotorJuegoContrato):
             self._registrar_presencia(sala)
             atributo(estado, jugador, "sala_actual", destino)
             self._registrar_presencia(destino)
+            self._revelar(estado, destino)
             self.activar_enemigos_sala(destino)
             notificaciones.append({"tipo": "CAMBIO_SALA", "sala": destino.id_sala})
             notificaciones.extend(self.activar_trampas_sala(destino, jugador))
@@ -533,6 +537,30 @@ class MotorJuego(MotorJuegoContrato):
         costo = puerta.costo if accion.tipo == "MOVER" else costo_base(accion.tipo)
         return ResultadoAccion(True, f"{accion.tipo} ejecutado.", costo=costo,
                                notificaciones=notificaciones)
+
+    @staticmethod
+    def _revelar(estado, sala):
+        """P2 §3.3: entrar a una sala la explora y avista sus vecinas.
+
+        Ocurre antes de que nada consulte el conocimiento, para que la vista y el viaje ya vean
+        la sala recién pisada. Si la partida no lleva mapa conocido —un estado antiguo— no hace
+        nada: el conocimiento es opcional para el motor.
+        """
+        conocido = getattr(estado, "mapa_conocido", None)
+        if conocido is None or sala is None:
+            return []
+        hechos = conocido.explorar(sala)
+        if getattr(estado, "antorcha_encendida", False):
+            for puerta in sala.puertas:
+                vecina = puerta.destino_sala
+                if vecina is not None:
+                    hechos += conocido.explorar(vecina)
+        if hechos:
+            # El conocimiento es estado del juego: se revierte con el pergamino y se
+            # reconstruye en la línea de tiempo (§3.3, FR-022). El cambio declara `rehacer`,
+            # que es el camino que 004 recomienda para estructuras propias.
+            registrar(estado, CambioConocimiento(conocido, hechos))
+        return hechos
 
     def activar_enemigos_sala(self, sala):
         """
