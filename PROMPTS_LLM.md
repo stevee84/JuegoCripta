@@ -2790,6 +2790,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 44 | Mediciones de la línea de tiempo en `--bench` (T002, T041 a T046) | 10/11/2026 |
 | 45 | Optimizar el punto de control, fijar K y documentar §5.5 (T047 a T049) | 10/11/2026 |
 | 46 | Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050) | 11/11/2026 |
+| 47 | Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios | 13/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3081,6 +3082,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `LineaTiempo.exportar_bytes`, `importar_bytes` (devuelve el estado y la línea y vuelve a conectar historial e inventario) y `aviso_k` en `logica/linea_tiempo.py`, con 5 pruebas: la ida y vuelta da las mismas consultas por acción y por instante, sin puntos de control extra; la línea sigue registrando acciones después de cargar; se conserva el K guardado; la infraestructura no viaja; y se rechazan bytes ajenos. En pygame: botón «Historia», diálogo de texto (`_dialogo_texto`) y panel de varias líneas (`mostrar_lineas`), que también usa el comando `resolubilidad`; el controlador usa el panel si la vista lo tiene y el mensaje de siempre en la consola. 4 pruebas en `tests/test_controller/test_historia_pygame.py`, sin ventana. Suite: 1335 aprobadas, 0 omitidas, 0 fallidas. Quedan pendientes T034, T035 y T040.
 
 **Qué hubo que corregir.** (1) El estado guarda la caché, el catálogo vivo y el cargador de contenido, que con el servicio web pueden tener el cliente de red; no viajan en los bytes y al cargar los vuelve a conectar el guardado. Se agregó al contrato `guardado-v10.md` antes del código. (2) La comparación por bytes de pickle daba diferencias falsas después de cargar: dos textos iguales pasan a ser objetos distintos, y `Sala` reconstruye su índice de enemigos en otra posición. Las pruebas de ida y vuelta comparan el estado por estructura y valores, sin depender de esas dos cosas.
+
+## Prompt 47 — Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios
+
+> **Prompt**
+>
+> Revisa lo que subió Steven en origin/Steve (spec 003, mapa conocido y viaje) y tráelo a mi rama joshua si no rompe nada, corriendo la suite completa. Steven pide que la línea de tiempo pueda volver a aplicar sus cambios de conocimiento, que modifican tablas hash propias en su sitio y no se pueden rehacer restaurando atributos: agrega en logica/cambios.py un gancho para que un cambio que defina rehacer(estado) se vuelva a aplicar con ese método después de deshacerlo, sin copias, con una prueba que use un cambio sobre una tabla hash propia. Documenta primero el gancho en el data-model y en contracts/dependencias.md. Después revisa qué tareas de la spec 003 me corresponden en la interfaz (mapa conocido e «ir a») y si ya se pueden hacer.
+
+**Qué se obtuvo.** `origin/Steve@74b63cd` entró por fast-forward (spec 003 con spec, plan y tareas, `logica/mapa_conocido.py`, `logica/viaje.py`, antorcha y mediciones de §5.3) y la suite pasó con 1380 aprobadas. En `logica/cambios.py`, `_Inverso.reaplicar` y la regla nueva de `_fotografiar`: si el cambio define `rehacer(estado)`, la línea lo llama para volver a aplicarlo; el orden queda `fotografiar_para_rehacer`, luego `rehacer`, luego los tipos conocidos, y si no hay ninguno la consulta falla antes de tocar el estado. Prueba en `tests/test_logica/test_cambios_linea.py` con un cambio sobre `TablaHashImpl` que se deshace y rehace tres veces. Las tareas de interfaz de la 003 que corresponden a Joshua son T016 (comando del mapa conocido) y T038 (comando «ir a» con el motivo de parada); dependen de que Steven exponga esos datos desde el servicio (sus T014, T015 y T028), que todavía no están hechas.
+
+**Qué hubo que corregir.** El `CambioConocimiento` de Steven no estaba publicado (lo tiene sin subir), así que el gancho se definió de forma general, por el nombre del método, y se probó con un cambio equivalente; falta comprobarlo con su clase real cuando la suba.
 
 # Steven Moya Porras — Parte II
 
