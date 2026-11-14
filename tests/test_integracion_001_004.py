@@ -1,23 +1,17 @@
 """Integración 001/004: protocolo de la línea de tiempo (T040).
 
-Estas pruebas se redactan contra la interfaz publicada por Joshua en
-``origin/joshua`` (condición ``condicion(estado, cambio)`` y ``_hasta``).
-La clase completa ``LineaTiempo`` no está integrada en la rama Sofia; por eso
-el módulo se omite hasta G4b/T056. No copian código de Joshua: usan estados y
-agendas mínimos para aislar el protocolo.
+Estas pruebas se redactaron contra la interfaz publicada por Joshua en
+``origin/joshua`` (condición ``condicion(estado, cambio)`` y ``_hasta``) y se
+ejecutan ahora sobre la implementación integrada de ``LineaTiempo``. No copian
+código de Joshua: usan estados y agendas mínimos para aislar el protocolo.
 
-La ejecución satisfactoria se cierra en T056; este archivo solo se redacta en
-T040 (FR-014–FR-016, PR-004, PR-006).
+T040 cubre la redacción y T056 su ejecución integrada
+(FR-014–FR-016, PR-004, PR-006).
 """
 
 import types
 
 import pytest
-
-pytest.importorskip(
-    "logica.linea_tiempo",
-    reason="G4b/T056: LineaTiempo completa no integrada en la rama Sofia",
-)
 
 from logica.cambios import (  # noqa: E402
     CambioAgenda,
@@ -202,6 +196,36 @@ def test_historia_no_ejecuta_el_comportamiento_del_cazador(monkeypatch):
 
     monkeypatch.setattr(comportamiento, "proximo_paso", prohibido)
     assert linea.consultar_accion(1, lambda estado_base: estado_base.reloj) == 10
+
+
+def test_consulta_cruza_punto_y_restaura_el_estado_vivo(monkeypatch):
+    """T056: consulta desde un punto K sin dejar mutado el estado que sigue jugando."""
+    estado = EstadoFalso(reloj=0)
+    estado.caja = types.SimpleNamespace(valor=0)
+    linea = LineaTiempo(estado, k=2)
+    estado.historial.vincular_linea(linea)
+
+    for valor, reloj in ((1, 10), (2, 20), (3, 30)):
+        estado.historial.iniciar_intervalo()
+        estado.historial.registrar(CambioAtributo(estado.caja, "valor"))
+        estado.caja.valor = valor
+        estado.historial.registrar(CambioReloj(estado))
+        estado.reloj = reloj
+        estado.historial.cerrar_intervalo()
+
+    assert [punto.accion for punto in linea.puntos] == [0, 2]
+    vivo_antes = (estado.reloj, estado.caja.valor)
+
+    import logica.comportamiento_enemigos as comportamiento
+
+    def prohibido(*args, **kwargs):
+        raise AssertionError("historia ejecutó el comportamiento del cazador")
+
+    monkeypatch.setattr(comportamiento, "proximo_paso", prohibido)
+    assert linea.consultar_accion(
+        2, lambda estado_base: (estado_base.reloj, estado_base.caja.valor)
+    ) == (10, 1)
+    assert (estado.reloj, estado.caja.valor) == vivo_antes == (30, 3)
 
 
 def test_historial_vincular_linea_avisa_cierre_y_recorte():
