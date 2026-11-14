@@ -53,6 +53,13 @@ Operaciones nuevas:
 (atributo, dato de ficha, estado del azar, posición en una lista, evento de la agenda, objeto del
 inventario). Aplicarlo deja el dato como estaba antes de deshacer. Solo existe durante la consulta.
 
+**Cambios de otras capacidades** (pedido de Steven para la spec 003, 2026-11-13): un cambio que
+modifica en su sitio una estructura propia (por ejemplo, una tabla hash del mapa conocido) no se
+puede rehacer restaurando atributos. Si el cambio define `rehacer(estado)`, la línea lo usa para
+volver a aplicarlo después de deshacerlo; si define `fotografiar_para_rehacer(inverso, estado)`,
+usa eso; y si no define ninguno de los dos y no es un tipo conocido, la consulta falla antes de
+tocar nada. `rehacer` debe dejar el estado exactamente como estaba antes de deshacer, sin copias.
+
 ## Consulta
 
 | Campo | Contenido | Validación |

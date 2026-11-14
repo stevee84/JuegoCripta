@@ -29,3 +29,20 @@ consultas (FR-022).
 
 - Ya disponible: `JuegoService.obtener_informe_resolubilidad()`. 002-T049 y 002-T050 se implementan
   en la 004 con el formato de [cli-verificar.md](../../002-resolubilidad/contracts/cli-verificar.md).
+
+## Cómo rehace la línea un cambio propio de otra capacidad
+
+La línea deshace cambios y los vuelve a aplicar en cada consulta (research R3). Para un tipo de
+cambio nuevo hay tres caminos, en este orden:
+
+1. **`rehacer(estado)`**: el cambio sabe volver a aplicarse. Es lo más simple para cambios que
+   modifican en su sitio una estructura propia (tablas hash del mapa conocido, estado del
+   cazador). Debe dejar el estado exactamente como estaba antes de `deshacer`, en O(1) por hecho
+   y sin copias (principio VII).
+2. **`fotografiar_para_rehacer(inverso, estado)`**: el cambio anota en el inverso qué atributos,
+   listas o diccionarios restaurar.
+3. **Los helpers de `logica/mutaciones.py`** (`atributo`, `agregar`, `quitar`, `quitar_identidad`):
+   no hace falta nada más.
+
+Un tipo que no use ninguno de los tres hace fallar la consulta con un error que lo explica, antes de
+tocar el estado.
