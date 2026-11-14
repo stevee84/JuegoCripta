@@ -14,7 +14,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 - **Búsqueda inversa limitada al rango máximo activo**: puede compartir trabajo, pero un solo rango grande amplía la región para todos y requiere gestionar cazadores fuera de la región.
 - **Estrategia adaptativa**: prometedora, pero el umbral depende de cantidad/distribución de cazadores, rangos y estabilidad de puertas. No se fija sin datos.
 
-**Measurement that may change the decision**: costo completo por ciclo para uno/decenas de cazadores, rangos pequeños/grandes y puertas estables/inestables. Si la compartida reduce consistentemente el ciclo completo, mantiene `PR-002`, pasa equivalencia y cumple `<20 ms`, puede habilitarse para el segmento medido. En colaboración con 003, una reutilización para «ir a» solo se considera si equivale al cálculo individual y su costo completo de construcción, consulta, invalidación y limpieza cumple el límite de 5 ms; aún no hay mediciones.
+**Measurement completed (2026-11-10)**: T046/T065 y T048 midieron uno frente a muchos cazadores, rango pequeño/grande, individual/compartida/reutilizada y puertas estables/inestables. La alternativa compartida/reutilizada fue más rápida en la matriz sintética y pasó la equivalencia observable, pero producción conserva el recálculo individual porque adoptar estado retenido exige tareas productivas nuevas y validación del ciclo completo; la referencia oficial sigue sin publicarse. La decisión medida se registra en R-13. Para «ir a», T054/T066 continúan bloqueadas por la vista de mapa conocido (T004); no existe medición de 5 ms.
 
 ## R-02 — Desempate independiente del descubrimiento
 
@@ -160,3 +160,52 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 - **Devolver la ruta completa**: rechazada como propuesta de Sofía porque puede quedar obsoleta antes del siguiente paso y ensancha el contrato.
 - **Usar el mapa real y filtrar después**: rechazada; puede filtrar información oculta aun si la presentación final la omite.
 - **Confundir origen=destino con sin ruta**: rechazada; son estados semánticamente distintos para 003.
+
+## R-13 — Decisión real de estrategia del cazador (T057)
+
+**Decision**: la producción conserva el **recálculo individual por cazador y por decisión**, sin caché, generación ni estado retenido. La inversa compartida y su variante reutilizada permanecen exclusivamente en `benchmarks/terreno_cazador_integrante1.py` y `benchmarks/benchmark_ciclo_real_integrante1.py`. La estrategia adaptativa no se adopta: no existe un umbral medido que justifique cambiar de estrategia según cantidad de cazadores, rango o estabilidad de puertas.
+
+**Rationale**: el recálculo individual ya era la referencia normativa del plan y la única vía productiva implementada. La evidencia sintética **favorece en tiempo** a la inversa compartida/reutilizada en las cargas medidas; no demuestra que el recálculo sea más rápido. Se conserva el recálculo porque adoptar estado retenido exige (a) planificar tareas productivas concretas con propietario y archivos, (b) validar invalidación y limpieza frente a todos los cambios de `FR-014`, no solo las puertas de T048, y (c) repetir el ciclo completo con la referencia oficial. Nada de eso está acordado. La decisión es final para el alcance productivo actual —no crear caché ni cambiar producción—, pero no selecciona un umbral adaptativo ni descarta una adopción futura con evidencia y tareas nuevas.
+
+**Equivalence evidence**:
+
+- T046/T065 comparó las tres alternativas antes de cada reloj sobre el mismo fixture y exige igualdad de acción, alcanzabilidad, costo total, primera vecina y costo del primer paso. Todas las filas conservadas pasaron esa comprobación.
+- T048 comparó el ciclo completo productivo con la retención experimental sobre la misma plantilla, acción `ESPERAR`, semilla 2609 y carga. La huella previa al cronómetro incluyó reloj, secuencia, agenda, salas, enemigos, puertas, jugador, azar, resultado y orden de notificaciones. Los 288 ciclos sintéticos clasificaron `completo`, sin rechazos, muertes, victorias, terminales, incompletos ni errores.
+- Los contadores internos de la alternativa retenida no se comparan con producción (`PR-006`); solo se comparan los observables.
+
+**Full-cost evidence** (medianas; no se comparan cocientes entre tablas porque las cargas difieren):
+
+| Escenario | Individual productivo | Inversa compartida | Inversa reutilizada |
+|---|---:|---:|---:|
+| T046: 64 salas, 20 cazadores, rango 640, 3 ciclos, puertas estables | 26 813 300 ns/lote | 587 200 ns/lote | 301 700 ns/lote |
+| T046: misma carga, cambios frecuentes de puertas | 18 713 300 ns/lote | 662 300 ns/lote | 586 800 ns/lote |
+
+| T048: 64 salas, 28 cazadores, rango 16 400, un ciclo completo | Producción individual | Retención experimental |
+|---|---:|---:|
+| Puertas estables | 20.5445 ms de mediana; p95/máx. 36.8259 ms; 7/9 muestras `>=20 ms` | 3.1269 ms; p95/máx. 4.0276 ms; 0/9 |
+| Puertas inestables | 17.9640 ms; p95/máx. 33.2342 ms; 2/9 | 2.6901 ms; p95/máx. 3.6784 ms; 0/9 |
+
+**Clasificación recuperada de las nueve muestras `>=20 ms`:**
+
+| Escenario / estrategia | Muestras lentas (índice: ms) | Carga | Mediana / p95 / máximo de la fila | Trabajo instrumentado por muestra |
+|---|---|---|---|---|
+| puertas estables / `ciclo_corriente_recalculo_produccion` | 1: 20.5445; 2: 20.4867; 4: 21.7241; 5: 22.2237; 6: 20.0708; 7: 21.0831; 8: 36.8259 | 64 salas, 28 cazadores activos, rango 16 400, `ESPERAR`, costos 100–130, 28 eventos enemigos | 20.5445 / 36.8259 / 36.8259 ms | 28 notificaciones, 28 eventos enemigos, 0 eventos de puerta, sin cierres |
+| puertas inestables / `ciclo_corriente_recalculo_produccion` | 5: 33.2342; 6: 22.9758 | 64 salas, 28 cazadores activos, rango 16 400, `ESPERAR`, costos 100–130, 24 eventos enemigos y 1 evento de puerta | 17.9640 / 33.2342 / 33.2342 ms | 24 notificaciones, 24 eventos enemigos, 1 evento de puerta, cierre `p2-1` |
+
+Las nueve muestras clasifican `completo`, con `exito=true`; ninguna pertenece a la estrategia retenida. La retención experimental incluye construcción, consultas, invalidación, reconstrucción y limpieza dentro del intervalo. En estable realizó 26 consultas, una construcción, ninguna invalidación y examinó 135 salidas; en inestable realizó 23 consultas, una construcción, una invalidación por `puertas`, una reconstrucción y examinó 267 salidas. Producción no expone contadores internos de ruta: sus filas solo reportan notificaciones y eventos observables y declaran `contadores_internos_comparados=false`. Por ello estas nueve duraciones no permiten atribuir la demora a una fase interna ni derivar un umbral adaptativo.
+
+**Complexity**: el recálculo individual conserva el costo de R-01/R-03: `O(E_R + P_R log max(2,Q_R) + Q_fin)` esperado por cazador, con memoria `O(D_R+Q_R)` y peor caso `O(D_R+E_R)`. La inversa compartida paga una construcción `O(E_L + P_L log max(2,Q_L) + Q_fin_L)` y luego la selección de cada cazador; la reutilizada añade consultas y, cuando cambian las puertas, invalidación y reconstrucción. El benchmark mide esos componentes por separado; no se atribuye a la variante retenida un coste que no se haya cronometrado.
+
+**Limits**:
+
+- Son cargas sintéticas de un solo equipo; no son la referencia oficial de `PR-001` ni permiten afirmar cumplimiento o incumplimiento del límite de 20 ms.
+- T046 usa 20 cazadores y tres ciclos por lote; T048 usa 28 cazadores y un ciclo completo por muestra. Sus medianas no son intercambiables ni justifican una comparación causal entre sí.
+- La alternativa compartida/reutilizada no se adopta y no existe caché productiva. Cualquier adopción futura requiere actualizar primero `plan.md`/`tasks.md` con tareas productivas concretas, definir la invalidación y repetir la validación de ciclo completo.
+- La estrategia adaptativa sigue sin umbral medido; no se implementó.
+- La conexión de estas filas a `main.py --bench` depende de T049/T050; hoy son evidencia aislada de los proveedores, no cierre de Principio IX.
+
+**Trazabilidad**: `logica/rutas_ponderadas.py`; `logica/comportamiento_enemigos.py`;
+`benchmarks/terreno_cazador_integrante1.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;
+`benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
+`benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`;
+`specs/001-terreno-y-cazador/tasks.md` (T046, T048, T057, T065).

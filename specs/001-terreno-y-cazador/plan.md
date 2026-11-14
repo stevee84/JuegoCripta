@@ -1,12 +1,12 @@
 # Implementation Plan: Terreno y cazador
 
-**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-08 | **Spec**: [spec.md](spec.md)
+**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-13 | **Spec**: [spec.md](spec.md)
 
 **Input**: Especificación confirmada en `specs/001-terreno-y-cazador/spec.md`.
 
 ## Summary
 
-La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` ya integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La elección provisional es una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench` hasta una decisión con evidencia. La producción inicial no retiene resultados de ruta. Mapa conocido, `LineaTiempo` completa y persistencia conjunta restante siguen pendientes.
+La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` ya integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. Las mediciones sintéticas de rutas, ciclo, agenda y mapa están conservadas, pero su conexión completa a `main.py --bench` sigue pendiente de T049/T050; la referencia oficial de PR-001 no se ha publicado. Mapa conocido, `LineaTiempo` completa y persistencia conjunta restante siguen pendientes.
 
 ## Technical Context
 
@@ -16,7 +16,7 @@ La capacidad incorpora costos de salida a todos los movimientos y añade decisio
 
 **Storage**: esqueleto y catálogo procedentes de `FuenteDatos`; `GuardadoBinario.VERSION = 10` y `partida.log`. V10 serializa `Puerta.costo` y rango; todavía no constituye la entrega conjunta completa de mapa conocido y línea de tiempo. Los resultados de ruta son exclusivamente memoria derivada y no se persisten.
 
-**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. Para `5000d1f`, Sofía comunicó `1204 passed, 4 subtests passed`; esta actualización documental no ejecutó esa suite y no la presenta como resultado propio. La implementación de este bloque tendrá su propia validación por etapas.
+**Testing**: `pytest`, incluida la suite heredada escrita con `unittest`; fixtures sintéticos deterministas, paquete offline y pruebas separadas contra el servicio cuando correspondan. T060 registró la validación local por etapas y la suite final (`1287 passed, 1 skipped, 4 subtests passed`); la omisión es T040 hasta G4b/T056. Las seis pruebas ejecutadas contra la copia temporal de Joshua no se presentan como pruebas locales.
 
 **Target Platform**: aplicación de escritorio/CLI local en Windows; scripts de spec-kit ejecutados mediante PowerShell desde el puente WSL/Windows. Los modos `--bench` y `--replay` no instancian la vista.
 
@@ -45,16 +45,16 @@ Los acuerdos comunicados no se clasifican como código disponible. La interfaz b
 | Principio | Estado después de revisar el merge |
 |---|---|
 | I. Estructuras propias | **Comprobado en el diseño**. Rutas e índices se limitan a estructuras propias; el montículo actual permite insertar y extraer, pero no actualizar prioridad. Las alternativas de biblioteca solo aparecen en `--bench`. |
-| II. Acceso por identificador | **Pendiente de 001 con verificación completa planificada**. El código integrado conserva `MapaCripta._salas` y búsquedas lineales; T007–T009 implementan/verifican el índice y T072–T075 separan construcción, consultas y vinculación frente a alternativa lineal benchmark-local. |
-| III. Determinismo | **Comprobado en el diseño**. La etiqueta ordena por costo y primera vecina; el ID de sala estabiliza trabajo ya empatado. Falta probar la implementación de 001. |
+| II. Acceso por identificador | **Comprobado en producción y en benchmark**. `MapaCripta` conserva `_salas` y añade `_salas_por_id` con `TablaHashImpl`; T007–T009 y T072–T075 cerraron construcción, consultas y vinculación frente a la alternativa lineal benchmark-local. |
+| III. Determinismo | **Comprobado en diseño e implementación**. La etiqueta ordena por costo y primera vecina; el ID de sala estabiliza trabajo ya empatado. T032 verificó dos estados equivalentes con orden incidental permutado, decisiones, tiempos, secuencias y `partida.log` idénticos. |
 | IV. Separación MVC | **Comprobado en la frontera actual**. `--bench` y `--verificar` salen antes de crear la vista; rutas productivas permanecen en lógica y las alternativas de reutilización en benchmarks. |
 | V. Datos desde el servicio | **G2 integrada**. `5000d1f` valida costo/rango, default 100 solo por ausencia y simetría entre sentidos existentes tras `vincular_salidas()`; acepta sentidos únicos. |
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
 | VII. Estado reversible | **Interfaz base local; integración conjunta pendiente**. `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `vincular_linea` están en `HEAD`. La clase completa `LineaTiempo`, el guardado y las pruebas conjuntas de cambios nuevos de 001 siguen pendientes. Sin reutilización productiva no existen cachés que invalidar. |
 | VIII. Contratos estables | **Fronteras explícitas**. Steven conserva DTO/inicialización/guardado; Sofía conserva mapa, rutas y vista del cazador. G1 fija firma/resultado sin asignar la vista conocida de 003. |
-| IX. Rendimiento medido | **Decisión provisional pendiente de medición**. La vía común de proveedores existe, pero todavía no registra mediciones de rutas/invalidez de 001 ni las seis operaciones exigidas de agenda. |
+| IX. Rendimiento medido | **Medición sintética disponible; conexión completa pendiente**. T044–T048/T065/T073–T075 conservan rutas, ciclo, agenda y mapa con equivalencia previa y trabajo separado. `main.py --bench` ya registra el proveedor del mapa, pero rutas, agenda y ciclo siguen pendientes de T049/T050; la referencia oficial de PR-001 no está publicada. |
 | X. Especificación y trazabilidad | **Enmienda confirmada**. FR-002 acepta sentidos únicos y compara costos solo cuando ambos existen; se registra antes del código. |
-| XI. Pruebas | **Regresión comunicada; cobertura propia pendiente**. Para `5000d1f` se comunicaron `1204 passed, 4 subtests passed`; esta revisión no los ejecutó. [quickstart.md](quickstart.md) conserva la cobertura de 001. |
+| XI. Pruebas | **Cobertura propia ejecutada con una dependencia omitida**. T060 registró `1287 passed, 1 skipped, 4 subtests passed`; la única omisión es `tests/test_integracion_001_004.py` hasta G4b/T056. [quickstart.md](quickstart.md) separa esta corrida local de las seis pruebas ejecutadas contra una copia temporal de Joshua. |
 
 La puerta de planificación no detecta una violación constitucional. Esto no cierra los contratos, la implementación ni la evidencia de rendimiento de 001.
 
@@ -83,11 +83,11 @@ specs/001-terreno-y-cazador/
 
 ```text
 dto/
-├── sala.py                         # integración pendiente: costo en la salida
-└── actor.py                        # integración pendiente: rango del cazador
+├── sala.py                         # costo en la salida (integrado en 5000d1f)
+└── actor.py                        # rango del cazador (integrado en 5000d1f)
 datos/
-├── decodificador_datos.py          # salidas externas/internas y fichas; integración pendiente
-└── guardado_binario.py             # formato actual v9; costo/rango aún ausentes
+├── decodificador_datos.py          # salidas externas/internas y fichas; validación v10 integrada
+└── guardado_binario.py             # formato actual v10; costo/rango integrados
 service/
 ├── inicializador_partida.py        # reúne esqueleto y verifica 002 antes del contenido
 └── restaurador_partida.py          # reconstruye mapa/actores y publica historial vacío
@@ -104,8 +104,8 @@ logica/
 ├── cambios.py                      # local: deshacer temporal, rehacer y extensión de fotografía de 004
 └── historial_reversible.py         # local: retroceso y vincular_linea; LineaTiempo completa aún no integrada
 benchmarks/
-├── terreno_cazador_integrante1.py  # nuevo proveedor conectado a --bench
-├── benchmark_ciclo_real_integrante1.py
+├── terreno_cazador_integrante1.py  # proveedor de rutas/agenda; T049 pendiente de conectar
+├── benchmark_ciclo_real_integrante1.py  # ciclo real; T049/T050 pendientes de conectar
 └── benchmark_agenda_integrante1.py
 tests/
 ├── test_datos/                     # validación costo/rango, tras acuerdo con Steven
@@ -168,23 +168,23 @@ No se usa el orden interno de la tabla hash para recorrer ni desempatar. Así, u
 
 T007–T009 protegen ese contrato. T072–T075 medirán por separado: (a) construir lista+índice; (b) consultar IDs frente a recorrido lineal; y (c) vincular las mismas salidas con resolución lineal frente a indexada. Los fixtures se generan fuera del intervalo; cada alternativa recibe mismos IDs, orden, instancias y carga, y la igualdad/identidad se comprueba antes de cronometrar.
 
-### 3. Ruta ponderada provisional
+### 3. Ruta ponderada de producción (decisión medida)
 
-La interfaz interna recibe una vista de grafo, origen, objetivo y límite. La implementación provisional ejecuta una búsqueda individual desde el cazador y:
+La interfaz interna recibe una vista de grafo, origen, objetivo y límite. La implementación de producción ejecuta una búsqueda individual desde el cazador y:
 
 1. Crea de forma perezosa un `MonticuloMinimo` propio y tablas propias de mejores etiquetas y salas fijadas; no inicializa arreglos de tamaño total. El montículo actual ofrece `insertar`, `extraer_minimo`, `ver_minimo` y eliminación de una referencia conocida, pero no actualización de prioridad.
 2. Etiqueta cada estado con `(distancia, primera_vecina_id, sala_id)`. Para una salida inicial, `primera_vecina_id` es su destino; en relajaciones posteriores se conserva.
 3. Cada mejora inserta una entrada inmutable nueva. Al extraer se descarta una entrada que ya no coincida con la mejor etiqueta o cuya sala ya esté fijada; no se atribuye al montículo una actualización de prioridad inexistente.
 4. Compara primero distancia y luego primera vecina. El `sala_id` solo hace determinista el orden de trabajo cuando el resultado observable ya está empatado.
 5. No inserta candidatos cuya distancia supere el rango. Con costos positivos ninguna continuación puede volver a entrar; solo se expanden salas fijadas dentro del límite.
-6. No devuelve una ruta completa: produce únicamente el siguiente paso y los metadatos mínimos que finalmente se acuerden. La firma y representación exactas continúan abiertas.
+6. No devuelve una ruta completa: produce únicamente el siguiente paso y los metadatos mínimos acordados en T002. La firma es `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`, con `alcanzable`, `costo_total`, `primera_vecina_id` y `costo_primera_salida`; «sin ruta» y «ya en destino» siguen siendo estados distintos.
 7. El comportamiento del cazador comprueba antes si comparte sala para `ATACAR`; si el buscador no encuentra ruta dentro del límite, decide `ESPERAR`; si obtiene un paso, decide `MOVER` y cobra esa salida (`FR-007`–`FR-012`). Atacar y esperar no son resultados elegidos por el buscador.
 
 **Prueba del desempate**: cada ruta desde el origen hereda el ID de su primera vecina. Para una sala, la etiqueta conserva el par mínimo `(costo_total, primera_vecina_id)`. Como todos los costos son positivos, todo predecesor de una ruta mínima al objetivo se fija antes que el objetivo; además, las etiquetas de igual costo con menor primera vecina salen antes del montículo. Por tanto, antes de fijar el objetivo ya se consideró toda ruta que pudiera igualar su costo con una primera vecina menor. El resultado coincide con escoger el menor `v` que cumple `costo(u,v) + dist(v,jugador) = d`, sin depender del orden de descubrimiento (`FR-011`).
 
-La alternativa compartida hace una búsqueda inversa desde el jugador y luego cada cazador elige el mínimo `(costo(u,v)+dist(v), v.id)`. Es potencialmente favorable con muchos cazadores y objetivo/puertas estables, pero puede recorrer una región grande por un único rango máximo. Se medirá; no es aún un resultado ni un contrato de producción (`PR-002`, `PR-003`).
+La alternativa compartida hace una búsqueda inversa desde el jugador y luego cada cazador elige el mínimo `(costo(u,v)+dist(v), v.id)`. Se midió en T046/T048: fue más rápida en las cargas sintéticas, pero no se adopta como producción; la decisión medida está en `research.md` R-13 y `DECISIONES.md` §5.1. Puede recorrer una región grande por un único rango máximo (`PR-002`, `PR-003`).
 
-Para «ir a», Steven confirmó una vista que solo contiene salas exploradas y enumera, desde ellas, puertas recordadas abiertas hacia otras salas exploradas. También aceptó recalcular cada paso con origen, destino y conocimiento vigentes, representar origen=destino como costo total 0 sin paso y distinguir ausencia de ruta. Siguen abiertos los nombres, firma Python y tipos de retorno.
+Para «ir a», Steven confirmó una vista que solo contiene salas exploradas y enumera, desde ellas, puertas recordadas abiertas hacia otras salas exploradas. También aceptó recalcular cada paso con origen, destino y conocimiento vigentes, representar origen=destino como costo total 0 sin paso y distinguir ausencia de ruta. La firma y los tipos quedaron cerrados en T002; la integración de la vista de 003 sigue pendiente de T004.
 
 ### 4. Costo completo y complejidad
 
@@ -224,20 +224,20 @@ En `--bench`, “preparación fuera del cronómetro” significa únicamente gen
 |---|---|---|---|
 | Esqueleto/costos | versión de cripta y datos validados | nueva versión/nueva partida | contenido descargado |
 | Distancias compartidas | esqueleto, costos, puertas abiertas, sala objetivo | abrir/cerrar puerta, cierre automático, mover jugador, nueva versión | velocidad; mover o morir otro actor |
-| Decisión individual | lo anterior + sala y rango del cazador | se recalcula en cada turno provisionalmente | contenido descargado, niebla |
-| Paso de «ir a» propuesto | origen, destino y mapa conocido vigentes | se recalcula en cada paso provisionalmente | estado real oculto fuera de la vista |
+| Decisión individual | lo anterior + sala y rango del cazador | se recalcula en cada turno (decisión medida, R-13) | contenido descargado, niebla |
+| Paso de «ir a» acordado | origen, destino y mapa conocido vigentes | se recalcula en cada paso (T002; integración T004 pendiente) | estado real oculto fuera de la vista |
 | Lote de cazadores | conjunto de cazadores vivos/activos | activación, muerte, retroceso que cambie ese conjunto | movimiento de un actor que no participa |
 | Próxima acción | reloj, velocidad y evento del actor | inicio/fin de efecto de velocidad; retroceso | rutas y puertas si el evento ya fue programado |
 
 La apertura y el cierre automático cambian el grafo transitable. El movimiento del jugador cambia el objetivo. El movimiento de un cazador cambia solo su origen; una distancia inversa al mismo objetivo podría seguir sirviendo. La velocidad no forma parte del costo de ruta y no invalida distancias; sí reprograma el evento con secuencia nueva (`FR-006`). La muerte/movimiento de otros actores no bloquea salidas, por lo que no invalida distancias, aunque la muerte cambia qué cazadores participan.
 
-La producción provisional recalcula y libera todos los auxiliares al terminar cada consulta. No conserva cachés, instantáneas ni generaciones entre decisiones; por tanto, `RETROCEDER`, `MotorJuego.iniciar` e `historia` no necesitan ganchos de invalidación de rutas.
+La producción recalcula y libera todos los auxiliares al terminar cada consulta. No conserva cachés, instantáneas ni generaciones entre decisiones; por tanto, `RETROCEDER`, `MotorJuego.iniciar` e `historia` no necesitan ganchos de invalidación de rutas.
 
 Las instantáneas compartidas existen solo en `benchmarks/`. Si la evidencia lleva a adoptar reutilización, antes de tocar producción se actualizarán plan y tareas con propietario y claves concretos. Solo entonces deberán quedar fuera de `EstadoPartida` y transacciones, e invalidarse después de retroceso exitoso y al iniciar/cargar, nunca por una consulta `historia` que restaura el estado en `finally`.
 
 En el código actual, `RestauradorPartida.restaurar_para_reanudar()` crea un estado nuevo, reconstruye agenda y referencias e inicia un historial vacío; ninguna caché de rutas se persiste. `MotorJuego.iniciar` es el punto común que recibe tanto estados nuevos como restaurados.
 
-La producción provisional recalcula cada decisión. Para «ir a», la integración aceptada también calcula individualmente desde cero en cada paso. Cualquier reutilización futura exige una decisión separada, equivalencia observable y medición completa antes de añadir tareas de producción.
+La producción recalcula cada decisión. Para «ir a», la integración aceptada también calcula individualmente desde cero en cada paso. Cualquier reutilización futura exige una decisión separada, equivalencia observable y medición completa antes de añadir tareas de producción; T046/T048 midieron la alternativa, pero no se adoptó (R-13).
 
 ### 6. Movimiento, agenda y reversión
 
@@ -249,13 +249,13 @@ La producción provisional recalcula cada decisión. Para «ir a», la integraci
 - Todo cambio nuevo de 001 debe sobrevivir a `copy.deepcopy((estado, transacciones))` conservando referencias hacia las entidades copiadas, y al `pickle` conjunto de estado vivo/línea propuesto por 004. Por ello contiene solo valores y referencias canónicas incluidas en el paquete, nunca motor, servicio de rutas, cachés, callbacks o recursos externos.
 - Las rutas, etiquetas, montículos de consulta e instantáneas no son estado del juego y no entran en `HistorialReversible` (`FR-016`).
 - Una acción rechazada se valida antes de mutar o aborta su transacción, y no deja datos derivados presentados como válidos (`FR-017`).
-- El contrato de 004 acepta condicionadamente esta frontera: FR-016 basta si todo estado observable se registra en la transacción. Implementación, compatibilidad `deepcopy`/`pickle` y pruebas conjuntas siguen pendientes.
+- El contrato de 004 acepta condicionadamente esta frontera: FR-016 basta si todo estado observable se registra en la transacción. T034/T035 comprobaron `deepcopy`/`pickle` de los cambios locales y T040 redactó la integración; la ejecución conjunta con `LineaTiempo` completa sigue pendiente en T056.
 
 ### 7. Medición conectada a `--bench`
 
 La conexión actual de `main.py --bench` importa `benchmarks.integrante2.PROVEEDORES`, concatena `benchmarks.bench_ampliado.PROVEEDORES` y entrega la tupla a `benchmarks.integrante3.ejecutar`. Ese ejecutor añade además `_medir_agenda_existente` y `_medir_ciclo_existente`. La integración conjunta acordada añadirá la tupla de 001 una sola vez; Sofía no edita unilateralmente `main.py`, no reemplaza proveedores de compañeros ni registra simultáneamente tupla y agregador.
 
-Cada fila de 001 informará semilla, entorno, calentamiento, repeticiones, carga, unidad, mediana, p95/máximo cuando corresponda, trabajo contado y alternativa. El helper genérico actual `benchmarks.integrante3.medir()` solo calcula mediana y mínimo; el proveedor de 001 deberá ampliar su fila o usar un adaptador propio para los percentiles exigidos, sin cambiar el significado de las filas ajenas. Antes de cronometrar se comprobará con un oráculo independiente la igualdad de acción, alcanzabilidad, costo total, primera vecina y costo del paso. Trabajo y orden interno pueden diferir y se miden aparte (`PR-004`, `PR-006`).
+Cada fila conservada de 001 informa semilla, entorno, calentamiento, repeticiones, carga, unidad, mediana, p95/máximo cuando corresponde, trabajo contado y alternativa. Los proveedores de 001 amplían la fila o usan adaptadores propios para los percentiles exigidos, sin cambiar el significado de las filas ajenas. Antes de cronometrar comprueban con un oráculo independiente la igualdad de acción, alcanzabilidad, costo total, primera vecina y costo del paso. Trabajo y orden interno pueden diferir y se miden aparte (`PR-004`, `PR-006`).
 
 **Rutas e invalidación** (`PR-002`, `PR-003`):
 
@@ -278,7 +278,7 @@ La evidencia decidirá si: (a) permanece la búsqueda individual; (b) se usa com
 
 ### 8. Estrategia de pruebas
 
-[quickstart.md](quickstart.md) contiene una fila por cada AC, incluidos AC-B01–AC-B07. Las pruebas de rutas pequeñas usarán enumeración exhaustiva de rutas simples y las matrices mayores una relajación completa independiente. Comparan decisión y costos observables; trabajo, frontera y orden interno se instrumentan aparte.
+[quickstart.md](quickstart.md) contiene una fila por cada AC, incluidos AC-B01–AC-B07. Las pruebas de rutas pequeñas usan enumeración exhaustiva de rutas simples y las matrices mayores una relajación completa independiente. Comparan decisión y costos observables; trabajo, frontera y orden interno se instrumentan aparte.
 
 La reversión captura el estado canónico antes del intervalo, ejecuta acciones/cazadores/puertas/velocidad, retrocede y compara todos los campos reversibles, aplicando la excepción de pergaminos de FR-016. Después ejecuta las mismas acciones desde el mismo estado posterior al retroceso en dos partidas y compara registros. La línea base histórica fue `1071 passed`; la corrida posterior comunicada tras integrar la interfaz base de Joshua fue `1101 passed`, sin fallos ni omisiones. Esta revisión documental no ejecutó ninguna de las dos; la regresión debe conservarse al añadir la cobertura específica de 001.
 
@@ -294,32 +294,32 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 ### Puntos de integración pendientes
 
 - **Steven**: `5000d1f` integra costo/rango, simetría de sentidos existentes y persistencia v10 de esos campos; acepta sentidos únicos. Aceptó la firma `proximo_paso(...) -> ResultadoRuta` y asignó rutas/vista del cazador a Sofía. La vista conocida de 003 y la persistencia conjunta completa siguen abiertas: [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md).
-- **Joshua**: la interfaz base introducida por `972af542…` y el enlace de historial de `927d886…` están integrados en `Sofia@3df43c6…`: deshacer/rehacer temporal, fotografía y `vincular_linea`. T005 mantiene la revisión cruzada de proceso. La clase completa `LineaTiempo` contenida en la punta posterior `b039b8b…`, el guardado coordinado y las pruebas conjuntas de 001 siguen pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
+- **Joshua**: la interfaz base introducida por `972af542…` y el enlace de historial de `927d886…` están integrados en `Sofia@3df43c6…`: deshacer/rehacer temporal, fotografía y `vincular_linea`. T005 cerró la revisión cruzada de esa interfaz y T040 redactó las pruebas contra el protocolo remoto. La clase completa `LineaTiempo`, el guardado coordinado y la ejecución local T056 siguen pendientes: [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md).
 - **Spec 002**: la versión integrada resolvió las dos observaciones revisadas: un fallo al obtener ubicaciones deja la cripta sin verificar y bloquea el inicio salvo `--forzar` (`FR-011`, `FR-019`), y retiró la divulgación de contenido de rutas frente a la niebla. Solo se permite identificar al enemigo que custodia una llave, excepción exigida para ubicarla. 001 no modifica ese spec ni su recorrido; el índice conserva orden e identidad y los costos no alteran la resolubilidad. Como hallazgo de implementación, `InicializadorPartida._verificar()` captura `CriptaAPIError` y `ValueError`, mientras `convertir_llaves()` puede producir `TypeError` ante un ID de sala de tipo inválido; ese borde no se corrige desde 001.
 - **Spec 004**: reconstruye hacia atrás desde el punto de control siguiente, deshaciendo como máximo K transacciones y rehaciendo con inversos en `finally`. Re-simular hacia adelante existe solo como alternativa de `--bench`. Su FR-022 necesita costos y cazadores canónicos, pero no cachés de ruta. No se modifica `specs/004-linea-de-tiempo`.
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas y el diseño provisional. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2 están cerradas; permanecen abiertas la vista conocida, `LineaTiempo` completa, persistencia conjunta restante y decisiones condicionadas por medición.
+[research.md](research.md) fija las alternativas, la decisión medida (R-13) y el diseño de producción. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2 y T005 están cerradas; permanecen abiertas la vista conocida (T004), `LineaTiempo` completa y persistencia (T006), la conexión `--bench` (T049/T050) y la referencia oficial (T051).
 
 ## Phase 1 Outputs
 
 - [data-model.md](data-model.md): entidades canónicas, derivadas, validaciones y transiciones.
-- [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md): acuerdo parcial sobre datos/vista y propuesta pendiente sobre resultado, reutilización y guardado.
-- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): interfaz base disponible localmente; revisión cruzada, `LineaTiempo` completa, pruebas conjuntas y guardado aún pendientes.
+- [contracts/propuesta-steven-rutas-datos.md](contracts/propuesta-steven-rutas-datos.md): resultado cerrado en T002 y estrategia de reutilización del cazador cerrada en T057; vista conocida y guardado siguen pendientes.
+- [contracts/propuesta-joshua-cambios-reversibles.md](contracts/propuesta-joshua-cambios-reversibles.md): interfaz base y revisión cruzada disponibles localmente; T040 está redactada, mientras `LineaTiempo` completa, ejecución T056 y guardado siguen pendientes.
 - [quickstart.md](quickstart.md): guía futura de validación, matriz completa de escenarios y `--bench`.
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con condiciones abiertas**. G1/G2 y la interfaz base reversible están disponibles. No están locales la vista conocida ni la clase completa `LineaTiempo`; la persistencia conjunta restante y la medición de 5 ms con 003 siguen pendientes. T049 registra hoy solo el proveedor de mapa, no rutas/ciclo.
+**Puerta de diseño satisfecha con condiciones abiertas**. G1/G2, T005 y la interfaz base reversible están disponibles. No están locales la vista conocida ni la clase completa `LineaTiempo`; la persistencia conjunta restante y la medición de 5 ms con 003 siguen pendientes. T049 registra hoy solo el proveedor de mapa, no rutas/agenda/ciclo.
 
 ## Risks and Pending Agreements Before Tasks
 
 1. **Integración de datos con Steven**: G1/G2 cerradas en `5000d1f`; costo/rango, firma/resultado, archivos de Sofía y política de sentidos únicos están confirmados. Falta la vista conocida de 003.
 2. **Contrato de «ir a» con Steven/003**: firma, recálculo y casos terminales están confirmados; bloquean la integración la entrega de la vista de 003 y evidencia conjunta de 5 ms.
-3. **Integración histórica con Joshua**: la interfaz base y `vincular_linea` están disponibles localmente y pendientes solo de revisión cruzada T005. `LineaTiempo` completa, cada fotografía de cambios nuevos de 001, las pruebas conjuntas y el guardado siguen abiertos. No hay invalidación de rutas mientras producción recalcule sin retener estado.
+3. **Integración histórica con Joshua**: la interfaz base y `vincular_linea` están disponibles localmente; T005 cerró la revisión cruzada. `LineaTiempo` completa, cada fotografía de cambios nuevos de 001, las pruebas conjuntas y el guardado siguen abiertos. No hay invalidación de rutas mientras producción recalcule sin retener estado.
 4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
-5. **Elección de estrategia**: individual es provisional. Compartida/adaptativa o cualquier reutilización de «ir a» solo se seleccionará con resultados de costo completo y equivalencia.
+5. **Elección de estrategia**: individual es la decisión medida (R-13). Compartida/adaptativa o cualquier reutilización de «ir a» solo se seleccionará con resultados de costo completo, equivalencia y tareas productivas; la referencia oficial sigue pendiente.
 6. **Persistencia coordinada**: v10 de costo/rango está integrada; mapa conocido y línea completa aún requieren campos, compatibilidad y prueba conjunta.
 7. **Componentes compartidos**: el diseño no exige ampliar `MonticuloMinimo`. El registro en `main.py` requiere tarea conjunta y no autoriza edición unilateral.
 

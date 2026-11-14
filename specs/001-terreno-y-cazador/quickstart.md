@@ -49,7 +49,7 @@ Estas cifras sí corresponden a la ejecución del bloque. No incluyen benchmarks
 
 El oráculo de US3 enumera rutas simples sin invocar `proximo_paso`. Las pruebas comprueban recálculo tras puertas, jugador, velocidad, otros actores, retroceso, reinicio y enlace de un estado deserializado; empate numérico y orden incidental permutado; bytes de `partida.log`; restauración de salas, actores, vida, reloj, agenda, secuencias, puertas y azar; excepciones de pergamino/`registrar_solo_linea`; y alias de copias conjuntas por `deepcopy` y `pickle`. La instrumentación por referencias débiles confirma que cada consulta libera su montículo y sus dos tablas. No se encontró un defecto de producción y no se añadieron cachés, generaciones ni observadores.
 
-No se ejecutó la suite completa porque este bloque solo cambió pruebas y documentación. Tampoco se ejecutaron benchmarks. `LineaTiempo` completa y el formato conjunto con mapa conocido siguen ausentes; por ello T040/T041/T055/T056 permanecen abiertas.
+No se ejecutó la suite completa en ese bloque porque solo cambió pruebas y documentación; la corrida completa posterior se registra en «Validación completa del bloque documental (T060)». Tampoco se ejecutaron benchmarks en ese bloque. `LineaTiempo` completa y el formato conjunto con mapa conocido siguen ausentes; por ello T041/T055/T056 permanecen abiertas. T040 quedó redactado y validado contra `origin/joshua`, pero su ejecución local se omite hasta G4b/T056.
 
 ### Ejecución aislada de rutas US4 (T044–T046/T065)
 
@@ -104,6 +104,17 @@ La ejecución focalizada terminó en **52 passed in 4.45s**, incluida una carga 
 - `ciclo_real_criptas_disponibles.json`: cuatro criptas locales reales, **12/12 ciclos completos**, medianas de **0.102 a 0.225 ms** y cero muestras de 20 ms o más. El archivo dice explícitamente `referencia_oficial=pendiente_publicacion_g6` y `afirma_pr001=false`.
 
 La mayor carga sintética fue 64 salas, 28 cazadores, rango grande y puertas estables con recálculo productivo: mediana **20.545 ms**, p95 **36.826 ms** y **7/9** muestras de al menos 20 ms; cada muestra reporta 28 decisiones/notificaciones de enemigo. La variante inestable equivalente conservó otras **2/9** muestras lentas (mediana 17.964 ms, p95 33.234 ms), 24 decisiones/notificaciones y un cierre. En total se conservan las **9 muestras `>=20 ms`** sin reducir trabajo. La alternativa retenida estable dio 3.127 ms de mediana, pero es experimental, incluye creación/consultas/invalidación/limpieza dentro del intervalo y no autoriza un cambio de producción. PR-001/T051 continúan bloqueados hasta publicar la referencia oficial.
+
+### Validación completa del bloque documental (T060)
+
+Ejecutada el 2026-11-10 con `.venv/Scripts/python.exe` desde la raíz:
+
+- **Suite completa final, con T040 añadido** (`pytest -q -rs --tb=short`): **1287 passed, 1 skipped, 4 subtests passed in 173.39s**. La omisión es el módulo `tests/test_integracion_001_004.py`, que espera G4b/T056.
+- **Suite completa previa, sin T040**: **1287 passed, 4 subtests passed, 0 skipped, 0 failed in 188.09s**.
+- **Foco funcional US1–US4 e integraciones no bloqueadas**: **159 passed, 2 subtests passed in 9.99s**.
+- **Módulos de benchmark y restricciones del enunciado**: **126 passed in 30.26s**.
+
+Una corrida intermedia falló solo en `tests/test_bench_integrante2.py::test_el_costo_crece_de_forma_aproximadamente_lineal` (factor 3.8 frente a 3.0). Esa prueba pasó 3/3 aislada y volvió a pasar en la corrida completa final; se registra como fluctuación de medición, no como regresión, y no se modificó. Las corridas usaron fixtures offline; no se ejecutaron pruebas contra el servicio en línea. Los conteos focalizados se solapan con la suite completa y no se suman. `main.py --bench` con las filas de rutas, agenda y ciclo sigue pendiente de T049/T062; el proveedor del mapa ya está conectado. Esta validación no demuestra PR-001 ni el límite oficial de 20 ms.
 
 ## Oráculos independientes
 

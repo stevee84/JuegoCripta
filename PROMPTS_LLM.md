@@ -456,6 +456,8 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 40 | Remediación de la planificación 001 con ramas remotas | Tema 12. Parte II dirigida por especificaciones | 08/11/2026 |
 | 54 | Implementación coherente de US1/US2: terreno, rutas y cazador | Tema 12. Parte II dirigida por especificaciones | 09/11/2026 |
 | 57 | Ciclo real sintético y agenda equivalente con costos variables | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
+| 58 | Revisión posterior T001, pruebas T040, propuesta T049 y cierre documental T057/T059/T060/T063/T068/T069 | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
+| 59 | Preparación de commit y revisión remota sin integración | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2193,6 +2195,48 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Resultados conservados.** `agenda_ciclo001_t047_c1_r9_256-512-1024.json` guarda **36 filas/324 muestras**; en 1024 eventos, resolver empates obtuvo 15.341 ms para `AgendaEventos` y 39.694 ms para la lista lineal. Se conservaron las 24 muestras lineales `>=20 ms` de insertar, reprogramar y resolver empates. `ciclo_sintetico_t048_t047_c1_r9_32-64.json` guarda **32 filas/288 muestras** y todas clasificaron `completo`. En 64 salas/28 cazadores/rango grande, el recálculo productivo estable dio mediana 20.545 ms, p95 36.826 ms y 7/9 muestras `>=20 ms` con 28 decisiones/notificaciones; el inestable dio 17.964 ms, 33.234 ms y otras 2/9 con 24 decisiones/notificaciones y un cierre. Se conservaron las nueve muestras lentas. La retención experimental estable dio 3.127 ms, sin convertirse en decisión productiva. `ciclo_real_criptas_disponibles.json` guarda 12/12 ciclos completos de cuatro criptas locales, medianas 0.102..0.225 ms, y declara que no es la referencia oficial.
 
 **Pruebas y estado.** Las pruebas de escenario, equivalencia, clasificación, fases, memoria, esquema AC-013/AC-015, catálogo vivo y proveedores terminaron en **52 passed in 4.45s**; los seis módulos de benchmark terminaron en **70 passed in 7.58s** y `py_compile` pasó. Se cerraron T043, T047 y T048. T049 queda abierta por el acuerdo del propietario de `main.py`; T050/T071 dependen de esa integración; T051/PR-001 siguen bloqueados por G6. No se añadieron cachés ni optimizaciones a producción, no se modificó `main.py` y no hubo commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 58 — Revisión posterior T001, pruebas T040, propuesta T049 y cierre documental T057/T059/T060/T063/T068/T069
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** DeepSeek V4.1 Flash Free
+
+**Fecha:** 10/11/2026
+
+> **Prompt**
+>
+> En la rama `Sofia`, continuar sin que Sofía tenga que pegar cada prompt: reejecutar `/speckit.analyze` en modo solo lectura (T001); documentar la decisión real de estrategia del cazador (T057); escribir §5.1, §5.2 y la parte de agenda de §5.6 en `DECISIONES.md` (T067–T069); redactar las pruebas de integración T040 contra el protocolo remoto de Joshua; dejar una propuesta T049 para el propietario de `main.py`; auditar la matriz AC→FR/PR→tareas→pruebas (T059); ejecutar todas las pruebas previstas y registrar aprobadas/omitidas/fixtures/en línea (T060); actualizar `plan.md`/`research.md` con resultados reales y bloqueos (T063). No editar `main.py`, producción ni código de compañeros; no cerrar T049/T051 ni afirmar PR-001; no hacer commit, push, merge ni cambio de rama.
+
+**T001 — análisis de solo lectura.** `/speckit.analyze` se reejecutó sobre la constitución, `spec.md`, `plan.md` y `tasks.md`. Confirmó 30/30 AC, 18/18 FR y 6/6 PR trazados, los siete AC-B explícitos y ninguna violación constitucional crítica. Los archivos de prueba aún ausentes corresponden a T040, T041 y T052, no a requisitos sin cobertura. Hallazgos de documentación: recuento de tareas desactualizado (33/43), R-01 afirmaba que no había mediciones y `plan.md` presentaba el proveedor de rutas como conectado a `--bench`. El informe no aplicó remediaciones ni autorizó implementación; las correcciones se hicieron después, en tareas separadas.
+
+**Decisión y documentación.** `research.md` añade R-13: producción conserva el recálculo individual por cazador y por decisión, sin caché; la inversa compartida/reutilizada queda solo en benchmark y la adaptativa no se adopta por falta de umbral medido. Se registran equivalencia previa al reloj, medianas de T046/T065 y T048, trabajo retenido y límites. `DECISIONES.md` añade §5.1 (estrategia de rutas), §5.2 (recálculo frente a reutilización) y la subsección de agenda de §5.6 (seis operaciones, 36 filas/324 muestras y 24 muestras lineales `>=20 ms`). La introducción se corrigió para no afirmar que las mediciones de 001 ya salen de `main.py --bench`. T067 queda abierta: el borrador de §5.1 está completo, pero su evidencia literal de `--bench` depende de T049/T050.
+
+**T040 — pruebas de integración.** Se redactó `tests/test_integracion_001_004.py` con seis pruebas propias contra el protocolo remoto: condición `(estado, cambio)`, inversos en `finally`, `_hasta`, `historia` sin ejecutar `proximo_paso`, avisos del historial y fotografía de los cambios de terreno/cazador. En `Sofia` el módulo se omite porque `LineaTiempo` no está integrada (G4b); contra una copia temporal de solo lectura de `origin/joshua@b769f35` las seis pruebas pasaron: **6 passed in 0.08s**. T040 se cierra como redacción; la ejecución satisfactoria sigue en T056.
+
+**T049 — propuesta no aplicada.** Se redactó `specs/001-terreno-y-cazador/contracts/propuesta-integracion-main-t049.md` con el diff mínimo para registrar una sola vez mapa, agenda, rutas y ciclo en `main.py --bench`, la validación posterior, los riesgos y el criterio de aceptación. `main.py` no se tocó: sigue registrando solo `PROVEEDORES_MAPA` además de los proveedores existentes. T049 permanece abierta hasta que el propietario acepte y aplique la propuesta.
+
+**Auditoría y pruebas.** T059 confirmó la matriz completa y corrigió el recuento. T060 ejecutó la suite completa final, con T040 añadido: **1287 passed, 1 skipped, 4 subtests passed in 173.39s**; la omisión es T040 hasta G4b/T056. Antes de T040, la suite había dado **1287 passed, 0 skipped, 4 subtests passed in 188.09s**. Una corrida intermedia falló solo en `tests/test_bench_integrante2.py::test_el_costo_crece_de_forma_aproximadamente_lineal` (factor 3.8 frente a 3.0); esa prueba pasó 3/3 aislada y volvió a pasar en la corrida final, por lo que se registra como fluctuación de medición y no como regresión. Foco funcional US1–US4: **159 passed, 2 subtests passed in 9.99s**; benchmarks y restricciones: **126 passed in 30.26s**. No se ejecutaron pruebas contra el servicio en línea; se usaron fixtures offline. T063 actualizó `plan.md`/`research.md` con la estrategia final, la tabla constitucional II/IX, el árbol de archivos y los bloqueos reales. Quedan 18 tareas abiertas; T049/T050, T051, T004, T006, G4b/G6 y las integraciones dependientes siguen bloqueadas. No se modificó `main.py`, no se tocó producción ni código de compañeros y no hubo commit, push, merge o cambio de rama.
+
+---
+
+## Prompt 59 — Preparación de commit y revisión remota sin integración
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 13/11/2026
+
+> **Prompt**
+>
+> Preparar el cierre del bloque actual de `001-terreno-y-cazador`: usar Git para Windows para comprobar HEAD, publicación y los seis archivos versionados más dos nuevos; proponer commits sin ejecutarlos; consultar de forma segura `origin/Steve` y `origin/joshua` para detectar novedades que puedan desbloquear T004, T006, T049/T050, T056 o benchmarks. No hacer checkout, merge, rebase, reset, restore, commit, push ni integración; no modificar `main.py` o producción y no repetir pruebas/benchmarks.
+
+**Estado y contenido.** Git para Windows confirmó `Sofia@a2e248d`, un commit por delante de `origin/Sofia@7500aa4`; ese commit y los ocho archivos del árbol de trabajo siguen locales. Los seis archivos versionados contienen cambios reales de 001 y los dos nuevos son la propuesta T049 y las pruebas T040. No se encontraron duplicaciones ni archivos ajenos; `git diff --check` pasó. `DECISIONES.md` y `PROMPTS_LLM.md` conservan finales de línea mixtos en el árbol de trabajo, sin ser cambios exclusivamente de EOL y sin normalizarlos.
+
+**Referencias remotas.** `ls-remote` coincidió con las referencias locales: `origin/Steve@74b63cd` y `origin/joshua@a305be6`. Steven publicó en `1bc5c62` el mapa conocido y el viaje que pueden satisfacer T004 tras revisión/integración; también añadió proveedores de 003, pero no registró los proveedores de rutas/agenda/ciclo de 001. El contrato v10 de 004 continúa pendiente de aceptación/implementación en `GuardadoBinario`, por lo que T006 no queda resuelta. Joshua publicó `LineaTiempo` completa y el nuevo gancho `rehacer(estado)`, novedades relevantes para G4b/T056 una vez integradas por el flujo del equipo. No se integró ni publicó nada y no se ejecutaron pruebas o benchmarks.
 
 ---
 

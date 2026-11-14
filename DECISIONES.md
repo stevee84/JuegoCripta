@@ -7,8 +7,263 @@ y al plan de spec-kit de los que proviene, y si la decisión final coincide con 
 
 **Entorno de las mediciones.** Las de esta parte se tomaron en el equipo local con
 `.venv/Scripts/python.exe`, mediana de repeticiones, con la preparación fuera del intervalo
-cronometrado y las criptas sintéticas generadas de forma determinista por semilla (§6.3). Todas
-salen de `--bench`: ningún número de aquí viene de un benchmark suelto (Principio IX).
+cronometrado y las criptas sintéticas generadas de forma determinista por semilla (§6.3). Las
+mediciones de §5.4 y de la subsección del índice salen de `--bench`. Las de §5.1, §5.2 y la
+subsección de agenda de §5.6 provienen de los proveedores de 001 ejecutados mediante
+`benchmarks.integrante3.ejecutar`; su
+registro en `main.py --bench` sigue pendiente de T049/T050, así que se presentan como evidencia
+sintética provisional y no como cierre del Principio IX.
+
+---
+
+## 5.1 Estrategia de rutas del cazador
+
+**Especificación**: [specs/001-terreno-y-cazador/spec.md](specs/001-terreno-y-cazador/spec.md) ·
+**Plan**: [specs/001-terreno-y-cazador/plan.md](specs/001-terreno-y-cazador/plan.md) ·
+**Diseño medido**: [research.md](specs/001-terreno-y-cazador/research.md) (R-01, R-05, R-13)
+
+**¿Coincide con el plan original?** Sí en la decisión: el plan ya fijaba el recálculo individual
+como producción provisional y prohibía adoptar reutilización sin medición. La diferencia es que
+ahora existe la medición y se documenta la decisión; no se cambió el plan.
+
+### 1. Problema
+
+Cada cazador debe decidir en su turno entre atacar, esperar o moverse un único paso por una ruta
+abierta de costo mínimo dentro de su rango. Con decenas de cazadores activos, repetir esa búsqueda
+en cada decisión puede dominar el ciclo de eventos entre dos decisiones del jugador. La elección
+no es solo de velocidad: cualquier estrategia debe conservar la decisión observable, el
+determinismo y la independencia del contenido descargado (`FR-007`–`FR-014`, `PR-002`–`PR-004`).
+
+Las alternativas de diseño son la búsqueda individual, la construcción de una inversa compartida
+desde el jugador y la reutilización de esa inversa entre ciclos con invalidación. Una estrategia
+adaptativa podría cambiar entre ellas, pero necesita un umbral medido. La referencia oficial de
+`PR-001` sigue sin publicarse; las cifras de esta sección son sintéticas.
+
+### 2. Alternativas consideradas
+
+**Búsqueda individual por cazador, limitada por rango.** Es la producción inicial. Crea de forma
+perezosa un `MonticuloMinimo` y tablas propias por consulta, etiqueta por
+`(distancia, primera_vecina_id, sala_id)`, no inserta candidatos fuera del rango y libera los
+auxiliares al terminar. No conserva estado entre decisiones.
+
+**Inversa compartida construida una vez por ciclo.** Recorre el grafo desde el jugador y cada
+cazador elige el mínimo `(costo(u,v)+dist(v), v.id)` entre sus salidas. Puede amortizar trabajo con
+muchos cazadores, pero un solo rango grande amplía la región para todos. Vive solo en
+`benchmarks/terreno_cazador_integrante1.py`.
+
+**Inversa reutilizada entre ciclos con invalidación explícita.** Evita reconstruir mientras las
+puertas y el objetivo no cambien, a cambio de mantener estado derivado, detectar invalidaciones y
+reconstruir cuando corresponda. También vive solo en el benchmark y mide construcción, consultas,
+invalidación, reconstrucción y limpieza dentro del intervalo.
+
+**Estrategia adaptativa.** Elegiría individual o compartida según cantidad de cazadores, rango y
+estabilidad de puertas. No se implementó porque no existe un umbral medido que justifique el
+cambio ni una carga oficial que lo valide.
+
+**Devolver la ruta completa.** Se descartó: el siguiente paso puede quedar obsoleto antes de
+usarse y el contrato de «ir a» solo necesita un paso. Además ampliaría la superficie de
+invalidación.
+
+**Bibliotecas de grafos o `heapq`/`sorted()`.** Prohibidas por la Constitución I en producción; las
+alternativas de comparación solo pueden existir dentro de `--bench`.
+
+### 3. Decisión
+
+La producción conserva el **recálculo individual por cazador y por decisión**, sin caché,
+generación ni estado retenido. La inversa compartida y la reutilizada permanecen como
+comparaciones del benchmark. No se adopta la estrategia adaptativa.
+
+La decisión no declara incorrecta la alternativa compartida: solo aplaza su adopción hasta que
+existan tareas productivas concretas en `plan.md`/`tasks.md`, una política de invalidación y
+limpieza, y una validación del ciclo completo con la referencia oficial. Mientras tanto no se crea
+ninguna caché productiva ni se altera el estado canónico.
+
+### 4. Análisis de complejidad
+
+Con `E_R`, `P_R`, `Q_R` y `Q_fin` definidos en `plan.md`:
+
+| Estrategia | Tiempo esperado | Memoria adicional | Estado retenido |
+|---|---|---|---|
+| Individual, una consulta | `O(E_R + P_R log max(2,Q_R) + Q_fin)` | `O(D_R+Q_R)`, peor `O(D_R+E_R)` | Ninguno |
+| `H` consultas individuales | Suma de las regiones de cada cazador | `O(max(D_R+Q_R))`, liberada entre consultas | Ninguno |
+| Inversa compartida por ciclo | `O(E_L + P_L log max(2,Q_L) + Q_fin_L + H)` | `O(D_L+Q_L)` | Solo durante el ciclo del benchmark |
+| Inversa reutilizada | Consultas más invalidación/reconstrucción | `O(D_L+Q_L)` retenida | Solo en el benchmark |
+| Adaptativa | Decisión de estrategia no medida | La de la estrategia elegida | No implementada |
+
+La ventaja de compartir crece con `H`, pero también con el tamaño de la región que impone el rango
+máximo. La reutilización añade el costo de detectar y pagar invalidaciones; no se asume que sea
+gratis. El benchmark mide esos componentes por separado y no atribuye a la variante retenida un
+costo que no haya cronometrado.
+
+### 5. Evidencia empírica
+
+Entorno: Python 3.12.10 sobre Windows 11, `perf_counter_ns`, semilla 2609, un calentamiento y nueve
+repeticiones; preparación del fixture fuera del intervalo y todas las muestras conservadas en los
+JSON. T046 usa 64 salas, 20 cazadores, rango 640 y lotes de tres ciclos; T048 usa 64 salas, 28
+cazadores, rango 16 400 y un ciclo completo por muestra. **Las dos tablas no son intercambiables**:
+distinta cantidad de cazadores y distinto número de ciclos por lote.
+
+**Comparación de rutas (T046/T065), medianas:**
+
+| Carga (64 salas, 20 cazadores, rango 640) | Individual | Inversa compartida | Inversa reutilizada |
+|---|---:|---:|---:|
+| Puertas estables, 3 ciclos | 26 813 300 ns/lote | 587 200 ns/lote | 301 700 ns/lote |
+| Cambios frecuentes, 3 ciclos | 18 713 300 ns/lote | 662 300 ns/lote | 586 800 ns/lote |
+
+**Ciclo completo (T048), medianas:**
+
+| Carga (64 salas, 28 cazadores, rango 16 400) | Producción individual | Retención experimental |
+|---|---:|---:|
+| Puertas estables | 20.5445 ms; p95/máx. 36.8259 ms; 7/9 muestras `>=20 ms` | 3.1269 ms; p95/máx. 4.0276 ms; 0/9 |
+| Puertas inestables | 17.9640 ms; p95/máx. 33.2342 ms; 2/9 | 2.6901 ms; p95/máx. 3.6784 ms; 0/9 |
+
+Antes de cada reloj, T046 comparó acción, alcanzabilidad, costo total, primera vecina y costo del
+primer paso; T048 comparó la huella de reloj, secuencia, agenda, salas, enemigos, puertas, jugador,
+azar, resultado y orden de notificaciones. No hubo divergencias observables y los 288 ciclos
+sintéticos clasificaron `completo`. La retención experimental pagó dentro del intervalo una
+construcción, 26 consultas y 135 salidas examinadas en estable; 23 consultas, una invalidación por
+`puertas`, una reconstrucción y 267 salidas en inestable. Producción no expone contadores internos
+de ruta: sus filas solo reportan 28 y 24 notificaciones enemigas y, en inestable, un cierre.
+
+### 6. Límites conocidos
+
+- Las cifras son sintéticas, de un solo equipo y de nueve muestras; no son la referencia oficial
+  de `PR-001` y no permiten afirmar cumplimiento ni incumplimiento de los 20 ms.
+- T046 y T048 no comparten carga; no se comparan sus cocientes ni se les atribuye una causa.
+- La alternativa compartida/reutilizada no se adopta y no hay caché productiva. Cualquier
+  adopción futura exige actualizar primero `plan.md`/`tasks.md` con tareas productivas concretas y
+  repetir la validación de ciclo completo.
+- La estrategia adaptativa no tiene umbral medido y no se implementó.
+- Las filas aún no están registradas en `main.py --bench`; T049/T050 siguen abiertas y estas
+  mediciones son evidencia aislada de los proveedores, no cierre del Principio IX.
+- No se afirma que la decisión individual sea la más rápida en todos los escenarios; solo es la
+  estrategia productiva acordada y validada hasta ahora.
+
+**Trazabilidad**: `logica/rutas_ponderadas.py`; `logica/comportamiento_enemigos.py`;
+`benchmarks/terreno_cazador_integrante1.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;
+`benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
+`benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`; `tasks.md` (T046, T048, T057,
+T065).
+
+---
+
+## 5.2 Recálculo frente a reutilización
+
+**Especificación**: [specs/001-terreno-y-cazador/spec.md](specs/001-terreno-y-cazador/spec.md) ·
+**Plan**: [specs/001-terreno-y-cazador/plan.md](specs/001-terreno-y-cazador/plan.md) ·
+**Diseño medido**: [research.md](specs/001-terreno-y-cazador/research.md) (R-05, R-06, R-13)
+
+**¿Coincide con el plan original?** Sí para el alcance productivo actual: el plan fija recálculo
+desde cero sin estado retenido y reserva la reutilización para `--bench`. La medición favoreció a
+la retención en las cargas sintéticas, pero no cubre la referencia oficial ni toda la política de
+invalidación requerida para adoptar estado retenido en producción.
+
+### 1. Problema
+
+`FR-014` exige que cada decisión del cazador sea observablemente idéntica a calcularla desde cero
+en ese instante. La reutilización puede ahorrar trabajo, pero solo es válida si respeta aperturas y
+cierres de puertas —incluido el cierre automático—, cambios de sala del jugador y del cazador,
+cambios de velocidad y movimientos o muertes de otros actores cuando alteran ataque, espera,
+primera vecina o costo. No se presupone que todos esos cambios invaliden lo mismo.
+
+La pregunta es si producción debe conservar el recálculo o adoptar una inversa retenida con
+invalidación. La segunda opción introduce estado derivado, una política de invalidación y limpieza;
+la primera es más simple y coincide con la referencia normativa.
+
+### 2. Alternativas consideradas
+
+**Recálculo desde cero por decisión.** No conserva resultados, no necesita invalidación y libera
+sus auxiliares al terminar. Es la producción actual.
+
+**Inversa retenida con invalidación explícita.** Mantiene la inversa entre ciclos y la reconstruye
+cuando cambian las puertas o el objetivo. Debe pagar consultas, invalidación, reconstrucción y
+limpieza dentro del intervalo. Vive solo en el benchmark.
+
+**Invalidación global por generación.** Cualquier cambio descarta toda la inversa. Es segura pero
+pierde la mayor parte de la reutilización; no se implementó porque no hay una decisión productiva
+que la justifique.
+
+**Invalidación selectiva por puerta.** Requiere un índice puerta→resultados y una medición del
+ahorro; es una candidata futura, no una decisión actual.
+
+**Invertir las mutaciones de la caché en el historial.** Se rechazó: mezcla estado derivado con
+estado canónico y aumenta los cambios reversibles sin valor observable.
+
+**Copia completa por decisión.** Prohibida por la Constitución VII.
+
+### 3. Decisión
+
+Producción conserva el **recálculo desde cero**, sin caché ni estado retenido. Esto no afirma que
+sea la vía más rápida: la evidencia sintética medida favorece a la retención. La inversa
+reutilizada es una comparación exclusiva del benchmark; su construcción, consultas, invalidación,
+reconstrucción y limpieza se pagan dentro del intervalo medido. No se añaden ganchos de
+invalidación a `historia`, `RETROCEDER` ni `iniciar` porque no existe caché productiva que
+invalidar.
+
+Si una decisión posterior adopta reutilización, primero deben añadirse tareas productivas
+concretas con propietario y archivos, definir la política de invalidación y validar el ciclo
+completo. Mientras tanto no se crea ninguna caché.
+
+### 4. Análisis de complejidad
+
+| Vía | Costo por decisión/ciclo | Memoria | Invalidación y limpieza |
+|---|---|---|---|
+| Recálculo individual | `O(E_R + P_R log max(2,Q_R) + Q_fin)` por cazador | `O(D_R+Q_R)`, peor `O(D_R+E_R)`, liberada al terminar | No aplica |
+| Inversa retenida | Consulta esperada `O(1)` por cazador; reconstrucción `O(E_L + P_L log max(2,Q_L) + Q_fin_L)` cuando se invalida | `O(D_L+Q_L)` retenida | Invalidación de generación `O(1)`; reconstrucción y limpieza completas |
+| Generación global | Descarta toda la inversa ante cualquier cambio | La de la inversa | `O(1)` para descartar; reconstrucción completa |
+| Selectiva por puerta | Debe identificar y reconstruir solo lo afectado | Índice adicional puerta→resultados | No medida |
+
+El recálculo evita el costo de mantener y limpiar estado derivado. La reutilización solo compensa
+si la frecuencia de consultas supera el costo de invalidaciones y reconstrucciones; el benchmark
+mide ambos lados, pero no autoriza a asumir que la balanza se mantenga en la referencia oficial.
+
+### 5. Evidencia empírica
+
+T046 comparó ambas vías con 64 salas, 20 cazadores, rango 640 y tres ciclos por lote. Las medianas
+de la inversa compartida y reutilizada fueron 587 200/301 700 ns con puertas estables y
+662 300/586 800 ns con cambios frecuentes, frente a 26 813 300/18 713 300 ns del recálculo
+individual. La reutilización incluyó la invalidación en el intervalo.
+
+T048 comparó el ciclo completo de producción con la retención experimental sobre la misma
+plantilla, acción `ESPERAR`, semilla 2609 y carga:
+
+| Carga (64 salas, 28 cazadores, rango 16 400) | Producción | Retención experimental | Trabajo retenido |
+|---|---:|---:|---|
+| Puertas estables | 20.5445 ms; 7/9 `>=20 ms` | 3.1269 ms; 0/9 | 26 consultas, 1 construcción, 0 invalidaciones, 135 salidas |
+| Puertas inestables | 17.9640 ms; 2/9 `>=20 ms` | 2.6901 ms; 0/9 | 23 consultas, 1 construcción, 1 invalidación (`puertas`), 1 reconstrucción, 267 salidas |
+
+Las nueve muestras productivas `>=20 ms` fueron: estable, índices 1/2/4/5/6/7/8 con
+20.5445/20.4867/21.7241/22.2237/20.0708/21.0831/36.8259 ms; inestable, índices 5/6 con
+33.2342/22.9758 ms. Todas clasificaron `completo` y `exito=true`. Cada muestra estable registró
+28 notificaciones y 28 eventos enemigos, sin evento de puerta; cada muestra inestable registró
+24 notificaciones, 24 eventos enemigos, un evento de puerta y el cierre `p2-1`. Producción no
+instrumentó contadores internos de ruta (`contadores_internos_comparados=false`), así que no se
+atribuye la demora a una fase concreta ni se deriva un umbral adaptativo.
+
+La huella previa al cronómetro comparó reloj, secuencia, agenda, salas, enemigos, puertas, jugador,
+azar, resultado y orden de notificaciones. Los 288 ciclos sintéticos fueron completos y no hubo
+divergencias observables. En estable no hubo cierres; en inestable se observó un cierre (`p2-1`)
+dentro del intervalo. Producción reporta 28 y 24 notificaciones enemigas, respectivamente.
+
+### 6. Límites conocidos
+
+- Son mediciones sintéticas de un equipo y nueve repeticiones; no son la referencia oficial ni
+  prueban el límite de 20 ms.
+- La retención experimental es más rápida en estas cargas, pero no se adopta: faltan tareas
+  productivas, política de invalidación y validación oficial. No se atribuye la diferencia a una
+  causa no medida.
+- El tiempo retenido incluye construcción, consultas, invalidación, reconstrucción y limpieza; no
+  es un coste de consulta aislado.
+- La conexión a `main.py --bench` sigue pendiente de T049/T050; estas filas son evidencia aislada.
+- Solo caracterizan el equipo y las cargas indicadas. No se infiere el comportamiento en la
+  referencia oficial ni en otras máquinas.
+- Cualquier adopción futura debe actualizar `plan.md`/`tasks.md` y repetir la validación; no se
+  crea caché mientras tanto.
+
+**Trazabilidad**: `logica/motor_juego.py`; `logica/comportamiento_enemigos.py`;
+`logica/rutas_ponderadas.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;
+`benchmarks/terreno_cazador_integrante1.py`;
+`benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`; `tasks.md` (T048, T068).
 
 ---
 
@@ -185,10 +440,113 @@ a pedir nada (`SC-004`).
 
 ## 5.6 Revisión de decisiones con la carga nueva
 
-La revisión de agenda correspondiente a §5.6 se completará por separado en T069. La evidencia
-complementaria del mapa se documenta en [Índice por ID de MapaCripta (evidencia complementaria
-de 001)](#índice-por-id-de-mapacripta-evidencia-complementaria-de-001). Esta referencia no cambia
-la decisión de Resolubilidad de §5.4 ni atribuye a 001 el componente de 002.
+**Especificación**: [specs/001-terreno-y-cazador/spec.md](specs/001-terreno-y-cazador/spec.md) ·
+**Plan**: [specs/001-terreno-y-cazador/plan.md](specs/001-terreno-y-cazador/plan.md) ·
+**Diseño medido**: [research.md](specs/001-terreno-y-cazador/research.md) (R-05, R-10)
+
+**¿Coincide con el plan original?** Sí: se conserva `AgendaEventos` como agenda productiva. La
+carga nueva no cambia la decisión de la Parte I; la alternativa lineal sigue siendo exclusiva del
+benchmark.
+
+### Agenda bajo carga nueva (T069)
+
+#### 1. Problema
+
+`PR-005` exige repetir las mediciones de agenda de la Parte I con cientos de eventos, costos
+variables y cazadores activos, comparando por separado insertar, extraer, cancelar por ID,
+cancelar por actor, reprogramar y resolver empates frente a una alternativa comparable. La
+decisión de la Parte I eligió `AgendaEventos`; la pregunta es si la carga nueva la sigue
+justificando o si algún patrón aconseja cambiarla.
+
+La agenda participa en el ciclo completo entre decisiones del jugador, pero esta medición es un
+workload aislado: no incluye rutas, motor, red ni renderizado. Por tanto, sus tiempos no se
+presentan como el ciclo de `PR-001`.
+
+#### 2. Alternativas consideradas
+
+**`AgendaEventos` productiva.** Usa la agenda de la Parte I con sus índices, árbol AVL y montículo
+propios para insertar, extraer, cancelar y reprogramar por tiempo y secuencia. Es la decisión
+vigente.
+
+**Lista lineal manual, solo en el benchmark.** Busca y retira por recorrido; no reimplementa ni
+sustituye la agenda productiva. Sirve como alternativa comparable con la misma carga y los mismos
+resultados observables.
+
+**Cambiar la producción a una lista lineal.** Se descarta: perdería las operaciones por tiempo,
+secuencia e índices que la agenda ya ofrece y trasladaría al ciclo completo un costo que la
+medición no justifica.
+
+**Reimplementar la agenda dentro del benchmark.** Se descarta: la alternativa debe ser comparable,
+no una segunda agenda productiva que oculte diferencias de contrato.
+
+#### 3. Decisión
+
+Se conserva **`AgendaEventos`** como agenda productiva y no se modifica su implementación. La
+lista lineal permanece como alternativa local al benchmark. La decisión de la Parte I se mantiene
+aunque la lista lineal haya sido más rápida en cancelaciones por ID y por actor en esta carga: las
+otras cuatro operaciones y el flujo mixto favorecen a la agenda, y no se adopta un cambio parcial
+sin una tarea productiva y una validación del ciclo completo.
+
+#### 4. Análisis de complejidad
+
+Con `N` eventos y `K_a` eventos de un actor:
+
+| Operación | `AgendaEventos` | Lista lineal benchmark-local |
+|---|---|---|
+| Insertar | `O(log N)` esperado por índice/AVL/montículo | `O(N)` para buscar la posición; `O(1)` para insertar si se recorre una vez |
+| Extraer el mínimo | `O(log N)` | `O(N)` para localizar el mínimo |
+| Cancelar por ID | `O(log N)` | `O(N)` por búsqueda y retiro |
+| Cancelar por actor | `O(log N + K_a)` para localizar; retiro total `O(K_a log N)` | `O(N + K_a)` por recorrido y retiro |
+| Reprogramar | `O(log N)` | `O(N)` por búsqueda y reubicación |
+| Resolver empates | `O(N log N)` para extraer todos | `O(N²)` por búsquedas repetidas |
+
+La lista lineal puede ser competitiva cuando la operación retira pocos elementos ya localizados,
+pero pierde cuando se repite la búsqueda por valor o se extrae repetidamente. El benchmark mide
+cada operación por separado y no mezcla esa observación con el ciclo completo.
+
+#### 5. Evidencia empírica
+
+`benchmarks/resultados/agenda_ciclo001_t047_c1_r9_256-512-1024.json` conserva **36 filas/324
+muestras** con semilla 2609, un calentamiento y nueve repeticiones. La carga usa 256/512/1024
+eventos, tipos `EFECTO`, `CERRAR_PUERTA`, `ENEMIGO`, `JUGADOR_DISPONIBLE` y `VENCER_EFECTO`, 28
+destinatarios cazador, puertas y demoras derivadas de costos variables. La equivalencia de estado,
+resultado, orden y tiempos se comprobó antes de cada reloj.
+
+Medianas/p95/máximo en **ms por lote de 1024 eventos**:
+
+| Operación | `AgendaEventos` | Lista lineal | Muestras lineales `>=20 ms` |
+|---|---:|---:|---:|
+| Insertar | 4.9556 / 11.6659 / 11.6659 | 20.0797 / 21.5294 / 21.5294 | 6/9 |
+| Extraer | 4.6489 / 14.3053 / 14.3053 | 17.3550 / 19.8748 / 19.8748 | 0/9 |
+| Cancelar por ID | 4.6092 / 14.3324 / 14.3324 | 3.9687 / 4.7648 / 4.7648 | 0/9 |
+| Cancelar por actor | 0.7760 / 2.1155 / 2.1155 | 0.4667 / 0.5790 / 0.5790 | 0/9 |
+| Reprogramar | 10.0860 / 18.0415 / 18.0415 | 24.9376 / 25.2668 / 25.2668 | 9/9 |
+| Resolver empates | 15.3412 / 16.3880 / 16.3880 | 39.6939 / 40.7043 / 40.7043 | 9/9 |
+
+Las **24 muestras `>=20 ms`** pertenecen todas a la lista lineal: insertar (6), reprogramar (9) y
+resolver empates (9); se conservan sin reducir carga. En esta carga aislada, ninguna muestra de
+`AgendaEventos` alcanzó los 20 ms, pero eso no demuestra el ciclo completo de `PR-001`.
+
+#### 6. Límites conocidos
+
+- Es una medición aislada de agenda, no un ciclo completo entre decisiones del jugador; no incluye
+  rutas, motor, red ni renderizado.
+- Las cifras son sintéticas, de un solo equipo y nueve repeticiones; no son la referencia oficial.
+- Que la lista lineal gane en cancelaciones por ID/actor no cambia la decisión: no se atribuye a
+  una causa no medida ni se adopta un cambio parcial sin tarea productiva y validación completa.
+- Las 24 muestras lentas son de la alternativa lineal, no de `AgendaEventos`; no se presentan como
+  incumplimiento de `PR-001`.
+- La conexión a `main.py --bench` sigue pendiente de T049/T050; estas filas son evidencia aislada
+  de los proveedores, no cierre del Principio IX.
+- Solo caracterizan el equipo y las cargas indicadas.
+
+**Trazabilidad**: `logica/agenda_eventos.py`; `logica/motor_juego.py`;
+`benchmarks/terreno_cazador_integrante1.py`; `tests/test_bench_agenda_t047.py`;
+`benchmarks/resultados/agenda_ciclo001_t047_c1_r9_256-512-1024.json`; `tasks.md` (T047, T069).
+
+La evidencia complementaria del mapa se documenta en [Índice por ID de MapaCripta (evidencia
+complementaria de 001)](#índice-por-id-de-mapacripta-evidencia-complementaria-de-001). Esta
+referencia no cambia la decisión de Resolubilidad de §5.4 ni atribuye a 001 el componente de 002.
 
 ### Índice por ID de MapaCripta (evidencia complementaria de 001)
 
