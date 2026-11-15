@@ -463,6 +463,9 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 62 | Adaptadores de cargas propias para T049/T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 63 | Integración final de proveedores 001 en `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 64 | Preparación de ejecución y evidencia oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 65 | Intento de ejecución oficial T050 y fallo de captura del código | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 66 | Corrida directa T050 interrumpida por `NativeCommandError` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 67 | Ejecutor Python reproducible y cierre oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2342,6 +2345,64 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Ejecución preparada.** `contracts/ejecucion-t050-powershell.md` define archivos separados para JSON completo, stderr, PID, código de salida y JSON filtrado; incluye inicio con `Start-Process`, consulta no intrusiva, espera, comprobación de código 0, parseo JSON, extracción y hashes SHA-256. El JSON completo no se reemplaza ni mezcla con stderr.
 
 **Pruebas y límite.** `tests/fixtures/benchmarks/main_bench_t050_minimo.json` conserva ejemplos representativos de nivel superior y filas de mapa, agenda, rutas y ciclo. Las pruebas del extractor, CLI, adaptadores y registro terminaron en **17 passed in 0.34s**. No se ejecutó el benchmark completo; T050 permanece abierta hasta obtener y validar la corrida oficial.
+
+---
+
+## Prompt 65 — Intento de ejecución oficial T050 y fallo de captura del código
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Ejecutar directamente los 25 proveedores registrados por `main.py --bench`, conservar stdout y stderr separados, registrar un código de salida verificable, extraer la evidencia de 001 solo después de éxito y cerrar T050 únicamente si toda la validación pasa. No reducir cargas/repeticiones, no sobrescribir evidencia, no modificar producción ni realizar operaciones Git modificadoras.
+
+**Precondiciones.** `Sofia@f5309f1` coincidía con `origin/Sofia`, el entorno Python 3.12.10 importó las dependencias y se confirmaron 25 proveedores/25 identidades. Había un intento previo vacío con PID inexistente; sus tres archivos se preservaron con sufijo `incompleto_20261114T201103` antes de iniciar.
+
+**Ejecuciones.** La primera corrida completa produjo JSON válido con 916 filas y stderr separado, pero `Start-Process.ExitCode` quedó vacío; se preservó con sufijo `sin_codigo_20261114T201819`. Una repetición única añadió `WaitForExit()` y `Refresh()`, volvió a producir 916 filas, pero `$p.ExitCode` siguió en `$null`; el envoltorio escribió `CAPTURE_FAILED` y terminó en 254. No se inició una tercera corrida automática.
+
+**Validación y decisión.** Ambos JSON pasan el parseo y el extractor en memoria: cada uno contiene 194 filas de 001 (mapa 60, agenda 72, rutas 30, ciclo 32), sin duplicados ni cobertura ausente. stderr contiene cinco avisos por falta del paquete offline de `cripta-01`. Como ninguna corrida tiene código de salida del proceso Python verificable, no se creó el JSON filtrado oficial y **T050 permanece abierta**. El contrato PowerShell se corrigió para usar invocación directa y capturar `$LASTEXITCODE`; no se alteraron umbrales, proveedores ni resultados.
+
+---
+
+## Prompt 66 — Corrida directa T050 interrumpida por `NativeCommandError`
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Preservar las dos corridas completas sin código, ejecutar una única corrida adicional mediante invocación directa de Python desde PowerShell, capturar `$LASTEXITCODE` inmediatamente, generar la evidencia filtrada solo con código 0 y cerrar T050 únicamente si todas las validaciones pasan. No iniciar otra corrida mientras esté activa ni modificar benchmarks, parámetros o Git.
+
+**Resultado.** Las dos corridas anteriores se preservaron con sus sufijos. La invocación adicional se ejecutó desde un script PowerShell independiente, pero el envoltorio añadió `$ErrorActionPreference = "Stop"`, opción que no formaba parte del fragmento solicitado. Windows PowerShell 5.1 convirtió el primer aviso de preparación offline en `NativeCommandError` y detuvo el script antes de asignar `$LASTEXITCODE`; el envoltorio terminó en 1, stdout/stderr redirigidos quedaron vacíos y no se creó el archivo de código.
+
+**Decisión y corrección.** No se inició una segunda corrida adicional. Los archivos vacíos/PID se preservaron con sufijo `interrumpido_nativecommanderror_20261114T203733`; las dos corridas completas de 916/194 filas permanecen intactas. El contrato advierte ahora que debe conservarse `$ErrorActionPreference = "Continue"` al ejecutar el proceso nativo. No se generó el JSON filtrado ni se cerró T050.
+
+---
+
+## Prompt 67 — Ejecutor Python reproducible y cierre oficial T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Implementar un ejecutor reproducible con `subprocess.Popen` que lance el Python virtual con `main.py --bench`, redirija stdout/stderr directamente, registre PID y `returncode` real, rechace sobrescrituras y pueda correr de forma independiente. Probar primero procesos hijos con códigos 0 y 7; solo después ejecutar una corrida oficial, extraer las 194 filas de 001 y cerrar T050 si código, JSON, muestras, metadatos y duplicados son correctos. Preservar intentos anteriores y no modificar benchmarks ni Git.
+
+**Mecanismo.** `benchmarks/ejecutar_t050_integrante1.py` reserva las cuatro rutas con modos exclusivos, usa `subprocess.Popen`, espera al hijo y escribe `Popen.returncode`; su propio código no suplanta el código de `main.py`. `tests/test_ejecutor_t050_001.py` verificó stdout/stderr/PID y código 0, código 7 y rechazo de sobrescritura: **3 passed in 0.22s**. La validación focalizada final de ejecutor, extractor, adaptadores y registro terminó en **20 passed in 0.43s**.
+
+**Corrida oficial.** No había otro benchmark activo ni rutas objetivo ocupadas. El proceso hijo terminó con código real **0**. `main_bench_completo_t050.json` contiene 916 filas, Python 3.12.10/Windows, tamaños globales 8/16/32/64/128/512 y 15 repeticiones. stderr conserva cinco avisos por ausencia del paquete offline de `cripta-01`; no se ocultaron ni confundieron con el código de salida.
+
+**Extracción y cierre.** El extractor produjo `benchmarks/resultados_terreno_cazador_integrante1.json` con **194 filas/2910 muestras**: mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. Las 194 claves son únicas, las filas y metadatos superiores coinciden exactamente con el subconjunto original y las 32 filas de ciclo mantienen `origen_carga=sintetico`, referencia oficial pendiente y `afirma_pr001=false`. T050 queda cerrada sin afirmar PR-001 ni avanzar T054/T066.
 
 ---
 

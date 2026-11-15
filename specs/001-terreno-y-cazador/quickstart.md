@@ -205,16 +205,16 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena los 20 proveedores existentes —incluidos `PROVEEDORES_MAPA` de 001 y `bench_linea.PROVEEDORES` de Joshua— con los cinco adaptadores de agenda, rutas y ciclo publicados en las dos tuplas `PROVEEDORES_MAIN`. La prueba de conexión compara las 25 identidades en su orden real, exige unicidad y comprueba una aparición exacta de cada adaptador. T049 está cerrada; T050 conserva la ejecución oficial y el artefacto.
+`main.py --bench` concatena los 20 proveedores existentes —incluidos `PROVEEDORES_MAPA` de 001 y `bench_linea.PROVEEDORES` de Joshua— con los cinco adaptadores de agenda, rutas y ciclo publicados en las dos tuplas `PROVEEDORES_MAIN`. La prueba de conexión compara las 25 identidades en su orden real, exige unicidad y comprueba una aparición exacta de cada adaptador. T049 y T050 están cerradas con ejecución oficial reproducible.
 
 El ciclo común histórico sigue disponible; `benchmarks/benchmark_ciclo_real_integrante1.py` conserva `PROVEEDORES = (medir_ciclos_sinteticos,)` y registra mediante `PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)` las cargas 32/64. `benchmarks/terreno_cazador_integrante1.py` conserva `PROVEEDORES_AGENDA`, `PROVEEDORES_RUTAS` y `PROVEEDORES`, y registra cuatro adaptadores nominales mediante `PROVEEDORES_MAIN`. El argumento global `tamanos` de `integrante3.ejecutar` no describe esas cargas particulares: al interpretar la salida se usan `n`, `carga`, escenario y alternativa de cada fila. Pruebas focalizadas de registro: **10 passed in 0.64s**; no se ejecutó el benchmark completo.
 
-### Preparación de evidencia T050
+### Evidencia oficial T050
 
-La ejecución oficial debe seguir `contracts/ejecucion-t050-powershell.md`: stdout
-se conserva como JSON completo, stderr y código de salida quedan en archivos
-separados y el proceso puede consultarse por PID sin leer la salida durante las
-mediciones. Solo después de un código 0 y JSON válido se ejecuta:
+La ejecución oficial usa `benchmarks.ejecutar_t050_integrante1`: stdout se
+conserva como JSON completo, stderr, PID y código real del hijo quedan en
+archivos separados y ninguna ruta existente se sobrescribe. El proceso hijo
+terminó con código **0** y después se ejecutó:
 
 ```powershell
 .\.venv\Scripts\python.exe -m benchmarks.extraer_resultados_terreno_cazador_integrante1 `
@@ -225,9 +225,12 @@ mediciones. Solo después de un código 0 y JSON válido se ejecuta:
 El extractor selecciona conjuntos exactos de nombres y alternativas de mapa,
 agenda, rutas y ciclo; conserva cada fila completa, exige que muestras y
 repeticiones coincidan y rechaza claves lógicas duplicadas. No reemplaza las
-cargas particulares por `tamanos` del ejecutor. Preparación focalizada:
-**17 passed in 0.34s**. T050 permanece abierta hasta disponer de la ejecución
-completa y validar el artefacto resultante.
+cargas particulares por `tamanos` del ejecutor. El JSON completo contiene 916
+filas y el filtrado **194 filas/2910 muestras**: mapa 60/900, agenda 72/1080,
+rutas 30/450 y ciclo 32/480; las 194 claves son únicas y el subconjunto coincide
+exactamente con el original. stderr conserva cinco avisos por falta del paquete
+offline de `cripta-01`. Las 32 filas de ciclo continúan etiquetadas como
+sintéticas, referencia oficial pendiente y `afirma_pr001=false`.
 
 ### Rutas
 
