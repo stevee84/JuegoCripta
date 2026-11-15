@@ -1,6 +1,6 @@
 # Propuesta de integración T049 — `main.py --bench`
 
-**Estado**: APLICADO Y VALIDADO EN `Sofia`; T049 CERRADA, T050 PENDIENTE.
+**Estado**: APLICADO Y VALIDADO EN `Sofia`; T049/T050 CERRADAS.
 
 **Autora**: Sofía Delgado (001).
 
@@ -30,8 +30,8 @@ Los doce proveedores de `benchmarks.integrante2` incluyen los cambios de
 Steven para mapa conocido y un paso de «ir a» (`medir_mapa_conocido` y
 `medir_paso_ir_a`). Con adicionales, mapa y línea de tiempo suman 20
 proveedores conservados; los cinco adaptadores de Sofía elevan el registro a
-25 identidades únicas. T049 está cerrada y T050 permanece abierta hasta la
-ejecución oficial y conservación del informe.
+25 identidades únicas. T049 está cerrada y T050 conserva ya la ejecución
+oficial, su código 0 y el informe filtrado.
 
 ## 2. Cambio mínimo aplicado
 
@@ -161,7 +161,7 @@ adaptadores de agenda/rutas exigidos. No debe sustituirse por `PROVEEDORES`,
 porque esa tupla histórica recibe los tamaños globales directamente y se
 conserva para ejecuciones focalizadas y compatibilidad de pruebas.
 
-## 4. Validación de T049 y ejecución pendiente de T050
+## 4. Validación de T049 y ejecución completada de T050
 
 1. `test_bench_desde_main_no_inicializa_fuente_ni_vista` captura los proveedores
    entregados por `main`, compara las 25 identidades en orden, exige unicidad y
@@ -171,16 +171,16 @@ conserva para ejecuciones focalizadas y compatibilidad de pruebas.
    despacho único, cargas, repeticiones, ausencia de duplicados e invariancia
    de las tuplas históricas sin ejecutar las cargas completas.
 3. La ejecución focalizada de ambos puntos terminó en **10 passed in 0.64s**.
-4. Ejecutar `python main.py --bench` y guardar el JSON fuera de la medición solo
-   en T050.
-5. En T050 comprobar que aparecen, una sola vez por combinación identificadora, las filas de mapa, agenda, rutas y ciclo. El nombre `medicion` no es único por sí solo: agenda, alternativas y escenarios producen varias filas legítimas con el mismo nombre.
+4. T050 ejecutó `main.py --bench` mediante el capturador Python y registró
+   código real 0, JSON completo de 916 filas y evidencia de 194 filas de 001.
+5. T050 comprobó una sola fila por combinación identificadora de mapa, agenda, rutas y ciclo. El nombre `medicion` no es único por sí solo: agenda, alternativas y escenarios producen varias filas legítimas con el mismo nombre.
 6. Verificar el esquema de 001 (`medicion`, `n`, `carga`, `repeticiones`, `unidad`, `mediana`, `p95`, `maximo`, `minimo`, `muestras`, `trabajo`, `memoria`) sin exigir esos campos a proveedores ajenos con contratos anteriores.
 7. Comparar las cargas con los artefactos ya conservados:
    - `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
    - `benchmarks/resultados/agenda_ciclo001_t047_c1_r9_256-512-1024.json`;
    - `benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`;
    - el artefacto del mapa correspondiente.
-8. T050 conserva la ejecución real y el artefacto; T062/T072/T076 usan esa salida. No se interpretan las filas sintéticas como PR-001 ni como cumplimiento de 20 ms.
+8. T050 conserva la ejecución real y el artefacto; T062/T072/T076 pueden usar esa salida. No se interpretan las filas sintéticas como PR-001 ni como cumplimiento de 20 ms.
 
 ## 5. Riesgos y mitigaciones
 
@@ -200,4 +200,4 @@ conserva para ejecuciones focalizadas y compatibilidad de pruebas.
 - [x] El acuerdo de Steven sobre el punto compartido consta en `4ea99fa`; la extensión actual usa la misma vía de concatenación.
 - [x] `main.py --bench` incluye una sola vez los 25 proveedores acordados.
 - [x] No cambia el comportamiento de producción ni se añaden cachés.
-- [x] T049 se cierra con pruebas de identidad; T050 conserva la ejecución completa y el artefacto.
+- [x] T049 se cierra con pruebas de identidad y T050 con ejecución completa, código 0 y artefacto validado.

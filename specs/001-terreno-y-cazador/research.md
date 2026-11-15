@@ -202,7 +202,7 @@ Las nueve muestras clasifican `completo`, con `exito=true`; ninguna pertenece a 
 - T046 usa 20 cazadores y tres ciclos por lote; T048 usa 28 cazadores y un ciclo completo por muestra. Sus medianas no son intercambiables ni justifican una comparación causal entre sí.
 - La alternativa compartida/reutilizada no se adopta y no existe caché productiva. Cualquier adopción futura requiere actualizar primero `plan.md`/`tasks.md` con tareas productivas concretas, definir la invalidación y repetir la validación de ciclo completo.
 - La estrategia adaptativa sigue sin umbral medido; no se implementó.
-- La conexión de estas filas a `main.py --bench` depende de T049/T050; hoy son evidencia aislada de los proveedores, no cierre de Principio IX.
+- T049/T050 conectaron y ejecutaron estas filas mediante `main.py --bench`: la evidencia oficial conserva 194 filas/2910 muestras de 001 dentro de un informe completo de 916 filas. Siguen siendo cargas sintéticas y no cierran PR-001 ni sustituyen la referencia oficial pendiente.
 
 **Trazabilidad**: `logica/rutas_ponderadas.py`; `logica/comportamiento_enemigos.py`;
 `benchmarks/terreno_cazador_integrante1.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;

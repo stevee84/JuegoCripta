@@ -6,7 +6,7 @@
 
 ## Summary
 
-La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` ya integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. Las mediciones sintéticas de rutas, ciclo, agenda y mapa están conservadas, pero su conexión completa a `main.py --bench` sigue pendiente de T049/T050; la referencia oficial de PR-001 no se ha publicado. Mapa conocido, `LineaTiempo` completa y persistencia conjunta restante siguen pendientes.
+La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` ya integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. T049/T050 conectaron y ejecutaron las mediciones sintéticas de rutas, ciclo, agenda y mapa mediante `main.py --bench`; la referencia oficial de PR-001 no se ha publicado y la persistencia conjunta restante sigue pendiente.
 
 ## Technical Context
 
@@ -52,7 +52,7 @@ Los acuerdos comunicados no se clasifican como código disponible. La interfaz b
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
 | VII. Estado reversible | **Interfaz base local; integración conjunta pendiente**. `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `vincular_linea` están en `HEAD`. La clase completa `LineaTiempo`, el guardado y las pruebas conjuntas de cambios nuevos de 001 siguen pendientes. Sin reutilización productiva no existen cachés que invalidar. |
 | VIII. Contratos estables | **Fronteras explícitas**. Steven conserva DTO/inicialización/guardado; Sofía conserva mapa, rutas y vista del cazador. G1 fija firma/resultado sin asignar la vista conocida de 003. |
-| IX. Rendimiento medido | **Medición sintética disponible; conexión completa pendiente**. T044–T048/T065/T073–T075 conservan rutas, ciclo, agenda y mapa con equivalencia previa y trabajo separado. `main.py --bench` ya registra el proveedor del mapa, pero rutas, agenda y ciclo siguen pendientes de T049/T050; la referencia oficial de PR-001 no está publicada. |
+| IX. Rendimiento medido | **Medición sintética conectada y ejecutada**. T044–T050/T065/T073–T075 conservan rutas, ciclo, agenda y mapa con equivalencia previa y trabajo separado; la corrida oficial produjo 194 filas/2910 muestras de 001. La referencia oficial de PR-001 no está publicada. |
 | X. Especificación y trazabilidad | **Enmienda confirmada**. FR-002 acepta sentidos únicos y compara costos solo cuando ambos existen; se registra antes del código. |
 | XI. Pruebas | **Cobertura propia ejecutada con una dependencia omitida**. T060 registró `1287 passed, 1 skipped, 4 subtests passed`; la única omisión es `tests/test_integracion_001_004.py` hasta G4b/T056. [quickstart.md](quickstart.md) separa esta corrida local de las seis pruebas ejecutadas contra una copia temporal de Joshua. |
 
@@ -104,8 +104,8 @@ logica/
 ├── cambios.py                      # local: deshacer temporal, rehacer y extensión de fotografía de 004
 └── historial_reversible.py         # local: retroceso y vincular_linea; LineaTiempo completa aún no integrada
 benchmarks/
-├── terreno_cazador_integrante1.py  # proveedor de rutas/agenda; T049 pendiente de conectar
-├── benchmark_ciclo_real_integrante1.py  # ciclo real; T049/T050 pendientes de conectar
+├── terreno_cazador_integrante1.py  # proveedor conectado de rutas/agenda
+├── benchmark_ciclo_real_integrante1.py  # ciclo sintético conectado
 └── benchmark_agenda_integrante1.py
 tests/
 ├── test_datos/                     # validación costo/rango, tras acuerdo con Steven
@@ -300,7 +300,7 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas, la decisión medida (R-13) y el diseño de producción. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2 y T005 están cerradas; permanecen abiertas la vista conocida (T004), `LineaTiempo` completa y persistencia (T006), la conexión `--bench` (T049/T050) y la referencia oficial (T051).
+[research.md](research.md) fija las alternativas, la decisión medida (R-13) y el diseño de producción. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2, T005 y la conexión/ejecución `--bench` T049/T050 están cerradas; permanecen abiertas la persistencia conjunta (T006) y la referencia oficial (T051).
 
 ## Phase 1 Outputs
 
