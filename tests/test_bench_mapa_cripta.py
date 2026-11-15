@@ -1,6 +1,8 @@
-"""Contrato de T072–T075 para el benchmark aislado de MapaCripta."""
+"""Contrato de T072–T075 y evidencia oficial de MapaCripta."""
 
-import pytest
+import json
+from pathlib import Path
+import sys
 
 
 CAMPOS_FILA = {
@@ -112,21 +114,148 @@ def test_proveedor_se_conecta_por_la_interfaz_estandar(monkeypatch):
     } <= nombres
 
 
-def test_main_bench_incluye_filas_del_mapa():
-    """T049 completada: `main.py --bench` registra el proveedor del mapa de 001.
+def test_main_bench_incluye_filas_del_mapa(monkeypatch):
+    """T049/T072: el punto de entrada real registra una vez el proveedor.
 
     Un benchmark que ningún punto de entrada ejecuta no cuenta como evidencia
-    (Principio IX), así que la medición del índice tiene que salir por `--bench`.
+    (Principio IX). Se intercepta el ejecutor para no repetir las 916 mediciones.
     """
-    from benchmarks.integrante3 import ejecutar
-    from benchmarks.bench_ampliado import PROVEEDORES as ADICIONALES
-    from benchmarks.integrante2 import PROVEEDORES as DATOS
+    import benchmarks.integrante3 as integrante3
     from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as MAPA
+    import main
 
-    registrados = DATOS + ADICIONALES + MAPA
-    for proveedor in MAPA:
-        assert proveedor in registrados
+    capturados = []
 
-    filas = ejecutar(repeticiones=1, tamanos=(8,), proveedores=registrados)["mediciones"]
-    nombres = {f["medicion"] for f in filas}
-    assert any(n.startswith("mapa_") for n in nombres), "--bench no mide el mapa"
+    def ejecutar(proveedores=()):
+        capturados.extend(proveedores)
+        return {"mediciones": [], "proveedores": len(proveedores)}
+
+    monkeypatch.setattr(sys, "argv", ["main.py", "--bench"])
+    monkeypatch.setattr(integrante3, "ejecutar", ejecutar)
+    main.main()
+
+    assert len(capturados) == len({id(proveedor) for proveedor in capturados}) == 25
+    assert tuple(proveedor for proveedor in capturados if proveedor in MAPA) == MAPA
+    assert all(capturados.count(proveedor) == 1 for proveedor in MAPA)
+
+
+def test_ejecucion_oficial_t050_contiene_las_60_filas_del_mapa():
+    """T072 valida la evidencia real sin volver a ejecutar el benchmark."""
+    ruta = (
+        Path(__file__).resolve().parents[1]
+        / "benchmarks/resultados/main_bench_completo_t050.json"
+    )
+    informe = json.loads(ruta.read_text(encoding="utf-8"))
+    filtrado = json.loads(
+        (ruta.parents[1] / "resultados_terreno_cazador_integrante1.json")
+        .read_text(encoding="utf-8")
+    )
+    nombres_mapa = {
+        "mapa_construccion_indice",
+        "mapa_construccion_lista_lineal_alternativa",
+        "mapa_busqueda_id",
+        "mapa_vinculacion_salidas",
+    }
+    filas = [
+        fila for fila in informe["mediciones"]
+        if fila["medicion"] in nombres_mapa
+    ]
+    filas_filtradas = [
+        fila for fila in filtrado["mediciones"]
+        if fila["medicion"] in nombres_mapa
+    ]
+
+    assert informe["repeticiones"] == 15
+    assert filas_filtradas == filas
+    assert len(filas) == 60
+    assert {fila["n"] for fila in filas} == {8, 16, 32, 64, 128, 512}
+    assert {
+        fila["carga"]["salidas_por_sala"] for fila in filas
+    } == {1, 4}
+    assert {
+        fila["medicion"]: {
+            otra["alternativa"] for otra in filas
+            if otra["medicion"] == fila["medicion"]
+        }
+        for fila in filas
+    } == {
+        "mapa_construccion_indice": {"lista_mas_tabla_hash_propia"},
+        "mapa_construccion_lista_lineal_alternativa": {
+            "lista_lineal_benchmark"
+        },
+        "mapa_busqueda_id": {
+            "tabla_hash_propia", "recorrido_lineal_benchmark"
+        },
+        "mapa_vinculacion_salidas": {
+            "vinculacion_indexada", "resolucion_lineal_benchmark"
+        },
+    }
+
+    claves = [
+        (
+            fila["medicion"], fila["alternativa"], fila["n"],
+            fila["carga"]["salidas_por_sala"],
+        )
+        for fila in filas
+    ]
+    assert len(claves) == len(set(claves)) == 60
+    for fila in filas:
+        assert CAMPOS_FILA <= fila.keys()
+        assert fila["semilla"] == 1729
+        assert fila["calentamiento"] == 1
+        assert fila["repeticiones"] == len(fila["muestras"]) == 15
+        assert fila["unidad"] == "ns_por_lote"
+        assert fila["fixture_fuera"] is True
+        muestras = sorted(fila["muestras"])
+        assert fila["minimo"] == muestras[0]
+        assert fila["mediana"] == muestras[7]
+        assert fila["p95"] == fila["maximo"] == muestras[-1]
+
+    construcciones = [
+        fila for fila in filas
+        if fila["medicion"].startswith("mapa_construccion_")
+    ]
+    por_carga = {}
+    for fila in construcciones:
+        clave = (fila["n"], fila["carga"]["salidas_por_sala"])
+        por_carga.setdefault(clave, []).append(fila)
+    assert len(por_carga) == 12
+    for variantes in por_carga.values():
+        assert len(variantes) == 2
+        assert all(fila["carga"]["identidad_instancias"] for fila in variantes)
+        assert len({fila["carga"]["huella_orden_ids"] for fila in variantes}) == 1
+        assert all(fila["trabajo"]["altas"] == fila["n"] for fila in variantes)
+
+    consultas = [
+        fila for fila in filas if fila["medicion"] == "mapa_busqueda_id"
+    ]
+    por_tamano = {}
+    for fila in consultas:
+        por_tamano.setdefault(fila["n"], []).append(fila)
+    assert len(por_tamano) == 6
+    for variantes in por_tamano.values():
+        assert len(variantes) == 2
+        assert len({fila["carga"]["huella_resultados"] for fila in variantes}) == 1
+        assert len({fila["carga"]["consultas"] for fila in variantes}) == 1
+        assert all(
+            fila["trabajo"]["consultas"] == fila["carga"]["consultas"]
+            for fila in variantes
+        )
+
+    vinculaciones = [
+        fila for fila in filas
+        if fila["medicion"] == "mapa_vinculacion_salidas"
+    ]
+    por_carga = {}
+    for fila in vinculaciones:
+        clave = (fila["n"], fila["carga"]["salidas_por_sala"])
+        por_carga.setdefault(clave, []).append(fila)
+    assert len(por_carga) == 12
+    for variantes in por_carga.values():
+        assert len(variantes) == 2
+        assert all(fila["carga"]["identidad_canonica"] for fila in variantes)
+        assert len({fila["carga"]["huella_enlaces"] for fila in variantes}) == 1
+        assert all(
+            fila["trabajo"]["salidas"] == fila["carga"]["salidas"]
+            for fila in variantes
+        )

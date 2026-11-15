@@ -271,6 +271,22 @@ Cada flujo usa los mismos eventos para `AgendaEventos` y una alternativa lineal/
 
 Antes de comparar tiempos se exige igualdad de IDs y ausencias, mismo orden de salas/puertas y que cada `destino_sala` sea exactamente la instancia canónica correspondiente. `main.py --bench` ya conecta el proveedor de mapa; los sentidos únicos aceptados no forman parte de estos fixtures estructurales.
 
+El cierre T072 se reproduce sin volver a ejecutar el benchmark completo:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests\test_bench_mapa_cripta.py
+```
+
+La prueba de integración llama al `main.main()` real en modo `--bench`, sustituye solo el ejecutor
+antes de que mida y comprueba 25 proveedores únicos y una única inclusión de MapaCripta. La prueba
+de evidencia lee `benchmarks/resultados/main_bench_completo_t050.json` y valida **60 filas/900
+muestras** de mapa: seis tamaños (8–512), densidades 1/4, 15 repeticiones, alternativas exactas,
+huellas/cargas equivalentes, destinos canónicos y ausencia de duplicados. Resultado focalizado:
+**6 passed**. Las tablas oficiales de mediana/p95/máximo y su comparación separada con las corridas
+anteriores de 9 y 30 repeticiones están en
+[`DECISIONES.md`](../../DECISIONES.md#índice-por-id-de-mapacripta-evidencia-complementaria-de-001).
+Estas mediciones aisladas no afirman PR-001 ni el presupuesto del ciclo completo de 20 ms.
+
 ## Reversión y determinismo
 
 1. Capturar el estado canónico anterior a una acción.

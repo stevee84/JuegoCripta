@@ -921,19 +921,93 @@ repeticiones, todas las muestras conservadas y p95 *nearest-rank* en el rango 29
 La muestra extrema original no se repitió en esas treinta mediciones de construcción; esta
 observación no demuestra por qué apareció y no autoriza a borrar el dato original.
 
-#### 6. Límites y estado de integración
+#### 6. Ejecución oficial conectada de T050 (15 repeticiones)
+
+La corrida oficial conectada mediante `main.py --bench` se conserva completa en
+[`benchmarks/resultados/main_bench_completo_t050.json`](benchmarks/resultados/main_bench_completo_t050.json)
+y sus filas de 001 están también, sin modificar, en
+[`benchmarks/resultados_terreno_cazador_integrante1.json`](benchmarks/resultados_terreno_cazador_integrante1.json).
+Terminó con código 0 y produjo 916 filas totales, incluidas **60 filas/900 muestras de mapa**. No
+es una reutilización de la corrida original de nueve repeticiones ni de la repetición especial de
+treinta: usó **15 repeticiones**, un calentamiento, semilla de fixture 1729, Python 3.12.10 sobre
+Windows 11 (`Intel64 Family 6 Model 154 Stepping 3`) y `perf_counter_ns`. La unidad es ns por lote,
+la generación de fixtures quedó fuera y todas las muestras se conservan. Para 15 muestras, el p95
+por *nearest-rank* ocupa el rango 15 y por eso coincide con el máximo.
+
+La evidencia cubre `V=8/16/32/64/128/512`; construcción y vinculación usan una o cuatro salidas
+por sala, y las consultas repiten `5V` IDs con aciertos al inicio/medio/final y dos ausencias. Las
+alternativas son las productivas `lista_mas_tabla_hash_propia`, `tabla_hash_propia` y
+`vinculacion_indexada`, frente a `lista_lineal_benchmark`, `recorrido_lineal_benchmark` y
+`resolucion_lineal_benchmark`, que permanecen locales al benchmark.
+
+**Construcción oficial** — mediana/p95/máximo en ns por lote de `V` altas:
+
+| V | Salidas/sala | Índice | Lista lineal benchmark-local |
+|---:|---:|---:|---:|
+| 8 | 1 | 5 900 / 7 200 / 7 200 | 21 300 / 29 200 / 29 200 |
+| 8 | 4 | 5 400 / 6 200 / 6 200 | 1 900 / 2 300 / 2 300 |
+| 16 | 1 | 15 400 / 18 600 / 18 600 | 4 900 / 5 300 / 5 300 |
+| 16 | 4 | 15 700 / 16 400 / 16 400 | 5 100 / 5 300 / 5 300 |
+| 32 | 1 | 35 000 / 41 500 / 41 500 | 16 200 / 17 200 / 17 200 |
+| 32 | 4 | 34 700 / 35 700 / 35 700 | 15 900 / 16 400 / 16 400 |
+| 64 | 1 | 76 600 / 141 400 / 141 400 | 57 400 / 65 400 / 65 400 |
+| 64 | 4 | 72 400 / 73 800 / 73 800 | 58 600 / 78 100 / 78 100 |
+| 128 | 1 | 152 800 / 177 000 / 177 000 | 229 900 / 240 300 / 240 300 |
+| 128 | 4 | 146 900 / 196 800 / 196 800 | 218 500 / 265 200 / 265 200 |
+| 512 | 1 | 655 000 / 876 000 / 876 000 | 3 796 200 / 3 958 800 / 3 958 800 |
+| 512 | 4 | 668 100 / 818 400 / 818 400 | 3 686 600 / 3 847 300 / 3 847 300 |
+
+**Consultas oficiales** — mediana/p95/máximo en ns por lote; ambas alternativas reciben la misma
+secuencia y conservan la misma huella de resultados:
+
+| V | Consultas/lote | Índice | Recorrido lineal benchmark-local |
+|---:|---:|---:|---:|
+| 8 | 40 | 6 500 / 7 400 / 7 400 | 5 800 / 6 600 / 6 600 |
+| 16 | 80 | 12 200 / 13 300 / 13 300 | 17 800 / 18 900 / 18 900 |
+| 32 | 160 | 24 700 / 25 800 / 25 800 | 61 800 / 62 800 / 62 800 |
+| 64 | 320 | 48 800 / 56 000 / 56 000 | 221 100 / 278 000 / 278 000 |
+| 128 | 640 | 95 400 / 113 000 / 113 000 | 938 300 / 982 400 / 982 400 |
+| 512 | 2 560 | 439 100 / 511 900 / 511 900 | 13 666 500 / 27 019 500 / 27 019 500 |
+
+**Vinculación oficial** — mediana/p95/máximo en ns por lote de `E` salidas:
+
+| V | Salidas/sala | E | Índice | Resolución lineal benchmark-local |
+|---:|---:|---:|---:|---:|
+| 8 | 1 | 8 | 1 700 / 2 000 / 2 000 | 1 300 / 1 700 / 1 700 |
+| 8 | 4 | 32 | 5 300 / 6 100 / 6 100 | 4 300 / 5 200 / 5 200 |
+| 16 | 1 | 16 | 3 600 / 4 700 / 4 700 | 3 600 / 4 000 / 4 000 |
+| 16 | 4 | 64 | 10 700 / 11 200 / 11 200 | 12 700 / 13 900 / 13 900 |
+| 32 | 1 | 32 | 7 300 / 21 500 / 21 500 | 12 100 / 13 200 / 13 200 |
+| 32 | 4 | 128 | 22 900 / 35 900 / 35 900 | 44 300 / 53 600 / 53 600 |
+| 64 | 1 | 64 | 14 500 / 24 800 / 24 800 | 40 900 / 48 300 / 48 300 |
+| 64 | 4 | 256 | 44 700 / 50 400 / 50 400 | 151 700 / 210 600 / 210 600 |
+| 128 | 1 | 128 | 55 100 / 600 100 / 600 100 | 148 700 / 166 700 / 166 700 |
+| 128 | 4 | 512 | 95 500 / 121 100 / 121 100 | 600 400 / 778 700 / 778 700 |
+| 512 | 1 | 512 | 161 900 / 275 400 / 275 400 | 2 459 300 / 2 818 400 / 2 818 400 |
+| 512 | 4 | 2 048 | 433 000 / 653 800 / 653 800 | 9 405 300 / 11 695 800 / 11 695 800 |
+
+Las 60 combinaciones de medición, alternativa, tamaño y densidad son únicas. Las pruebas comparan
+las huellas de orden y resultados entre alternativas, los mismos conteos de altas/consultas/salidas
+y la identidad canónica de cada destino antes de aceptar los tiempos. La ejecución oficial repite
+el comportamiento observado antes: el costo fijo del índice no gana siempre en las cargas más
+pequeñas, mientras consulta y vinculación se separan progresivamente del recorrido lineal al crecer
+`V`; en construcción, las medianas indexadas son menores desde 128 salas. La muestra extrema de
+33 018 900 ns de la corrida original de nueve repeticiones no apareció en esta corrida oficial; se
+mantiene documentada y no se le atribuye una causa.
+
+#### 7. Límites y estado de integración
 
 - El proveedor publica `PROVEEDORES` y funciona mediante la interfaz de
-  `benchmarks.integrante3.ejecutar`, pero todavía no está registrado en `main.py --bench`; esa
-  integración conjunta corresponde a T049. Por eso estos números son evidencia aislada
-  complementaria y no una medición final conectada de §5.6.
+  `benchmarks.integrante3.ejecutar`; T049/T050 lo registraron una sola vez en `main.py --bench` y
+  conservaron la ejecución oficial. T072 valida la composición real del punto de entrada sin
+  repetir las 916 mediciones y comprueba las 60 filas oficiales contra el JSON completo.
 - Las mediciones validan construcción, consulta e identidad de vinculación; no miden un ciclo de
   juego completo, rutas de cazadores, agenda ni red/renderizado. No demuestran el presupuesto de
-  20 ms de PR-001.
+  20 ms de PR-001 ni se presentan como cumplimiento de PR-001.
 - Solo caracterizan el equipo y las cargas indicadas. El peor caso de la tabla hash sigue siendo
   lineal por colisiones, aunque no se observó esa degeneración en estos fixtures.
-- T076 permanece abierta hasta que T049/T050/T071 conecten, ejecuten y validen las filas por
-  `main.py --bench`; documentar la evidencia aislada no sustituye esas dependencias.
+- T076 documenta la decisión del índice con la evidencia conectada; T071 conserva por separado el
+  cierre global de US4 y T051 la referencia oficial aún no publicada.
 
 **Trazabilidad**: `logica/mapa_cripta.py`; `estructuras/tabla_hash.py`;
 `benchmarks/mapa_cripta_integrante1.py`; `tests/test_bench_mapa_cripta.py`;

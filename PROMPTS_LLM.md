@@ -466,6 +466,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 65 | Intento de ejecución oficial T050 y fallo de captura del código | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 66 | Corrida directa T050 interrumpida por `NativeCommandError` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 67 | Ejecutor Python reproducible y cierre oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 68 | Validación oficial de MapaCripta y decisión del índice por ID | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2403,6 +2404,24 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Corrida oficial.** No había otro benchmark activo ni rutas objetivo ocupadas. El proceso hijo terminó con código real **0**. `main_bench_completo_t050.json` contiene 916 filas, Python 3.12.10/Windows, tamaños globales 8/16/32/64/128/512 y 15 repeticiones. stderr conserva cinco avisos por ausencia del paquete offline de `cripta-01`; no se ocultaron ni confundieron con el código de salida.
 
 **Extracción y cierre.** El extractor produjo `benchmarks/resultados_terreno_cazador_integrante1.json` con **194 filas/2910 muestras**: mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. Las 194 claves son únicas, las filas y metadatos superiores coinciden exactamente con el subconjunto original y las 32 filas de ciclo mantienen `origen_carga=sintetico`, referencia oficial pendiente y `afirma_pr001=false`. T050 queda cerrada sin afirmar PR-001 ni avanzar T054/T066.
+
+---
+
+## Prompt 68 — Validación oficial de MapaCripta y decisión del índice por ID
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Completar T072 y T076 en la rama `Sofia`: reforzar la prueba para demostrar que el `main.py --bench` real registra una vez el proveedor de MapaCripta sin ejecutar las 916 mediciones; validar contra el JSON oficial las filas de construcción, búsqueda y vinculación, sus tamaños, cargas, alternativas, muestras y equivalencias; e incorporar en la subsección existente de `DECISIONES.md` la evidencia oficial de 15 repeticiones, separada de las corridas anteriores de 9 y 30. No modificar producción, benchmarks, código ajeno ni Git, no repetir el benchmark completo y no avanzar T054/T066.
+
+**Pruebas y evidencia.** `tests/test_bench_mapa_cripta.py` atraviesa `main.main()` en modo benchmark e intercepta solo `benchmarks.integrante3.ejecutar`: confirmó 25 proveedores únicos y una inclusión del proveedor de mapa sin medir. La lectura de `benchmarks/resultados/main_bench_completo_t050.json` validó **60 filas/900 muestras**, tamaños 8/16/32/64/128/512, densidades 1/4, seis alternativas, 15 muestras por fila, 60 claves únicas y huellas/cargas/identidad canónica equivalentes. Resultado focalizado: **6 passed**.
+
+**Decisión documentada.** La subsección «Índice por ID de MapaCripta (evidencia complementaria de 001)», ya enlazada desde §5.6, conserva la justificación, alternativas y complejidades, mantiene separadas las corridas de 9 y 30 repeticiones y añade las tablas oficiales completas de mediana/p95/máximo para construcción, consulta y vinculación. §5.4 no cambió, no se reatribuyeron componentes de 002 y las mediciones aisladas no se presentan como PR-001 ni como prueba del ciclo completo de 20 ms. T072/T076 quedan cerradas; T071/T051 siguen conservando el cierre global y la referencia oficial, y T054/T066 no avanzan.
 
 ---
 
