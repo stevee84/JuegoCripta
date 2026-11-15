@@ -205,9 +205,9 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Rutas, agenda ampliada y ciclo de 001 publican ahora adaptadores de firma común en sendas tuplas `PROVEEDORES_MAIN`; aún requieren la integración conjunta en `main.py`, sin reemplazar ni registrar dos veces los existentes.
+`main.py --bench` concatena los 20 proveedores existentes —incluidos `PROVEEDORES_MAPA` de 001 y `bench_linea.PROVEEDORES` de Joshua— con los cinco adaptadores de agenda, rutas y ciclo publicados en las dos tuplas `PROVEEDORES_MAIN`. La prueba de conexión compara las 25 identidades en su orden real, exige unicidad y comprueba una aparición exacta de cada adaptador. T049 está cerrada; T050 conserva la ejecución oficial y el artefacto.
 
-El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` conserva `PROVEEDORES = (medir_ciclos_sinteticos,)` y añade `PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)` para 32/64 salas. `benchmarks/terreno_cazador_integrante1.py` conserva `PROVEEDORES_AGENDA`, `PROVEEDORES_RUTAS` y `PROVEEDORES`, y añade cuatro adaptadores nominales en `PROVEEDORES_MAIN`. El argumento global `tamanos` de `integrante3.ejecutar` no describe esas cargas particulares: al interpretar la salida se usan `n`, `carga`, escenario y alternativa de cada fila. El registro real sigue pendiente de T049.
+El ciclo común histórico sigue disponible; `benchmarks/benchmark_ciclo_real_integrante1.py` conserva `PROVEEDORES = (medir_ciclos_sinteticos,)` y registra mediante `PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)` las cargas 32/64. `benchmarks/terreno_cazador_integrante1.py` conserva `PROVEEDORES_AGENDA`, `PROVEEDORES_RUTAS` y `PROVEEDORES`, y registra cuatro adaptadores nominales mediante `PROVEEDORES_MAIN`. El argumento global `tamanos` de `integrante3.ejecutar` no describe esas cargas particulares: al interpretar la salida se usan `n`, `carga`, escenario y alternativa de cada fila. Pruebas focalizadas de registro: **10 passed in 0.64s**; no se ejecutó el benchmark completo.
 
 ### Rutas
 

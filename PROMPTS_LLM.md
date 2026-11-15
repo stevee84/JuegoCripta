@@ -461,6 +461,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 60 | Cierre de integraciones T004/T052/T053/T056 | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
 | 61 | Preparación coordinada de T049/T050 para `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 62 | Adaptadores de cargas propias para T049/T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 63 | Integración final de proveedores 001 en `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2300,6 +2301,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Pruebas y documentación.** `tests/test_bench_adaptadores_001.py` usa productores sustitutos para comprobar una llamada exacta, firma, cargas, repeticiones, cinco identidades únicas, las 25 identidades del registro propuesto y tuplas históricas intactas. La ejecución focalizada con las regresiones de agenda, rutas y ciclo terminó en **60 passed in 19.98s**. La propuesta T049, `plan.md`, `quickstart.md` y `tasks.md` documentan que `informe["tamanos"]` pertenece al ejecutor común y que cada fila de 001 debe interpretarse mediante su `n`, `carga`, escenario y alternativa.
 
 **Límites.** `main.py` no se modificó; T049/T050 continúan abiertas. No se ejecutaron el benchmark completo, la línea de tiempo de 5000 acciones, la suite completa, producción, persistencia ni operaciones Git modificadoras.
+
+---
+
+## Prompt 63 — Integración final de proveedores 001 en `main.py --bench`
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> En la rama única `Sofia`, sincronizada con `origin/Sofia`, completar T049 conectando en el bloque `if config.bench` de `main.py` las dos tuplas `PROVEEDORES_MAIN` de terreno/cazador y ciclo. Conservar íntegramente todos los proveedores anteriores, incluida la línea de tiempo de Joshua; comprobar por identidad que los cinco adaptadores aparezcan exactamente una vez; ejecutar solo pruebas focalizadas; cerrar T049 con evidencia del acuerdo de Steven y mantener T050 abierta. No ejecutar el benchmark completo ni operaciones Git modificadoras.
+
+**Integración.** `main.py` conserva los 20 proveedores anteriores en su orden y añade después cuatro adaptadores de agenda/rutas y uno de ciclo. La secuencia final contiene **25 identidades únicas**. No se modificaron `benchmarks.integrante3.py`, adaptadores, algoritmos medidos ni otros caminos de producción.
+
+**Pruebas.** `tests/test_bloque3_conexiones.py` captura la tupla entregada al ejecutor, exige igualdad exacta con existentes + adicionales + mapa + línea de tiempo + terreno + ciclo, comprueba unicidad y una aparición de cada adaptador. Junto con `tests/test_bench_adaptadores_001.py` y la prueba de registro/K de línea de tiempo: **10 passed in 0.64s**. No se ejecutó `python main.py --bench` ni la suite completa.
+
+**Cierre y coordinación.** T049 queda cerrada. El acuerdo sobre el punto compartido se acredita con `4ea99fa1c62dd79faf841ea143bb7ff9b55cde94`, donde Steven registró previamente el mapa de 001 para T049, retiró la omisión y dejó el conteo derivado para extensiones coordinadas; la autorización actual completa esa misma concatenación. T050 permanece abierta para la ejecución oficial y el artefacto reproducible.
 
 ---
 
