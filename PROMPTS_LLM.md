@@ -467,6 +467,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 66 | Corrida directa T050 interrumpida por `NativeCommandError` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 67 | Ejecutor Python reproducible y cierre oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 68 | Validación oficial de MapaCripta y decisión del índice por ID | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 69 | Verificación integral de benchmarks y cierre sintético de US4 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2422,6 +2423,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Pruebas y evidencia.** `tests/test_bench_mapa_cripta.py` atraviesa `main.main()` en modo benchmark e intercepta solo `benchmarks.integrante3.ejecutar`: confirmó 25 proveedores únicos y una inclusión del proveedor de mapa sin medir. La lectura de `benchmarks/resultados/main_bench_completo_t050.json` validó **60 filas/900 muestras**, tamaños 8/16/32/64/128/512, densidades 1/4, seis alternativas, 15 muestras por fila, 60 claves únicas y huellas/cargas/identidad canónica equivalentes. Resultado focalizado: **6 passed**.
 
 **Decisión documentada.** La subsección «Índice por ID de MapaCripta (evidencia complementaria de 001)», ya enlazada desde §5.6, conserva la justificación, alternativas y complejidades, mantiene separadas las corridas de 9 y 30 repeticiones y añade las tablas oficiales completas de mediana/p95/máximo para construcción, consulta y vinculación. §5.4 no cambió, no se reatribuyeron componentes de 002 y las mediciones aisladas no se presentan como PR-001 ni como prueba del ciclo completo de 20 ms. T072/T076 quedan cerradas; T071/T051 siguen conservando el cierre global y la referencia oficial, y T054/T066 no avanzan.
+
+---
+
+## Prompt 69 — Verificación integral de benchmarks y cierre sintético de US4
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T062 y T071 en `Sofia`: validar los JSON oficiales existentes, comprobar una única conexión de mapa, agenda, rutas y ciclo a `main.py --bench`, revisar cargas, alternativas, muestras, repeticiones y límites; ejecutar `tests/test_bench_terreno_cazador.py` y `tests/test_bench_mapa_cripta.py`; realizar solo una medición focalizada si faltara evidencia; cerrar el alcance sintético de US4 manteniendo T051/PR-001 bloqueados. No repetir el benchmark completo, modificar producción/código ajeno ni avanzar T054/T066/T067/T070.
+
+**Pruebas y conexión.** Los dos módulos exigidos terminaron en **33 passed in 2.66s**. La prueba puntual de composición de `main.main()` terminó en **1 passed in 0.23s**, confirmó 25 proveedores únicos y una inclusión de cada adaptador de 001 sin ejecutar cargas. No faltó evidencia, por lo que no se lanzó ninguna medición adicional.
+
+**Auditoría oficial.** La extracción en memoria desde las 916 filas completas coincidió exactamente con `benchmarks/resultados_terreno_cazador_integrante1.json`: **194 filas/2910 muestras**, 194 claves únicas y 15 repeticiones por fila; mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. PR-002 conserva trabajo regional constante; PR-003 cubre su matriz completa; PR-004/PR-006 conservan metadatos y equivalencia; PR-005 cubre seis operaciones y dos alternativas. Sus 43 muestras de agenda `>=20 ms` pertenecen a la lista lineal y no infringen un umbral inexistente para agenda.
+
+**Límite y cierre.** PR-001 permanece no concluyente: la carga de ciclo es sintética, declara referencia oficial pendiente y conserva **10/240** muestras productivas `>=20 ms` —8 estables y 2 inestables— frente a 0/240 de la alternativa experimental. Esos datos no permiten declarar cumplimiento ni incumplimiento oficial. T062 y T071 quedan cerradas; T051 conserva AC-013 bloqueado y T054/T066/T067/T070 no avanzan.
 
 ---
 

@@ -83,7 +83,8 @@ Validación: **55 pruebas de benchmark/conexión**, **21 pruebas de rutas relaci
 
 ### Agenda equivalente y ciclo completo T047/T048
 
-Los productores se ejecutan directamente —todavía no desde `main.py --bench`— con:
+La validación inicial ejecutó los productores directamente; T049/T050 los conectaron y ejecutaron
+después mediante `main.py --bench`. El comando focalizado original fue:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q `
@@ -114,7 +115,7 @@ Ejecutada el 2026-11-10 con `.venv/Scripts/python.exe` desde la raíz:
 - **Foco funcional US1–US4 e integraciones no bloqueadas**: **159 passed, 2 subtests passed in 9.99s**.
 - **Módulos de benchmark y restricciones del enunciado**: **126 passed in 30.26s**.
 
-Una corrida intermedia falló solo en `tests/test_bench_integrante2.py::test_el_costo_crece_de_forma_aproximadamente_lineal` (factor 3.8 frente a 3.0). Esa prueba pasó 3/3 aislada y volvió a pasar en la corrida completa final; se registra como fluctuación de medición, no como regresión, y no se modificó. Las corridas usaron fixtures offline; no se ejecutaron pruebas contra el servicio en línea. Los conteos focalizados se solapan con la suite completa y no se suman. `main.py --bench` con las filas de rutas, agenda y ciclo sigue pendiente de T049/T062; el proveedor del mapa ya está conectado. Esta validación no demuestra PR-001 ni el límite oficial de 20 ms.
+Una corrida intermedia falló solo en `tests/test_bench_integrante2.py::test_el_costo_crece_de_forma_aproximadamente_lineal` (factor 3.8 frente a 3.0). Esa prueba pasó 3/3 aislada y volvió a pasar en la corrida completa final; se registra como fluctuación de medición, no como regresión, y no se modificó. Las corridas usaron fixtures offline; no se ejecutaron pruebas contra el servicio en línea. Los conteos focalizados se solapan con la suite completa y no se suman. La conexión y ejecución posteriores de mapa, rutas, agenda y ciclo mediante `main.py --bench` quedaron cerradas en T049/T050/T062. Esta validación histórica no demuestra PR-001 ni el límite oficial de 20 ms.
 
 ### Validación de integraciones en `integracion-parte2@d86819d`
 
@@ -231,6 +232,50 @@ rutas 30/450 y ciclo 32/480; las 194 claves son únicas y el subconjunto coincid
 exactamente con el original. stderr conserva cinco avisos por falta del paquete
 offline de `cripta-01`. Las 32 filas de ciclo continúan etiquetadas como
 sintéticas, referencia oficial pendiente y `afirma_pr001=false`.
+
+### Cierre integral T062/T071
+
+No se repite el benchmark completo. La validación usa los JSON oficiales existentes y ejecuta solo
+los módulos focalizados:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q `
+  tests\test_bench_terreno_cazador.py `
+  tests\test_bench_mapa_cripta.py
+
+.\.venv\Scripts\python.exe -m pytest -q `
+  tests\test_bloque3_conexiones.py::test_bench_desde_main_no_inicializa_fuente_ni_vista
+```
+
+Resultados: **33 passed in 2.66s** para los dos módulos de US4 y **1 passed in 0.23s** para la
+composición exacta del punto de entrada. Esta última prueba intercepta el ejecutor antes de medir:
+confirma 25 proveedores únicos y una sola inclusión de los adaptadores de mapa, agenda, rutas y
+ciclo. La auditoría en memoria vuelve a extraer desde las 916 filas completas y obtiene exactamente
+el JSON conservado de **194 filas/2910 muestras**, con 194 claves únicas, 15 repeticiones por fila y
+la distribución mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480.
+
+Estado frente a los requisitos de rendimiento:
+
+- **PR-002, satisfecho en la carga sintética**: AC-012 conserva en producción
+  `(F,D,E,P,Q)=(5,5,6,5,2)` para 32, 128 y 512 salas mientras solo crece el exterior.
+- **PR-003, cubierto**: AC-014 conserva 24 filas con 1/20 cazadores, rango pequeño/grande, puertas
+  estables/inestables e individual/compartida/reutilizada.
+- **PR-004 y PR-006, cubiertos**: semilla, calentamiento, carga, unidad, 15 muestras y preparación
+  fuera del intervalo están presentes; agenda, rutas y ciclo declaran equivalencia observable, y
+  mapa conserva las mismas huellas de orden/resultados/enlaces e identidad canónica.
+- **PR-005, cubierto sin umbral temporal propio**: 36 filas de carga nueva cruzan seis operaciones,
+  256/512/1024 eventos y agenda/lista lineal. Hay **43/540 muestras `>=20 ms`**, todas de la lista
+  lineal benchmark-local; no son un incumplimiento de PR-005 porque ese requisito no fija 20 ms.
+- **PR-001/AC-013, no concluyente y bloqueado por T051**: las 32 filas/480 muestras de ciclo son
+  sintéticas y declaran `referencia_oficial=pendiente_publicacion_g6` y `afirma_pr001=false`. En la
+  alternativa productiva hay **10/240 muestras `>=20 ms`**: 8/15 en 64 salas, 28 cazadores, rango
+  grande y puertas estables (mediana 20.3797 ms; p95/máximo 33.2902 ms), y 2/15 con puertas
+  inestables (mediana 17.2163 ms; p95/máximo 23.9919 ms). La retención experimental tiene 0/240,
+  pero no autoriza un cambio productivo. Estas superaciones describen la carga sintética; sin la
+  cripta oficial no permiten declarar cumplimiento ni incumplimiento oficial del límite de 20 ms.
+
+Con esta evidencia, T062 y el alcance sintético de US4/T071 quedan cerrados. La publicación y
+validación oficial de AC-013 permanece exclusivamente en T051.
 
 ### Rutas
 
