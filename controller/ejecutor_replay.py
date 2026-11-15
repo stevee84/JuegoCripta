@@ -156,6 +156,10 @@ class EjecutorReplay:
                             raise ValueError("Identificadores/versiones/semilla inválidos.")
                         cabecera = registro
                     else:
+                        if registro.get("registro") == "comentario":
+                            # Spec 003 (FR-020): la orden de «ir a» se anota como comentario; no
+                            # es una acción del jugador y no se reproduce (sus pasos sí son acciones).
+                            continue
                         campos = ("registro", "tipo", "objetivo", "direccion")
                         if len(registro) != len(campos) or not all(c in registro for c in campos):
                             raise ValueError("Acción incompleta o con campos desconocidos.")

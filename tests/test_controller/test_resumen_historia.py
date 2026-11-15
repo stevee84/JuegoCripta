@@ -34,8 +34,10 @@ def test_fr004_orden_fijo_y_contenido_minimo():
     assert "Moneda" in lineas[4] or "Objeto demostracion" in lineas[4]
     assert lineas[5] == "Efectos: Veneno: 120 restantes"
     assert lineas[6] == "Enemigos en la sala: Guardián (vida 9)"
-    assert lineas[7] == "Mapa conocido: no disponible"
-    assert len(lineas) == 8
+    # T040: el mapa conocido del estado (vacío en esta partida de prueba armada a mano).
+    assert lineas[7] == "Mapa conocido (0 exploradas, 0 avistadas)"
+    assert lineas[8] == "  Avistadas: ninguna"
+    assert len(lineas) == 9
 
 
 def test_fr004_vacios_se_dicen_explicitamente():
@@ -59,3 +61,9 @@ def test_fr005_armar_el_resumen_no_modifica_el_estado():
     antes = pickle.dumps(estado)
     lineas_resumen(estado, "x")
     assert pickle.dumps(estado) == antes
+
+
+def test_fr004_sin_mapa_conocido_lo_dice():
+    estado = crear_partida_minima(7)
+    estado.mapa_conocido = None
+    assert lineas_resumen(estado)[-1] == "Mapa conocido: no disponible"

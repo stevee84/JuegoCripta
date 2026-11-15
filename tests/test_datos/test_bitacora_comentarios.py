@@ -48,15 +48,14 @@ def test_el_texto_lo_produce_el_viaje(tmp_path):
     assert Viaje(saber, origen_id=1, destino_id=4).comentario() == "ir a 4 desde 1"
 
 
-def test_el_lector_del_replay_todavia_no_ignora_los_comentarios(log):
-    """Documenta por qué el escritor está listo pero sin conectar.
+def test_el_lector_del_replay_ignora_los_comentarios(log):
+    """El contrato ya está aplicado en `controller/ejecutor_replay.py` (Joshua, 2026-11-14).
 
-    Mientras `controller/ejecutor_replay.py` rechace las líneas que no son acciones, anotar la
-    orden dejaría sin reproducir toda partida que use «ir a», y §4.11 la exige. Cuando Joshua
-    aplique el contrato, esta prueba cambia de sentido: pasa a comprobar que sí las salta.
+    Antes esta prueba comprobaba que el lector todavía rechazaba los comentarios; como anunciaba
+    su texto, cambió de sentido: ahora comprueba que los salta y no los cuenta como acciones.
     """
     from controller.ejecutor_replay import EjecutorReplay
 
     RegistroPartida().anexar_comentario(log, "ir a 5 desde 1")
-    with pytest.raises(ValueError, match="registro inválido"):
-        EjecutorReplay()._leer_log(log)
+    _, acciones = EjecutorReplay()._leer_log(log)
+    assert all(registro["registro"] == "accion" for _, registro in acciones)

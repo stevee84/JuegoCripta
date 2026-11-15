@@ -6,6 +6,7 @@ clarificación del 2026-11-06). Solo lee el estado que recibe: no ejecuta reglas
 red y no modifica nada (FR-005).
 """
 
+from controller.resumen_mapa import lineas_mapa_conocido
 from vista import presentacion_juego as presentacion
 
 MAPA_NO_DISPONIBLE = "Mapa conocido: no disponible"
@@ -35,8 +36,8 @@ def lineas_resumen(estado, titulo=None) -> list:
                 for enemigo in sala.enemigos if enemigo.esta_vivo()]
     lineas.append("Enemigos en la sala: " + (", ".join(enemigos) if enemigos else "ninguno"))
 
-    # El mapa conocido llega con la spec 003 (contracts/dependencias.md, T040).
-    lineas.append(MAPA_NO_DISPONIBLE)
+    # T040: el mapa que el jugador conocía en ese instante (spec 003, mismo texto que «mapa»).
+    lineas.extend(lineas_mapa_conocido(getattr(estado, "mapa_conocido", None)))
     return lineas
 
 

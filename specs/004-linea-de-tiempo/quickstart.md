@@ -79,7 +79,9 @@ estar por debajo de 50 ms (SC-001).
 - Pasos 1 a 4 y 6: cubiertos por pruebas automáticas (`tests/test_controller/test_historia.py`,
   `test_replay_hasta.py`, `test_historia_pygame.py`, `tests/test_logica/test_linea_tiempo.py`,
   `tests/test_bench_linea_tiempo.py`), y `--replay --hasta` también en un proceso aparte sin vista.
-- Paso 5 (guardar y cargar con el archivo de partida): **pendiente** del guardado de Steven (T034 y
-  T035). La serialización propia de la línea ya está probada (T032 y T033).
-- Mapa conocido en el resumen: **pendiente** de la spec 003 (T040); hoy muestra «no disponible».
-- Casos del Apéndice B: 5 de 6 con prueba; falta el del archivo de la Parte I (T035).
+- Paso 5 (guardar y cargar): **hecho el 2026-11-14** con el guardado v11 de Steven
+  (`tests/test_datos/test_guardado_linea.py`): las consultas son idénticas antes de guardar y
+  después de cargar, se conserva el K guardado y se avisa, y los archivos v7 a v10 se rechazan.
+- Mapa conocido en el resumen: **hecho el 2026-11-14** (T040), el del instante consultado.
+- Casos del Apéndice B: **6 de 6** con prueba.
+- Suite el 2026-11-14: **1438 aprobadas, 0 omitidas, 0 fallidas**.

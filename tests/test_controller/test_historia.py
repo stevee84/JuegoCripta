@@ -75,7 +75,7 @@ def test_fr004_fr008_muestra_el_resumen(tmp_path, monkeypatch, capsys):
     assert resultado.exito
     assert "Historia en t=0 (antes de la acción #1)" in salida
     assert "Reloj: 0" in salida
-    assert "Mapa conocido: no disponible" in salida
+    assert "Mapa conocido (1 exploradas" in salida  # T040: el mapa del instante 0
 
 
 def test_fr005_historia_no_consume_tiempo_ni_se_registra(tmp_path, monkeypatch):
@@ -132,3 +132,17 @@ def test_fr015_la_partida_interactiva_usa_el_k_pedido(tmp_path, monkeypatch):
     controlador.configurar_checkpoint_cada(4)
     assert controlador.procesar_comando("cripta cripta-01").exito
     assert controlador._servicio.obtener_linea_tiempo().k == 4
+
+
+def test_fr004_fr022_historia_muestra_el_mapa_de_ese_instante(tmp_path, monkeypatch, capsys):
+    """T040: el mapa conocido del resumen es el que el jugador conocía entonces (spec 003)."""
+    controlador = _controlador(tmp_path, monkeypatch)
+    assert controlador.procesar_comando("mover NORTE").exito
+    capsys.readouterr()
+    controlador.procesar_comando("historia 0")
+    pasado = capsys.readouterr().out
+    controlador.procesar_comando("mapa")
+    ahora = capsys.readouterr().out
+    assert "Mapa conocido (1 exploradas" in pasado
+    assert "Mapa conocido (2 exploradas" in ahora
+    assert "Sala 2" not in pasado.split("Mapa conocido")[1].split("Avistadas")[0]
