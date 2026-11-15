@@ -468,6 +468,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 67 | Ejecutor Python reproducible y cierre oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 68 | Validación oficial de MapaCripta y decisión del índice por ID | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 69 | Verificación integral de benchmarks y cierre sintético de US4 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 70 | Decisión final del cazador y aceptación README de 001 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2443,6 +2444,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Auditoría oficial.** La extracción en memoria desde las 916 filas completas coincidió exactamente con `benchmarks/resultados_terreno_cazador_integrante1.json`: **194 filas/2910 muestras**, 194 claves únicas y 15 repeticiones por fila; mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. PR-002 conserva trabajo regional constante; PR-003 cubre su matriz completa; PR-004/PR-006 conservan metadatos y equivalencia; PR-005 cubre seis operaciones y dos alternativas. Sus 43 muestras de agenda `>=20 ms` pertenecen a la lista lineal y no infringen un umbral inexistente para agenda.
 
 **Límite y cierre.** PR-001 permanece no concluyente: la carga de ciclo es sintética, declara referencia oficial pendiente y conserva **10/240** muestras productivas `>=20 ms` —8 estables y 2 inestables— frente a 0/240 de la alternativa experimental. Esos datos no permiten declarar cumplimiento ni incumplimiento oficial. T062 y T071 quedan cerradas; T051 conserva AC-013 bloqueado y T054/T066/T067/T070 no avanzan.
+
+---
+
+## Prompt 70 — Decisión final del cazador y aceptación README de 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T067 y T070 en `Sofia`: revisar sin reescribir innecesariamente §5.1 de `DECISIONES.md`, completar su evidencia con la corrida conectada T050 de 15 repeticiones separada de las cifras previas de nueve y conservar resultados desfavorables/límites; añadir en `README.md` solo una subsección Parte II de 001 con comandos reales, artefactos, entorno y distinción entre pruebas escritas, ejecutadas, omitidas y bloqueadas. No modificar decisiones o documentación de 002/003/004 ni afirmar PR-001.
+
+**T067.** §5.1 ya contenía problema, alternativas individual/compartida/reutilizada/adaptativa, decisión, complejidad, enlaces y divergencia del diseño. Se preservaron sus tablas de nueve repeticiones y se añadió la ejecución T050 de 15: 30 filas/450 muestras de rutas y 32/480 de ciclo. AC-012 mantuvo trabajo regional constante; las tablas oficiales conservan mediana/p95/máximo y documentan que compartida/reutilizada fueron más rápidas en cargas altas. Producción mantiene recálculo individual por ausencia de política completa de invalidación, tareas productivas acordadas y referencia oficial; las 10 muestras sintéticas productivas `>=20 ms` no prueban PR-001.
+
+**T070.** `README.md` incorpora una subsección aislada «Parte II — especificación 001: terreno y cazador» dentro de Mediciones. Incluye comandos existentes de pruebas e integraciones, `main.py --bench`, los JSON completo/filtrado y el código de salida, entorno/condiciones y una tabla de estados. No se alteraron instrucciones ni resultados de otras especificaciones y no hizo falta coordinación sobre contenido ajeno.
+
+**Validación.** Los cambios son documentales; no se repitieron pruebas ni benchmarks. Se verificaron la existencia de comandos/rutas contra el repositorio y los valores de T050 contra los JSON conservados. T067/T070 quedan cerradas y T051 continúa bloqueada.
 
 ---
 

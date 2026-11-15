@@ -8,11 +8,10 @@ y al plan de spec-kit de los que proviene, y si la decisión final coincide con 
 **Entorno de las mediciones.** Las de esta parte se tomaron en el equipo local con
 `.venv/Scripts/python.exe`, mediana de repeticiones, con la preparación fuera del intervalo
 cronometrado y las criptas sintéticas generadas de forma determinista por semilla (§6.3). Las
-mediciones de §5.4 y de la subsección del índice salen de `--bench`. Las de §5.1, §5.2 y la
-subsección de agenda de §5.6 provienen de los proveedores de 001 ejecutados mediante
-`benchmarks.integrante3.ejecutar`; su
-registro en `main.py --bench` sigue pendiente de T049/T050, así que se presentan como evidencia
-sintética provisional y no como cierre del Principio IX.
+mediciones de §5.4 y de la subsección del índice salen de `--bench`. T049/T050 conectaron también
+los proveedores de §5.1, §5.2 y la subsección de agenda de §5.6 a `main.py --bench`; T062/T071
+validaron su cobertura única y el cierre sintético. Esta conexión satisface la trazabilidad del
+Principio IX, pero no convierte las cargas sintéticas en la referencia oficial de `PR-001`.
 
 ---
 
@@ -125,25 +124,68 @@ construcción, 26 consultas y 135 salidas examinadas en estable; 23 consultas, u
 `puertas`, una reconstrucción y 267 salidas en inestable. Producción no expone contadores internos
 de ruta: sus filas solo reportan 28 y 24 notificaciones enemigas y, en inestable, un cierre.
 
+#### Ejecución conectada T050 (15 repeticiones)
+
+Los valores anteriores se conservan como las mediciones aisladas originales de **nueve**
+repeticiones. La ejecución posterior de `main.py --bench`, con código 0, está en
+[`benchmarks/resultados/main_bench_completo_t050.json`](benchmarks/resultados/main_bench_completo_t050.json)
+y sus filas de 001, sin transformar, en
+[`benchmarks/resultados_terreno_cazador_integrante1.json`](benchmarks/resultados_terreno_cazador_integrante1.json).
+Usó el mismo equipo, Python 3.12.10, `perf_counter_ns`, semilla 2609, un calentamiento y **15
+repeticiones**. Conserva 30 filas/450 muestras de rutas y 32 filas/480 muestras de ciclo, todas con
+equivalencia observable previa al reloj.
+
+**AC-012, rango pequeño.** Al crecer solo el exterior de 32 a 128 y 512 salas, producción conservó
+exactamente `(F,D,E,P,Q)=(5,5,6,5,2)`; sus medianas fueron 39 200, 41 700 y 56 800 ns. La inversa
+compartida tuvo medianas de 30 700, 96 800 y 375 400 ns porque su construcción sí recorre el grafo
+total. La decisión de trabajo acotado por región se apoya en contadores, no en asumir tiempos
+idénticos.
+
+**Comparación de rutas en T050** — mediana/p95/máximo en ns por lote de tres ciclos:
+
+| Carga (64 salas, 20 cazadores, rango 640) | Individual | Inversa compartida | Inversa reutilizada |
+|---|---:|---:|---:|
+| Puertas estables | 27 702 500 / 51 959 500 / 51 959 500 | 628 900 / 858 800 / 858 800 | 304 300 / 338 300 / 338 300 |
+| Cambios frecuentes | 17 967 000 / 19 863 600 / 19 863 600 | 660 800 / 932 800 / 932 800 | 587 200 / 773 800 / 773 800 |
+
+**Ciclo sintético en T050** — mediana/p95/máximo en ms por intervalo:
+
+| Carga (64 salas, 28 cazadores, rango grande) | Producción individual | Retención experimental |
+|---|---:|---:|
+| Puertas estables | 20.3797 / 33.2902 / 33.2902; 8/15 muestras `>=20 ms` | 2.6707 / 16.9907 / 16.9907; 0/15 |
+| Puertas inestables | 17.2163 / 23.9919 / 23.9919; 2/15 muestras `>=20 ms` | 2.5386 / 3.0233 / 3.0233; 0/15 |
+
+La ejecución de 15 repeticiones confirma el resultado desfavorable ya visible en las nueve: para
+20/28 cazadores y rango grande, las alternativas compartida/reutilizada fueron más rápidas que el
+recálculo individual. Eso diverge de cualquier expectativa de que la opción provisional fuera la
+más rápida, pero **no cambia la decisión productiva**: adoptar retención requeriría una política
+completa de invalidación, tareas con propietario y validación contra la referencia oficial. La
+producción conserva la alternativa simple y sin estado retenido; no se atribuye una causa interna
+a las diez muestras sintéticas productivas de al menos 20 ms.
+
 ### 6. Límites conocidos
 
-- Las cifras son sintéticas, de un solo equipo y de nueve muestras; no son la referencia oficial
-  de `PR-001` y no permiten afirmar cumplimiento ni incumplimiento de los 20 ms.
+- Las dos corridas son sintéticas, de un solo equipo y de nueve/15 muestras por fila; ninguna es la
+  referencia oficial de `PR-001` ni permite afirmar cumplimiento o incumplimiento oficial de los
+  20 ms.
 - T046 y T048 no comparten carga; no se comparan sus cocientes ni se les atribuye una causa.
 - La alternativa compartida/reutilizada no se adopta y no hay caché productiva. Cualquier
   adopción futura exige actualizar primero `plan.md`/`tasks.md` con tareas productivas concretas y
   repetir la validación de ciclo completo.
 - La estrategia adaptativa no tiene umbral medido y no se implementó.
-- Las filas aún no están registradas en `main.py --bench`; T049/T050 siguen abiertas y estas
-  mediciones son evidencia aislada de los proveedores, no cierre del Principio IX.
+- T049/T050 registraron y ejecutaron las filas mediante `main.py --bench`; T062/T071 comprobaron
+  cobertura, unicidad y equivalencia. La referencia oficial continúa bloqueada exclusivamente en
+  T051.
 - No se afirma que la decisión individual sea la más rápida en todos los escenarios; solo es la
   estrategia productiva acordada y validada hasta ahora.
 
 **Trazabilidad**: `logica/rutas_ponderadas.py`; `logica/comportamiento_enemigos.py`;
 `benchmarks/terreno_cazador_integrante1.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;
 `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
-`benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`; `tasks.md` (T046, T048, T057,
-T065).
+`benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`;
+`benchmarks/resultados/main_bench_completo_t050.json`;
+`benchmarks/resultados_terreno_cazador_integrante1.json`; `tasks.md` (T046, T048–T050, T057,
+T062, T065, T067, T071).
 
 ---
 
