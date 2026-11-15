@@ -139,6 +139,8 @@ Se maneja con el ratón:
 | `retroceder [X]` | Usa un pergamino de retroceso; no consume tiempo. |
 | `historia T`, `historia #K` | Estado de la partida en el instante `T`, o justo antes de la acción número `K`. No consume tiempo, no se registra en la bitácora y no cambia el retroceso. |
 | `resolubilidad` | Informe de resolubilidad de la cripta, calculado antes de empezar: el orden de obtención de llaves si tiene solución, o las llaves inalcanzables, las puertas que cierran la región y los círculos de llaves si no la tiene. |
+| `mapa` | Mapa conocido: salas exploradas con sus salidas, costo y el estado recordado de cada puerta, y las salas avistadas. |
+| `ir a SALA` | Viaja a una sala explorada, un movimiento por acción, y dice por qué se detuvo (llegó, enemigos, daño o sin camino conocido). No abre puertas. |
 | `criptas`, `cripta ID` | Lista las criptas e inicia una partida. |
 | `guardar [RUTA]`, `cargar [RUTA]` | Sin ruta usan `partidas/partida.bin`. |
 | `bitacora`, `puntajes [criterio]` | Mensajes del juego y tabla de puntajes. |

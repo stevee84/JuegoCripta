@@ -398,14 +398,17 @@ class VistaPygame:
         barra_y = zona_bottom - self.BTN_H
         bw = self.BTN_W
         gap = self.BTN_GAP
-        self._botones.append(Boton((px, barra_y, bw, self.BTN_H), "Guardar", "guardar", NARANJA, enabled=activa))
-        self._botones.append(Boton((px + bw + gap, barra_y, 80, self.BTN_H), "Salir", "salir", ROJO))
-        # 002-T050: informe de resolubilidad de antes de empezar (FR-014 de la spec 002).
-        self._botones.append(Boton((px + bw + 80 + 2 * gap, barra_y, 150, self.BTN_H),
-                                   "Resolubilidad", "resolubilidad"))
-        # Spec 004 (FR-008): historia <t> o historia #k, pidiendo el valor en un diálogo.
-        self._botones.append(Boton((px + bw + 80 + 150 + 3 * gap, barra_y, 110, self.BTN_H),
-                                   "Historia", "__historia__"))
+        # Barra inferior en una sola fila, para no robar espacio a acciones e inventario:
+        # Guardar y Salir (Parte I), Resolub. (002-T050), Historia (spec 004), Mapa e Ir a (003).
+        barra = (("Guardar", "guardar", NARANJA, activa, 90), ("Salir", "salir", ROJO, True, 60),
+                 ("Resolub.", "resolubilidad", GRIS_OSCURO, True, 100),
+                 ("Historia", "__historia__", GRIS_OSCURO, True, 100),
+                 ("Mapa", "mapa", GRIS_OSCURO, True, 70), ("Ir a", "__ir_a__", GRIS_OSCURO, activa, 60))
+        x = px
+        for texto, comando, color, habilitado, ancho in barra:
+            self._botones.append(Boton((x, barra_y, ancho, self.BTN_H), texto, comando, color,
+                                       enabled=habilitado))
+            x += ancho + gap
         self._botones.extend(self._botones_sala)
 
     def _colocar_fila(self, items, px, panel_w, y):
@@ -677,6 +680,12 @@ class VistaPygame:
 
         visibles = {sid: (gx, gy) for sid, (gx, gy) in posiciones.items()
                     if abs(gx - jx) <= radio_x and abs(gy - jy) <= radio_y}
+        # Spec 003, T016 (§3.3): solo se pintan las salas que el jugador conoce.
+        conocido = getattr(estado, "mapa_conocido", None)
+        if conocido is not None:
+            visibles = {sid: p for sid, p in visibles.items()
+                        if sid == sala_actual.id_sala or conocido.esta_explorada(sid)
+                        or conocido.esta_avistada(sid)}
         if not visibles:
             visibles = {sala_actual.id_sala: (jx, jy)}
 
@@ -1305,6 +1314,10 @@ class VistaPygame:
                                 self._pagina_sala += 1
                             elif b.comando.startswith("__orden__:"):
                                 self._elegir_orden(controlador, b.comando.split(":", 1)[1])
+                            elif b.comando == "__ir_a__":
+                                texto = self._dialogo_texto("Ir a: número de una sala explorada")
+                                if texto:
+                                    controlador.procesar_comando(f"ir a {texto}")
                             elif b.comando == "__historia__":
                                 texto = self._dialogo_texto(
                                     "Historia: un instante (400) o una acción (#12)")

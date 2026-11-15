@@ -75,3 +75,37 @@ def test_fr008_el_controlador_usa_el_panel_si_la_vista_lo_tiene(tmp_path, monkey
     controlador._vista = panel
     assert controlador.procesar_comando("historia 0").exito
     assert panel.lineas[0] == "Historia en t=0 (antes de la acción #1)"
+
+
+def test_t016_t038_botones_mapa_e_ir_a_sin_encimarse(vista, tmp_path, monkeypatch):
+    """Spec 003: los botones nuevos caben en el panel y no tapan otros botones."""
+    pantalla, pygame = vista
+    controlador = _controlador(tmp_path, monkeypatch)
+    pantalla._construir_botones(controlador._servicio.obtener_estado())
+    rects = [(b.comando, pygame.Rect(b.rect)) for b in pantalla._botones]
+    nuevos = [(c, r) for c, r in rects if c in ("mapa", "__ir_a__")]
+    assert [c for c, _ in nuevos] == ["mapa", "__ir_a__"]
+    for comando, rect in nuevos:
+        assert rect.right <= pantalla.PANEL_X + pantalla.PANEL_ANCHO
+        for otro, rect_otro in rects:
+            if otro != comando:
+                assert not rect.colliderect(rect_otro), (comando, otro)
+
+
+def test_t016_el_minimapa_no_dibuja_salas_desconocidas(vista, tmp_path, monkeypatch):
+    pantalla, _ = vista
+    controlador = _controlador(tmp_path, monkeypatch)
+    estado = controlador._servicio.obtener_estado()
+    dibujadas = []
+    original = pantalla._color_sala_minimapa
+
+    def registrar(sid, sala, es_actual):
+        dibujadas.append(sid)
+        return original(sid, sala, es_actual)
+
+    monkeypatch.setattr(pantalla, "_color_sala_minimapa", registrar)
+    pantalla._dibujar_minimapa(estado)
+    conocido = estado.mapa_conocido
+    assert dibujadas, "el minimapa debe dibujar al menos la sala actual"
+    for sid in dibujadas:
+        assert conocido.esta_explorada(sid) or conocido.esta_avistada(sid), sid

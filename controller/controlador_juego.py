@@ -15,6 +15,7 @@ from datos.guardado_binario import GuardadoBinario
 from datos.repositorio_puntajes import RepositorioPuntajes
 from dto.accion import ResultadoAccion
 from controller.resumen_historia import consultar_historia
+from controller.resumen_mapa import lineas_mapa_conocido
 from controller.resumen_resolubilidad import linea_inicio, lineas_informe
 from logica.bitacora_pantalla import BitacoraPantalla
 from service.inicializador_partida import CriptaNoResoluble
@@ -97,6 +98,57 @@ class ControladorJuego:
         self._servicio._cache = cache
         if ruta_guardado is not None:
             self._ruta_partida = Path(ruta_guardado) / ARCHIVO_PARTIDA
+
+    def _ir_a(self, texto_destino):
+        """Viaje «ir a» (spec 003, §3.4): decide el viaje de Steven, ejecuta este controlador.
+
+        Cada paso es una acción MOVER completa, con sus eventos, y queda en la bitácora como un
+        movimiento; la orden se anota además como comentario (FR-020). El camino se recalcula
+        antes de cada paso con lo que el jugador conoce.
+        """
+        from logica.viaje import MOTIVOS
+
+        try:
+            destino = int(texto_destino)
+        except ValueError:
+            raise ValueError("ir a necesita el número de una sala.") from None
+        viaje = self._servicio.iniciar_viaje(destino)
+        estado = self._servicio.obtener_estado()
+        if not viaje.valido:
+            raise ValueError(f"No puedes viajar a la sala {destino}: {viaje.explicacion()}.")
+        ruta = getattr(self._servicio, "_ruta_registro", None)
+        if ruta is not None and destino != estado.jugador.sala_actual.id_sala:
+            self._servicio._registro.anexar_comentario(str(ruta), viaje.comentario())
+        viaje.evaluar_llegada(None, estado.jugador.vida)  # vida de partida, sin parar por enemigos
+        pasos = 0
+        while estado.partida_activa:
+            sala = estado.jugador.sala_actual
+            siguiente = viaje.siguiente_paso(sala.id_sala)
+            if siguiente is None:
+                break
+            puerta = next((p for p in sala.puertas if p.destino_sala_id == siguiente), None)
+            if puerta is None:
+                viaje.detener(MOTIVOS.SIN_CAMINO)
+                break
+            paso = self._servicio.ejecutar_accion(
+                self._servicio.resolver_accion("MOVER", direccion=puerta.direccion))
+            for mensaje in presentacion.mensajes_resultado(paso, estado, "mover", self._servicio):
+                self._publicar(mensaje, error=not paso.exito)
+            if not paso.exito:
+                viaje.detener(MOTIVOS.SIN_CAMINO)
+                break
+            pasos += 1
+            if viaje.evaluar_llegada(estado.jugador.sala_actual, estado.jugador.vida):
+                break
+        sala_final = estado.jugador.sala_actual.id_sala
+        if viaje.motivo is None and not estado.partida_activa:
+            return ResultadoAccion(True, f"Viaje interrumpido: la partida terminó en la sala {sala_final}.")
+        explicacion = viaje.explicacion(sala_final)
+        if viaje.motivo == MOTIVOS.LLEGO:
+            mensaje = f"Viaje terminado: {explicacion} ({pasos} pasos)."
+        else:
+            mensaje = f"Viaje detenido en la sala {sala_final}: {explicacion} ({pasos} pasos)."
+        return ResultadoAccion(True, mensaje)
 
     def _mostrar_lineas(self, lineas) -> None:
         """Un resumen de varias líneas: panel si la vista lo tiene (pygame), mensaje si no."""
@@ -320,6 +372,10 @@ class ControladorJuego:
                 raise ValueError("Este comando no recibe argumentos.")
             if operacion == "inventario" and len(partes) not in (1, 2):
                 raise ValueError("inventario acepta opcionalmente peso, valor o nombre.")
+            if operacion == "mapa" and len(partes) != 1:
+                raise ValueError("mapa no recibe argumentos.")
+            if operacion == "ir" and (len(partes) != 3 or partes[1].lower() != "a"):
+                raise ValueError("Se usa así: ir a SALA (por ejemplo, ir a 5).")
             if operacion == "historia" and len(partes) != 2:
                 raise ValueError("historia requiere un instante (historia 400) o una acción (historia #12).")
             if operacion in ("guardar", "cargar") and len(partes) not in (1, 2):
@@ -366,6 +422,15 @@ class ControladorJuego:
                 if self._vista is not None:
                     self._vista.mostrar_bitacora(self._bitacora.obtener_mensajes())
                 resultado = ResultadoAccion(True, "Bitácora mostrada.")
+            elif operacion == "mapa":
+                # Spec 003, T016 (FR-007, FR-008): solo lo que el jugador conoce.
+                if self._servicio.obtener_estado() is None:
+                    raise ValueError("No hay una partida iniciada.")
+                self._mostrar_lineas(lineas_mapa_conocido(self._servicio.obtener_mapa_conocido()))
+                resultado = ResultadoAccion(True, "Mapa conocido mostrado.")
+            elif operacion == "ir":
+                # Spec 003, T038 (FR-009 a FR-020): cada paso es una acción mover normal.
+                resultado = self._ir_a(partes[2])
             elif operacion == "historia":
                 # Spec 004 (FR-005): una consulta; no pasa por el motor ni por partida.log.
                 linea = self._servicio.obtener_linea_tiempo()
@@ -390,6 +455,7 @@ class ControladorJuego:
                     "Los nombres deben ser inequívocos (con o sin comillas).\n"
                     "Inventario: siguiente, anterior, seleccionar ID (o nombre), inventario [peso|valor|nombre]. "
                     "usar [ID|NOMBRE] usa el seleccionado sin argumentos; equipar; soltar; retroceder [ID] sin tiempo.\n"
+                    "Mapa: mapa (lo que conoces); ir a SALA (viaja por salas exploradas, paso a paso).\n"
                     "Partidas: criptas; cripta ID; resolubilidad; historia T o historia #K (consulta el pasado "
                     "sin consumir tiempo); guardar [RUTA]; cargar [RUTA]; salir. "
                     "Guardado v8: cargar inicia un historial vacío.\n"
@@ -464,6 +530,9 @@ class ControladorJuego:
                     raise ValueError(f"No hay una partida guardada en {ruta}.")
                 self._nuevo_presupuesto()
                 self.cargar(str(ruta))
+                aviso = getattr(self._servicio, "obtener_aviso_checkpoint", lambda: None)()
+                if aviso:
+                    self._publicar(aviso)  # spec 004, FR-030
                 resultado = ResultadoAccion(True, f"Partida cargada: {self._resumen_partida()}. "
                                                   "El retroceso empieza de cero desde aquí. "
                                                   "Esta sesión cargada no dispone de reproducción desde su inicio.")

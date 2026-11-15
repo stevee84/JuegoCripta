@@ -128,8 +128,8 @@ partida original.
 
 - [X] T032 [P] [US5] Escribir en `tests/test_logica/test_linea_tiempo.py`: `exportar_bytes` e `importar_bytes` conservan el estado vivo, K, instantes, puntos y cola; tras importar, todas las consultas dan lo mismo que antes, la cantidad de puntos de control es la misma (ninguno extra) y todos siguen en múltiplos de K; al importar con otro K pedido se conserva el guardado y se informa (US5-1, US5-2) (FR-017, FR-028, FR-029, FR-030)
 - [X] T033 [US5] Implementar `exportar_bytes(estado)` e `importar_bytes(datos) -> (estado, linea)` en `logica/linea_tiempo.py` según [guardado-v10.md](./contracts/guardado-v10.md), serializando el estado vivo y la línea en una sola operación con `pickle` (FR-017, FR-028, FR-029, FR-030)
-- [ ] T034 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` la prueba de punta a punta: guardar con el guardado v10, cargar y repetir consultas; usar el aviso de K de FR-030 en `controller/controlador_juego.py` al cargar (US5-1, US5-2) (FR-028, FR-030)
-- [ ] T035 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` que un archivo v9, uno v8 y uno de la Parte I se reportan como incompatibles y nunca se cargan en silencio (US5-3; **Apéndice B: archivo de la Parte I**) (FR-031)
+- [X] T034 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` la prueba de punta a punta: guardar con el guardado v10, cargar y repetir consultas; usar el aviso de K de FR-030 en `controller/controlador_juego.py` al cargar (US5-1, US5-2) (FR-028, FR-030)
+- [X] T035 [US5] **[DEPENDE v10]** Escribir en `tests/test_datos/test_guardado_linea.py` que un archivo v9, uno v8 y uno de la Parte I se reportan como incompatibles y nunca se cargan en silencio (US5-3; **Apéndice B: archivo de la Parte I**) (FR-031)
 
 ---
 
@@ -146,7 +146,7 @@ partida original.
 
 ## Fase 10: Mapa conocido en el resumen (depende de la spec 003)
 
-- [ ] T040 [US1] **[DEPENDE 003]** Usar en `controller/resumen_historia.py` la consulta de solo lectura del mapa conocido de la 003 sobre el estado reconstruido, y escribir en `tests/test_controller/test_resumen_historia.py` que el mapa de `historia <t>` coincide con el que mostraba el comando de mapa en ese instante, incluido después de un pergamino que revierte una exploración con antorcha (FR-004, FR-022)
+- [X] T040 [US1] **[DEPENDE 003]** Usar en `controller/resumen_historia.py` la consulta de solo lectura del mapa conocido de la 003 sobre el estado reconstruido, y escribir en `tests/test_controller/test_resumen_historia.py` que el mapa de `historia <t>` coincide con el que mostraba el comando de mapa en ese instante, incluido después de un pergamino que revierte una exploración con antorcha (FR-004, FR-022)
 
 ---
 
