@@ -570,6 +570,7 @@ SEMILLA_CICLO_SINTETICO = 2609
 CALENTAMIENTO_CICLO = 1
 REPETICIONES_CICLO = 9
 CARGAS_CICLO_SINTETICO = (32,)
+CARGAS_CICLO_SINTETICO_MAIN = (32, 64)
 CAZADORES_CICLO = 28
 RANGO_PEQUENO_CICLO = 300
 COSTO_CIERRE_INESTABLE = 60
@@ -1243,7 +1244,17 @@ def medir_ciclos_sinteticos(repeticiones=REPETICIONES_CICLO,
     return filas
 
 
+def medir_ciclos_sinteticos_main(repeticiones, tamanos):
+    """Adapta la firma común y conserva las cargas publicadas de T048."""
+    return medir_ciclos_sinteticos(
+        repeticiones=repeticiones,
+        tamanos=CARGAS_CICLO_SINTETICO_MAIN,
+    )
+
+
 PROVEEDORES = (medir_ciclos_sinteticos,)
+# T049: el tamaño global del ejecutor no sustituye las cargas del ciclo 001.
+PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)
 
 
 def _ms(valor):

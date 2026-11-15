@@ -205,9 +205,9 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 ### Conexión actual comprobada
 
-`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Los proveedores de rutas, agenda ampliada y ciclo de 001 aún requieren integración conjunta, sin reemplazar ni registrar dos veces los existentes.
+`main.py --bench` concatena los proveedores existentes y ya registra `PROVEEDORES_MAPA` de 001. Esa es la parte entregada de T049. Rutas, agenda ampliada y ciclo de 001 publican ahora adaptadores de firma común en sendas tuplas `PROVEEDORES_MAIN`; aún requieren la integración conjunta en `main.py`, sin reemplazar ni registrar dos veces los existentes.
 
-El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` publica ahora `PROVEEDORES = (medir_ciclos_sinteticos,)`, pero aún no aparece en el informe estándar. `benchmarks/terreno_cazador_integrante1.py` publica `PROVEEDORES_AGENDA = (medir_agenda, medir_agenda_ciclo)` con las seis operaciones exigidas por PR-005; su registro real sigue pendiente de T049.
+El ciclo común actual ejecuta `prueba_rendimiento_sofia.py`; `benchmarks/benchmark_ciclo_real_integrante1.py` conserva `PROVEEDORES = (medir_ciclos_sinteticos,)` y añade `PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)` para 32/64 salas. `benchmarks/terreno_cazador_integrante1.py` conserva `PROVEEDORES_AGENDA`, `PROVEEDORES_RUTAS` y `PROVEEDORES`, y añade cuatro adaptadores nominales en `PROVEEDORES_MAIN`. El argumento global `tamanos` de `integrante3.ejecutar` no describe esas cargas particulares: al interpretar la salida se usan `n`, `carga`, escenario y alternativa de cada fila. El registro real sigue pendiente de T049.
 
 ### Rutas
 

@@ -459,6 +459,8 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 58 | Revisión posterior T001, pruebas T040, propuesta T049 y cierre documental T057/T059/T060/T063/T068/T069 | Tema 12. Parte II dirigida por especificaciones | 10/11/2026 |
 | 59 | Preparación de commit y revisión remota sin integración | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
 | 60 | Cierre de integraciones T004/T052/T053/T056 | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
+| 61 | Preparación coordinada de T049/T050 para `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 62 | Adaptadores de cargas propias para T049/T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2258,6 +2260,46 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Integraciones cruzadas.** Se creó `tests/test_integracion_ir_a_001_003.py` con dos estados reales divergentes y conocimiento equivalente, acceso oculto prohibido, paso único, cambios de origen/destino/conocimiento y terminales diferenciados; T052 quedó cerrada. `tests/test_integracion_001_004.py` dejó de omitir `LineaTiempo` y añadió una consulta que cruza K=2 y restaura el estado vivo. Los dos módulos terminaron en **10 passed in 0.29s**, sin omisiones. T056 se cerró además con la evidencia de PowerShell aceptada: **79 pruebas específicas** y suite completa de **1402 pruebas, 4 subtests**, sin fallos ni omisiones.
 
 **Límites.** T006/T055 de persistencia y T049/T050 permanecen abiertas. No se tocó `main.py`, producción, specs 003/004, `controller/`, `service/` ni `datos/guardado_binario.py`; no hubo commit, push, checkout, merge, rebase, reset, restore ni stash.
+
+---
+
+## Prompt 61 — Preparación coordinada de T049/T050 para `main.py --bench`
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> En `integracion-parte2@31f58ca`, preparar sin aplicar la integración de `benchmarks.terreno_cazador_integrante1.PROVEEDORES` y `benchmarks.benchmark_ciclo_real_integrante1.PROVEEDORES` en `main.py --bench`. Conservar todos los proveedores existentes de datos, resolubilidad, mapa conocido, índice de `MapaCripta` y línea de tiempo; revisar firmas, nombres, compatibilidad con `benchmarks.integrante3.ejecutar` y pruebas. Actualizar solo la propuesta T049 y esta bitácora. No editar `main.py`, cerrar T049/T050, ejecutar el benchmark de 5000 acciones o la suite completa, ni realizar operaciones Git modificadoras.
+
+**Resultado.** La propuesta T049 registra el diff mínimo exacto, ahora conserva explícitamente `bench_linea.PROVEEDORES` de Joshua y los doce proveedores de `integrante2`, incluidos `medir_mapa_conocido` y `medir_paso_ir_a` incorporados con Steven. La inspección estática confirmó 25 callables y 25 identidades distintas tras la concatenación prevista.
+
+**Bloqueo detectado.** Aunque las firmas aceptan `repeticiones` y `tamanos`, el ejecutor fuerza `(8, 16, 32, 64, 128, 512)` a todos. La agenda rechaza 8/16 y el ciclo sintético rechaza 8; además, un único conjunto común no conserva las cargas propias publicadas. La propuesta recomienda adaptadores con cargas propias en los módulos de benchmark de 001 antes de aplicar el diff compartido. T049/T050 permanecen abiertas.
+
+**Validación limitada.** No se ejecutaron mediciones: solo introspección de firmas/identidades y llamadas que terminan en la validación previa con los `ValueError` esperados. No se modificó `main.py`, producción ni pruebas; no se ejecutó la línea de tiempo de 5000 acciones, la suite completa ni operaciones Git modificadoras.
+
+---
+
+## Prompt 62 — Adaptadores de cargas propias para T049/T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Resolver el problema detectado en Prompt 61 mediante adaptadores propios de 001 con firma `(repeticiones, tamanos)`, sin modificar `main.py` ni `benchmarks.integrante3.py`. Conservar funciones y tuplas originales; publicar `PROVEEDORES_MAIN` para agenda 256/512/1024, rutas 32/128/512 y 32/64, y ciclo 32/64. Probar despacho único, cargas, repeticiones y ausencia de duplicados con sustitutos, actualizar la documentación de 001 y mantener T049/T050 abiertas.
+
+**Implementación.** `benchmarks/terreno_cazador_integrante1.py` añade `medir_agenda_main`, `medir_agenda_ciclo_main`, `medir_rutas_region_main` y `medir_rutas_matriz_main`; `benchmarks/benchmark_ciclo_real_integrante1.py` añade `medir_ciclos_sinteticos_main`. Cada módulo exporta una tupla nueva `PROVEEDORES_MAIN`. Los adaptadores ignoran solo los tamaños globales, transmiten las repeticiones sin reducción y delegan con las cargas propias. `PROVEEDORES`, `PROVEEDORES_RUTAS`, `PROVEEDORES_AGENDA` y las funciones productoras permanecen intactas.
+
+**Pruebas y documentación.** `tests/test_bench_adaptadores_001.py` usa productores sustitutos para comprobar una llamada exacta, firma, cargas, repeticiones, cinco identidades únicas, las 25 identidades del registro propuesto y tuplas históricas intactas. La ejecución focalizada con las regresiones de agenda, rutas y ciclo terminó en **60 passed in 19.98s**. La propuesta T049, `plan.md`, `quickstart.md` y `tasks.md` documentan que `informe["tamanos"]` pertenece al ejecutor común y que cada fila de 001 debe interpretarse mediante su `n`, `carga`, escenario y alternativa.
+
+**Límites.** `main.py` no se modificó; T049/T050 continúan abiertas. No se ejecutaron el benchmark completo, la línea de tiempo de 5000 acciones, la suite completa, producción, persistencia ni operaciones Git modificadoras.
 
 ---
 
