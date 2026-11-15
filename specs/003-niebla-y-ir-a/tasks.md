@@ -33,13 +33,13 @@ El proyecto no usa `src/`. Las capas son `contratos/`, `datos/`, `dto/`, `logica
 **Propósito**: tener criptas de prueba con la topología que esta capacidad necesita, antes de
 tocar código.
 
-- [ ] T001 [P] Crear el paquete `tests/fixtures/niebla/cripta-rutas/` con una cripta donde existan
+- [X] T001 [P] Crear el paquete `tests/fixtures/niebla/cripta-rutas/` con una cripta donde existan
       dos caminos de igual costo total entre dos salas, para ejercitar el desempate por menor id
       (`FR-012`), con la estructura que `FuenteOffline` ya sabe leer
-- [ ] T002 [P] Crear el paquete `tests/fixtures/niebla/cripta-cierre/` con una puerta de cierre
+- [X] T002 [P] Crear el paquete `tests/fixtures/niebla/cripta-cierre/` con una puerta de cierre
       automático en el camino, para ejercitar la memoria de puertas desactualizada (`FR-006`,
       `FR-014`)
-- [ ] T003 [P] Crear el paquete `tests/fixtures/niebla/cripta-antorcha/` con una sala de muchas
+- [X] T003 [P] Crear el paquete `tests/fixtures/niebla/cripta-antorcha/` con una sala de muchas
       vecinas, algunas tras puertas cerradas, para ejercitar la antorcha (`FR-024`)
 
 ---
@@ -51,25 +51,25 @@ nada pueda consultarlo.
 
 **Crítico**: ninguna historia puede empezar hasta que esta fase esté completa.
 
-- [ ] T004 Crear `logica/mapa_conocido.py` con la estructura del conocimiento: salas exploradas,
+- [X] T004 Crear `logica/mapa_conocido.py` con la estructura del conocimiento: salas exploradas,
       salas avistadas y puertas observadas, cada una en una `TablaHashImpl` indexada por id. Lo
       desconocido NO se almacena: una sala desconocida simplemente no está en ninguna tabla
       (`FR-001` a `FR-004`). Prohibidos `set`, `heapq`, `collections` y `sorted()` (§6.2)
-- [ ] T005 Implementar en `logica/mapa_conocido.py` las consultas de estado de una sala y de
+- [X] T005 Implementar en `logica/mapa_conocido.py` las consultas de estado de una sala y de
       estado recordado de una puerta, en O(1) promedio, porque ocurren en cada dibujo de la vista
       y en cada paso del viaje (`FR-001`, `FR-006`, `SC-002`)
-- [ ] T006 Implementar en `logica/mapa_conocido.py` la revelación al entrar a una sala: la sala
+- [X] T006 Implementar en `logica/mapa_conocido.py` la revelación al entrar a una sala: la sala
       pasa a explorada con su nombre, sus salidas y sus costos, y sus vecinas pasan a avistadas.
       El costo DEBE ser proporcional a las salidas de esa sala, no al tamaño del mapa conocido
       (`FR-002`, `FR-003`, `SC-003`)
-- [ ] T007 Implementar en `logica/mapa_conocido.py` la observación de puertas: estando en una
+- [X] T007 Implementar en `logica/mapa_conocido.py` la observación de puertas: estando en una
       sala, el estado de cada puerta que la conecta se registra tal como está en ese momento, y
       sobrescribe la observación anterior (`FR-006`)
-- [ ] T008 Añadir el mapa conocido a `dto/estado_partida.py`, con la sala inicial ya explorada
+- [X] T008 Añadir el mapa conocido a `dto/estado_partida.py`, con la sala inicial ya explorada
       desde el instante cero (`FR-005`)
-- [ ] T009 Conectar la revelación al movimiento en `logica/motor_juego.py`: entrar a una sala
+- [X] T009 Conectar la revelación al movimiento en `logica/motor_juego.py`: entrar a una sala
       actualiza el conocimiento antes de que nada lo consulte (`FR-002`, `FR-006`)
-- [ ] T010 [P] Escribir en `tests/test_logica/test_mapa_conocido.py` las pruebas de los tres
+- [X] T010 [P] Escribir en `tests/test_logica/test_mapa_conocido.py` las pruebas de los tres
       estados, de la sala inicial explorada y de que una sala desconocida no aparece de ninguna
       forma (`FR-001` a `FR-005`)
 
@@ -87,21 +87,21 @@ detrás de sus salidas; tras moverse, esa vecina se conoce por completo.
 
 ### Pruebas de la Historia 1
 
-- [ ] T011 [P] [US1] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba de que una
+- [X] T011 [P] [US1] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba de que una
       sala avistada revela únicamente su existencia: ni nombre, ni salidas, ni contenido
       (`FR-003`)
-- [ ] T012 [P] [US1] Escribir la prueba de la memoria de puertas desactualizada con
+- [X] T012 [P] [US1] Escribir la prueba de la memoria de puertas desactualizada con
       `cripta-cierre`: una puerta observada abierta sigue figurando abierta tras cerrarse sola, y
       se corrige al volver a observarla (`FR-006`)
-- [ ] T013 [P] [US1] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba de que
+- [X] T013 [P] [US1] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba de que
       revelar las mismas salas sobre un mapa conocido mucho mayor no cuesta proporcionalmente más
       (`SC-003`)
 
 ### Implementación de la Historia 1
 
-- [ ] T014 [US1] Exponer el mapa conocido desde `service/juego_service.py` como dato, para que la
+- [X] T014 [US1] Exponer el mapa conocido desde `service/juego_service.py` como dato, para que la
       interfaz lo pinte sin recibir el esqueleto completo (`FR-007`)
-- [ ] T015 [US1] Dar al mapa conocido una forma legible para la interfaz —salas exploradas con sus
+- [X] T015 [US1] Dar al mapa conocido una forma legible para la interfaz —salas exploradas con sus
       salidas y estado recordado, y la lista de avistadas— según
       [contracts/cli-ir-a.md](./contracts/cli-ir-a.md) (`FR-008`)
 - [ ] T016 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
@@ -121,39 +121,39 @@ jugador allí con movimientos ordinarios, sin usar nada que no conozca.
 
 ### Pruebas de la Historia 2
 
-- [ ] T017 [P] [US2] Escribir en `tests/test_logica/test_viaje.py` la prueba de contrato de la
+- [X] T017 [P] [US2] Escribir en `tests/test_logica/test_viaje.py` la prueba de contrato de la
       vista conocida con los casos de
       [contracts/vista-conocida.md](./contracts/vista-conocida.md): sala explorada sí, avistada
       no, desconocida no, salida recordada abierta hacia explorada sí, hacia avistada no, y
       recordada cerrada no (`FR-011`)
-- [ ] T018 [P] [US2] Escribir la prueba del desempate por menor id con `cripta-rutas`, y de que
+- [X] T018 [P] [US2] Escribir la prueba del desempate por menor id con `cripta-rutas`, y de que
       dos ejecuciones iguales dan el mismo recorrido (`FR-012`, `SC-006`)
-- [ ] T019 [P] [US2] Escribir la prueba de que pedir ir a una sala avistada, desconocida o
+- [X] T019 [P] [US2] Escribir la prueba de que pedir ir a una sala avistada, desconocida o
       inexistente se rechaza indicando el motivo (`FR-010`)
-- [ ] T020 [P] [US2] Escribir la prueba de que el viaje no abre puertas aunque el jugador tenga la
+- [X] T020 [P] [US2] Escribir la prueba de que el viaje no abre puertas aunque el jugador tenga la
       llave (`FR-015`)
-- [ ] T021 [P] [US2] Escribir la prueba de `SC-005`: dos estados reales distintos que produzcan el
+- [X] T021 [P] [US2] Escribir la prueba de `SC-005`: dos estados reales distintos que produzcan el
       mismo mapa conocido producen el mismo viaje. Es la garantía de separación que acordó 001
-- [ ] T022 [P] [US2] Escribir la prueba de que pedir ir a la sala actual termina de inmediato sin
+- [X] T022 [P] [US2] Escribir la prueba de que pedir ir a la sala actual termina de inmediato sin
       consumir pasos ni tiempo (`FR-009`)
 
 ### Implementación de la Historia 2
 
-- [ ] T023 [US2] Implementar en `logica/mapa_conocido.py` la vista que consume el buscador de 001:
+- [X] T023 [US2] Implementar en `logica/mapa_conocido.py` la vista que consume el buscador de 001:
       `contiene_sala` responde solo por salas exploradas, y `salidas_transitables` devuelve solo
       las salidas recordadas abiertas hacia salas exploradas, con el costo conocido
       (`FR-011`, contrato en [contracts/vista-conocida.md](./contracts/vista-conocida.md))
-- [ ] T024 [US2] Crear `logica/viaje.py` que pide un paso al buscador de `logica/rutas_ponderadas.py`
+- [X] T024 [US2] Crear `logica/viaje.py` que pide un paso al buscador de `logica/rutas_ponderadas.py`
       con esa vista, lo ejecuta como acción ordinaria y vuelve a pedir el siguiente. NO guarda la
       ruta: §3.4 exige recalcular antes de cada paso (`FR-009`, `FR-013`, `FR-014`)
-- [ ] T025 [US2] Rechazar en `logica/viaje.py` los destinos que no son salas exploradas, con un
+- [X] T025 [US2] Rechazar en `logica/viaje.py` los destinos que no son salas exploradas, con un
       motivo legible (`FR-010`)
-- [ ] T026 [US2] Hacer que cada paso sea una acción completa del jugador en `logica/viaje.py`:
+- [X] T026 [US2] Hacer que cada paso sea una acción completa del jugador en `logica/viaje.py`:
       consume tiempo según el costo de la salida y deja correr los eventos del reloj entre paso y
       paso (`FR-013`)
-- [ ] T027 [US2] Impedir en `logica/viaje.py` que el viaje abra puertas, aunque el jugador tenga
+- [X] T027 [US2] Impedir en `logica/viaje.py` que el viaje abra puertas, aunque el jugador tenga
       la llave (`FR-015`)
-- [ ] T028 [US2] Exponer el viaje desde `service/juego_service.py` como dato: el motivo de parada
+- [X] T028 [US2] Exponer el viaje desde `service/juego_service.py` como dato: el motivo de parada
       y la sala donde quedó (`FR-019`)
 
 **Punto de control**: las Historias 1 y 2 funcionan por separado.
@@ -169,26 +169,26 @@ correcto.
 
 ### Pruebas de la Historia 3
 
-- [ ] T029 [P] [US3] Escribir en `tests/test_logica/test_viaje.py` la prueba de las cuatro
+- [X] T029 [P] [US3] Escribir en `tests/test_logica/test_viaje.py` la prueba de las cuatro
       condiciones de parada: llegó, hay enemigos, recibió daño y no hay camino conocido
       (`FR-016`)
-- [ ] T030 [P] [US3] Escribir la prueba del enemigo **dormido**, que es el caso obligatorio de
+- [X] T030 [P] [US3] Escribir la prueba del enemigo **dormido**, que es el caso obligatorio de
       §3.4: también detiene el viaje (`FR-016`)
-- [ ] T031 [P] [US3] Escribir la prueba de que el viaje **sí** empieza cuando el jugador ya está
+- [X] T031 [P] [US3] Escribir la prueba de que el viaje **sí** empieza cuando el jugador ya está
       en una sala con enemigos, porque la parada se dispara al entrar (`FR-017`)
-- [ ] T032 [P] [US3] Escribir la prueba de que el daño recibido entre dos pasos, sin que el
+- [X] T032 [P] [US3] Escribir la prueba de que el daño recibido entre dos pasos, sin que el
       jugador se mueva, también detiene el viaje (`FR-018`)
-- [ ] T033 [P] [US3] Escribir con `cripta-cierre` la prueba del caso obligatorio de §3.4: una
+- [X] T033 [P] [US3] Escribir con `cripta-cierre` la prueba del caso obligatorio de §3.4: una
       puerta que el mapa recordaba abierta y en realidad se cerró NO detiene el viaje; el mapa se
       corrige al llegar y el cálculo siguiente la evita (`FR-014`)
 
 ### Implementación de la Historia 3
 
-- [ ] T034 [US3] Implementar en `logica/viaje.py` las cuatro condiciones de parada, cada una con
+- [X] T034 [US3] Implementar en `logica/viaje.py` las cuatro condiciones de parada, cada una con
       su motivo distinguible (`FR-016`, `FR-019`)
-- [ ] T035 [US3] Implementar en `logica/viaje.py` que estar ya en una sala con enemigos no impide
+- [X] T035 [US3] Implementar en `logica/viaje.py` que estar ya en una sala con enemigos no impide
       empezar el viaje (`FR-017`)
-- [ ] T036 [US3] Detectar en `logica/viaje.py` el daño recibido entre dos pasos, no solo al
+- [X] T036 [US3] Detectar en `logica/viaje.py` el daño recibido entre dos pasos, no solo al
       moverse (`FR-018`)
 - [ ] T037 [US3] Anotar en la bitácora cada paso como un movimiento individual, y la orden de ir a
       como un comentario, en `logica/viaje.py` (`FR-020`)
@@ -208,27 +208,27 @@ paso y vuelve al estado anterior.
 
 ### Pruebas de la Historia 4
 
-- [ ] T039 [P] [US4] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba del caso
+- [X] T039 [P] [US4] Escribir en `tests/test_logica/test_mapa_conocido.py` la prueba del caso
       obligatorio de §3.4: usar el pergamino durante un viaje revierte **solo el último paso**, y
       el mapa conocido vuelve al estado anterior a ese paso, sin las salas que reveló (`FR-021`)
-- [ ] T040 [P] [US4] Escribir en `tests/test_datos/test_mapa_conocido_persistido.py` la prueba de
+- [X] T040 [P] [US4] Escribir en `tests/test_datos/test_mapa_conocido_persistido.py` la prueba de
       que el mapa conocido sobrevive a guardar, cerrar y reanudar, y de que un archivo de la
       versión anterior se reporta incompatible (`FR-022`)
-- [ ] T041 [P] [US4] Escribir la prueba de que registrar y deshacer una revelación cuestan un
+- [X] T041 [P] [US4] Escribir la prueba de que registrar y deshacer una revelación cuestan un
       tiempo que no crece con el tamaño del mapa conocido (`SC-004`)
 
 ### Implementación de la Historia 4
 
-- [ ] T042 [US4] Registrar cada revelación en `logica/mapa_conocido.py` como un cambio reversible,
+- [X] T042 [US4] Registrar cada revelación en `logica/mapa_conocido.py` como un cambio reversible,
       heredando del contrato que ya existe en `logica/cambios.py` **sin modificar ese archivo**,
       que es de otro integrante (Principio VIII). Sin copias completas del mapa (Principio VII)
       (`FR-021`, `FR-022`, `SC-004`)
-- [ ] T043 [US4] Subir `GuardadoBinario.VERSION` de 10 a 11 en `datos/guardado_binario.py` y
+- [X] T043 [US4] Subir `GuardadoBinario.VERSION` de 10 a 11 en `datos/guardado_binario.py` y
       escribir el mapa conocido en el archivo de partida (`FR-022`)
-- [ ] T044 [US4] Reconstruir el mapa conocido al reanudar en `service/restaurador_partida.py`, y
+- [X] T044 [US4] Reconstruir el mapa conocido al reanudar en `service/restaurador_partida.py`, y
       hacer que un archivo de la versión 10 se reporte como incompatible en lugar de cargarse a
       medias (`FR-022`)
-- [ ] T045 [US4] Comprobar que la línea de tiempo reconstruye el mapa conocido de un instante
+- [X] T045 [US4] Comprobar que la línea de tiempo reconstruye el mapa conocido de un instante
       pasado, sin alterar el actual (`FR-022`)
 
 **Punto de control**: el conocimiento sobrevive al retroceso, al guardado y a la consulta de un
@@ -245,21 +245,21 @@ antorcha apagada, solo avistadas.
 
 ### Pruebas de la Historia 5
 
-- [ ] T046 [P] [US5] Escribir con `cripta-antorcha` la prueba del caso obligatorio de §3.4: con la
+- [X] T046 [P] [US5] Escribir con `cripta-antorcha` la prueba del caso obligatorio de §3.4: con la
       antorcha encendida las vecinas quedan exploradas por cualquier salida, abierta o cerrada, y
       no se activa ninguno de sus enemigos ni trampas (`FR-023`, `FR-024`)
-- [ ] T047 [P] [US5] Escribir la prueba de que una vecina revelada por la antorcha conoce su
+- [X] T047 [P] [US5] Escribir la prueba de que una vecina revelada por la antorcha conoce su
       nombre y sus salidas pero no su contenido, y de que es un destino válido de «ir a»
       (`FR-024`, `FR-010`)
-- [ ] T048 [P] [US5] Escribir la prueba de que con la antorcha apagada las vecinas quedan solo
+- [X] T048 [P] [US5] Escribir la prueba de que con la antorcha apagada las vecinas quedan solo
       avistadas (`FR-003`)
 
 ### Implementación de la Historia 5
 
-- [ ] T049 [US5] Implementar en `logica/mapa_conocido.py` la revelación por antorcha: al entrar a
+- [X] T049 [US5] Implementar en `logica/mapa_conocido.py` la revelación por antorcha: al entrar a
       una sala con la antorcha encendida, todas sus vecinas pasan a exploradas, a través de
       cualquier salida, esté abierta o cerrada (`FR-023`)
-- [ ] T050 [US5] Comprobar que esa revelación no toca el contenido de las vecinas ni activa sus
+- [X] T050 [US5] Comprobar que esa revelación no toca el contenido de las vecinas ni activa sus
       enemigos ni sus trampas (`FR-024`)
 
 **Punto de control**: las cinco historias funcionan por separado.
@@ -268,29 +268,29 @@ antorcha apagada, solo avistadas.
 
 ## Fase 8: Cierre y asuntos transversales
 
-- [ ] T051 Añadir a `benchmarks/integrante2.py` la medición del mapa conocido frente a una
+- [X] T051 Añadir a `benchmarks/integrante2.py` la medición del mapa conocido frente a una
       alternativa que recorre el mapa para responder lo mismo, con criptas sintéticas
       deterministas por semilla (`SC-008`, §5.3, §6.3)
-- [ ] T052 Medir el paso de «ir a» con el mapa conocido completo de la cripta de referencia y
+- [X] T052 Medir el paso de «ir a» con el mapa conocido completo de la cripta de referencia y
       comprobar que queda por debajo de 5 ms, separando la preparación del intervalo cronometrado
       y con calentamiento y repeticiones (`SC-001`, §6.1)
-- [ ] T053 Comprobar que `SC-002` y `SC-003` se cumplen con datos: las consultas no crecen con el
+- [X] T053 Comprobar que `SC-002` y `SC-003` se cumplen con datos: las consultas no crecen con el
       mapa conocido y explorar cuesta en proporción a lo revelado
-- [ ] T054 Conectar las mediciones nuevas a `--bench`, porque un benchmark que ningún punto de
+- [X] T054 Conectar las mediciones nuevas a `--bench`, porque un benchmark que ningún punto de
       entrada ejecuta no cuenta como evidencia (Principio IX)
-- [ ] T055 [P] Comprobar que `tests/test_restricciones_enunciado.py` sigue en verde sobre el
+- [X] T055 [P] Comprobar que `tests/test_restricciones_enunciado.py` sigue en verde sobre el
       código nuevo: sin `heapq`, `set`, `collections`, bibliotecas de grafos ni `sorted()` (§6.2)
 - [ ] T056 Ejecutar la validación de punta a punta de [quickstart.md](./quickstart.md), los diez
       pasos
-- [ ] T057 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
+- [X] T057 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
       comandos de spec-kit usados en esta capacidad (§2.6)
-- [ ] T058 Escribir en `DECISIONES.md` la sección §5.3 con el formato de §7.1 —problema,
+- [X] T058 Escribir en `DECISIONES.md` la sección §5.3 con el formato de §7.1 —problema,
       alternativas consideradas, decisión, análisis de complejidad, evidencia empírica y límites
       conocidos—, enlazando a [spec.md](./spec.md) y [plan.md](./plan.md), e indicando si la
       decisión final coincide con la del plan. Debe responder lo que §5.3 pregunta: si se comparte
       implementación con la búsqueda del cazador o si conviene separarlas. Las alternativas están
       en [research.md](./research.md) y la evidencia sale de T051 a T053
-- [ ] T059 Actualizar `README.md` con los comandos nuevos de esta capacidad y de la 002
+- [X] T059 Actualizar `README.md` con los comandos nuevos de esta capacidad y de la 002
       (`--verificar`, `--forzar`, ver el mapa conocido e «ir a»), que §7.2 exige
 
 ---
@@ -368,3 +368,24 @@ la línea de tiempo entre en el mismo salto de versión, en vez de provocar un v
   si eso no bastara, hay que acordarlo antes (Principio VIII)
 - No se escribe un segundo buscador de caminos: T023 construye la vista y T024 usa el buscador de
   001 que ya existe
+
+---
+
+## Estado al 14/11/2026
+
+**Hechas: 55 de 59.** Lo que queda:
+
+- `T016` y `T038` son de Joshua: los comandos de ver el mapa conocido y de «ir a» en `controller/`
+  y `vista/`, que consumen lo que `T014`, `T015` y `T028` ya exponen desde el servicio.
+- `T037` tiene su mitad escrita y la otra pedida. Anotar cada paso como un movimiento individual
+  sale gratis: cada paso ya es una acción `MOVER` del jugador y la bitácora la registra sola.
+  Anotar la orden de «ir a» **como comentario** necesita que el lector de
+  `controller/ejecutor_replay.py` ignore las líneas que no son acciones, y hoy rechaza cualquier
+  registro que no tenga los cuatro campos de una acción. Escribir comentarios sin ese cambio
+  dejaría sin reproducir toda partida que use «ir a», y §4.11 la exige. El escritor
+  —`RegistroPartida.anexar_comentario` y `Viaje.comentario()`— está listo y probado; la petición
+  es [contracts/bitacora-comentarios.md](./contracts/bitacora-comentarios.md).
+- `T056` se ejecutó en los pasos que no dependen de la interfaz: 1, 2, 3, 7, 8, 9 y 10. Los pasos
+  4, 5 y 6 escriben `ir a` en la consola y esperan a `T038`. La lógica que esos tres pasos
+  ejercitan sí está cubierta por `tests/test_logica/test_viaje.py` y por
+  `tests/test_integracion_ir_a_001_003.py`.

@@ -46,6 +46,7 @@ class JuegoService:
         # Línea de tiempo (spec 004): se crea al iniciar una partida nueva.
         self._checkpoint_cada = None
         self._linea_tiempo = None
+        self._aviso_checkpoint = None
 
     def configurar_checkpoint_cada(self, k) -> None:
         """K de --checkpoint-cada para las partidas que se inicien (spec 004, FR-015)."""
@@ -54,6 +55,45 @@ class JuegoService:
 
     def obtener_linea_tiempo(self):
         return self._linea_tiempo
+
+    def obtener_aviso_checkpoint(self):
+        """FR-030: si la partida cargada se guardó con otro K, el texto que lo explica.
+
+        Se produce al cargar, que es el único momento en que hay dos valores de K en juego.
+        Mostrarlo es de la interfaz.
+        """
+        return self._aviso_checkpoint
+
+    @staticmethod
+    def _marcar_cargado(estado, linea):
+        """Lo que describe la carga, no la partida, y por eso no viaja en los bytes.
+
+        El estado que trae la línea es el que estaba vivo al guardar, con su pergamino lleno. El
+        pergamino sigue siendo de la sesión: una carga no permite deshacer acciones de la sesión
+        anterior, y `limitaciones_carga` lo anuncia. La línea conserva su propia cola, que es
+        otra cosa (FR-029), así que estrenar pergamino no le quita nada.
+        """
+        from logica.historial_reversible import HistorialReversible
+
+        estado.historial = HistorialReversible()
+        estado.historial.vincular_linea(linea)
+        if estado.inventario is not None:
+            estado.inventario.historial_linea = estado.historial
+        estado.reanudable = True
+        estado.limitaciones_carga = ("historial",)
+
+    @staticmethod
+    def _linea_del_guardado(datos):
+        """La línea de tiempo del archivo como `(estado, linea)`, o None si no trae sección.
+
+        El estado viaja con la línea a propósito: la cola guarda cambios que apuntan a esos
+        objetos (contrato `004/contracts/guardado-v10.md`). Esta capa no interpreta los bytes,
+        solo se los entrega a la línea; si no se pueden leer, el error sube.
+        """
+        from logica.linea_tiempo import LineaTiempo
+
+        bytes_linea = datos.get("linea_tiempo_bytes") if datos else None
+        return LineaTiempo.importar_bytes(bytes_linea) if bytes_linea else None
 
     def _crear_linea_tiempo(self, estado):
         from logica.linea_tiempo import LineaTiempo
@@ -283,6 +323,9 @@ class JuegoService:
             datos = binario.cargar(str(temporal))
             try:
                 RestauradorPartida().restaurar_para_reanudar(datos, self._fichas_del_estado(estado))
+                # La sección de la línea también se valida antes de reemplazar el destino: un
+                # bloque que no se puede volver a leer dejaría una partida sin retroceso.
+                self._linea_del_guardado(datos)
             except (ValueError, TypeError) as error:
                 raise ValueError(f"Guardado completo bloqueado: datos parciales o inválidos: {error}") from error
             os.replace(temporal, destino)
@@ -364,6 +407,16 @@ class JuegoService:
         try:
             catalogo = self._catalogo_para_carga(datos)
             estado = RestauradorPartida().restaurar_para_reanudar(datos, catalogo)
+            desde_linea = self._linea_del_guardado(datos)
+            if desde_linea is not None:
+                # El estado vivo es el de la línea, no el que acaba de armar el guardado: su cola
+                # guarda cambios que apuntan a esos objetos y con otros no se podrían deshacer
+                # (004/contracts/guardado-v10.md). Lo reconstruido sirvió para validar el archivo,
+                # que es para lo que se lee, y la infraestructura se reconecta más abajo igual.
+                estado, linea = desde_linea
+                self._marcar_cargado(estado, linea)
+            else:
+                linea = None
         except (ValueError, TypeError, KeyError, IndexError, AttributeError) as error:
             raise ValueError(f"Carga bloqueada: datos parciales o inválidos: {error}") from error
         anterior = getattr(self._motor, "_servicio_inventario", None)
@@ -393,7 +446,13 @@ class JuegoService:
         self._versiones_exigidas = None
         self._semilla = estado.semilla
         self._estado_inicial = None  # Una carga no es el inicio de un replay.
-        self._linea_tiempo = None  # Spec 004: la carga con línea llega con el guardado v10.
+        if linea is not None:
+            self._linea_tiempo = linea
+            self._aviso_checkpoint = linea.aviso_k(self._checkpoint_cada)
+        else:
+            # Un guardado sin sección de línea (partida de prueba) estrena una (contrato v10).
+            self._crear_linea_tiempo(estado)
+            self._aviso_checkpoint = None
         self._ruta_registro = self._marca_registro = self._error_registro = None
         self._acciones_coordinadas = 0
         # Cargar un final guardado no vuelve a anexar el mismo resultado.
@@ -772,6 +831,59 @@ class JuegoService:
 
     def obtener_estado(self):
         return getattr(self._motor, "estado", None)
+
+    def obtener_mapa_conocido(self):
+        """Lo que el jugador sabe de la cripta (P2 §3.3, FR-007, FR-008).
+
+        Se entrega como dato, no como texto: quien lo muestre decide el formato. La vista
+        **no** recibe el esqueleto completo, que §3.3 reserva a la infraestructura.
+        """
+        estado = self.obtener_estado()
+        return getattr(estado, "mapa_conocido", None) if estado is not None else None
+
+    def describir_mapa_conocido(self):
+        """El mapa conocido en una forma lista para pintar (FR-008).
+
+        Cada sala explorada con su nombre y sus salidas, y el estado **recordado** de cada
+        puerta, que puede no ser el real. Más la lista de salas avistadas, de las que el
+        jugador solo sabe que existen.
+        """
+        from logica.ordenamiento import OrdenadorAdaptativo
+
+        conocido = self.obtener_mapa_conocido()
+        if conocido is None:
+            return {"exploradas": [], "avistadas": []}
+        exploradas = []
+        for id_sala in OrdenadorAdaptativo().ordenar(conocido.exploradas(), lambda s: s):
+            sala = conocido.sala(id_sala)
+            exploradas.append({
+                "id_sala": id_sala,
+                "nombre": sala.nombre,
+                "salidas": [{
+                    "direccion": salida.direccion,
+                    "destino": salida.destino_id,
+                    "abierta": conocido.puerta_recordada_abierta(salida.id_puerta),
+                    "costo": salida.costo,
+                    "llave": salida.llave_requerida,
+                } for salida in sala.salidas],
+            })
+        return {
+            "exploradas": exploradas,
+            "avistadas": OrdenadorAdaptativo().ordenar(conocido.avistadas(), lambda s: s),
+        }
+
+    def iniciar_viaje(self, destino_id):
+        """Prepara un viaje «ir a» (P2 §3.4, FR-009, FR-010).
+
+        Devuelve el viaje aunque el destino no sirva: `valido` y `motivo` dicen por qué, que es
+        lo que §7.3 pide poder mostrar.
+        """
+        from logica.viaje import Viaje
+
+        estado = self.obtener_estado()
+        if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
+            raise ValueError("No hay una partida en curso.")
+        return Viaje(estado.mapa_conocido, estado.jugador.sala_actual.id_sala, destino_id)
 
     def obtener_informe_resolubilidad(self):
         """El informe de la verificación hecha antes de empezar (P2 §3.5, FR-014).

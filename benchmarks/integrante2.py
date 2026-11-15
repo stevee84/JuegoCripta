@@ -126,9 +126,15 @@ def _partida_real(cripta_id, carpeta):
 
 
 def _datos_json(datos):
-    """El mismo estado lógico que el binario, en JSON: las salas pasan a lista de registros."""
+    """El mismo estado lógico que el binario, en JSON: las salas pasan a lista de registros.
+
+    La sección de la línea de tiempo (v11) queda fuera: es un bloque opaco de bytes que el texto
+    no puede representar y que no forma parte del estado que las dos codificaciones describen.
+    Se mide aparte, en la columna `linea_bytes`, para que su peso no quede escondido.
+    """
     copia = dict(datos)
     copia["salas"] = [registro for _, registro in datos["salas"]]
+    copia.pop("linea_tiempo_bytes", None)
     return copia
 
 
@@ -149,13 +155,18 @@ def medir_guardado(repeticiones, tamanos):
             ruta_bin = os.path.join(carpeta, f"{cripta_id}.bin")
             ruta_json = os.path.join(carpeta, f"{cripta_id}.json")
             servicio.guardar_partida(ruta_bin)
-            datos = _datos_json(binario.cargar(ruta_bin))
+            crudo = binario.cargar(ruta_bin)
+            bytes_linea = len(crudo.get("linea_tiempo_bytes") or b"")
+            datos = _datos_json(crudo)
             with open(ruta_json, "w", encoding="utf-8") as archivo:
                 json.dump(datos, archivo)
             n = len(datos["salas"])
             ultima = datos["salas"][-1]["id_sala"]
-            comun = {"cripta": cripta_id, "salas": n}
-            tamanos_bytes = {"binario": os.path.getsize(ruta_bin), "json": os.path.getsize(ruta_json)}
+            comun = {"cripta": cripta_id, "salas": n, "linea_bytes": bytes_linea}
+            # §4.10 compara codificaciones del mismo estado, así que al binario se le descuenta
+            # la sección de la línea: es carga adicional que el archivo JSON no lleva.
+            tamanos_bytes = {"binario": os.path.getsize(ruta_bin) - bytes_linea,
+                             "json": os.path.getsize(ruta_json)}
 
             def escribir_json(datos=datos, ruta=ruta_json):
                 with open(ruta, "w", encoding="utf-8") as archivo:

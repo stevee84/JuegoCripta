@@ -130,7 +130,7 @@ primera deja empezar la partida y la segunda no.
       dato, con los tres estados distinguibles —con solución y cuántas llaves, sin solución, o no
       se pudo verificar—, para que la interfaz lo pinte sin interpretar texto. El formato está en
       [contracts/cli-verificar.md](./contracts/cli-verificar.md) (`FR-013`)
-- [ ] T049 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
+- [x] T049 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
       `REPARTO_PARTE2.md`): mostrar esa línea al iniciar la partida en consola y en pygame.
       §7.3 lo exige en la interfaz funcional mínima: «ver el reporte de resolubilidad al iniciar
       una partida» (`FR-013`)
@@ -170,7 +170,7 @@ tres cosas.
 - [x] T027 [US2] Exponer el informe completo desde `service/juego_service.py` para que el
       controlador lo consulte durante la partida, devolviendo siempre el de antes de empezar, sin
       recalcular (`FR-014`)
-- [ ] T050 [US2] **Depende de Joshua** (`controller/` y `vista/` son suyos): añadir el comando de
+- [x] T050 [US2] **Depende de Joshua** (`controller/` y `vista/` son suyos): añadir el comando de
       la partida que muestra el informe completo, en consola y en pygame, consumiendo lo que
       expone T027 (`FR-014`, `FR-017`)
 - [x] T028 [US2] Subir `GuardadoBinario.VERSION` de 8 a 9 en `datos/guardado_binario.py` y guardar
@@ -360,3 +360,19 @@ en la interfaz y tres dependen de otros integrantes.
 - T005 vuelve abstracto un método de un contrato compartido: T006, T007 y T008 tienen que entrar
   en el mismo cambio o la suite queda rota
 - T028 cambia el formato de guardado: conviene hacerlo de una sola vez y con T029 al lado
+
+---
+
+## Estado al 14/11/2026
+
+**Hechas: 50 de 50.** `T049` y `T050` eran de Joshua —`controller/` y `vista/` son suyos— y las
+cerró en el Prompt 47 de su bitácora, en consola y en pygame: la línea de resolubilidad al iniciar
+con sus tres estados distinguibles, y el comando que muestra el informe completo. Las cubren las
+nueve pruebas de `tests/test_controller/test_resolubilidad_interfaz.py`, incluida la que compara
+letra por letra lo que muestra la consola con lo que imprime `--verificar`.
+
+Correcciones posteriores al cierre, por si se revisa el historial: el `TypeError` que escapaba de
+`convertir_llaves` (lo encontró la revisión que pasó Sofía), el arranque sin `--forzar` y el aviso
+de ruta que rompía la niebla de la 003 (las dos objeciones de Sofía, las dos aceptadas), y el
+guardado de `Puerta.costo` y `Enemigo.rango`, que se habían añadido sin persistir y se perdían en
+silencio al guardar (de ahí la v10).

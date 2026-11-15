@@ -608,3 +608,32 @@ def test_cache_size_limita_las_fichas_retenidas_y_recupera_desde_disco(en_tmp, m
     assert servicio._cache.metricas()["tamano"] <= 3
     assert servicio.obtener_metricas()["cache"]["desde_disco"] > antes
     assert pedidos_a_red == []
+
+
+def test_el_presupuesto_alcanza_para_arrancar_las_cuatro_criptas_publicadas(en_tmp, api_simulada):
+    """§5.1 y §9: ninguna cripta publicada se pasa de su presupuesto al iniciar.
+
+    El test de arriba cubre los caminos del presupuesto en dos criptas; este cubre las cuatro y
+    deja el margen a la vista, porque es lo que se verifica en la defensa (§9) y porque el límite
+    no es proporcional al tamaño: cripta-01 declara 9 solicitudes para 6 salas y es la más
+    ajustada de las cuatro, no la más holgada.
+
+    La consulta de ubicación de llaves que añadió la verificación de resolubilidad (spec 002,
+    `FR-016`) es una de las que se cuentan aquí. No se duplica —la partida reutiliza esos datos y
+    no los vuelve a pedir— pero sí es una solicitud que antes no se hacía, así que este margen es
+    el que hay que vigilar al añadir cualquier otra.
+    """
+    criptas = [c["id"] for c in _leer(API_REAL / "criptas.json")["criptas"]]
+    assert len(criptas) == 4
+    margenes = {}
+    for cripta_id in criptas:
+        controlador = _controlador_http()
+        controlador.procesar_comando("criptas")
+        assert controlador.procesar_comando(f"cripta {cripta_id}").exito, cripta_id
+        presupuesto = controlador._fuente._presupuesto
+        assert presupuesto._limite == _leer(API_REAL / cripta_id / "generales.json")["presupuesto_solicitudes"]
+        assert presupuesto._intentos <= presupuesto._limite, (
+            f"{cripta_id} gastó {presupuesto._intentos} de {presupuesto._limite} al arrancar: "
+            f"{', '.join(presupuesto.operaciones())}")
+        margenes[cripta_id] = presupuesto._limite - presupuesto._intentos
+    assert min(margenes.values()) >= 1, f"margen por cripta: {margenes}"

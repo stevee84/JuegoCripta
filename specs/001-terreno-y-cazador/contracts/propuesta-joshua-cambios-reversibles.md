@@ -126,7 +126,7 @@ Re-simular hacia adelante permanece únicamente como alternativa medida en `--be
 Los cambios nuevos de 001 deben cumplir ambos contratos de 004:
 
 - `copy.deepcopy((estado, ventana_de_transacciones))` copia el paquete en una sola operación; cada cambio copiado debe apuntar a la entidad copiada correspondiente, no a la viva;
-- el `pickle` conjunto propuesto para v10 debe conservar estado vivo, línea, transacciones y alias de referencias tras ida y vuelta.
+- el `pickle` conjunto —propuesto para v10, entregado como **v11**— debe conservar estado vivo, línea, transacciones y alias de referencias tras ida y vuelta. Entregado así: la sección v11 guarda lo que devuelve `LineaTiempo.exportar_bytes`, que serializa estado vivo y línea en una sola operación para conservar las referencias de la cola, y al cargar el estado de la partida es el que devuelve `importar_bytes`. Lo que no viaja es la infraestructura de su lista `INFRAESTRUCTURA` —caché, catálogo vivo, cargador, cliente de red, fuente y presupuesto—, que el servicio vuelve a conectar al reanudar.
 
 Por tanto, un cambio de 001 puede retener valores anteriores e identidades/referencias canónicas incluidas en ese paquete, pero no referencias al `MotorJuego`, servicio de rutas, cachés, funciones de cierre, archivos, red u otros recursos externos. Estas propiedades requieren pruebas específicas; no se consideran verificadas por la aceptación documental.
 
@@ -139,7 +139,7 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 3. Calentar una instantánea de ruta, cambiar una puerta, retroceder y verificar que la siguiente decisión coincide con cálculo desde cero.
 4. Calentar una caché, ejecutar `historia` sobre paquete y sobre estado vivo, y comprobar que su identidad/generación no cambia y que la decisión posterior coincide con cálculo desde cero.
 5. Copiar profundamente estado y ventana con cada cambio nuevo; verificar que el cambio copiado apunta solo a entidades copiadas y que deshacer/rehacer restaura el paquete.
-6. Hacer ida y vuelta `pickle` del estado vivo y línea bajo el contrato v10, conservando alias y resultados históricos.
+6. Hacer ida y vuelta `pickle` del estado vivo y línea bajo el contrato v10, conservando alias y resultados históricos. **Hecha** en `tests/test_datos/test_guardado_terreno_cazador.py` (T041/T055), contra v11: costo, rango, mapa conocido y K de la línea vuelven juntos; los sentidos cortos del paquete real vuelven canónicos; y el archivo no guarda resultados de ruta, comprobado sobre los bytes crudos porque `pickle` escribe los nombres de clase en claro.
 7. Medir retroceso con cambios de 001 frente a copia completa, sin que los derivados inflen el historial.
 
 ## 9. Estado de aceptación y cierre
@@ -156,4 +156,4 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 - [ ] Si la evidencia adopta reutilización productiva, se planifican y prueban entonces sus puntos de invalidación; con recálculo sin estado retenido no se añaden.
 - [ ] Los cambios nuevos pasan pruebas de `deepcopy`, `pickle`, deshacer/rehacer exacto y ausencia de referencias a motor/cachés.
 - [ ] Se prueba la excepción de pergaminos, la continuación determinista y que `historia` no altera cachés.
-- [ ] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real; hasta entonces el formato ejecutable consultado continúa en v9.
+- [x] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real: **v11** en `d1ad04867c94a2637024089c1625edb9cb296807` (2026-11-14, rama `integracion-parte2`). El formato ejecutable consultado ya no es v9. Detalle de campos, archivos y compatibilidad en §4.3 de [propuesta-steven-rutas-datos.md](./propuesta-steven-rutas-datos.md); verificación en `tests/test_datos/test_guardado_terreno_cazador.py`.

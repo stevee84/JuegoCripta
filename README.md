@@ -85,6 +85,8 @@ python main.py --demo                # partida de demostración, sin servicio we
 python main.py --replay partidas/logs/<bitacora>.log
 python main.py --replay partidas/logs/<bitacora>.log --hasta 400   # resumen en t=400, sin vista
 python main.py --checkpoint-cada 25  # punto de control de la línea de tiempo cada 25 acciones
+python main.py --verificar cripta-01 # solo comprueba si esa cripta se puede ganar, y termina
+python main.py --forzar              # juega una cripta sin solución, avisando
 python main.py --bench               # mediciones por subsistema, sin interfaz
 ```
 
@@ -98,6 +100,8 @@ python main.py --bench               # mediciones por subsistema, sin interfaz
 | `--replay RUTA` | Reproduce una bitácora de partida sin vista ni entrada del usuario. |
 | `--hasta T` | Solo con `--replay`: reproduce hasta el instante `T` e imprime el mismo resumen que `historia T`. Si `T` es posterior al final, muestra el estado final y avisa que la partida terminó antes. |
 | `--checkpoint-cada K` | Acciones del jugador entre dos puntos de control de la línea de tiempo (entero ≥ 1, por defecto 10). Vale para la partida, `--replay` y `--bench`. |
+| `--verificar CRIPTA` | Comprueba si esa cripta se puede ganar y termina, sin abrir el juego. Imprime el informe completo y devuelve 0 si tiene solución, 1 si no la tiene y 2 si no se pudo comprobar. Funciona igual con `--offline`. |
+| `--forzar` | Inicia la partida aunque la cripta no tenga solución o no se haya podido comprobar. Sin esta bandera, una cripta sin solución no inicia y se muestra el informe. |
 | `--bench` | Ejecuta cargas sintéticas y reporta tiempos en JSON. No crea ninguna vista. |
 | `--log-nivel {DEBUG,INFO,WARNING,ERROR}` | Detalle del registro de red, caché y persistencia en stderr. Por defecto, `WARNING`: una partida normal no imprime nada. |
 
@@ -134,7 +138,7 @@ Se maneja con el ratón:
 | `usar [X]`, `equipar`, `soltar` | Operan sobre el objeto seleccionado (o sobre `X`). |
 | `retroceder [X]` | Usa un pergamino de retroceso; no consume tiempo. |
 | `historia T`, `historia #K` | Estado de la partida en el instante `T`, o justo antes de la acción número `K`. No consume tiempo, no se registra en la bitácora y no cambia el retroceso. |
-| `resolubilidad` | Informe de resolubilidad de la cripta, calculado antes de empezar. |
+| `resolubilidad` | Informe de resolubilidad de la cripta, calculado antes de empezar: el orden de obtención de llaves si tiene solución, o las llaves inalcanzables, las puertas que cierran la región y los círculos de llaves si no la tiene. |
 | `criptas`, `cripta ID` | Lista las criptas e inicia una partida. |
 | `guardar [RUTA]`, `cargar [RUTA]` | Sin ruta usan `partidas/partida.bin`. |
 | `bitacora`, `puntajes [criterio]` | Mensajes del juego y tabla de puntajes. |
@@ -156,8 +160,15 @@ Las reglas completas están en [`docs/enunciado.md`](docs/enunciado.md). Un resu
   fresco (menos de 400 unidades de antigüedad).
 - **Entrada a una sala.** Las trampas armadas se activan, quedan desarmadas y se rearman
   300 unidades después. Una puerta con cierre automático se vuelve a cerrar.
+- **Lo que el jugador conoce.** No ve la cripta completa. Una sala está **explorada** si entró
+  en ella —y entonces conoce su nombre, sus salidas y sus costos—, **avistada** si solo es el
+  destino de una salida de una explorada —y entonces solo sabe que existe—, y **desconocida** si
+  ninguna de las dos. El estado de una puerta es el de la última vez que la vio: si se cerró
+  sola mientras estaba lejos, su mapa sigue mostrándola abierta hasta que vuelva a mirarla.
 - **Efectos.** Veneno (daño cada 80 unidades durante 400), regeneración de enemigos
-  (cada 200), antorcha y cambio temporal de velocidad.
+  (cada 200), antorcha y cambio temporal de velocidad. Con la antorcha encendida, entrar a una
+  sala deja **exploradas** todas sus vecinas, por cualquier salida, abierta o cerrada: se revela
+  su nombre y sus salidas, nunca su contenido, y no se activa nada de lo que haya dentro.
 - **Fin de la partida.** Derrota si la vida llega a 0. Victoria al entrar a la sala de salida
   después de abrir con la llave correspondiente la puerta que lleva a ella. El resultado se
   registra en la tabla local de puntajes.
@@ -255,12 +266,17 @@ python -m tests.fixtures.capturar_api datos_offline
 ## Guardado, continuar y reproducción
 
 **Guardar y continuar.** `guardar` escribe `partidas/partida.bin` (formato binario propio,
-versión 7) de forma segura: se valida el archivo antes de reemplazar el anterior. El menú
+versión 11) de forma segura: se valida el archivo antes de reemplazar el anterior. El menú
 inicial ofrece continuar la partida; se restauran las salas, los enemigos, el inventario, la
-agenda de eventos y el estado del azar. Al cargar se verifica que la versión de la cripta y
-del catálogo coincidan con las del guardado. El formato guarda los textos con largo variable,
-tiene un índice de salas al final y permite leer una sola sala sin leer el archivo completo.
-No se guarda una partida ya terminada.
+agenda de eventos, el estado del azar, el informe de resolubilidad, lo que el jugador conoce de
+la cripta y la línea de tiempo con sus puntos de control. Al cargar se verifica que la versión
+de la cripta y del catálogo coincidan con las del guardado. El formato guarda los textos con
+largo variable, tiene un índice de salas al final y permite leer una sola sala sin leer el
+archivo completo. No se guarda una partida ya terminada.
+
+Un archivo de una versión anterior se reporta como incompatible y no se carga a medias. El
+pergamino de retroceso es de la sesión: una partida reanudada no deshace acciones de antes de
+guardar, aunque la línea de tiempo sí permita consultar sus instantes pasados.
 
 **Bitácora y reproducción.** Cada partida nueva crea su bitácora en `partidas/logs/` con la
 cripta, las versiones, la semilla y cada acción del jugador. Para reproducirla sin interfaz:

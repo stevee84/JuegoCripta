@@ -60,6 +60,15 @@ class Viaje:
             self.motivo = (MOTIVOS.AVISTADA if conocido.esta_avistada(destino_id)
                            else MOTIVOS.DESCONOCIDA)
 
+    def comentario(self) -> str:
+        """El texto con que la orden de «ir a» se anota en la bitácora (`FR-020`).
+
+        Lo produce el viaje y no quien escribe la bitácora, para que la consola, pygame y la
+        reproducción anoten exactamente lo mismo. Los pasos se registran solos: cada uno es una
+        acción `MOVER` del jugador.
+        """
+        return f"ir a {self.destino_id} desde {self.origen_id}"
+
     def evaluar_llegada(self, sala, vida_actual):
         """Tras ejecutar un paso: ¿sigue el viaje, o se detiene y por qué? (§3.4, FR-016)
 

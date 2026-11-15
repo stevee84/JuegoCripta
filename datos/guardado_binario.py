@@ -20,7 +20,7 @@ class GuardadoBinario:
     #     reanudar sin volver a verificar (P2 §3.5, FR-020).
     # v10: costo de cada salida y rango de cada cazador (P2 §3.1, §4.1). Se guardan porque
     #      son datos canónicos de la cripta: sin ellos, reanudar los perdería en silencio.
-    VERSION = 10
+    VERSION = 11
     HEADER_FORMAT = "<4sHqIIII"  # firma, versión, semilla, reloj, salas, offset índice, offset jugador
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
     INDICE_ENTRADA = 40  # id de sala (32) + offset (4) + largo del registro (4)
@@ -336,6 +336,16 @@ class GuardadoBinario:
         informe = getattr(estado, 'informe_resolubilidad', None)
         self._escribir_texto(f, json.dumps(informe.a_dato()) if informe is not None else "")
 
+        # --- v11: la línea de tiempo, como bloque opaco (004/contracts/guardado-v10.md) ---
+        # Longitud y bytes. Esta capa no interpreta el contenido: lo pide a la línea y lo
+        # devuelve tal cual. Si la partida no tiene línea, la sección queda en longitud 0.
+        # La línea se alcanza por el historial, que es donde ya está vinculada.
+        historial = getattr(estado, 'historial', None)
+        linea = getattr(historial, '_linea', None)
+        bytes_linea = linea.exportar_bytes(estado) if linea is not None else b""
+        f.write(struct.pack("<I", len(bytes_linea)))
+        f.write(bytes_linea)
+
     def _leer_extras(self, data, offset):
         o = offset
         if o + 14 > len(data):
@@ -499,11 +509,23 @@ class GuardadoBinario:
         informe_json, o = self._leer_texto(data, o)
         resultado["informe_resolubilidad"] = informe_json or None
 
+        # --- v11: la línea de tiempo, como bloque opaco ---
+        # No se valida el contenido aquí: quien reanuda se lo entrega a la línea, y un bloque
+        # ilegible rompe la carga con un mensaje propio en vez de quedar en un estado a medias.
+        # Un archivo recortado ya no llega hasta aquí: la cabecera exige que el índice de salas
+        # termine justo en el final del archivo.
+        if o + 4 > len(data):
+            return resultado, o
+        largo = struct.unpack_from("<I", data, o)[0]; o += 4
+        resultado["linea_tiempo_bytes"] = bytes(data[o:o + largo]) if largo else None
+        o += largo
+
         return resultado, o
 
     def _extras_por_defecto(self):
         return {
             "informe_resolubilidad": None,
+            "linea_tiempo_bytes": None,
             "acciones_ejecutadas": 0,
             "enemigos_derrotados": 0,
             "secuencia": 0,

@@ -126,14 +126,50 @@ El mecanismo y propietario concretos de esa reutilización siguen sin acuerdo.
 
 ### 4.3 Persistencia coordinada
 
-Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y línea de tiempo ya están disponibles como estado, pero su persistencia conjunta todavía requiere la entrega coordinada con Joshua; G2 no cierra por sí sola T006/T055.
+Steven integró persistencia v10 de costo/rango en `5000d1f`. **Entrega coordinada completada el 2026-11-14** en `d1ad04867c94a2637024089c1625edb9cb296807` (rama `integracion-parte2`), que cierra T006.
 
-**Estado de M3**: `5000d1f` materializa v10 para costo/rango y mantiene incompatibilidad explícita con v9. Ampliar ese formato con mapa conocido y línea de tiempo completa sigue pendiente de confirmación/entrega conjunta; T041/T055 no se cierran con la parte ya integrada.
+**Versión real: 11.** `GuardadoBinario.VERSION = 11`.
+
+| Versión | Campos que añade | Dónde |
+|---|---|---|
+| 10 | `costo` de cada puerta y `rango` de cada enemigo | registros de sala, dentro de `_escribir_sala` |
+| 11 | la línea de tiempo como bloque opaco: longitud (`<I`) + bytes | al final de los extras |
+
+**El mapa conocido no tiene sección propia.** `LineaTiempo.exportar_bytes` serializa el estado vivo
+completo y `mapa_conocido` no figura en su lista `INFRAESTRUCTURA`, así que el conocimiento viaja
+dentro de los bytes de la línea. Una sección aparte habría guardado lo mismo dos veces. Si el
+archivo no trae línea —partida de prueba—, la sección se escribe con longitud 0 y
+`RestauradorPartida._completar_v11` reconstruye el mínimo: la sala donde está el jugador, porque
+una sala que se está pisando no puede estar desconocida para la vista ni para «ir a».
+
+**Archivos reales**: `datos/guardado_binario.py` (formato), `service/juego_service.py` (al cargar,
+el estado de la partida es el que devuelve `LineaTiempo.importar_bytes`, porque su cola apunta a
+esos objetos) y `service/restaurador_partida.py` (reanudación sin línea). La sección va al final de
+los extras y no después del índice de salas porque la cabecera exige que el índice termine justo
+en el final del archivo, y ese chequeo es el que detecta un archivo recortado.
+
+**Compatibilidad**: v9 y v10 se reportan incompatibles y no se cargan a medias (`cargar` devuelve
+`None`; `JuegoService.cargar_partida` lanza `ValueError` con «incompatible» y conserva la partida
+vigente). Comprobado para las dos versiones.
+
+**Estado de M3**: la propuesta pedía **un solo v10** con las cuatro cosas. No salió así: fueron dos
+subidas, porque v10 ya estaba publicada y en uso cuando llegó el contrato de la línea, y un archivo
+v10 circulando no puede reinterpretarse en silencio (FR-018). El resultado observable es el que M3
+pedía: una sola ida y vuelta devuelve costo, rango, mapa conocido y línea.
+
+**Verificación (T041/T055)**: `tests/test_datos/test_guardado_terreno_cazador.py`, seis pruebas que
+cubren las cuatro cosas en una ida y vuelta, que el costo no se rellena con un valor por defecto,
+el paquete histórico en v9 y v10, los alias de sentidos cortos del paquete real y la ausencia de
+resultados de ruta en el archivo. Esta última mira los bytes crudos y no el estado reconstruido,
+porque `pickle` escribe los nombres de clase en claro: si algo retuviera un `ResultadoRuta`, la
+vista conocida o el viaje, aparecería. Ejecutadas: `6 passed`. Suite completa: 1424 aprobadas, 0
+omitidas.
 
 ## 5. Puntos todavía no confirmados por ambos
 
-- mecanismo, claves, invalidación y propietario de reutilización para «ir a»;
-- compatibilidad y entrega conjunta de mapa conocido y línea de tiempo completa.
+- mecanismo, claves, invalidación y propietario de reutilización para «ir a». Sigue abierto a
+  propósito: 003 no reutiliza nada, recalcula el paso cada vez (FR-014), y mientras eso se cumpla
+  no hay caché que acordar.
 
 ## 6. Consumidores y compatibilidad
 
@@ -154,6 +190,12 @@ Steven integró persistencia v10 de costo/rango en `5000d1f`. Mapa conocido y l�
 - [x] Ambos fijan firma Python y `ResultadoRuta` sin confundir «sin ruta» con «ya en destino».
 - [x] Steven solicita a Sofía implementar el índice de `MapaCripta` conservando firmas, orden e identidad; el plan identifica sus consumidores reales.
 - [x] Sofía recibe rutas/vista del cazador y se acepta una salida sin inversa; clases de Steven permanecen fuera de su asignación.
-- [ ] 003 y 001 demuestran equivalencia y miden el límite de 5 ms con costo completo.
-- [ ] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta; costo/rango v10 ya están integrados en `5000d1f`.
+- [ ] 003 y 001 demuestran equivalencia y miden el límite de 5 ms con costo completo. **Mitad de
+  003 hecha**: `ir_a_un_paso` mide 0,229 ms de mediana con las 49 salas de la cripta publicada más
+  grande y 1,887 ms en una medición aislada, las dos por debajo de los 5 ms de §6.1, y la fila está
+  en `main.py --bench` vía `benchmarks.integrante2.medir_paso_ir_a`. La equivalencia la cubre
+  `SC-005` en `tests/test_logica/test_viaje.py`: dos estados reales distintos con el mismo mapa
+  conocido producen el mismo viaje. Falta la mitad de 001 (T054/T066: la medición comparada en su
+  propio proveedor).
+- [x] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta: v11 en `d1ad048`, verificada en T041/T055. Ver §4.3.
 - [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; la persistencia y la medición conjunta conservan sus tareas abiertas.
