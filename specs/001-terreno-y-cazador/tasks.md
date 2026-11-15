@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. G1/G2, US1, US2, el núcleo de US3 y el alcance sintético de US4 están cerrados; los cierres de T001–T005/T007–T017/T018–T040/T042–T050/T052–T053/T056–T065/T067–T076 constan con evidencia fechada. Quedan 6 tareas sin marcar, principalmente persistencia, la integración conjunta de «ir a» y la referencia oficial.
+**Estado**: implementación en curso. G1/G2, US1, US2, el núcleo de US3 y el alcance sintético de US4 están cerrados; los cierres de T001–T005/T007–T017/T018–T040/T042–T050/T052–T054/T056–T076 constan con evidencia fechada. Quedan 4 tareas sin marcar, correspondientes a persistencia y a la referencia oficial.
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; 70 marcadas y 6 abiertas; 22 oportunidades `[P]` reales. US1 y US2 están cerradas; el núcleo de US3 y el cierre sintético de US4 están cerrados. AC-013/PR-001 conserva su referencia oficial bloqueada en T051.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; 72 marcadas y 4 abiertas; 22 oportunidades `[P]` reales. US1 y US2 están cerradas; el núcleo de US3, el cierre sintético de US4 y la integración de rendimiento de «ir a» están cerrados. AC-013/PR-001 conserva su referencia oficial bloqueada en T051.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -237,7 +237,9 @@ description: "Tareas ejecutables para Terreno y cazador"
 - [x] T053 Sofía — después de T002/T004, exponer en `logica/rutas_ponderadas.py` la firma acordada para que «ir a» calcule un siguiente paso desde la vista de Steven, manteniendo recálculo individual como implementación suficiente y sin añadir reglas de ataque/espera (FR-010, FR-011, FR-013–FR-015, PR-004, PR-006).
 
 **Evidencia T053 (2026-11-13)**: `21c234248d4f9b7bcdeb3c9c299e40498a2d131a` publica `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta`. El buscador solo exige `contiene_sala` y `salidas_transitables`, devuelve un paso/costo y no contiene reglas de ataque o espera. `1bc5c62` conecta `Viaje` mediante `VistaMapaConocido`; cada llamada a `siguiente_paso` invoca de nuevo `proximo_paso` con origen y conocimiento vigentes. No fue necesario modificar el algoritmo productivo. Pruebas focalizadas: **45 passed in 0.30s** y los tres escenarios nuevos de T052 incluidos en **10 passed in 0.29s**.
-- [ ] T054 Conjunta Sofía/003 — añadir al proveedor `benchmarks/terreno_cazador_integrante1.py` la medición completa de un paso de «ir a» frente a 5 ms, primero con sintéticos y finalmente con el mapa conocido oficial; incluir preparación auxiliar necesaria y equivalencia antes del tiempo (FR-013–FR-015, PR-003, PR-004, PR-006).
+- [x] T054 Conjunta Sofía/003 — añadir al proveedor `benchmarks/terreno_cazador_integrante1.py` la medición completa de un paso de «ir a» frente a 5 ms, primero con sintéticos y finalmente con el mapa conocido oficial; incluir preparación auxiliar necesaria y equivalencia antes del tiempo (FR-013–FR-015, PR-003, PR-004, PR-006).
+
+**Evidencia T054 (2026-11-14)**: la medición propia `medir_paso_ir_a_001` quedó separada de `benchmarks.integrante2.medir_paso_ir_a` y se añadió al adaptador de rutas de 001 ya registrado en `main.py --bench`, sin modificar el punto compartido. Usa `Viaje`, `MapaConocido` y `VistaMapaConocido` reales; incluye creación del viaje/vista, auxiliares de ruta, consulta y limpieza, y deja fuera solo la construcción del fixture. Antes del reloj compara recálculo e inversa experimental en siguiente sala, alcance, costo total, costo de primera salida y motivo. Los sintéticos de 32/128/512 salas cubren desempate, puerta recordada cerrada, ausencia de camino y cambio de conocimiento; la carga publicada usa el mapa conocido oficial disponible localmente, con conocimiento completo de las 50 salas de `cripta-04`, y el par alcanzable 46→41 (paso 45, costo 4000); no es la cripta de referencia de PR-001. `benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json` conserva **26 filas/390 muestras**, semilla 2609, un calentamiento, 15 repeticiones, mediana, p95, máximo, fases, trabajo y memoria separada. En el mapa publicado, recálculo obtuvo **0.4965/0.5136/0.5136 ms** de mediana/p95/máximo y **15/15** muestras `<5 ms`; la construcción fría experimental obtuvo 0.2510/0.3344/0.3344 ms y su consulta reutilizada 0.0036 ms de mediana. En sintéticos, producción cumplió todas las muestras hasta 128 salas y en dos casos baratos de 512; en 512 salas, desempate registró **9/15 muestras que cumplen y 6/15 que superan** el límite, y puerta cerrada **12/15 que cumplen y 3/15 que superan**. La evidencia no afirma PR-001 ni repite T050. Pruebas focalizadas: **38 passed in 3.78s**, integración funcional: **49 passed in 0.42s**, restricciones: **61 passed in 0.57s**.
 - [ ] T055 Conjunta Steven/Joshua con verificación de Sofía — después de T006 y usando `tests/test_datos/test_guardado_terreno_cazador.py` escrita en T041, **ejecutar** la ida/vuelta del mismo formato v10 único propuesto (M3, 2026-11-09, no confirmado en esta revisión) contra `datos/guardado_binario.py` y `service/restaurador_partida.py` publicados, comprobando costo/rango/mapa conocido, paquete histórico, alias y ausencia de resultados de ruta; Sofía no implementa campos ajenos (FR-001, FR-009, FR-016, FR-018).
 - [x] T056 Conjunta Sofía/Joshua — después de T005/T040 y de integrar por el flujo del equipo la clase completa `LineaTiempo`, **ejecutar** `tests/test_integracion_001_004.py` sobre puntos de control, estado vivo e inversos en `finally`, comprobando el protocolo de condición `condicion(estado, cambio)` de la punta remota de Joshua, la restauración de eventos posteriores al instante consultado, que cada cambio nuevo ofrece fotografía y que 004 nunca llama al cazador; la interfaz base local por sí sola no cierra esta ejecución (FR-014–FR-016, PR-004, PR-006).
 
@@ -245,7 +247,9 @@ description: "Tareas ejecutables para Terreno y cazador"
 - [x] T057 Sofía — después de T046/T065, documentar en `specs/001-terreno-y-cazador/research.md` la decisión real de estrategia del **cazador** —individual, compartida o adaptativa— con equivalencia y costo completo; si se adopta estado retenido, actualizar primero plan/tasks con tareas productivas concretas, y si no, no crear caché (FR-013, FR-014, PR-003, PR-006).
 
 **Evidencia T057 (2026-11-10; revisada 2026-11-13)**: `research.md` añade **R-13 — Decisión real de estrategia del cazador (T057)** y actualiza la medición pendiente de R-01. La producción conserva el recálculo individual por cazador y por decisión, sin caché ni estado retenido; la inversa compartida y la reutilizada permanecen exclusivas del benchmark; la adaptativa no se adopta por falta de umbral medido. La revisión recuperó las nueve muestras T048 `>=20 ms`: siete estables y dos inestables, todas `completo` y de recálculo productivo; la retención equivalente tuvo cero. Esto favorece en tiempo a la retención sintética, no al recálculo. T057 permanece cerrada como decisión final del alcance productivo actual porque la evidencia no cubre la referencia oficial ni la política completa de invalidación de `FR-014`; no se inventa un umbral ni se crea caché. Se registran equivalencia, costo completo, trabajo retenido y la ausencia de contadores internos de ruta en producción.
-- [ ] T066 Conjunta Sofía/003 — después de T054, documentar separadamente en `specs/001-terreno-y-cazador/research.md` la decisión de reutilización para **«ir a»** frente a 5 ms; cumplir con recálculo cierra la decisión sin caché, y cualquier adopción exige primero nuevas tareas con propietario/archivos acordados (FR-013–FR-015, PR-003, PR-004, PR-006).
+- [x] T066 Conjunta Sofía/003 — después de T054, documentar separadamente en `specs/001-terreno-y-cazador/research.md` la decisión de reutilización para **«ir a»** frente a 5 ms; cumplir con recálculo cierra la decisión sin caché, y cualquier adopción exige primero nuevas tareas con propietario/archivos acordados (FR-013–FR-015, PR-003, PR-004, PR-006).
+
+**Evidencia T066 (2026-11-14)**: `research.md` añade R-14, separada de la estrategia del cazador. La decisión mantiene recálculo productivo por paso y no crea caché: con el mapa conocido completo de la mayor cripta publicada, las 15 muestras productivas quedaron bajo 5 ms. La inversa experimental fue más rápida en la ruta larga publicada y en los sintéticos largos, pero su ventaja no es necesaria para el criterio actual; además, recálculo fue más rápido en rutas resueltas casi de inmediato y en ausencia de camino. Las nueve superaciones sintéticas de 512 salas (6/15 en desempate y 3/15 en puerta cerrada) se conservan como límite, no disparan adopción automática. Si una referencia futura las vuelve relevantes, primero se requieren tareas coordinadas con 003 para propiedad, generación/invalidez ante cambios de conocimiento, ciclo de vida, limpieza y validación tras retroceso/carga. La producción sigue usando exclusivamente el conocimiento del jugador.
 
 ---
 
@@ -342,13 +346,13 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 | Puerta | Se cierra con | Bloquea | No bloquea |
 |---|---|---|---|
-| G1 — firma/representación del buscador | **cerrada por T002** | ya no bloquea T022/T024; T052–T054 siguen esperando la vista T004 | US1, índice y pruebas sintéticas |
+| G1 — firma/representación del buscador | **cerrada por T002** | ya no bloquea T022/T024 ni T052–T054 | US1, índice y pruebas sintéticas |
 | G2 — costo/rango/simetría publicados e integrados | **cerrada por T003 en `5000d1f`** | ya no bloquea T010/T018, T016–T017, T027–T029 ni T064 | persistencia conjunta completa sigue en T006 |
-| G3 — vista de mapa conocido | T004 | T052–T054 | cazador, porque usa su vista real independiente |
+| G3 — vista de mapa conocido | **cerrada por T004** | ya no bloquea T052–T054 | cazador, porque usa su vista real independiente |
 | G4a — revisión cruzada de interfaz Joshua ya integrada | **cerrada por T005** | ya no bloquea T040; satisface una precondición de T056 | disponibilidad local de interfaz base, `deepcopy` y recálculo |
 | G4b — `LineaTiempo` completa integrada localmente | integración por flujo del equipo de la entrega publicada | ejecución T056 | escritura contractual T040 e interfaz base ya local |
 | G5 — persistencia/versionado publicados | T006 | T041, T055 | desarrollo desde fuente fresca y benchmarks sintéticos |
-| G6 — referencia oficial | publicación externa | T051 y validación oficial final de T054 | T042–T050, T072–T075, pruebas funcionales y medición sintética |
+| G6 — referencia oficial | publicación externa | T051 | T042–T054, T066, T072–T075, pruebas funcionales y medición con la mayor cripta publicada local |
 
 ### Phase Dependencies
 
@@ -358,7 +362,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 - **US2 (Phase 4)**: depende de T002, T003 y Phase 2; integra sobre US1 para cobrar el paso.
 - **US3 (Phase 5)**: depende de US2; T031 cierra el núcleo propio. T040 depende además de T005 y T041 de T006, pero solo escriben pruebas.
 - **US4 (Phase 6)**: oráculos pueden escribirse tras T001; mediciones de rutas/ciclo dependen de US1–US3. T072 puede escribirse tras T001 y T073–T075 dependen de T008, no de costo/rango ni de la salida sin inversa. T043 sigue a T042; T065 sigue a T046; T049/T050 integran también el mapa; T051 espera la referencia oficial. US3 no depende de US4.
-- **Phase 7**: T052–T054 dependen de T002/T004; T055 de T006/T041; T056 de T005/T040 y de G4b; T057 de T046/T065 y T066 de T054.
+- **Phase 7**: T052–T054 se cerraron sobre T002/T004; T055 de T006/T041; T056 de T005/T040 y de G4b; T057 de T046/T065 y T066 se cerró tras T054.
 - **Phase 8**: T058 puede ejecutarse al terminar código; T059–T063/T071 cierran pruebas y evidencia; T067–T070/T076 documentan únicamente resultados ya medidos.
 
 ### User Story Dependencies
@@ -444,7 +448,7 @@ T072: tests/test_bench_mapa_cripta.py
 
 ### Regla para reutilización
 
-La ruta de producción recalcula cada paso. T046/T065 deciden por separado la estrategia del cazador en T057; T054 decide reutilización de «ir a» en T066. Las alternativas permanecen en benchmarks. Cumplir §3.4 y 5 ms mediante recálculo cierra «ir a» sin caché, generaciones ni invalidación productiva.
+La ruta de producción recalcula cada paso. T046/T065 deciden por separado la estrategia del cazador en T057; T054 mide «ir a» y T066 cierra su decisión de reutilización. Las alternativas permanecen en benchmarks. El recálculo cumplió 5 ms con el mapa conocido completo de la mayor cripta publicada y cierra «ir a» sin caché, generaciones ni invalidación productiva; las superaciones sintéticas de 512 salas quedan documentadas como límite.
 
 ---
 

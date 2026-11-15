@@ -339,10 +339,12 @@ funcionales y de integración se ejecutan con:
   tests\test_bloque3_conexiones.py::test_bench_desde_main_no_inicializa_fuente_ni_vista
 ```
 
-La suite completa sigue disponible mediante `python -m pytest -q`. Los dos módulos de benchmark de
-001 terminaron en **33 pruebas aprobadas** y la prueba de conexión en **1 aprobada** durante el
-cierre T071. Esta enumeración distingue presencia de pruebas de su ejecución: que un archivo esté
-escrito no implica que se haya corrido en el bloque actual.
+La suite completa sigue disponible mediante `python -m pytest -q`. El cierre T071 dejó **33 pruebas
+aprobadas** en los dos módulos de benchmark de 001 y **1 aprobada** en la conexión; tras T054, la
+ejecución focalizada de `tests/test_bench_terreno_cazador.py` y
+`tests/test_bench_adaptadores_001.py` reunió **38 aprobadas**. Esta enumeración distingue presencia
+de pruebas de su ejecución: que un archivo esté escrito no implica que se haya corrido en el bloque
+actual.
 
 El punto de entrada real de mediciones es:
 
@@ -357,6 +359,9 @@ sus resultados. Sus artefactos versionados son:
 - informe completo: `benchmarks/resultados/main_bench_completo_t050.json` (**916 filas**);
 - evidencia filtrada de 001: `benchmarks/resultados_terreno_cazador_integrante1.json`
   (**194 filas/2910 muestras**: mapa 60, agenda 72, rutas 30 y ciclo 32);
+- medición independiente de «ir a»:
+  `benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json`
+  (**26 filas/390 muestras**; no reemplaza la medición de `integrante2`);
 - código real del proceso: `benchmarks/resultados/main_bench_t050.exitcode.txt`.
 
 La medición se tomó con Python 3.12.10, Windows 11, Intel64 Family 6 Model 154 Stepping 3,
@@ -367,7 +372,7 @@ alternativa, muestras, mediana, p95 y máximo permanecen en el JSON.
 | Estado de validación 001 | Evidencia |
 |---|---|
 | **Escritas** | Pruebas funcionales, integraciones 001/003 y 001/004, oráculos y benchmarks en las rutas anteriores. |
-| **Ejecutadas** | T050: `main.py --bench` con código 0; T071: 33 pruebas de benchmark y 1 de conexión aprobadas; T062: JSON completo y filtrado idénticos para las filas de 001. |
+| **Ejecutadas** | T050: `main.py --bench` con código 0; T054: 26 filas/390 muestras de «ir a», con 15/15 muestras bajo 5 ms en el mapa publicado; T071: 33 pruebas de benchmark y 1 de conexión aprobadas; T062: JSON completo y filtrado idénticos para las filas de 001. |
 | **Omitidas** | Ninguna en el foco T071. La suite completa y las pruebas en línea no se repitieron en los cierres exclusivamente documentales posteriores. |
 | **Bloqueadas** | T051/AC-013: falta la cripta oficial de referencia publicada para decidir `PR-001`. |
 

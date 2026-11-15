@@ -187,7 +187,7 @@ Los criterios 1–3 se cerraron en los bloques de datos anteriores. Los criterio
 | AC-013 | ciclo real de referencia con decenas de cazadores | cada muestra válida `<20 ms`, sin red/render; PR-001 |
 | AC-014 | matriz individual/compartida, uno/muchos, pequeño/grande, reutilizar/cero, puertas estables/inestables | equivalencia primero; reporte de tiempo, trabajo y memoria; PR-003/PR-004/PR-006 |
 | AC-015 | seis operaciones de agenda con cientos de eventos | comparación por operación y ciclo mixto; PR-005 |
-| Integración 003 (funcional cerrada; medición T054 pendiente) | una decisión de «ir a» desde cero y alternativas reutilizadas | equivalencia primero; costo completo frente a 5 ms, sin afirmar cumplimiento antes de medir |
+| Integración 003 (funcional y rendimiento cerrados en T054) | una decisión de «ir a» desde cero y alternativa reutilizada experimental | equivalencia primero; costo completo frente a 5 ms, separado por carga y estado de conocimiento |
 | Índice de `MapaCripta` — construcción | mismos IDs/instancias en varios tamaños | generación fuera; construcción de lista+índice y memoria separadas |
 | Índice de `MapaCripta` — búsqueda | aciertos inicio/medio/final y ausencias | índice propio frente a recorrido lineal benchmark-local; identidad primero |
 | Índice de `MapaCripta` — vinculación | mismos grafos y densidades antes/después | tiempo de enlace separado; orden, destinos y alias canónicos iguales antes de medir |
@@ -276,6 +276,69 @@ Estado frente a los requisitos de rendimiento:
 
 Con esta evidencia, T062 y el alcance sintético de US4/T071 quedan cerrados. La publicación y
 validación oficial de AC-013 permanece exclusivamente en T051.
+
+### Medición de un paso de «ir a» (T054/T066)
+
+La medición es propia de 001 y no sustituye `benchmarks.integrante2.medir_paso_ir_a`, que pertenece
+a la entrega de Steven. Usa `Viaje`, `MapaConocido` y `VistaMapaConocido` reales; la creación del
+viaje/vista, los auxiliares del buscador, la consulta y la limpieza quedan dentro del intervalo.
+Solo la construcción del fixture queda fuera. Antes del reloj se comparan siguiente sala, alcance,
+costo total, costo de la primera salida y motivo.
+
+```powershell
+@'
+import json
+from pathlib import Path
+from benchmarks.terreno_cazador_integrante1 import (
+    CALENTAMIENTO, CARGAS_IR_A, LIMITE_IR_A_NS, SEMILLA,
+    _entorno, medir_paso_ir_a_001,
+)
+salida = Path(
+    "benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json")
+if salida.exists():
+    raise SystemExit(f"No se sobrescribe: {salida}")
+filas = medir_paso_ir_a_001(
+    repeticiones=15, tamanos=CARGAS_IR_A, incluir_publicado=True)
+salida.write_text(
+    json.dumps({
+        "entorno_ejecutor": _entorno(), "semilla": SEMILLA,
+        "calentamiento": CALENTAMIENTO, "repeticiones": 15,
+        "cargas_sinteticas": list(CARGAS_IR_A),
+        "mapa_publicado": {"cripta_id": "cripta-04", "salas": 50,
+                           "conocimiento": "completo"},
+        "limite_ns": LIMITE_IR_A_NS,
+        "alcance": "t054_ir_a_001_no_reemplaza_integrante2_ni_afirma_pr001",
+        "mediciones": filas,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+'@ | .\.venv\Scripts\python.exe -
+```
+
+El artefacto conserva **26 filas/390 muestras**, semilla 2609, un calentamiento y 15 repeticiones.
+Los sintéticos de 32/128/512 salas cubren desempate, puerta recordada cerrada, cambio de
+conocimiento y ausencia de camino. La carga publicada usa el conocimiento completo de `cripta-04`
+(50 salas) y el par alcanzable 46→41, con paso 45 y costo 4000.
+
+Con el mapa publicado, el recálculo productivo obtuvo **0.4965/0.5136/0.5136 ms** de
+mediana/p95/máximo y **15/15 muestras `<5 ms`**; la inversa fría experimental obtuvo
+0.2510/0.3344/0.3344 ms y su consulta reutilizada 0.0036 ms de mediana. En 32/128 salas todas las
+muestras productivas cumplieron. En 512 salas, desempate registró **9/15 muestras que cumplen y
+6/15 que superan** el límite; puerta cerrada, **12/15 que cumplen y 3/15 que superan**. No se redujo
+la carga ni se cambió el umbral. El total productivo fue **186/195** muestras bajo el límite, con
+**9/195** superaciones, y la alternativa experimental **195/195** en su costo frío.
+La consulta reutilizada es experimental y solo representa conocimiento sin cambios; no se creó
+caché productiva.
+
+Pruebas focalizadas de benchmark/adaptadores: **38 passed in 3.78s**. Integración funcional
+001/003 y lógica asociada: **49 passed in 0.42s**. Restricciones del enunciado: **61 passed in
+0.57s**. La prueba temporal de `tests/test_bench_integrante2.py` que mide exploración falló una vez
+con factor 2.7× y pasó al repetirse aislada; cinco mediciones directas oscilaron entre 1.36× y
+2.23×. Se registra como fluctuación de una prueba ajena, no como regresión de T054, y no se
+modificó.
+
+La decisión T066 conserva el recálculo y no introduce caché. El cumplimiento corresponde al mapa
+conocido completo de la mayor cripta publicada local, no a PR-001; la referencia oficial de T051
+sigue pendiente. Si esa referencia cambia la carga, la medición se repetirá como parte de T051;
+una adopción de reutilización requeriría antes tareas y archivos acordados con 003.
 
 ### Rutas
 

@@ -167,9 +167,9 @@ omitidas.
 
 ## 5. Puntos todavía no confirmados por ambos
 
-- mecanismo, claves, invalidación y propietario de reutilización para «ir a». Sigue abierto a
-  propósito: 003 no reutiliza nada, recalcula el paso cada vez (FR-014), y mientras eso se cumpla
-  no hay caché que acordar.
+- mecanismo, claves, invalidación y propietario de reutilización para «ir a». T066 decidió no crear
+  caché: 003 no reutiliza nada y recalcula el paso cada vez (FR-014). Si una referencia futura exige
+  retener estado, el mecanismo sigue sin acordarse.
 
 ## 6. Consumidores y compatibilidad
 
@@ -195,7 +195,9 @@ omitidas.
   grande y 1,887 ms en una medición aislada, las dos por debajo de los 5 ms de §6.1, y la fila está
   en `main.py --bench` vía `benchmarks.integrante2.medir_paso_ir_a`. La equivalencia la cubre
   `SC-005` en `tests/test_logica/test_viaje.py`: dos estados reales distintos con el mismo mapa
-  conocido producen el mismo viaje. Falta la mitad de 001 (T054/T066: la medición comparada en su
-  propio proveedor).
+  conocido producen el mismo viaje. La mitad de 001 está cubierta por T054/T066: medición propia en
+  `benchmarks/terreno_cazador_integrante1.py`, equivalencia previa, 15/15 muestras `<5 ms` con el
+  mapa conocido completo de `cripta-04` y decisión de conservar el recálculo sin caché. La
+  referencia oficial de PR-001/T051 sigue pendiente.
 - [x] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta: v11 en `d1ad048`, verificada en T041/T055. Ver §4.3.
-- [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; la persistencia y la medición conjunta conservan sus tareas abiertas.
+- [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; T054/T066 cierran la medición conjunta y la decisión sin caché. La persistencia coordinada conserva tareas abiertas de 001.

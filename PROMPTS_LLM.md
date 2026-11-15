@@ -2467,6 +2467,28 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 71 — Medición completa de «ir a» y decisión de reutilización
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** DeepSeek V4.1 Flash Free
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T054 y T066 en `Sofia`: estudiar los criterios de ambas tareas, el contrato con Steven y el código actual de `Viaje`, `MapaConocido`, `VistaMapaConocido` y `rutas_ponderadas`; implementar en `benchmarks/terreno_cazador_integrante1.py` una medición propia de un paso completo de «ir a», sin tocar `benchmarks/integrante2.py`, `main.py` ni código de Steven/Joshua. Debe usar las clases reales, incluir la preparación auxiliar, comparar con una reutilización solo experimental, validar siguiente sala/costos/desempates/puertas cerradas/sin camino/cambios de conocimiento antes de medir y conservar cargas, semilla, repeticiones, percentiles y memoria. Contrastar con 5 ms, distinguir cumplimientos de incumplimientos, guardar un JSON nuevo sin sobrescribir T050, documentar la decisión separada en `research.md`, actualizar `tasks.md`/`quickstart.md` y registrar este prompt. No ejecutar Git ni repetir los 916 benchmarks.
+
+**Qué se construyó.** `medir_paso_ir_a_001` usa `Viaje`, `MapaConocido` y `VistaMapaConocido` reales. Incluye creación del viaje/vista, auxiliares de `proximo_paso`, consulta y limpieza; solo la construcción del fixture queda fuera. Compara recálculo con una inversa experimental en siguiente sala, alcance, costo total, costo de la primera salida y motivo. Los sintéticos de 32/128/512 salas cubren empate por primera vecina, puerta recordada cerrada, ausencia de camino y un atajo que pasa de avistado a explorado. La carga publicada usa las 50 salas de `cripta-04`, el mayor mapa oficial local, con el par alcanzable 46→41. El adaptador `medir_rutas_matriz_main` ya registrado añade T054 una sola vez; no se editó `main.py` ni la medición de Steven.
+
+**Corrección durante el bloque.** La primera versión de `_construir_inversa_ir_a` consumía `salidas` al calcular el fallback de `salidas_examinadas` y luego al recorrerla. Se corrigió para materializar una sola vez solo cuando no existe el atributo; la equivalencia y las pruebas posteriores confirmaron el arreglo. No se cambió ningún algoritmo productivo.
+
+**Resultados.** `benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json` conserva **26 filas/390 muestras**, semilla 2609, un calentamiento y 15 repeticiones. En `cripta-04`, el recálculo productivo obtuvo **0.4965/0.5136/0.5136 ms** de mediana/p95/máximo y **15/15** muestras `<5 ms`; la inversa fría experimental, 0.2510/0.3344/0.3344 ms, con consulta reutilizada de 0.0036 ms. En 32/128 salas todas las muestras productivas cumplieron. En 512 salas, desempate registró **9/15 muestras que cumplen y 6/15 que superan** el límite; puerta cerrada, **12/15 que cumplen y 3/15 que superan**. No se redujo la carga ni se alteró el umbral. El total productivo fue **186/195** (9 superaciones) y el experimental **195/195** en costo frío. La inversa fue más rápida en recorridos largos, pero el recálculo ganó en pasos resueltos de inmediato o sin salida: no hay superioridad universal.
+
+**Decisión y validación.** `research.md` añade R-14, separada de R-13: se conserva el recálculo por paso y no se crea caché porque el mapa publicado cumple 5 ms. Las superaciones sintéticas y la referencia oficial pendiente quedan como límites; cualquier adopción futura requiere tareas coordinadas con 003 para propiedad, invalidación del conocimiento, ciclo de vida, limpieza y pruebas tras retroceso/carga. Pruebas focalizadas: **38 passed in 3.78s**; integración 001/003 y lógica asociada: **49 passed in 0.42s**; restricciones: **61 passed in 0.57s**. La prueba temporal de exploración de `tests/test_bench_integrante2.py` falló una vez con factor 2.7× y pasó al repetirse; cinco mediciones directas oscilaron 1.36×–2.23×, por lo que se registra como fluctuación ajena y no se modificó. T054/T066 quedan cerradas: **72/76** tareas, con T006, T041, T051 y T055 abiertas. No se hizo commit, push, merge, cambio de rama ni ninguna operación Git que modifique el repositorio; solo se consultaron estado y `diff --check`. No se repitió T050 y no se afirmó PR-001.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
