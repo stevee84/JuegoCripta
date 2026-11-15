@@ -1,0 +1,71 @@
+{
+  "entorno": {
+    "python": "3.12-fixture",
+    "plataforma": "Windows-fixture",
+    "procesador": "CPU-fixture",
+    "reloj": "perf_counter_ns",
+    "calentamiento": 1,
+    "semilla_inputs": 123
+  },
+  "tamanos": [8, 16, 32, 64, 128, 512],
+  "repeticiones": 1,
+  "umbrales": {"pequeno": 16, "factor": 4},
+  "mediciones": [
+    {
+      "medicion": "inventario_insertar", "n": 8, "repeticiones": 1,
+      "unidad": "ns_por_lote", "mediana": 1, "minimo": 1
+    },
+    {
+      "medicion": "mapa_construccion_indice",
+      "alternativa": "lista_mas_tabla_hash_propia", "n": 8,
+      "carga": {"salas": 8, "salidas": 8, "salidas_por_sala": 1},
+      "semilla": 1729, "entorno": {"reloj": "perf_counter_ns"},
+      "calentamiento": 1, "repeticiones": 1, "unidad": "ns_por_lote",
+      "mediana": 101, "p95": 101, "maximo": 101, "minimo": 101,
+      "muestras": [101], "trabajo": {"altas": 8},
+      "memoria": {"lista_bytes": 120, "indice_bytes": 480}
+    },
+    {
+      "medicion": "agenda_insertar",
+      "alternativa": "agenda_eventos_indices_avl_monticulo", "n": 256,
+      "carga": {"eventos_base": 256, "patron": "determinista_t047"},
+      "semilla": 2609, "entorno": {"reloj": "perf_counter_ns"},
+      "calentamiento": 1, "repeticiones": 1, "unidad": "ns_por_lote",
+      "mediana": 202, "p95": 202, "maximo": 202, "minimo": 202,
+      "muestras": [202], "trabajo": {"operaciones": 64},
+      "memoria": {"unidad": "bytes", "pico_operacion": 900}
+    },
+    {
+      "medicion": "agenda_ciclo001_extraer",
+      "alternativa": "lista_lineal_manual_benchmark", "n": 512,
+      "carga": {"eventos_base": 512, "patron": "ciclo001_cientos_costos_variables_decenas_cazadores"},
+      "semilla": 2609, "entorno": {"reloj": "perf_counter_ns"},
+      "calentamiento": 1, "repeticiones": 1, "unidad": "ns_por_lote",
+      "mediana": 303, "p95": 303, "maximo": 303, "minimo": 303,
+      "muestras": [303], "trabajo": {"operaciones": 128}
+    },
+    {
+      "medicion": "rutas_ac012_region", "escenario": "ac012_region_5_exterior_27",
+      "alternativa": "individual_produccion_recalculo", "n": 32,
+      "carga": {"salas": 32, "cazadores": 1, "puertas": "estables"},
+      "semilla": 2609, "entorno": {"reloj": "perf_counter_ns"},
+      "calentamiento": 1, "repeticiones": 1, "unidad": "ns_por_lote",
+      "mediana": 404, "p95": 404, "maximo": 404, "minimo": 404,
+      "muestras": [404], "trabajo": {"ciclos": 1},
+      "memoria": {"unidad": "bytes", "pico": 1200}
+    },
+    {
+      "medicion": "ciclo_real_intervalo",
+      "alternativa": "ciclo_corriente_recalculo_produccion", "n": 32,
+      "escenario": "t048-salas-32-cazadores-1-rango-pequeno-puertas-estable",
+      "carga": {"salas": 32, "cazadores": 1, "puertas_tipo": "estable"},
+      "semilla": 2609, "entorno": {"reloj": "perf_counter_ns"},
+      "calentamiento": 1, "repeticiones": 1, "unidad": "ns_por_intervalo",
+      "mediana": 505, "p95": 505, "maximo": 505, "minimo": 505,
+      "muestras": [{"indice": 1, "duracion_ns": 505}],
+      "trabajo": {"eventos_enemigo": 0}, "memoria": {"pico_bytes": 1500},
+      "origen_carga": "sintetico", "referencia_oficial": "pendiente_publicacion_g6",
+      "afirma_pr001": false
+    }
+  ]
+}

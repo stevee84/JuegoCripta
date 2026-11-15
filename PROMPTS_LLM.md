@@ -462,6 +462,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 61 | Preparación coordinada de T049/T050 para `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 62 | Adaptadores de cargas propias para T049/T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 63 | Integración final de proveedores 001 en `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 64 | Preparación de ejecución y evidencia oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2321,6 +2322,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Pruebas.** `tests/test_bloque3_conexiones.py` captura la tupla entregada al ejecutor, exige igualdad exacta con existentes + adicionales + mapa + línea de tiempo + terreno + ciclo, comprueba unicidad y una aparición de cada adaptador. Junto con `tests/test_bench_adaptadores_001.py` y la prueba de registro/K de línea de tiempo: **10 passed in 0.64s**. No se ejecutó `python main.py --bench` ni la suite completa.
 
 **Cierre y coordinación.** T049 queda cerrada. El acuerdo sobre el punto compartido se acredita con `4ea99fa1c62dd79faf841ea143bb7ff9b55cde94`, donde Steven registró previamente el mapa de 001 para T049, retiró la omisión y dejó el conteo derivado para extensiones coordinadas; la autorización actual completa esa misma concatenación. T050 permanece abierta para la ejecución oficial y el artefacto reproducible.
+
+---
+
+## Prompt 64 — Preparación de ejecución y evidencia oficial T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> En `Sofia@4c6fb68`, preparar T050 sin ejecutar todavía `main.py --bench`: revisar el JSON real, crear una herramienta de 001 que extraiga únicamente mapa, agenda, rutas y ciclo hacia `benchmarks/resultados_terreno_cazador_integrante1.json`, conservar todos los datos originales, validar nombres/metadatos/muestras/duplicados, probar con un fixture pequeño y documentar comandos PowerShell que separen stdout, stderr y código de salida y permitan consultar el proceso. Mantener T050 abierta y no modificar proveedores, producción ni el ejecutor común.
+
+**Extractor.** `benchmarks/extraer_resultados_terreno_cazador_integrante1.py` reconoce conjuntos exactos de mediciones y alternativas reales de `mapa_cripta_integrante1`, `terreno_cazador_integrante1` y `benchmark_ciclo_real_integrante1`. Copia las filas completas y conserva el nivel superior del ejecutor; no usa `tamanos` global para sustituir `n` o `carga`. Exige entorno/formato común, campos de fila, una muestra por repetición, escenario para rutas/ciclo, etiqueta sintética del ciclo, cobertura de nombres y ausencia de claves lógicas duplicadas.
+
+**Ejecución preparada.** `contracts/ejecucion-t050-powershell.md` define archivos separados para JSON completo, stderr, PID, código de salida y JSON filtrado; incluye inicio con `Start-Process`, consulta no intrusiva, espera, comprobación de código 0, parseo JSON, extracción y hashes SHA-256. El JSON completo no se reemplaza ni mezcla con stderr.
+
+**Pruebas y límite.** `tests/fixtures/benchmarks/main_bench_t050_minimo.json` conserva ejemplos representativos de nivel superior y filas de mapa, agenda, rutas y ciclo. Las pruebas del extractor, CLI, adaptadores y registro terminaron en **17 passed in 0.34s**. No se ejecutó el benchmark completo; T050 permanece abierta hasta obtener y validar la corrida oficial.
 
 ---
 
