@@ -8,7 +8,7 @@ Esta guía describe cómo validar la implementación y sus integraciones; solo l
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
 - G1/G2 cerradas: Steven aceptó `proximo_paso(...) -> ResultadoRuta`; `5000d1f` integra costo/rango estrictos, simetría de sentidos existentes y v10 para esos campos. Las salidas sin inversa son válidas.
-- Estado auditado: `Sofia@568477fe2ddeb0ff8090164f44d6a944bab9c1d1`. Mapa conocido, `LineaTiempo` y persistencia conjunta v11 están integrados; T006/T041/T055 quedaron verificados el 2026-11-15.
+- Implementación auditada: `Sofia@568477fe2ddeb0ff8090164f44d6a944bab9c1d1`. Mapa conocido, `LineaTiempo` y persistencia conjunta v11 están integrados; T006/T041/T055 quedaron verificados el 2026-11-15. El commit documental posterior `Sofia@c4bb758` publicó ese cierre sin cambiar la implementación auditada.
 
 ## Comandos previstos
 

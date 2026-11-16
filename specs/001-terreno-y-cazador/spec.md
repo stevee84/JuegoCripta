@@ -94,7 +94,7 @@ Como equipo evaluado, queremos medir la persecución y la agenda bajo la carga n
 
 1. **AC-012 — Rango pequeño [PR-002]**: **Given** dos criptas con la misma región dentro del rango de un cazador y distinta cantidad de salas exclusivamente fuera de esa región, **When** `--bench` mide una decisión equivalente, **Then** el trabajo reportado para hallar la decisión no crece proporcionalmente al tamaño total añadido fuera del rango.
 2. **AC-013 — Ciclo con decenas de cazadores [PR-001]**: **Given** la cripta de referencia con decenas de cazadores activos, **When** `--bench` mide cada ciclo completo entre dos decisiones del jugador sin red ni renderizado, **Then** el ciclo tarda menos de 20 ms bajo las condiciones oficiales de referencia.
-3. **AC-014 — Matriz de comparaciones [PR-003, PR-004]**: **Given** escenarios sintéticos deterministas, **When** `--bench` ejecuta las mediciones de ruta e invalidación, **Then** informa por separado uno frente a muchos cazadores, rango pequeño frente a grande, trabajo individual frente a compartido, reutilización frente a recálculo siempre y puertas estables frente a inestables, comprobando equivalencia observable antes de comparar tiempos.
+3. **AC-014 — Matriz de comparaciones [PR-003, PR-004, PR-006]**: **Given** escenarios sintéticos deterministas, **When** `--bench` ejecuta las mediciones de ruta e invalidación, **Then** informa por separado uno frente a muchos cazadores, rango pequeño frente a grande, trabajo individual frente a compartido, reutilización frente a recálculo siempre y puertas estables frente a inestables, comprobando equivalencia observable antes de comparar tiempos.
 4. **AC-015 — Revisión de agenda [PR-005]**: **Given** las mediciones de agenda de la primera parte, cientos de eventos y una carga equivalente con costos variables y cazadores activos, **When** `--bench` mide insertar, extraer, cancelar por ID, cancelar por actor, reprogramar y resolver empates frente a una alternativa comparable, **Then** reporta cada operación por separado, resultados antes/después y si los límites y decisiones previos siguen siendo adecuados.
 
 ### Edge Cases
@@ -146,7 +146,7 @@ Como equipo evaluado, queremos medir la persecución y la agenda bajo la carga n
 
 ### Key Entities
 
-- **Salida**: Conexión transitable entre dos salas; tiene costo efectivo simétrico y un estado actual que determina si puede usarse.
+- **Salida**: Conexión dirigida transitable entre dos salas; tiene un costo efectivo y un estado actual que determina si puede usarse. Si existe también el sentido inverso, ambos costos efectivos son iguales; un sentido único sigue siendo válido conforme a FR-002.
 - **Sala**: Lugar del esqueleto identificado exclusivamente por un entero; sus IDs se comparan numéricamente y no admiten conversiones silenciosas.
 - **Actor**: Participante con sala, velocidad y próxima acción; incluye al jugador y a los distintos enemigos.
 - **Cazador**: Enemigo con rango entero mayor o igual que 0 expresado en unidades de costo y una decisión ordenada entre atacar, esperar o moverse un paso; su ficha es inválida si el rango falta o no pertenece a ese dominio.

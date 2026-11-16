@@ -469,6 +469,10 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 68 | Validación oficial de MapaCripta y decisión del índice por ID | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 69 | Verificación integral de benchmarks y cierre sintético de US4 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 70 | Decisión final del cazador y aceptación README de 001 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 71 | Medición completa de «ir a» y decisión de reutilización | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 72 | Auditoría y cierre de persistencia conjunta T006/T041/T055 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
+| 73 | Auditoría final de consistencia e integración 001 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
+| 74 | Corrección documental posterior a la auditoría | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2506,6 +2510,90 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Cobertura y ejecución.** El archivo existente `tests/test_datos/test_guardado_terreno_cazador.py`, introducido en `e4a34e8` y ampliado en `76ba6b7`, ya cubre las cuatro piezas, default de costo, v9/v10, alias y ausencia de derivados; las regresiones de restauración/línea cubren identidades canónicas y consultas históricas. No se añadió ni duplicó ninguna prueba. Ejecución directa: **7 passed in 0.63s**. Ejecución conjunta de nueve archivos de persistencia, restauración, línea e integración: **144 passed in 12.09s**. No se ejecutaron benchmarks ni se modificó producción.
 
 **Cierre.** T006, T041 y T055 quedan cerradas con atribución explícita a Steven y Joshua. `tasks.md` pasa a **75/76**; solo T051 permanece abierta por la referencia oficial de PR-001. Se actualizaron contratos, plan, modelo de datos, investigación y quickstart propios de 001 para distinguir antecedentes v9/v10 del estado vigente v11. No se hizo commit, push, pull, merge, cambio de rama ni ninguna operación Git mutante; los intentos históricos incompletos de T050 quedaron intactos.
+
+---
+
+## Prompt 73 — Auditoría final de consistencia e integración 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Auditar de forma no destructiva la especificación 001 antes de integrar: revisar spec, plan,
+> tasks, research, data-model, quickstart, contratos, decisiones, README y bitácora; comprobar
+> trazabilidad FR/AC/PR, conexiones reales con 002/003/004, persistencia v11, rutas derivadas y
+> evidencias JSON; ejecutar la suite completa y validaciones estáticas pertinentes sin repetir
+> benchmarks ni modificar archivos. Mantener T051 bloqueada, distinguir fallos reproducibles,
+> inestabilidad y limitaciones externas, y proponer únicamente correcciones mínimas.
+
+**Consistencia e integración.** El análisis no destructivo confirmó 30/30 AC en la matriz, 18/18
+FR y 6/6 PR citados por tareas, los siete AC-B explícitos y 75/76 tareas, con T051 como única abierta.
+001 está conectada con la resolubilidad independiente de pesos de 002, `Viaje`/`VistaMapaConocido`
+de 003 y `LineaTiempo`/guardado conjunto de 004. `GuardadoBinario.VERSION` es 11 y los resultados de
+ruta no se persisten como estado canónico. Los 13 JSON versionados son válidos; el subconjunto T050
+de 194 filas coincide exactamente con las 916 filas originales y conserva `afirma_pr001=false`.
+
+**Validación ejecutada.** La suite completa terminó en **1460 passed, 1 failed, 4 subtests passed in
+153.80s**. El único fallo fue
+`tests/test_bench_integrante2.py::test_explorar_no_crece_con_el_mapa_ya_conocido`, con relación local
+2,2×; pasó aislado (**1 passed in 0.86s**). Las restricciones terminaron en **61 passed in 0.58s**,
+224 archivos Python compilaron sin errores y `git diff --check` pasó. No se ejecutaron benchmarks
+completos ni pruebas en línea.
+
+**Hallazgo adicional de Actions #96.** La misma prueba falló en Python 3.11.18/Ubuntu con 10 332 ns
+para 400 salas y 21 997 ns para 1600 (2,13×), mientras Actions #95 había aprobado. La revisión del
+diseño comprobó que el benchmark vuelve a explorar una sala de un mapa completo y produce cero
+revelaciones nuevas; mide una operación de microsegundos mediante el mínimo de siete muestras y es
+sensible a caché, GC y hashes textuales. Cuarenta comparaciones focalizadas, alternando el orden, y
+20 procesos con semillas de hash diferentes aprobaron. Se clasificó como prueba temporal inestable
+y medición insuficiente de SC-003, no como defecto reproducible de producción; cualquier corrección
+corresponde coordinarla con Steven sin relajar `<2×`.
+
+**Resultado.** No se identificaron defectos críticos reproducibles. Se propusieron correcciones de
+G4b, simetría condicional, trazabilidad PR-006, commits auditado/documental e índice de prompts; las
+referencias vigentes de 004/v10 y `DECISIONES.md` §5.5 quedaron para coordinación con Joshua. La
+auditoría no modificó archivos ni Git y mantuvo intactos los 14 artefactos históricos T050.
+
+---
+
+## Prompt 74 — Corrección documental posterior a la auditoría
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Corregir exclusivamente los hallazgos documentales propios de 001: cerrar G4b como estado vigente,
+> precisar la simetría solo cuando existen ambos sentidos, enlazar AC-014 con PR-006 y distinguir la
+> implementación auditada `568477f` del commit documental `c4bb758`. Añadir Prompt 71/72 al índice y
+> registrar Prompt 73/74 con herramienta y modelo reales. No editar 003/004 ni decisiones de Joshua;
+> preparar notas de coordinación para Steven sobre SC-003 y para Joshua sobre v11. Conservar toda
+> evidencia histórica, T051 abierta y 75/76 tareas; validar documentos y `git diff --check`, sin
+> pruebas ni benchmarks y sin operaciones Git mutantes.
+
+**Correcciones.** `spec.md` aclara que una salida es dirigida y que la igualdad de costos se exige
+solo si existe el inverso; AC-014 cita PR-006. `tasks.md` replica esa trazabilidad y marca G4b cerrada
+por `d86819d`/T056 sin alterar evidencias históricas. `quickstart.md` separa la implementación
+auditada `568477f` de su publicación documental `c4bb758`. El índice incorpora Prompt 71–74 sin
+duplicar los cuerpos existentes de 71/72.
+
+**Coordinación y alcance.** §5.5 de `DECISIONES.md` declara a Joshua como responsable, por lo que no
+se editó. Dos notas nuevas dentro de los contratos de 001 registran para Steven el rediseño sugerido
+de la medición SC-003 conservando `<2×`, y para Joshua las referencias vigentes de 004/decisiones
+que deben distinguir el formato actual v11 del contrato histórico v10. No se modificaron código,
+pruebas, benchmarks, umbrales, 003, 004, workflows ni artefactos T050.
+
+**Validación.** Se revisaron referencias, recuentos y enlaces de los documentos modificados; no se
+ejecutaron pruebas ni benchmarks por ser un cambio exclusivamente documental. `git diff --check`
+pasó. El estado permanece en **75/76** y T051 continúa bloqueada por la referencia oficial de
+PR-001. No se hizo commit ni push.
 
 ---
 

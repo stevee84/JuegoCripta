@@ -330,7 +330,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 | AC-018 | FR-014 | T030, T037–T039 | `tests/test_logica/test_cazador_vigencia.py` |
 | AC-012 | PR-002 | T042, T044–T045, T050 | `tests/test_bench_terreno_cazador.py`, fila AC-012 de `--bench` |
 | AC-013 | PR-001 | T043, T048–T051, T071 | `tests/test_bench_terreno_cazador.py` comprueba esquema/salida; ejecución oficial pendiente de T051 |
-| AC-014 | PR-003, PR-004 | T042–T046, T049–T050, T065 | `tests/test_bench_terreno_cazador.py`, fila AC-014 y equivalencia AC-009 |
+| AC-014 | PR-003, PR-004, PR-006 | T042–T046, T049–T050, T065 | `tests/test_bench_terreno_cazador.py`, fila AC-014 y equivalencia AC-009 |
 | AC-015 | PR-005 | T043, T047, T049–T050, T069 | `tests/test_bench_terreno_cazador.py`, seis filas de agenda de `--bench` y decisión §5.6 |
 
 **Cobertura adicional**: FR-017 se verifica en T010/T012/T022/T039; FR-018 en cierres T064/T029/T031, regresión T061 y mapa T072–T076; PR-006 en oráculos/benchmarks T042–T050/T065/T071–T075. La documentación oficial se cierra en T067–T070/T076. Los siete casos del Apéndice B son AC-B01…AC-B07 y aparecen explícitamente en la matriz.
@@ -356,7 +356,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 | G2 — costo/rango/simetría publicados e integrados | **cerrada por T003 en `5000d1f`** | ya no bloquea T010/T018, T016–T017, T027–T029 ni T064 | persistencia conjunta completada después por T006 |
 | G3 — vista de mapa conocido | **cerrada por T004** | ya no bloquea T052–T054 | cazador, porque usa su vista real independiente |
 | G4a — revisión cruzada de interfaz Joshua ya integrada | **cerrada por T005** | ya no bloquea T040; satisface una precondición de T056 | disponibilidad local de interfaz base, `deepcopy` y recálculo |
-| G4b — `LineaTiempo` completa integrada localmente | integración por flujo del equipo de la entrega publicada | ejecución T056 | escritura contractual T040 e interfaz base ya local |
+| G4b — `LineaTiempo` completa integrada localmente | **cerrada por la integración `d86819d` y la ejecución T056** | ya no bloquea tareas; T056 se ejecutó sin omisiones | evidencia histórica T040 e interfaz base ya local |
 | G5 — persistencia/versionado publicados | **cerrada por T006 en v11 (`d1ad048`)** | ya no bloquea T041/T055, cerradas con ejecución real | desarrollo desde fuente fresca y benchmarks sintéticos |
 | G6 — referencia oficial | publicación externa | T051 | T042–T054, T066, T072–T075, pruebas funcionales y medición con la mayor cripta publicada local |
 
