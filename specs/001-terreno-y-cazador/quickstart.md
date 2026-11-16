@@ -1,6 +1,6 @@
 # Quickstart de validación: Terreno y cazador
 
-Esta guía describe cómo validar la implementación y sus integraciones todavía pendientes.
+Esta guía describe cómo validar la implementación y sus integraciones; solo la referencia oficial de T051 continúa pendiente.
 
 ## Prerrequisitos
 
@@ -8,7 +8,7 @@ Esta guía describe cómo validar la implementación y sus integraciones todaví
 - Soporte mínimo Python 3.11. Para reproducir la validación local previa, usar el entorno del proyecto `.venv` con Python 3.12.10 y `requirements.txt`; el Python general del sistema no sustituye ese entorno.
 - Paquete offline de fixtures para pruebas sin red.
 - G1/G2 cerradas: Steven aceptó `proximo_paso(...) -> ResultadoRuta`; `5000d1f` integra costo/rango estrictos, simetría de sentidos existentes y v10 para esos campos. Las salidas sin inversa son válidas.
-- Estado local base: `Sofia@5000d1fe8af268987206827e4c524c05bd599357`. Mapa conocido, clase completa `LineaTiempo` y persistencia conjunta restante continúan pendientes.
+- Estado auditado: `Sofia@568477fe2ddeb0ff8090164f44d6a944bab9c1d1`. Mapa conocido, `LineaTiempo` y persistencia conjunta v11 están integrados; T006/T041/T055 quedaron verificados el 2026-11-15.
 
 ## Comandos previstos
 
@@ -49,7 +49,7 @@ Estas cifras sí corresponden a la ejecución del bloque. No incluyen benchmarks
 
 El oráculo de US3 enumera rutas simples sin invocar `proximo_paso`. Las pruebas comprueban recálculo tras puertas, jugador, velocidad, otros actores, retroceso, reinicio y enlace de un estado deserializado; empate numérico y orden incidental permutado; bytes de `partida.log`; restauración de salas, actores, vida, reloj, agenda, secuencias, puertas y azar; excepciones de pergamino/`registrar_solo_linea`; y alias de copias conjuntas por `deepcopy` y `pickle`. La instrumentación por referencias débiles confirma que cada consulta libera su montículo y sus dos tablas. No se encontró un defecto de producción y no se añadieron cachés, generaciones ni observadores.
 
-No se ejecutó la suite completa en ese bloque porque solo cambió pruebas y documentación; la corrida completa posterior se registra en «Validación completa del bloque documental (T060)». Tampoco se ejecutaron benchmarks en ese bloque. `LineaTiempo` completa y el formato conjunto con mapa conocido siguen ausentes; por ello T041/T055/T056 permanecen abiertas. T040 quedó redactado y validado contra `origin/joshua`, pero su ejecución local se omite hasta G4b/T056.
+No se ejecutó la suite completa en aquel bloque histórico porque solo cambió pruebas y documentación; la corrida completa posterior se registra en «Validación completa del bloque documental (T060)». Tampoco se ejecutaron benchmarks. En ese momento `LineaTiempo` y el formato conjunto aún estaban ausentes; las secciones posteriores registran sus cierres T056 y T006/T041/T055.
 
 ### Ejecución aislada de rutas US4 (T044–T046/T065)
 
@@ -411,15 +411,35 @@ Además de la reversión funcional:
 1. Verificar que cada mutación canónica de 001 se registra dentro de la transacción mediante los cambios y helpers existentes; una acción rechazada no publica cambios.
 2. Comprobar que ninguna caché/servicio de rutas es alcanzable desde `EstadoPartida`, entidades canónicas o cambios guardados.
 3. Copiar en una sola operación `(estado, ventana_de_transacciones)` con `copy.deepcopy`; cada cambio de la copia debe apuntar a las entidades copiadas. Deshacer temporalmente y aplicar los inversos debe dejar bytes/estructura equivalentes aun si el resumen falla.
-4. Cuando exista el formato conjunto acordado por Steven y Joshua, hacer ida y vuelta del `pickle` de estado vivo y línea y repetir consultas; las cachés no aparecen en los bytes.
+4. Sobre el formato conjunto v11 acordado por Steven y Joshua, hacer ida y vuelta del estado vivo y línea, repetir consultas y confirmar que las cachés/resultados de ruta no aparecen en los bytes.
 5. Con la producción inicial de recálculo, comprobar que no se conserva caché/instantánea entre decisiones y que `historia`, `RETROCEDER` e `iniciar` no requieren ganchos de invalidación.
 6. Si una decisión posterior adopta reutilización, ejecutar entonces las pruebas planificadas de `historia`, retroceso e inicio/carga sobre la caché externa; no anticiparlas como requisito de la vía sin estado retenido.
 
-El checkout integrado ofrece `LineaTiempo`, puntos de control, `deshacer_mientras`, `rehacer`, el gancho `rehacer(estado)`/`fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. T056 ejecutó la integración local: el módulo propio cubre el protocolo y las 79 pruebas específicas aceptadas cubren además puntos de control y partidas reales. La persistencia conjunta conserva tareas separadas y no se considera cerrada por esta integración.
+El checkout integrado ofrece `LineaTiempo`, puntos de control, `deshacer_mientras`, `rehacer`, el gancho `rehacer(estado)`/`fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea`. T056 ejecutó la integración local: el módulo propio cubre el protocolo y las 79 pruebas específicas aceptadas cubren además puntos de control y partidas reales. La persistencia conjunta se verificó después y se cierra separadamente en T006/T041/T055.
 
-### Estado de persistencia
+### Estado de persistencia — cierre T006/T041/T055
 
-La versión ejecutable es v10 y persiste costo/rango. Las pruebas de ida y vuelta de mapa conocido más línea de tiempo permanecen bloqueadas hasta la entrega conjunta completa; este bloque no modifica ese guardado.
+La versión ejecutable es **v11**. V10 introdujo costo/rango; v11 añade el bloque opaco de la línea, cuyo estado vivo incluye `mapa_conocido`. El lector actual acepta únicamente v11 y rechaza v9/v10 como incompatibles. La propuesta M3 de 2026-11-09 de un único v10 queda como antecedente: el v10 ya publicado no se reinterpretó.
+
+Comandos ejecutados el 2026-11-15:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q `
+  tests\test_datos\test_guardado_terreno_cazador.py
+
+.\.venv\Scripts\python.exe -m pytest -q `
+  tests\test_datos\test_guardado_terreno_cazador.py `
+  tests\test_datos\test_mapa_conocido_persistido.py `
+  tests\test_datos\test_guardado_linea.py `
+  tests\test_datos\test_costo_y_rango.py `
+  tests\test_service\test_restaurador_partida.py `
+  tests\test_service\test_reanudacion_v5.py `
+  tests\test_logica\test_linea_tiempo.py `
+  tests\test_integracion_001_004.py `
+  tests\test_integracion_conocimiento_003_004.py
+```
+
+Resultados: **7 passed in 0.63s** para T041/T055 y **144 passed in 12.09s** para el conjunto relacionado. La ejecución comprobó costo, rango, exploradas/avistadas, K y consultas de la línea, referencias canónicas de salas/actores/eventos/efectos/botín, alias de sentidos, continuación tras cargar, rechazo de v9/v10 sin perder la partida vigente y ausencia de resultados/vistas/viajes de ruta en el archivo. No se añadieron pruebas porque la cobertura existente satisface los criterios; no se modificó producción ni se ejecutaron benchmarks.
 
 ## Señales de salida
 

@@ -2489,6 +2489,26 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 
 ---
 
+## Prompt 72 — Auditoría y cierre de persistencia conjunta T006/T041/T055
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Auditar y cerrar T006, T041 y T055 en `Sofia` sin reimplementar trabajo de Steven/Joshua: inspeccionar `GuardadoBinario`, `RestauradorPartida` e interfaces; confirmar versión 11, campos, commits y compatibilidad v9/v10; revisar el archivo de pruebas existente sin duplicarlo; ejecutar ida/vuelta y regresiones de guardado/restauración/línea; comprobar costo, rango, conocimiento, línea, identidad, alias, rechazo de versiones anteriores y ausencia de resultados derivados. Si cumple, actualizar solo documentación propia de 001, tareas/recuento y este prompt; mantener T051 bloqueada. No modificar producción, formato, otras specs, benchmarks ni Git.
+
+**Auditoría del contrato.** `GuardadoBinario.VERSION = 11`. Steven introdujo costo/rango en v10 con `5000d1fe8af268987206827e4c524c05bd599357`; Joshua publicó la serialización conjunta de estado/línea en `e002077bc4d6376e21308bcb4dd6a2c2a364e779`, integrada por `d86819db3f1e5505105f4dc8f49d2c3202cf8925`; Steven añadió conocimiento reversible en `719fc3492e35a94f81f48fe52773f2adb35e3f55` y entregó v11 en `d1ad04867c94a2637024089c1625edb9cb296807`. V11 conserva costo/rango en registros de sala y añade el bloque opaco de `LineaTiempo`; su estado vivo contiene `mapa_conocido`. El lector acepta exclusivamente v11 y reporta v9/v10 incompatibles, sin reemplazar la partida vigente. La propuesta M3 de un único v10 queda como antecedente: no se reinterpretó el v10 ya publicado.
+
+**Cobertura y ejecución.** El archivo existente `tests/test_datos/test_guardado_terreno_cazador.py`, introducido en `e4a34e8` y ampliado en `76ba6b7`, ya cubre las cuatro piezas, default de costo, v9/v10, alias y ausencia de derivados; las regresiones de restauración/línea cubren identidades canónicas y consultas históricas. No se añadió ni duplicó ninguna prueba. Ejecución directa: **7 passed in 0.63s**. Ejecución conjunta de nueve archivos de persistencia, restauración, línea e integración: **144 passed in 12.09s**. No se ejecutaron benchmarks ni se modificó producción.
+
+**Cierre.** T006, T041 y T055 quedan cerradas con atribución explícita a Steven y Joshua. `tasks.md` pasa a **75/76**; solo T051 permanece abierta por la referencia oficial de PR-001. Se actualizaron contratos, plan, modelo de datos, investigación y quickstart propios de 001 para distinguir antecedentes v9/v10 del estado vigente v11. No se hizo commit, push, pull, merge, cambio de rama ni ninguna operación Git mutante; los intentos históricos incompletos de T050 quedaron intactos.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.

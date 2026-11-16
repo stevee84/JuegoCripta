@@ -1,12 +1,12 @@
-# Acuerdo condicionado con Joshua: cambios reversibles y reconstrucción
+# Acuerdo con Joshua: cambios reversibles y reconstrucción
 
-**Estado**: ACEPTACIÓN CONDICIONADA; INTERFAZ BASE INTEGRADA Y REVISADA LOCALMENTE; LÍNEA COMPLETA PENDIENTE. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. El checkout `Sofia` contiene y T005 verificó deshacer temporal/rehacer, el gancho para cambios nuevos y el enlace del historial. La clase completa `LineaTiempo` publicada después, el guardado coordinado y las pruebas conjuntas con cambios nuevos de 001 siguen pendientes. Este documento no modifica archivos de Joshua ni de Steven.
+**Estado**: INTERFAZ BASE, `LineaTiempo` COMPLETA Y PERSISTENCIA CONJUNTA INTEGRADAS Y VERIFICADAS. `specs/004-linea-de-tiempo/contracts/dependencias.md` declara que FR-016 de 001 basta si todo estado observable se registra dentro de la transacción y que la línea no llama al cazador. T005 verificó la interfaz base; T056 verificó localmente la línea integrada; T006/T041/T055 comprobaron el formato conjunto v11 y su ida y vuelta. Este documento atribuye a Joshua la línea/serialización (`e002077`) y a Steven la entrega binaria v10/v11 (`5000d1f`, `d1ad048`); no modifica sus archivos.
 
 ## 1. Objetivo
 
 Permitir que retroceso y línea de tiempo restauren exactamente el estado introducido o afectado por 001, sin copiar el estado completo por acción y sin conservar cálculos de ruta obsoletos (`FR-014`, `FR-016`; spec 004 FR-022).
 
-## Estado comprobado local y remoto
+## Antecedente comprobado local y remoto (2026-11-08/09)
 
 **Checkout local consultado**: revisión del 2026-11-09 sobre `Sofia@b046f8820d33ff9a20dedf0e37db90f850d5f30a` (para T005 del 2026-11-08 se consultó `Sofia@e89574de14df8a9e672ef0a62590630d37242f05`), descendiente de la integración `3df43c63c68a33f692148b737c12b0c0a4208569` con `joshua@927d8860639f3efa6260172d3e03cae61f74301b`. Contiene la implementación introducida en `972af5421d628171a4464709858275b100151c1e`. Su interfaz disponible en `logica/cambios.py` incluye:
 
@@ -27,7 +27,7 @@ La disponibilidad local es un hecho del checkout y T005 ya cerró su revisión c
 - **M2 — enlaces técnicos y derivados fuera de copias y guardado**: los enlaces técnicos no son estado del juego y no se copian ni persisten: `HistorialReversible.__getstate__` ya omite `_linea` (local) y la punta remota añade `Inventario.__getstate__` que omite `historial_linea`; la línea los reconecta al restaurar. Los cálculos derivados (índice de mapa, cachés, fronteras de búsqueda) conservan su regla del §2: se reconstruyen desde el estado canónico y jamás se registran como estado. 001 no añade enlaces técnicos; si un cambio de 001 necesitara uno, su exclusión en `deepcopy`/`pickle`/guardado se documentará allí antes de implementarlo.
 - **B1 — cambios de pergaminos «solo línea»**: documentados en §5 con el mecanismo de la punta remota; forman parte de 004/006 y 001 solo los consume; los cambios nuevos de 001 no se marcan «solo línea» salvo decisión explícita.
 
-Este análisis no marca tareas; T040/T056/T041/T055 permanecen abiertas.
+Este análisis histórico no marcó tareas: en esa revisión T040/T056/T041/T055 permanecían abiertas. T040/T056 se cerraron tras integrar la línea y T041/T055 tras auditar v11.
 
 ### Evidencia de T005
 
@@ -39,7 +39,7 @@ Este análisis no marca tareas; T040/T056/T041/T055 permanecen abiertas.
 - Pruebas ejecutadas: `tests/test_logica/test_cambios_linea.py`, `test_historial_linea.py`, `test_cambios.py`, `test_historial_reversible.py` y `test_cambio_soltar_objeto.py` → **44 passed in 0.76s**.
 - Alcance: esta evidencia valida la interfaz base y su compatibilidad estructural con futuros cambios de 001; no prueba cambios de terreno/cazador aún inexistentes, `LineaTiempo` completa, T056 ni persistencia conjunta.
 
-El guardado real es **v9** (`GuardadoBinario.VERSION = 9`). El **v10** de `specs/004-linea-de-tiempo/contracts/guardado-v10.md` es una propuesta para Steven: serializar en una sola operación el estado vivo y la línea como bytes opacos. No está implementado y debe coordinarse con la incorporación de costo/rango.
+**Estado histórico de aquella revisión**: el guardado real era v9 y el v10 de `specs/004-linea-de-tiempo/contracts/guardado-v10.md` era una propuesta para serializar en una sola operación el estado vivo y la línea como bytes opacos. Posteriormente `5000d1f` usó v10 para costo/rango y `d1ad048` entregó la propuesta conjunta como v11; no se reinterpretó el v10 ya publicado.
 
 ## 2. Separación propuesta
 
@@ -132,7 +132,7 @@ Por tanto, un cambio de 001 puede retener valores anteriores e identidades/refer
 
 La representación serializable exacta de cada cambio pertenece al acuerdo de 004/guardado; 001 ofrece IDs estables y valores anteriores necesarios, sin asumir formato binario.
 
-## 8. Pruebas conjuntas pendientes
+## 8. Pruebas conjuntas planificadas y estado
 
 1. Capturar estado canónico, mover/atacar/reprogramar/cerrar puerta, retroceder y comparar igualdad salvo pergaminos.
 2. Desde el mismo estado posterior al retroceso, aplicar las mismas acciones en dos ejecuciones y comparar registros.
@@ -151,9 +151,9 @@ La representación serializable exacta de cada cambio pertenece al acuerdo de 00
 - [x] 004 publica deshacer temporal/rehacer y `fotografiar_para_rehacer(inverso, estado)` en `972af5421d628171a4464709858275b100151c1e`.
 - [x] Esa interfaz base y `HistorialReversible.vincular_linea` están integrados en `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` mediante `972af542…`/`927d886…`.
 - [x] T005 completa la revisión cruzada de proceso sobre interfaces y pruebas locales; disponibilidad y revisión no se confunden.
-- [ ] Se integra y verifica la clase completa `LineaTiempo` publicada posteriormente; no se asume disponible por existir en `origin/joshua@5b67c08…`.
-- [ ] Sofía implementa todas las mutaciones canónicas de 001 mediante cambios registrados; cada tipo nuevo declara `fotografiar_para_rehacer` si lo exige la interfaz integrada.
-- [ ] Si la evidencia adopta reutilización productiva, se planifican y prueban entonces sus puntos de invalidación; con recálculo sin estado retenido no se añaden.
-- [ ] Los cambios nuevos pasan pruebas de `deepcopy`, `pickle`, deshacer/rehacer exacto y ausencia de referencias a motor/cachés.
-- [ ] Se prueba la excepción de pergaminos, la continuación determinista y que `historia` no altera cachés.
-- [x] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real: **v11** en `d1ad04867c94a2637024089c1625edb9cb296807` (2026-11-14, rama `integracion-parte2`). El formato ejecutable consultado ya no es v9. Detalle de campos, archivos y compatibilidad en §4.3 de [propuesta-steven-rutas-datos.md](./propuesta-steven-rutas-datos.md); verificación en `tests/test_datos/test_guardado_terreno_cazador.py`.
+- [x] Se integra y verifica la clase completa `LineaTiempo`: `d86819d` la integra y T056 ejecuta la verificación local.
+- [x] T039 auditó las mutaciones canónicas de 001 mediante cambios registrados; no encontró asignaciones nuevas fuera de los helpers ni requirió modificar producción.
+- [x] T057/T066 conservaron recálculo productivo sin estado retenido; por tanto no se añadieron puntos de invalidación para una reutilización no adoptada.
+- [x] T034/T035 y T040/T056 verificaron `deepcopy`, `pickle`, deshacer/rehacer y ausencia de referencias a motor/cachés.
+- [x] T032/T033 y T040/T056 probaron la excepción de pergaminos, continuación determinista e `historia` sin ejecutar ni invalidar rutas.
+- [x] Steven publica la persistencia de costo/rango/mapa conocido coordinada con Joshua y se comprueba la versión real: **v11** en `d1ad04867c94a2637024089c1625edb9cb296807` (2026-11-14, rama `integracion-parte2`). El formato ejecutable consultado ya no es v9. Detalle de campos, archivos y compatibilidad en §4.3 de [propuesta-steven-rutas-datos.md](./propuesta-steven-rutas-datos.md); auditoría T006/T041/T055 del 2026-11-15: **7 pruebas conjuntas y 144 regresiones relacionadas aprobadas**.

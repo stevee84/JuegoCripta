@@ -105,7 +105,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Rationale**: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` integra `972af5421d628171a4464709858275b100151c1e` y `927d8860639f3efa6260172d3e03cae61f74301b`: están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `HistorialReversible.vincular_linea`. 001 consume esa interfaz y no copia ni modifica clases de Joshua. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
-**Estado observado**: la interfaz base y el enlace del historial están locales y T005 está cerrada; la clase completa `LineaTiempo` sigue pendiente. `5000d1f` integra guardado v10 de costo/rango, no la persistencia conjunta restante.
+**Estado observado (actualizado 2026-11-15)**: la interfaz base, el enlace del historial y `LineaTiempo` están locales; T005/T040/T056 verifican su protocolo. `5000d1f` introdujo guardado v10 de costo/rango y `d1ad048` entregó v11 con el bloque conjunto de línea/estado, incluido `mapa_conocido`. T006/T041/T055 verifican persistencia y restauración sin resultados de ruta retenidos.
 
 **Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para el formato que finalmente acuerden Steven y Joshua. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
 
@@ -143,7 +143,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Decision**: distinguir siempre checkout local, publicación remota y acuerdo comunicado. Registrar el acuerdo parcial con Steven y la aceptación condicionada de Joshua sin presentar otra rama como integrada ni un acuerdo como implementación.
 
-**Rationale**: `Sofia@5000d1f` integra costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de esos campos. Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` con los cuatro observables acordados y asignó a Sofía rutas/vista del cazador; el equipo acepta sentidos sin inversa. La vista conocida de 003 ya está integrada y T054 midió «ir a» con ella; la clase completa `LineaTiempo` y su persistencia conjunta siguen pendientes. La validación `1204 passed, 4 subtests passed` es evidencia comunicada por Sofía sobre la base integrada, no ejecutada en este bloque.
+**Rationale**: `Sofia@5000d1f` integra costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de esos campos. Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` con los cuatro observables acordados y asignó a Sofía rutas/vista del cazador; el equipo acepta sentidos sin inversa. La vista conocida y `LineaTiempo` están integradas; `d1ad048` entrega su persistencia conjunta v11 y T006/T041/T055 la verifican. La validación histórica `1204 passed, 4 subtests passed` fue comunicada sobre la base v10; la auditoría actual ejecutó separadamente 7 pruebas conjuntas y 144 regresiones relacionadas.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.
 

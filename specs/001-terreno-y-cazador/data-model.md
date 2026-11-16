@@ -109,7 +109,7 @@ Implementaciones previstas:
 - vista real del cazador: esqueleto completo + estado actual de puertas;
 - vista del mapa conocido de «ir a», construida por Steven: solo contiene salas exploradas y solo enumera, desde ellas, puertas recordadas abiertas hacia otras salas exploradas.
 
-Steven aceptó estas dos capacidades conceptuales y construirá una prueba futura de independencia frente al estado real oculto. También aceptó recalcular por paso. Las firmas Python, el protocolo/clase, el tipo exacto de cada retorno y la asignación de archivos compartidos continúan abiertos. La vista no expone contenido de salas, red, niebla ajena ni mutaciones.
+Steven aceptó estas dos capacidades y las publicó en `1bc5c62`; T004/T052/T053 verificaron la independencia frente al estado real oculto y el recálculo por paso. `VistaMapaConocido` fija las firmas `contiene_sala`/`salidas_transitables` y `Viaje` consume esa vista sin exponer contenido de salas, red, niebla ajena ni mutaciones.
 
 ## 7. EtiquetaRuta y frontera (derivadas)
 
@@ -194,7 +194,7 @@ Para «ir a», el mecanismo de reutilización, sus claves y su propietario sigue
 
 **Excluido**: montículos de ruta, etiquetas, distancias, métricas e instantáneas. Después de deshacer, esos derivados se eliminan y se reconstruyen desde el estado restaurado.
 
-**Mecanismo real local**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. `Sofia@3df43c6…` contiene `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, la extensión `fotografiar_para_rehacer(inverso, estado)` y `HistorialReversible.vincular_linea` mediante `972af542…`/`927d886…`. Esto hace disponible la interfaz base, no la clase completa `LineaTiempo` contenida en la punta posterior `origin/joshua@b039b8b…`, ni demuestra todavía las pruebas conjuntas con cambios nuevos de 001.
+**Mecanismo real local**: las mutaciones usan `logica.mutaciones.atributo`, `agregar`, `quitar_identidad` o `registrar`, además del registro automático de agenda, mientras `HistorialReversible` mantiene una transacción abierta. La interfaz base (`registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `vincular_linea`) y la clase completa `LineaTiempo` están integradas; T034/T035/T040/T056 verifican copia, reversión e integración. T006/T041/T055 verifican además su persistencia conjunta v11.
 
 **Compatibilidad con 004**: un cambio nuevo solo retiene valores y referencias canónicas incluidas en el paquete `(estado, transacciones)`. Debe conservar alias correctos al copiar ese paquete con `deepcopy` y al serializar conjuntamente estado/línea con `pickle`; no referencia motor, servicio de rutas, cachés, callbacks ni recursos externos.
 
@@ -216,18 +216,18 @@ Para «ir a», el mecanismo de reutilización, sus claves y su propietario sigue
 
 ## 13. Persistencia y reconstrucción vigentes
 
-**Versión actual comprobada**: `GuardadoBinario.VERSION = 9`. El lector acepta únicamente esa versión y rechaza una cabecera distinta.
+**Versión actual comprobada**: `GuardadoBinario.VERSION = 11`. El lector acepta únicamente v11; v9 y v10 se reportan incompatibles y no se cargan parcialmente.
 
-| Punto actual | Datos relevantes para 001 | Impacto pendiente |
+| Punto actual | Datos relevantes para 001 | Contrato verificado |
 |---|---|---|
-| `GuardadoBinario._escribir_sala()` | puerta: destino, dirección, apertura, llave y cierre; enemigo: estadísticas y comportamiento | no escribe costo de salida ni rango materializado |
-| `GuardadoBinario._leer_sala_datos()` | reconstruye los mismos registros de puerta/enemigo | debe leer los campos acordados bajo una nueva versión de formato |
-| `DecodificadorDatos.convertir_sala()` | adapta tanto API (`salidas`) como registro interno (`puertas`) | ambos caminos deben producir el mismo `costo` validado |
-| `DecodificadorDatos.convertir_contenido()` | reconstruye enemigos desde registros internos | debe conservar/materializar rango según el contrato acordado |
-| `RestauradorPartida._reconstruir_mapa()` | crea salas, comprueba destinos y vincula referencias | reconstruye costo canónico; nunca resultados de ruta |
-| `RestauradorPartida.restaurar_para_reanudar()` | publica estado nuevo, agenda reconstruida e historial vacío | `MotorJuego.iniciar` invalida explícitamente cualquier caché anterior al enlazarlo |
+| `GuardadoBinario._escribir_sala()` | puerta: destino, dirección, apertura, llave, cierre y `costo`; enemigo: estadísticas, comportamiento y `rango` | v10 introdujo ambos campos canónicos y v11 los conserva |
+| `GuardadoBinario._leer_sala_datos()` | reconstruye registros con costo/rango | no sustituye costos guardados por el default; `-1` representa rango ausente |
+| `GuardadoBinario._escribir_extras()` | longitud y bytes opacos de `LineaTiempo` | el estado vivo de la línea contiene `mapa_conocido`; no hay sección duplicada |
+| `LineaTiempo.exportar_bytes/importar_bytes()` | serializa estado y línea en un paquete conservando alias | excluye infraestructura y exige que `linea._estado is estado` |
+| `RestauradorPartida._reconstruir_mapa()` | crea salas, comprueba destinos y vincula referencias | reconstruye costo/rango e identidades canónicas; nunca resultados de ruta |
+| `JuegoService.cargar_partida()` | valida el camino del restaurador y adopta el estado importado con la línea | reconecta infraestructura; sin sección crea línea nueva y conocimiento mínimo de la sala actual |
 
-V9 también guarda el informe de resolubilidad de 002. Añadir costo/rango modifica el esquema y requiere una versión nueva explícita porque no hay lectura flexible de versiones. Steven asume persistir costo/rango/mapa conocido coordinado con Joshua, pero `Steve@757d747…` sigue en v9 y no publica esa entrega. 001 no reserva v10 ni otra versión: campos, representación, compatibilidad, archivos y versión final deben comprobarse en el hash que finalmente se integre. Etiquetas, fronteras, distancias, métricas e instantáneas permanecerán fuera del guardado.
+**Evolución verificada**: v9 añadió el informe de resolubilidad; `5000d1f` subió a v10 para costo/rango; `d1ad048` subió a v11 para la línea y el conocimiento contenido en su estado vivo. La propuesta histórica M3 esperaba un único v10, pero el v10 ya publicado no se reinterpretó: el lector actual rechaza v9/v10. Etiquetas, fronteras, distancias, métricas, vistas, viajes e instantáneas permanecen fuera del guardado.
 
 ## 14. Reconstrucción histórica de 004
 
