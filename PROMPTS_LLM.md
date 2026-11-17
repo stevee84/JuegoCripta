@@ -3256,6 +3256,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 47 | Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios | 13/11/2026 |
 | 48 | Cerrar la 004 y la interfaz de la 003 con la integración de Steven | 14/11/2026 |
 | 49 | Dejar el guardado v11 como estado vigente en la documentación de la 004 | 16/11/2026 |
+| 50 | Atender el analyze cruzado de Steven sobre la 004 | 16/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3575,6 +3576,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 > Sofía dejó en origin/Sofia la nota specs/001-terreno-y-cazador/contracts/nota-coordinacion-joshua-v11.md: el guardado entregado es GuardadoBinario.VERSION = 11, pero mi documentación todavía presenta v10 como vigente o la persistencia de la línea como pendiente. Corrige solo mis archivos: specs/004-linea-de-tiempo/plan.md (almacenamiento y cambio de formato), quickstart.md (paso 5), research.md R8 y DECISIONES.md §5.5 (persistencia y límites conocidos, donde también sigue el mapa conocido como «no disponible»). Deja v11 como estado entregado y conserva la evolución v9 → v10 → v11, sin borrar ni reinterpretar contracts/guardado-v10.md, que queda como antecedente. Mantén claro que datos/guardado_binario.py es de Steven y LineaTiempo y su serialización son míos. No toques código ni archivos de Steven o Sofía.
 
 **Qué se obtuvo.** `plan.md` dice que el formato se propuso como v10 y se entregó como v11, porque v10 terminó usándose para `Puerta.costo` y `Enemigo.rango` (spec 001). `quickstart.md` pide rechazar los archivos v10 o anteriores con el guardado v11. R8 gana un párrafo «Estado entregado» con la evolución y la propiedad de cada archivo. En `DECISIONES.md` §5.5, la persistencia figura como entregada en v11, y en los límites se quitaron dos que ya no aplican (la línea sin guardado y el mapa «no disponible»); en su lugar queda el rechazo de los archivos anteriores a v11. El contrato `guardado-v10.md` no cambió. Suite completa sin cambios de código.
+
+## Prompt 50 — Atender el analyze cruzado de Steven sobre la 004
+
+> **Prompt**
+>
+> Trae origin/Steve a mi rama joshua y corre la suite completa. Después atiende los hallazgos del /speckit-analyze cruzado que Steven hizo de mi spec 004. Crítico: crear un punto de control cuesta unos 51 ms contra los 20 ms por ciclo de §6.1 y no hay FR que lo autorice; declaralo como excepción en spec.md con un FR nuevo y explícalo en DECISIONES.md §5.5. Alto: SC-001 no dice qué estadístico usa; deja la mediana como criterio y que el p95 y el máximo se reporten como límite conocido. Alto: T041 está marcada hecha pero no existe la comparación de memoria con 2 500 frente a 5 000 acciones; agrégala en benchmarks/linea_tiempo.py, compruébala en tests/test_bench_linea_tiempo.py, corre la medición real con 5 000 acciones, publica el JSON y reporta el resultado tal cual aunque no salga proporcional. Medios: en tasks.md aclara que [DEPENDE v10] se entregó como v11; en plan.md di que T049 y T050 son de la spec 002 y que vista/vista_pygame.py es mío. Registra las correcciones como clarificación y tareas nuevas. No toques el código de Steven ni de Sofía.
+
+**Qué se obtuvo.** `origin/Steve@a381eff` entró por fast-forward y la suite dio 1494 aprobadas. `spec.md` gana una sesión de clarificación del 2026-11-16, FR-032 (la acción que crea un punto de control puede pasar los 20 ms, como excepción declarada y medida), SC-001 con la mediana como criterio y SC-005 con la comparación en la misma partida. `benchmarks/linea_tiempo.py` anota la memoria de la línea al llegar a la mitad de las acciones y agrega la fila `linea_tiempo_memoria_crecimiento` a `--bench`. La corrida real (`benchmarks/resultados/linea_tiempo_memoria_2500_5000.json`) da 2,56 veces más memoria con K = 10 y 2,66 con K = 50 al duplicar las acciones: los puntos se duplican, pero cada uno pesa más porque el estado crece durante la partida. Se documentó en `DECISIONES.md` §5.5 como límite de SC-005. `tasks.md` tiene T051 y T052 y la aclaración de v11; `plan.md` corrige T049 y T050 y el dueño de la vista de pygame.
+
+**Qué hubo que corregir.** La primera versión de la prueba esperaba la fila solo para K = 10 y 50, pero K = 200 también la tiene porque cuenta el punto inicial.
 
 # Steven Moya Porras — Parte II
 

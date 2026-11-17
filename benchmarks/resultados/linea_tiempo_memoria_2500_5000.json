@@ -1,0 +1,28 @@
+[
+  {
+    "medicion": "linea_tiempo_memoria_crecimiento",
+    "k": 10,
+    "acciones_mitad": 2500,
+    "acciones_final": 5000,
+    "memoria_mitad_mb": 261.2,
+    "memoria_final_mb": 668.02,
+    "por_punto_mitad_kb": 1065.6,
+    "por_punto_final_kb": 1365.4,
+    "razon_acciones": 2.0,
+    "razon_memoria": 2.56,
+    "proporcional": false
+  },
+  {
+    "medicion": "linea_tiempo_memoria_crecimiento",
+    "k": 50,
+    "acciones_mitad": 2500,
+    "acciones_final": 5000,
+    "memoria_mitad_mb": 196.79,
+    "memoria_final_mb": 522.95,
+    "por_punto_mitad_kb": 3951.2,
+    "por_punto_final_kb": 5302.0,
+    "razon_acciones": 2.0,
+    "razon_memoria": 2.66,
+    "proporcional": false
+  }
+]
