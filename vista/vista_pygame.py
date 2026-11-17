@@ -157,6 +157,10 @@ class VistaPygame:
         self._sprite_rata_muerta = self._cargar_sprite("rata_muerta.png", "personajes")
         self._sprite_guardian_oseo = self._cargar_sprite("guardian_oseo.png", "personajes")   
         self._sprite_guardian_muerto = self._cargar_sprite("guardian_muerto.png", "personajes")
+        self._sprite_carcelero = self._cargar_sprite("Carcelero.png", "personajes")
+        self._sprite_carcelero_muerto = self._cargar_sprite("Carcelero_muerto.png", "personajes")
+        self._sprite_sabueso = self._cargar_sprite("Sabueso.png", "personajes")
+        self._sprite_sabueso_muerto = self._cargar_sprite("Sabueso_muerto.png", "personajes")
         self._fondo_menu = self._cargar_fondo_menu()
         self._fondo_sala = self._cargar_fondo_sala()
 
@@ -615,6 +619,35 @@ class VistaPygame:
         ):
             texto = texto.replace(original, reemplazo)
         return texto.replace("_", " ").replace("-", " ")
+
+    def _sprite_para_enemigo(self, enemigo):
+        """Elige por ficha real; conserva la selección histórica como respaldo."""
+        sprites_por_ficha = {
+            "ent_guardian_oseo": (
+                self._sprite_carcelero,
+                self._sprite_carcelero_muerto,
+            ),
+            "ent_rata_gigante": (
+                self._sprite_sabueso,
+                self._sprite_sabueso_muerto,
+            ),
+        }
+        sprites = sprites_por_ficha.get(getattr(enemigo, "tipo_ficha_id", None))
+        if sprites is not None:
+            return sprites[0] if enemigo.esta_vivo() else sprites[1]
+
+        ficha = getattr(enemigo, "ficha", None)
+        nombre_ficha = ficha.get("nombre", "") if isinstance(ficha, dict) else ""
+        identificacion = self._normalizar_nombre(
+            f"{enemigo.nombre} "
+            f"{getattr(enemigo, 'tipo_ficha_id', '')} "
+            f"{nombre_ficha}"
+        )
+        if "rata gigante" in identificacion:
+            return self._sprite_rata if enemigo.esta_vivo() else self._sprite_rata_muerta
+        if "guardian" in identificacion and "oseo" in identificacion:
+            return self._sprite_guardian_oseo if enemigo.esta_vivo() else self._sprite_guardian_muerto
+        return None
     
     def _sprite_para_objeto(self, objeto):
         """Selecciona la imagen según la ficha del objeto."""
@@ -821,31 +854,9 @@ class VistaPygame:
         ]
 
         for numero, enemigo in enumerate(sala.enemigos, 1):
-            ficha = getattr(enemigo, "ficha", None)
-            nombre_ficha = (
-                ficha.get("nombre", "")
-                if isinstance(ficha, dict)
-                else ""
-            )
-            identificacion = self._normalizar_nombre(
-                f"{enemigo.nombre} "
-                f"{getattr(enemigo, 'tipo_ficha_id', '')} "
-                f"{nombre_ficha}"
-            )
-
-            es_rata = "rata gigante" in identificacion
-            es_guardian = (
-                "guardian" in identificacion
-                and "oseo" in identificacion
-            )
+            sprite = self._sprite_para_enemigo(enemigo)
 
             if enemigo.esta_vivo():
-                sprite = None
-                if es_rata:
-                    sprite = self._sprite_rata
-                elif es_guardian:
-                    sprite = self._sprite_guardian_oseo
-
                 entidades.append((
                     GLYPH_ENEMIGO,
                     f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
@@ -854,12 +865,6 @@ class VistaPygame:
                     sprite,
                 ))
             else:
-                sprite = None
-                if es_rata:
-                    sprite = self._sprite_rata_muerta
-                elif es_guardian:
-                    sprite = self._sprite_guardian_muerto
-
                 entidades.append((
                     GLYPH_ENEMIGO_MUERTO,
                     f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
