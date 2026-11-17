@@ -287,3 +287,38 @@ obliga a invalidar o reconstruir antes de decidir.
 26 filas/390 muestras, entorno Windows/Python 3.12.10, semilla 2609, fases, trabajo, percentiles y
 memoria. La medición es propia de 001 y no reemplaza ni modifica
 `benchmarks.integrante2.medir_paso_ir_a`.
+
+## R-15 — Vigencia metodológica de las filas de mapa conocido en T050
+
+**Decision**: conservar sin cambios la ejecución T050 y sus JSON como registro histórico real y
+reproducible, pero no usar como evidencia vigente de SC-002/SC-003 las filas producidas con la
+metodología anterior de `benchmarks.integrante2.medir_mapa_conocido`. La validación corregida es la
+publicada posteriormente por Steven en `1734a70` (SC-003) y `d59752d` (SC-002), documentada en
+`specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.md` y `DECISIONES.md` §5.3.
+
+**Alcance exacto dentro de las 916 filas de T050**:
+
+| Medición histórica | Filas / repeticiones | `n` | Metodología anterior | Vigencia |
+|---|---:|---|---|---|
+| `mapa_conocido_explorar_una_sala` | 6 / 90 | 9, 16, 25, 64, 121, 484 | construía el conocimiento completo y volvía a explorar `salas // 2`; produjo cero revelaciones y objetivos de grado distinto | registro histórico; no demuestra SC-003 |
+| `mapa_conocido_estado_sala` | 6 / 90 | 9, 16, 25, 64, 121, 484 | una pasada por todas las salas, por lo que `consultas_por_lote == n`; los lotes comparados no eran iguales | operación válida, pero esas filas no demuestran actualmente SC-002 |
+| `mapa_conocido_estado_recorriendo_alternativa` | 6 / 90 | 9, 16, 25, 64, 121, 484 | alternativa emparejada con la misma cantidad variable de consultas | comparación histórica; tampoco es evidencia vigente de SC-002 |
+
+Las dos métricas principales reúnen 12 filas/180 repeticiones; al incluir la alternativa necesaria
+para la comparación de SC-002 son **18 filas/270 repeticiones** con metodología anterior. Las filas
+históricas sí registran medianas y mínimos de 15 repeticiones, pero no el lote fijo comparable que
+exige la revisión vigente. La corrección de Steven usa 2 000 consultas fijas y medianas para SC-002;
+para SC-003 usa hasta ocho salas interiores separadas, comprueba revelaciones positivas equivalentes
+antes del reloj, normaliza por revelación y compara medianas alternando el orden.
+
+**Límites de la reclasificación**:
+
+- No se reescriben ni eliminan `main_bench_completo_t050.json` ni sus resultados; la corrida y su
+  código de salida 0 siguen demostrando que los 25 proveedores se ejecutaron y fueron capturados.
+- Las 18 filas señaladas están en el informe completo, no en
+  `resultados_terreno_cazador_integrante1.json`; las **194 filas/2910 muestras** propias de mapa,
+  agenda, rutas y ciclo de 001 conservan íntegramente su alcance original.
+- Los dos commits correctivos de Steven solo cambian las tres series identificadas. No se extrapola
+  el hallazgo a las otras 898 filas de T050 ni se alteran decisiones sustentadas en otras cargas.
+- T050 permanece cerrada como ejecución histórica. PR-001 no queda demostrado por ella y T051
+  continúa abierta hasta que se publique la referencia oficial.

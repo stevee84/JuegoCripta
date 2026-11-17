@@ -474,6 +474,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 73 | Auditoría final de consistencia e integración 001 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 | 74 | Corrección documental posterior a la auditoría | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 | 75 | Sprites de carcelero y sabueso | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
+| 76 | Vigencia metodológica de la evidencia histórica T050 | Tema 12. Parte II dirigida por especificaciones | 16/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2635,6 +2636,44 @@ pruebas, benchmarks, umbrales, 003, 004, workflows ni artefactos T050.
 ejecutaron pruebas ni benchmarks por ser un cambio exclusivamente documental. `git diff --check`
 pasó. El estado permanece en **75/76** y T051 continúa bloqueada por la referencia oficial de
 PR-001. No se hizo commit ni push.
+
+---
+
+## Prompt 76 — Vigencia metodológica de la evidencia histórica T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 16/11/2026
+
+> **Prompt**
+>
+> Cerrar la observación de Steven sobre la evidencia histórica T050 sin repetir benchmarks ni
+> alterar resultados: identificar exactamente las filas con metodología anterior de SC-002/SC-003,
+> corregir su interpretación en documentación propia de 001, preservar las cifras 916 y 194/2910,
+> evaluar sin modificar PID/código de salida/stderr, mantener T050 cerrada y T051/PR-001 pendientes,
+> registrar Prompt 76 y validar referencias y `git diff --check` sin operaciones Git mutantes.
+
+**Hallazgo y corrección documental.** El informe completo contiene seis filas/90 repeticiones de
+`mapa_conocido_explorar_una_sala` con cero revelaciones, seis/90 de
+`mapa_conocido_estado_sala` con lotes variables y seis/90 de su alternativa lineal emparejada. Son
+18 filas/270 repeticiones históricas que no demuestran actualmente SC-002/SC-003. La corrección
+vigente se atribuye a Steven (`1734a70`, `d59752d`); no se modificó 003. Ninguna serie afectada
+pertenece al subconjunto propio de 001 de 194 filas/2910 muestras, cuyo alcance se conserva junto con
+las demás filas no implicadas. Los JSON originales de 916 y 194 filas quedaron intactos, T050 sigue
+cerrada como ejecución reproducible y T051 permanece abierta por la referencia oficial de PR-001.
+
+**Archivos auxiliares.** Se recomienda conservar el código de salida 0 y stderr como prueba del
+resultado del hijo y diagnóstico de los cinco avisos. Se recomienda retirar posteriormente solo el
+PID histórico, que no es consumido por código ni pruebas; hacerlo requerirá actualizar las referencias
+documentales, no eliminar la generación temporal de PID del capturador. En este bloque no se modificó
+ni eliminó ninguno de los tres archivos.
+
+**Validación.** Se inspeccionaron en memoria los JSON existentes y se contrastaron el código de la
+corrida con los commits correctivos, sin ejecutar benchmarks ni pruebas. Se verificaron enlaces,
+recuentos, 75/76 tareas y T051 como única abierta. `git diff --check` pasó; los 14 artefactos T050
+incompletos permanecieron intactos. No se modificaron producción, pruebas, 003, 004 ni Git.
 
 ---
 

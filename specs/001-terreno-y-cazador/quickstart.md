@@ -210,7 +210,7 @@ Cada prueba incluye en su nombre o docstring el AC y los FR asociados. No se ace
 
 El ciclo común histórico sigue disponible; `benchmarks/benchmark_ciclo_real_integrante1.py` conserva `PROVEEDORES = (medir_ciclos_sinteticos,)` y registra mediante `PROVEEDORES_MAIN = (medir_ciclos_sinteticos_main,)` las cargas 32/64. `benchmarks/terreno_cazador_integrante1.py` conserva `PROVEEDORES_AGENDA`, `PROVEEDORES_RUTAS` y `PROVEEDORES`, y registra cuatro adaptadores nominales mediante `PROVEEDORES_MAIN`. El argumento global `tamanos` de `integrante3.ejecutar` no describe esas cargas particulares: al interpretar la salida se usan `n`, `carga`, escenario y alternativa de cada fila. Pruebas focalizadas de registro: **10 passed in 0.64s**; no se ejecutó el benchmark completo.
 
-### Evidencia oficial T050
+### Ejecución histórica T050
 
 La ejecución oficial usa `benchmarks.ejecutar_t050_integrante1`: stdout se
 conserva como JSON completo, stderr, PID y código real del hijo quedan en
@@ -232,6 +232,45 @@ rutas 30/450 y ciclo 32/480; las 194 claves son únicas y el subconjunto coincid
 exactamente con el original. stderr conserva cinco avisos por falta del paquete
 offline de `cripta-01`. Las 32 filas de ciclo continúan etiquetadas como
 sintéticas, referencia oficial pendiente y `afirma_pr001=false`.
+
+#### Vigencia de las filas de mapa conocido
+
+La ejecución del 14/11/2026 sigue siendo un registro real y reproducible; sus JSON no se corrigen
+retroactivamente. La revisión posterior de Steven identificó metodología antigua únicamente en
+estas series del informe completo:
+
+| Serie | Filas | Repeticiones resumidas | Cargas `n` | Interpretación vigente |
+|---|---:|---:|---|---|
+| `mapa_conocido_explorar_una_sala` | 6 | 90 | 9, 16, 25, 64, 121, 484 | cero revelaciones nuevas; no evidencia SC-003 |
+| `mapa_conocido_estado_sala` | 6 | 90 | 9, 16, 25, 64, 121, 484 | lotes de `n` consultas; no evidencia vigente de SC-002 |
+| `mapa_conocido_estado_recorriendo_alternativa` | 6 | 90 | 9, 16, 25, 64, 121, 484 | alternativa con el mismo lote variable; comparación histórica |
+
+Son **18 filas/270 repeticiones** en total. Las dos métricas principales representan 12/180 y la
+tercera es la alternativa emparejada de SC-002. Ninguna pertenece al JSON filtrado de 001 de **194
+filas/2910 muestras**. Las demás filas conservan su interpretación original y no se consideran
+afectadas solo por este hallazgo.
+
+La evidencia vigente corresponde a `1734a70` y `d59752d`, cambios posteriores de Steven: SC-003
+comprueba revelaciones positivas equivalentes sobre salas interiores y compara medianas por
+revelación; SC-002 usa 2 000 consultas fijas en ambos tamaños y compara medianas por consulta. El
+detalle y los resultados corregidos están en
+`specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.md` y `DECISIONES.md` §5.3.
+
+#### Archivos auxiliares de la captura
+
+- `main_bench_t050.exitcode.txt`: **conservar**. El valor 0 es la comprobación histórica directa
+  del resultado del proceso hijo, distinta del éxito del capturador.
+- `main_bench_t050.stderr.log`: **conservar**. Sus cinco avisos explican la ausencia del paquete
+  offline de `cripta-01` y permiten auditar por qué no invalidaron el código 0.
+- `main_bench_t050.pid`: **retirar del repositorio en una limpieza posterior**. El PID 31608 solo
+  identificó el proceso mientras estaba vivo y no prueba resultados una vez terminada la corrida.
+  No lo consume ninguna prueba ni código posterior; el ejecutor y
+  `tests/test_ejecutor_t050_001.py` prueban la creación de archivos PID temporales, no ese valor
+  versionado. Al retirarlo deben actualizarse las referencias de este quickstart y de
+  `contracts/ejecucion-t050-powershell.md`, sin quitar del capturador la capacidad de publicar un
+  PID durante una ejecución futura.
+
+Esta revisión no elimina ni modifica ninguno de los tres archivos auxiliares.
 
 ### Cierre integral T062/T071
 
