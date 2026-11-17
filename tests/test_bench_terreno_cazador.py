@@ -522,6 +522,125 @@ def test_benchmark_rutas_no_impone_umbral_temporal_variable():
                for fila in filas)
 
 
+# T054: medición propia de 001, distinta de integrante2.medir_paso_ir_a.
+def test_t054_valida_viaje_vista_conocimiento_y_alternativa_antes_de_medir():
+    from benchmarks.terreno_cazador_integrante1 import (
+        ALTERNATIVA_IR_A_RECALCULO,
+        ALTERNATIVA_IR_A_REUTILIZADA,
+        FASES_IR_A,
+        medir_paso_ir_a_001,
+    )
+
+    filas = medir_paso_ir_a_001(
+        repeticiones=1, tamanos=(16,), incluir_publicado=False)
+
+    assert len(filas) == 4 * 2
+    assert {fila["alternativa"] for fila in filas} == {
+        ALTERNATIVA_IR_A_RECALCULO,
+        ALTERNATIVA_IR_A_REUTILIZADA,
+    }
+    assert {fila["carga"]["estado_conocimiento"] for fila in filas} == {
+        "empate", "puerta_cerrada", "conocimiento_actualizado", "sin_camino",
+    }
+    for fila in filas:
+        assert fila["medicion"] == "ir_a_paso_completo_001"
+        assert fila["unidad"] == "ns_por_paso"
+        assert fila["limite_ns"] == 5_000_000
+        assert fila["repeticiones"] == len(fila["muestras"]) == 1
+        assert set(fila["fases"]) == set(FASES_IR_A)
+        assert all(len(fase["muestras"]) == 1
+                   for fase in fila["fases"].values())
+        assert fila["fixture_fuera"] is True
+        assert fila["preparacion_auxiliar_incluida"] is True
+        assert fila["validacion"]["equivalencia_observable"] is True
+        assert fila["validacion"]["viaje_real"] is True
+        assert fila["validacion"]["vista_mapa_conocido_real"] is True
+        assert fila["validacion"]["solo_conocimiento_jugador"] is True
+        assert fila["memoria"]["incluida_en_tiempo"] is False
+        assert fila["cumple_mediana_5ms"] == (
+            fila["mediana"] < fila["limite_ns"])
+        assert fila["cumple_todas_muestras_5ms"] == (
+            fila["maximo"] < fila["limite_ns"])
+
+    por_estado = {
+        fila["carga"]["estado_conocimiento"]: fila
+        for fila in filas
+        if fila["alternativa"] == ALTERNATIVA_IR_A_RECALCULO
+    }
+    assert por_estado["empate"]["validacion"]["paso"] == 2
+    assert por_estado["puerta_cerrada"]["validacion"]["paso"] == 3
+    assert por_estado["conocimiento_actualizado"]["validacion"]["paso"] == 15
+    assert por_estado["sin_camino"]["validacion"]["paso"] is None
+    assert por_estado["sin_camino"]["validacion"]["motivo"] == "sin_camino"
+
+
+def test_t054_usa_mapa_conocido_completo_de_la_cripta_publicada_mayor():
+    from benchmarks.terreno_cazador_integrante1 import (
+        ALTERNATIVA_IR_A_RECALCULO,
+        medir_paso_ir_a_001,
+    )
+
+    filas = medir_paso_ir_a_001(
+        repeticiones=1, tamanos=(), incluir_publicado=True)
+    assert len(filas) == 2
+    produccion = next(
+        fila for fila in filas
+        if fila["alternativa"] == ALTERNATIVA_IR_A_RECALCULO)
+    assert produccion["origen_carga"] == "mapa_publicado_offline"
+    assert produccion["n"] == produccion["carga"]["salas_exploradas"] == 50
+    assert produccion["carga"]["cripta_id"] == "cripta-04"
+    assert produccion["carga"]["estado_conocimiento"] == \
+        "conocimiento_completo_publicado"
+    assert produccion["validacion"]["paso"] == 45
+    assert produccion["validacion"]["costo_total"] == 4000
+    assert produccion["afirma_pr001"] is False
+
+
+def test_t054_evidencia_conservada_distingue_cumplimientos_de_superaciones():
+    import json
+    from pathlib import Path
+
+    from benchmarks.terreno_cazador_integrante1 import (
+        ALTERNATIVA_IR_A_RECALCULO,
+        ALTERNATIVA_IR_A_REUTILIZADA,
+        LIMITE_IR_A_NS,
+    )
+
+    ruta = Path(
+        "benchmarks/resultados/"
+        "paso_ir_a_t054_c1_r15_32-128-512-publicado50.json")
+    informe = json.loads(ruta.read_text(encoding="utf-8"))
+    filas = informe["mediciones"]
+
+    assert informe["limite_ns"] == LIMITE_IR_A_NS
+    assert informe["repeticiones"] == 15
+    assert len(filas) == 26
+    assert sum(len(fila["muestras"]) for fila in filas) == 390
+    assert all(fila["repeticiones"] == len(fila["muestras"]) == 15
+               for fila in filas)
+
+    produccion = [fila for fila in filas
+                  if fila["alternativa"] == ALTERNATIVA_IR_A_RECALCULO]
+    experimental = [fila for fila in filas
+                    if fila["alternativa"] == ALTERNATIVA_IR_A_REUTILIZADA]
+    publicada = [fila for fila in produccion
+                 if fila["origen_carga"] == "mapa_publicado_offline"]
+    superadas = [fila for fila in produccion
+                 if not fila["cumple_todas_muestras_5ms"]]
+
+    assert len(produccion) == len(experimental) == 13
+    assert len(publicada) == 1
+    assert publicada[0]["cumple_todas_muestras_5ms"] is True
+    assert publicada[0]["muestras_bajo_5ms"] == 15
+    assert {(fila["n"], fila["carga"]["estado_conocimiento"])
+            for fila in superadas} == {
+                (512, "empate"),
+                (512, "puerta_cerrada"),
+            }
+    assert sum(fila["muestras_bajo_5ms"] for fila in produccion) == 186
+    assert all(fila["afirma_pr001"] is False for fila in filas)
+
+
 # T043/AC-015: el esquema debe quedar cubierto en este archivo, además de las
 # pruebas específicas del productor T047.
 def test_ac015_agenda_ciclo001_conserva_filas_equivalentes_y_muestras():

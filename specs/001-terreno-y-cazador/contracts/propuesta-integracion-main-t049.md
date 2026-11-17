@@ -1,37 +1,39 @@
 # Propuesta de integración T049 — `main.py --bench`
 
-**Estado**: BORRADOR PARA ACUERDO; NO APLICADO.
+**Estado**: APLICADO Y VALIDADO EN `Sofia`; T049/T050 CERRADAS.
 
 **Autora**: Sofía Delgado (001).
 
-**Propietario de `main.py`**: por confirmar en la revisión conjunta.
+**Propietario coordinado de `main.py`**: Steven; acuerdo previo verificable en `4ea99fa1c62dd79faf841ea143bb7ff9b55cde94` y extensión autorizada en el bloque actual.
 
-**Fecha**: 2026-11-10; revisada el 2026-11-14 sobre `integracion-parte2@31f58ca`.
+**Fecha**: 2026-11-10; aplicada el 2026-11-14 sobre `Sofia@59cf4ed`.
 
 **Referencias**: T049, T062, T067, T070, T072, T076; FR-011, FR-013, FR-018; PR-001–PR-006.
 
-Esta propuesta no modifica `main.py`, no cambia producción y no afirma PR-001 ni el límite de 20 ms. Solo describe el cambio mínimo para que `main.py --bench` ejecute los proveedores de 001 que hoy se lanzan por separado.
+El cambio se limita al bloque `if config.bench` de `main.py`, no cambia los caminos de juego y no afirma PR-001 ni el límite de 20 ms. Registra los proveedores de 001 sin modificar el ejecutor común ni los algoritmos medidos.
 
 ## 1. Situación actual
 
-`main.py` importa, dentro de `if config.bench`:
+`main.py` importa ahora, dentro de `if config.bench`:
 
 - `PROVEEDORES` de `benchmarks.integrante2`;
 - `PROVEEDORES_ADICIONALES` de `benchmarks.bench_ampliado`;
 - `PROVEEDORES_MAPA` de `benchmarks.mapa_cripta_integrante1`;
 - `bench_linea.PROVEEDORES` de `benchmarks.linea_tiempo` (Joshua), después de
   asignar `bench_linea.K_CONFIGURADO` desde `--checkpoint-cada`;
+- `PROVEEDORES_MAIN` de `benchmarks.terreno_cazador_integrante1`;
+- `PROVEEDORES_MAIN` de `benchmarks.benchmark_ciclo_real_integrante1`;
 
 y ejecuta `benchmarks.integrante3.ejecutar(proveedores=...)`.
 
-Los doce proveedores de `benchmarks.integrante2` incluyen ahora los cambios de
+Los doce proveedores de `benchmarks.integrante2` incluyen los cambios de
 Steven para mapa conocido y un paso de «ir a» (`medir_mapa_conocido` y
-`medir_paso_ir_a`). El proveedor del índice de mapa y el de línea de tiempo ya
-se ejecutan desde `main.py --bench`. Rutas, agenda ampliada y ciclo sintético
-completo de 001 todavía no están registrados allí; por eso T049/T050 y sus
-tareas documentales dependientes siguen abiertas.
+`medir_paso_ir_a`). Con adicionales, mapa y línea de tiempo suman 20
+proveedores conservados; los cinco adaptadores de Sofía elevan el registro a
+25 identidades únicas. T049 está cerrada y T050 conserva ya la ejecución
+oficial, su código 0 y el informe filtrado.
 
-## 2. Cambio mínimo propuesto
+## 2. Cambio mínimo aplicado
 
 Añadir dos importaciones locales al bloque `--bench` y concatenar sus tuplas
 una sola vez, **sin sustituir ni reordenar los proveedores ya registrados**.
@@ -128,7 +130,7 @@ conserva Joshua y usa exclusivamente las tuplas adaptadas `PROVEEDORES_MAIN`.
 
 No se toca `_crear_fuente`, `--replay`, `--verificar`, la vista ni ningún camino de producción. Las importaciones permanecen dentro de `if config.bench` para no encarecer el arranque normal.
 
-## 3. Proveedores que quedarían registrados
+## 3. Proveedores registrados
 
 | Tupla | Proveedores | Cobertura |
 |---|---|---|
@@ -141,7 +143,7 @@ No se toca `_crear_fuente`, `--replay`, `--verificar`, la vista ni ningún camin
 `PROVEEDORES`, `PROVEEDORES_ADICIONALES`, `PROVEEDORES_MAPA` y
 `bench_linea.PROVEEDORES` existentes se conservan sin cambios y sin duplicados.
 
-Los nombres emitidos por los cinco proveedores pendientes son:
+Los nombres emitidos por los cinco proveedores añadidos son:
 
 - `agenda_insertar`, `agenda_extraer`, `agenda_cancelar_id`,
   `agenda_cancelar_actor`, `agenda_reprogramar` y
@@ -159,27 +161,26 @@ adaptadores de agenda/rutas exigidos. No debe sustituirse por `PROVEEDORES`,
 porque esa tupla histórica recibe los tamaños globales directamente y se
 conserva para ejecuciones focalizadas y compatibilidad de pruebas.
 
-## 4. Validación posterior a la aplicación
+## 4. Validación de T049 y ejecución completada de T050
 
-1. Al aplicar el diff de `main.py`, adaptar `test_bench_desde_main_no_inicializa_fuente_ni_vista`
-   y el patrón de `test_fr016_main_bench_registra_el_proveedor_y_el_k` para
-   capturar los proveedores de terreno/ciclo, comprobar una inclusión por
-   callable y confirmar que línea de tiempo y los demás existentes permanecen.
-2. Conservar `tests/test_bench_adaptadores_001.py`, que verifica firma,
+1. `test_bench_desde_main_no_inicializa_fuente_ni_vista` captura los proveedores
+   entregados por `main`, compara las 25 identidades en orden, exige unicidad y
+   una aparición de cada adaptador. `test_fr016_main_bench_registra_el_proveedor_y_el_k`
+   confirma además que la línea de tiempo y su K siguen conectados.
+2. `tests/test_bench_adaptadores_001.py` verifica firma,
    despacho único, cargas, repeticiones, ausencia de duplicados e invariancia
    de las tuplas históricas sin ejecutar las cargas completas.
-3. Ejecutar `python main.py --bench` y guardar el JSON fuera de la medición solo
-   en T050, después de autorizar y aplicar el registro compartido.
-4. Comprobar que aparecen, una sola vez por combinación identificadora, las filas de mapa, agenda, rutas y ciclo. El nombre `medicion` no es único por sí solo: agenda, alternativas y escenarios producen varias filas legítimas con el mismo nombre.
-5. Verificar el esquema de 001 (`medicion`, `n`, `carga`, `repeticiones`, `unidad`, `mediana`, `p95`, `maximo`, `minimo`, `muestras`, `trabajo`, `memoria`) sin exigir esos campos a proveedores ajenos con contratos anteriores.
-6. Comparar las cargas con los artefactos ya conservados:
+3. La ejecución focalizada de ambos puntos terminó en **10 passed in 0.64s**.
+4. T050 ejecutó `main.py --bench` mediante el capturador Python y registró
+   código real 0, JSON completo de 916 filas y evidencia de 194 filas de 001.
+5. T050 comprobó una sola fila por combinación identificadora de mapa, agenda, rutas y ciclo. El nombre `medicion` no es único por sí solo: agenda, alternativas y escenarios producen varias filas legítimas con el mismo nombre.
+6. Verificar el esquema de 001 (`medicion`, `n`, `carga`, `repeticiones`, `unidad`, `mediana`, `p95`, `maximo`, `minimo`, `muestras`, `trabajo`, `memoria`) sin exigir esos campos a proveedores ajenos con contratos anteriores.
+7. Comparar las cargas con los artefactos ya conservados:
    - `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
    - `benchmarks/resultados/agenda_ciclo001_t047_c1_r9_256-512-1024.json`;
    - `benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`;
    - el artefacto del mapa correspondiente.
-7. Ejecutar primero las pruebas focalizadas de registro, proveedores y esquema;
-   dejar la suite completa para el cierre coordinado posterior.
-8. T050 comprueba la inclusión real en `main.py --bench`; T062/T072/T076 usan esa salida. No se interpretan las filas sintéticas como PR-001 ni como cumplimiento de 20 ms.
+8. T050 conserva la ejecución real y el artefacto; T062/T072/T076 pueden usar esa salida. No se interpretan las filas sintéticas como PR-001 ni como cumplimiento de 20 ms.
 
 ## 5. Riesgos y mitigaciones
 
@@ -196,8 +197,7 @@ conserva para ejecuciones focalizadas y compatibilidad de pruebas.
 
 ## 6. Criterio de aceptación
 
-- El propietario revisa y aplica el diff exacto de registro, o propone una variante equivalente.
-- `main.py --bench` incluye una sola vez los proveedores acordados.
-- No cambia el comportamiento de producción ni se añaden cachés.
-- T049 se cierra; T050, T062, T067, T070, T072 y T076 pueden continuar con evidencia literal de `--bench`.
-- La propuesta no se considera acuerdo hasta que el propietario de `main.py` la acepte.
+- [x] El acuerdo de Steven sobre el punto compartido consta en `4ea99fa`; la extensión actual usa la misma vía de concatenación.
+- [x] `main.py --bench` incluye una sola vez los 25 proveedores acordados.
+- [x] No cambia el comportamiento de producción ni se añaden cachés.
+- [x] T049 se cierra con pruebas de identidad y T050 con ejecución completa, código 0 y artefacto validado.

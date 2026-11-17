@@ -1,10 +1,10 @@
 # Respuesta parcial con Steven: datos ponderados y rutas para «ir a»
 
-**Estado**: G1/G2 y la vista conocida están integradas en `integracion-parte2@d86819d`. Steven aceptó la firma y representación de §4.1; su entrega publica costo/rango estrictos, simetría entre sentidos existentes, persistencia v10 de costo/rango y la vista de conocimiento de 003. El equipo confirmó que una salida sin inversa es válida y enmendó FR-002 antes del código. La línea de tiempo completa también está integrada, pero la persistencia conjunta de mapa conocido y línea permanece abierta. Este documento no modifica ni sustituye specs 002/003, clases de Steven ni un contrato de Joshua.
+**Estado**: G1/G2, la vista conocida y la persistencia conjunta están integradas. Steven aceptó la firma y representación de §4.1; `5000d1f` publicó costo/rango estrictos, simetría entre sentidos existentes y su persistencia v10, mientras `d1ad048` entregó el formato conjunto **v11** con mapa conocido y línea de tiempo. El equipo confirmó que una salida sin inversa es válida y enmendó FR-002 antes del código. T006/T041/T055 quedaron verificadas el 2026-11-15 sin modificar clases de Steven/Joshua ni otras especificaciones.
 
 **Proponentes/consumidores**: Sofía ofrece cálculo de rutas; Steven adapta los datos, construye la vista del mapa conocido y asume la persistencia de costo/rango/mapa conocido en coordinación con Joshua. Steven solicitó expresamente que Sofía implemente el índice por ID de `MapaCripta`, componente de Sofía, conservando firmas, orden e identidad. Ese acuerdo específico no autoriza a Sofía a editar clases de Steven ni fija quién modifica DTO, inicialización u otros archivos compartidos.
 
-**Evidencia integrada verificada el 2026-11-09**:
+**Evidencia histórica integrada verificada el 2026-11-09**:
 
 - checkout local `Sofia`: `5000d1fe8af268987206827e4c524c05bd599357` (`Steve@5000d1f`);
 - `dto/sala.py` publica `Puerta.costo` con default 100; `dto/actor.py` publica `Enemigo.rango`;
@@ -20,7 +20,7 @@ Acordar dos fronteras:
 1. entregar al modelo costos y rangos ya validados conforme a `FR-001`, `FR-002`, `FR-009` y `FR-011` de 001;
 2. permitir que «ir a» use el cálculo ponderado de 001 sin acceder al esqueleto completo ni al estado real de puertas que el jugador desconoce.
 
-## 2. Estado del código revisado
+## 2. Estado del código revisado en 2026-11-09
 
 La entrega integrada constituye implementación local de G2:
 
@@ -28,7 +28,7 @@ La entrega integrada constituye implementación local de G2:
 - `_adaptar_contenido_externo()` valida/materializa `rango` solo para `comportamiento == "cazador"`.
 - `InicializadorPartida._construir()` valida multiplicidad y simetría después de `mapa.vincular_salidas()` y antes de 002.
 - `MapaCripta` publica índice por ID; la vista de cazador se implementa en 001 sin requerir la vista conocida de 003.
-- `GuardadoBinario.VERSION` es **10** e incluye costo/rango. Persistir mapa conocido y línea de tiempo completa continúa coordinado y pendiente.
+- En esa revisión `GuardadoBinario.VERSION` era **10** e incluía costo/rango; mapa conocido y línea de tiempo todavía estaban pendientes. La entrega posterior vigente se registra en §4.3.
 - `verificador_resolubilidad.verificar()` usa destino, apertura y llaves, no pesos. Incorporar costos no cambia su alcanzabilidad.
 
 Steven solicitó a Sofía resolver el cuello de botella lineal mediante el índice de `MapaCripta`. No se encontró un acuerdo explícito contradictorio: la anotación previa de que era un componente compartido exigía identificar consumidores y acordar el cambio. El plan enumera esos consumidores y T007–T009/T072–T076 conservan contrato y aportan pruebas/mediciones. La solicitud no resuelve las asignaciones todavía abiertas de DTO, inicialización, vista conocida o persistencia.
@@ -157,26 +157,28 @@ subidas, porque v10 ya estaba publicada y en uso cuando llegó el contrato de la
 v10 circulando no puede reinterpretarse en silencio (FR-018). El resultado observable es el que M3
 pedía: una sola ida y vuelta devuelve costo, rango, mapa conocido y línea.
 
-**Verificación (T041/T055)**: `tests/test_datos/test_guardado_terreno_cazador.py`, seis pruebas que
+**Verificación (T041/T055)**: `tests/test_datos/test_guardado_terreno_cazador.py`, siete pruebas que
 cubren las cuatro cosas en una ida y vuelta, que el costo no se rellena con un valor por defecto,
 el paquete histórico en v9 y v10, los alias de sentidos cortos del paquete real y la ausencia de
 resultados de ruta en el archivo. Esta última mira los bytes crudos y no el estado reconstruido,
 porque `pickle` escribe los nombres de clase en claro: si algo retuviera un `ResultadoRuta`, la
-vista conocida o el viaje, aparecería. Ejecutadas: `6 passed`. Suite completa: 1424 aprobadas, 0
-omitidas.
+vista conocida o el viaje, aparecería. Auditoría de Sofía del 2026-11-15: **7 passed in 0.63s**
+en el archivo conjunto y **144 passed in 12.09s** en persistencia, restauración, línea e
+integraciones relacionadas. Las identidades canónicas están cubiertas por las regresiones del
+restaurador, reanudación y línea; no fue necesario añadir pruebas.
 
 ## 5. Puntos todavía no confirmados por ambos
 
-- mecanismo, claves, invalidación y propietario de reutilización para «ir a». Sigue abierto a
-  propósito: 003 no reutiliza nada, recalcula el paso cada vez (FR-014), y mientras eso se cumpla
-  no hay caché que acordar.
+- mecanismo, claves, invalidación y propietario de reutilización para «ir a». T066 decidió no crear
+  caché: 003 no reutiliza nada y recalcula el paso cada vez (FR-014). Si una referencia futura exige
+  retener estado, el mecanismo sigue sin acordarse.
 
 ## 6. Consumidores y compatibilidad
 
 - **001**: cazador, movimiento ponderado y benchmarks de rutas.
 - **002**: conserva su recorrido de resolubilidad; los costos no cambian alcanzabilidad.
 - **003**: consume la vista restringida construida por Steven y vuelve a pedir un paso con conocimiento vigente.
-- **004/guardado**: persiste estado canónico según el acuerdo futuro; nunca resultados ni cachés de ruta.
+- **004/guardado**: v11 persiste estado canónico y línea según el acuerdo entregado; nunca resultados ni cachés de ruta.
 
 ## 7. Criterios de cierre e integración
 
@@ -195,7 +197,9 @@ omitidas.
   grande y 1,887 ms en una medición aislada, las dos por debajo de los 5 ms de §6.1, y la fila está
   en `main.py --bench` vía `benchmarks.integrante2.medir_paso_ir_a`. La equivalencia la cubre
   `SC-005` en `tests/test_logica/test_viaje.py`: dos estados reales distintos con el mismo mapa
-  conocido producen el mismo viaje. Falta la mitad de 001 (T054/T066: la medición comparada en su
-  propio proveedor).
+  conocido producen el mismo viaje. La mitad de 001 está cubierta por T054/T066: medición propia en
+  `benchmarks/terreno_cazador_integrante1.py`, equivalencia previa, 15/15 muestras `<5 ms` con el
+  mapa conocido completo de `cripta-04` y decisión de conservar el recálculo sin caché. La
+  referencia oficial de PR-001/T051 sigue pendiente.
 - [x] Steven y Joshua completan mapa conocido/línea de tiempo y su persistencia conjunta: v11 en `d1ad048`, verificada en T041/T055. Ver §4.3.
-- [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; la persistencia y la medición conjunta conservan sus tareas abiertas.
+- [x] T004/T052/T053 verifican vista conocida, independencia, recálculo por paso y casos terminales; T054/T066 cierran la medición conjunta y la decisión sin caché. T006/T041/T055 cierran la persistencia coordinada en 001.

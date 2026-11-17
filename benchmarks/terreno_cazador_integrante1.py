@@ -10,6 +10,7 @@ import gc
 import hashlib
 import heapq
 import json
+from pathlib import Path
 import platform
 import random
 import statistics
@@ -43,6 +44,18 @@ ALTERNATIVA_COMPARTIDA = "inversa_compartida_recalculo_benchmark"
 ALTERNATIVA_REUTILIZADA = "inversa_compartida_reutilizada_benchmark"
 CICLOS_RUTAS = 3
 CANTIDAD_CAZADORES = 20
+CARGAS_IR_A = (32, 128, 512)
+LIMITE_IR_A_NS = 5_000_000
+ALTERNATIVA_IR_A_RECALCULO = "ir_a_recalculo_produccion"
+ALTERNATIVA_IR_A_REUTILIZADA = "ir_a_inversa_reutilizable_experimental"
+FASES_IR_A = (
+    "crear_viaje",
+    "construccion_auxiliar",
+    "consulta_recalculo",
+    "consulta_inicial",
+    "consulta_reutilizada",
+    "limpieza",
+)
 FASES_RUTAS = (
     "mantenimiento_puertas",
     "construccion_inicial",
@@ -1313,6 +1326,456 @@ def medir_rutas_matriz(repeticiones=9, tamanos=(32, 64)):
     return filas
 
 
+# T054: un paso completo de «ir a» usa las clases reales de 003 y el buscador
+# productivo de 001. La inversa retenida de comparación no sale del benchmark.
+@dataclass(frozen=True)
+class _EscenarioIrA:
+    identificador: str
+    conocido: object
+    n: int
+    origen_id: int
+    destino_id: int
+    origen_carga: str
+    estado_conocimiento: str
+    paso_esperado: int | None
+    motivo_esperado: str | None
+    cripta_id: str | None = None
+
+
+def _agregar_salida_ir_a(salas, origen, destino, costo, abierta=True):
+    from dto.sala import Puerta
+
+    puerta = Puerta(f"t054-{origen}-{destino}", destino, f"{origen}>{destino}")
+    puerta.costo = costo
+    puerta.abierta = abierta
+    salas[origen].puertas.append(puerta)
+
+
+def _conocido_ir_a_sintetico(n, estado):
+    """Crea conocimiento real de 003; la sala de atajo puede seguir avistada."""
+    from dto.sala import Sala
+    from logica.mapa_conocido import MapaConocido
+
+    if type(n) is not int or n < 8:
+        raise ValueError("T054 requiere cargas sintéticas de al menos ocho salas.")
+    salas = {sala_id: Sala(sala_id) for sala_id in range(1, n + 1)}
+    for sala in salas.values():
+        sala.nombre = f"T054-{sala.id_sala}"
+
+    cerradas = set()
+    if estado == "puerta_cerrada":
+        cerradas.add((1, 2))
+    elif estado == "sin_camino":
+        cerradas.update({(1, 2), (1, 3)})
+    elif estado not in {"empate", "conocimiento_actualizado"}:
+        raise ValueError(f"Estado de conocimiento T054 desconocido: {estado}")
+
+    def salida(origen, destino, costo):
+        _agregar_salida_ir_a(
+            salas, origen, destino, costo,
+            abierta=(origen, destino) not in cerradas,
+        )
+
+    # Dos rutas de igual costo fuerzan el desempate por primera vecina 2/3.
+    salida(1, 2, 2)
+    salida(1, 3, 2)
+    salida(2, 4, 2)
+    salida(3, 4, 2)
+    for sala_id in range(4, n - 2):
+        salida(sala_id, sala_id + 1, 2)
+    salida(n - 2, n, 2)
+    # Atajo inicialmente solo avistado; al explorarlo cambia el siguiente paso.
+    salida(1, n - 1, 1)
+    salida(n - 1, n, 1)
+
+    conocido = MapaConocido()
+    exploradas = tuple(range(1, n + 1))
+    if estado != "conocimiento_actualizado":
+        exploradas = tuple(
+            sala_id for sala_id in exploradas if sala_id != n - 1)
+    for sala_id in exploradas:
+        conocido.explorar(salas[sala_id])
+    return conocido
+
+
+def _escenarios_ir_a_sinteticos(n):
+    from logica.viaje import MOTIVOS
+
+    return (
+        _EscenarioIrA(
+            f"t054-sintetico-{n}-desempate",
+            _conocido_ir_a_sintetico(n, "empate"), n, 1, n,
+            "sintetico", "empate", 2, None,
+        ),
+        _EscenarioIrA(
+            f"t054-sintetico-{n}-puerta-cerrada",
+            _conocido_ir_a_sintetico(n, "puerta_cerrada"), n, 1, n,
+            "sintetico", "puerta_cerrada", 3, None,
+        ),
+        _EscenarioIrA(
+            f"t054-sintetico-{n}-conocimiento-actualizado",
+            _conocido_ir_a_sintetico(n, "conocimiento_actualizado"), n, 1, n,
+            "sintetico", "conocimiento_actualizado", n - 1, None,
+        ),
+        _EscenarioIrA(
+            f"t054-sintetico-{n}-sin-camino",
+            _conocido_ir_a_sintetico(n, "sin_camino"), n, 1, n,
+            "sintetico", "sin_camino", None, MOTIVOS.SIN_CAMINO,
+        ),
+    )
+
+
+def _escenario_ir_a_publicado():
+    """Carga la cripta publicada mayor sin incluir red ni decodificación al medir."""
+    from datos.decodificador_datos import DecodificadorDatos
+    from datos.fuente_offline import FuenteOffline
+    from logica.mapa_conocido import MapaConocido
+    from logica.mapa_cripta import MapaCripta
+
+    carpeta = Path(__file__).resolve().parents[1] / "tests/fixtures/api_real"
+    cripta_id = "cripta-04"
+    fuente = FuenteOffline(str(carpeta))
+    generales = fuente.obtener_generales(cripta_id)
+    decodificador = DecodificadorDatos()
+    mapa = MapaCripta()
+    for numero in range(1, generales["paginas"] + 1):
+        for datos in fuente.obtener_pagina(cripta_id, numero)["salas"]:
+            mapa.agregar_sala(decodificador.convertir_sala(datos))
+    mapa.vincular_salidas()
+    conocido = MapaConocido()
+    for sala in mapa.obtener_salas():
+        conocido.explorar(sala)
+    return _EscenarioIrA(
+        "t054-publicado-cripta-04",
+        conocido,
+        generales["salas_total"],
+        46,
+        41,
+        "mapa_publicado_offline",
+        "conocimiento_completo_publicado",
+        45,
+        None,
+        cripta_id=cripta_id,
+    )
+
+
+def _construir_inversa_ir_a(vista, ids_salas, destino_id):
+    """Alternativa experimental sobre el protocolo público de VistaMapaConocido."""
+    inversas = {sala_id: [] for sala_id in ids_salas}
+    examinadas = 0
+    aristas = 0
+    for origen_id in ids_salas:
+        salidas = vista.salidas_transitables(origen_id)
+        cantidad_examinada = getattr(salidas, "salidas_examinadas", None)
+        examinadas += (
+            len(tuple(salidas))
+            if cantidad_examinada is None
+            else cantidad_examinada
+        )
+        for salida in salidas:
+            inversas[salida.destino_id].append((origen_id, salida.costo))
+            aristas += 1
+
+    distancias = {destino_id: 0}
+    frontera = [(0, destino_id)]
+    fijadas = set()
+    insertadas = 1
+    frontera_maxima = 1
+    obsoletas = 0
+    relajadas = 0
+    while frontera:
+        distancia, sala_id = heapq.heappop(frontera)
+        if sala_id in fijadas or distancias.get(sala_id) != distancia:
+            obsoletas += 1
+            continue
+        fijadas.add(sala_id)
+        for predecesor_id, costo in inversas[sala_id]:
+            relajadas += 1
+            nueva = distancia + costo
+            anterior = distancias.get(predecesor_id)
+            if anterior is not None and anterior <= nueva:
+                continue
+            distancias[predecesor_id] = nueva
+            heapq.heappush(frontera, (nueva, predecesor_id))
+            insertadas += 1
+            frontera_maxima = max(frontera_maxima, len(frontera))
+    metricas = {
+        "salas_fijadas": len(fijadas),
+        "salas_descubiertas": len(distancias),
+        "salidas_examinadas": relajadas,
+        "conexiones_examinadas_construccion": examinadas,
+        "aristas_inversas": aristas,
+        "entradas_insertadas": insertadas,
+        "frontera_maxima": frontera_maxima,
+        "obsoletas_extraidas": obsoletas,
+        "frontera_final_limpiada": len(frontera),
+        "consultas": 0,
+        "salidas_seleccion": 0,
+    }
+    instantanea = _InstantaneaInversaBenchmark(
+        destino_id, sys.maxsize, distancias, metricas)
+    return instantanea, _TemporalesInversos(inversas, frontera)
+
+
+def _observable_ir_a(resultado):
+    return (
+        resultado.alcanzable,
+        resultado.costo_total,
+        resultado.primera_vecina_id,
+        resultado.costo_primera_salida,
+    )
+
+
+def _validar_ir_a(escenario):
+    from logica.mapa_conocido import VistaMapaConocido
+    from logica.viaje import Viaje
+
+    ids_salas = tuple(sorted(escenario.conocido.exploradas()))
+    vista = VistaMapaConocido(escenario.conocido)
+    esperado = proximo_paso(vista, escenario.origen_id, escenario.destino_id)
+    viaje = Viaje(
+        escenario.conocido, escenario.origen_id, escenario.destino_id)
+    paso = viaje.siguiente_paso(escenario.origen_id)
+    instantanea, temporales = _construir_inversa_ir_a(
+        vista, ids_salas, escenario.destino_id)
+    obtenido = instantanea.consultar(vista, escenario.origen_id, sys.maxsize)
+    trabajo_experimental = dict(instantanea.metricas)
+    temporales.limpiar()
+    instantanea.limpiar()
+
+    if paso != escenario.paso_esperado or viaje.motivo != escenario.motivo_esperado:
+        raise ValueError(
+            f"Viaje no produjo el paso/motivo esperado en {escenario.identificador}.")
+    if _observable_ir_a(esperado) != _observable_ir_a(obtenido):
+        raise ValueError(
+            f"La reutilización experimental diverge en {escenario.identificador}.")
+    metricas = esperado.metricas
+    trabajo_recalculo = {
+        nombre: getattr(metricas, nombre)
+        for nombre in (
+            "salas_fijadas", "salas_descubiertas", "salidas_examinadas",
+            "entradas_insertadas", "frontera_maxima", "obsoletas_extraidas",
+            "frontera_final_limpiada",
+        )
+    }
+    salidas_conocidas = sum(
+        len(escenario.conocido.sala(sala_id).salidas)
+        for sala_id in ids_salas
+    )
+    return {
+        "equivalencia_observable": True,
+        "viaje_real": True,
+        "vista_mapa_conocido_real": True,
+        "solo_conocimiento_jugador": True,
+        "campos": (
+            "siguiente_sala", "alcanzable", "costo_total",
+            "costo_primera_salida", "motivo",
+        ),
+        "paso": paso,
+        "motivo": viaje.motivo,
+        "alcanzable": esperado.alcanzable,
+        "costo_total": esperado.costo_total,
+        "costo_primera_salida": esperado.costo_primera_salida,
+        "desempate_comprobado": escenario.estado_conocimiento == "empate",
+        "puerta_cerrada_comprobada": escenario.estado_conocimiento in {
+            "puerta_cerrada", "sin_camino"},
+        "ausencia_camino_comprobada": escenario.estado_conocimiento == "sin_camino",
+        "cambio_conocimiento_comprobado": (
+            escenario.estado_conocimiento == "conocimiento_actualizado"),
+        "salas_exploradas": len(ids_salas),
+        "salidas_conocidas": salidas_conocidas,
+        "trabajo_recalculo": trabajo_recalculo,
+        "trabajo_experimental": trabajo_experimental,
+        "huella": _huella((
+            escenario.identificador,
+            _observable_ir_a(esperado),
+            paso,
+            viaje.motivo,
+        )),
+    }
+
+
+def _fases_ir_a_vacias():
+    return {fase: 0 for fase in FASES_IR_A}
+
+
+def _ejecutar_ir_a_recalculo(escenario):
+    from logica.viaje import Viaje
+
+    fases = _fases_ir_a_vacias()
+    inicio_total = perf_counter_ns()
+    inicio = perf_counter_ns()
+    viaje = Viaje(
+        escenario.conocido, escenario.origen_id, escenario.destino_id)
+    fases["crear_viaje"] = perf_counter_ns() - inicio
+    inicio = perf_counter_ns()
+    paso = viaje.siguiente_paso(escenario.origen_id)
+    fases["consulta_recalculo"] = perf_counter_ns() - inicio
+    total = perf_counter_ns() - inicio_total
+    return {
+        "total": total,
+        "fases": fases,
+        "resultado": (paso, viaje.motivo),
+    }
+
+
+def _ejecutar_ir_a_experimental(escenario):
+    from logica.viaje import Viaje
+
+    fases = _fases_ir_a_vacias()
+    inicio = perf_counter_ns()
+    viaje = Viaje(
+        escenario.conocido, escenario.origen_id, escenario.destino_id)
+    fases["crear_viaje"] = perf_counter_ns() - inicio
+    ids_salas = tuple(sorted(escenario.conocido.exploradas()))
+    inicio = perf_counter_ns()
+    instantanea, temporales = _construir_inversa_ir_a(
+        viaje._vista, ids_salas, escenario.destino_id)
+    fases["construccion_auxiliar"] = perf_counter_ns() - inicio
+    inicio = perf_counter_ns()
+    limpiadas = temporales.limpiar()
+    fases["limpieza"] += perf_counter_ns() - inicio
+    inicio = perf_counter_ns()
+    resultado = instantanea.consultar(
+        viaje._vista, escenario.origen_id, sys.maxsize)
+    fases["consulta_inicial"] = perf_counter_ns() - inicio
+    inicio = perf_counter_ns()
+    reutilizado = instantanea.consultar(
+        viaje._vista, escenario.origen_id, sys.maxsize)
+    fases["consulta_reutilizada"] = perf_counter_ns() - inicio
+    if reutilizado != resultado:
+        raise ValueError("La consulta reutilizada cambió el resultado observable.")
+    inicio = perf_counter_ns()
+    distancias_limpiadas = instantanea.limpiar()
+    fases["limpieza"] += perf_counter_ns() - inicio
+    # El costo frío completo incluye crear Viaje/vista, construir, consultar y
+    # limpiar. La consulta reutilizada se informa aparte y no se suma dos veces.
+    total = sum(
+        fases[fase] for fase in (
+            "crear_viaje", "construccion_auxiliar", "consulta_inicial", "limpieza")
+    )
+    return {
+        "total": total,
+        "fases": fases,
+        "resultado": _observable_ir_a(resultado),
+        "limpiadas": limpiadas + distancias_limpiadas,
+    }
+
+
+def _medir_memoria_ir_a(escenario, alternativa):
+    gc.collect()
+    tracemalloc.start()
+    base_actual, _ = tracemalloc.get_traced_memory()
+    if alternativa == ALTERNATIVA_IR_A_RECALCULO:
+        resultado = _ejecutar_ir_a_recalculo(escenario)
+    else:
+        resultado = _ejecutar_ir_a_experimental(escenario)
+    final_actual, pico = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    if resultado["resultado"] is None:
+        raise AssertionError("La corrida de memoria no produjo resultado.")
+    return {
+        "metodo": "tracemalloc_corrida_separada",
+        "unidad": "bytes",
+        "base_actual": base_actual,
+        "final_actual": final_actual,
+        "pico_paso": pico,
+        "incluida_en_tiempo": False,
+    }
+
+
+def _medir_escenario_ir_a(escenario, alternativa, repeticiones, validacion):
+    ejecutar = (
+        _ejecutar_ir_a_recalculo
+        if alternativa == ALTERNATIVA_IR_A_RECALCULO
+        else _ejecutar_ir_a_experimental
+    )
+    corridas = [
+        ejecutar(escenario)
+        for _ in range(repeticiones + CALENTAMIENTO)
+    ][CALENTAMIENTO:]
+    if alternativa == ALTERNATIVA_IR_A_RECALCULO:
+        esperado = (validacion["paso"], validacion["motivo"])
+    else:
+        esperado = (
+            validacion["alcanzable"], validacion["costo_total"],
+            validacion["paso"], validacion["costo_primera_salida"],
+        )
+    if any(corrida["resultado"] != esperado for corrida in corridas):
+        raise ValueError("Una muestra de T054 difiere del resultado validado.")
+    muestras = [corrida["total"] for corrida in corridas]
+    resumen = _resumen_muestras(muestras)
+    fases = {
+        fase: _resumen_muestras([
+            corrida["fases"][fase] for corrida in corridas])
+        for fase in FASES_IR_A
+    }
+    trabajo = (
+        validacion["trabajo_recalculo"]
+        if alternativa == ALTERNATIVA_IR_A_RECALCULO
+        else validacion["trabajo_experimental"]
+    )
+    return {
+        "medicion": "ir_a_paso_completo_001",
+        "escenario": escenario.identificador,
+        "alternativa": alternativa,
+        "n": escenario.n,
+        "carga": {
+            "salas_exploradas": validacion["salas_exploradas"],
+            "salidas_conocidas": validacion["salidas_conocidas"],
+            "origen_id": escenario.origen_id,
+            "destino_id": escenario.destino_id,
+            "estado_conocimiento": escenario.estado_conocimiento,
+            "cripta_id": escenario.cripta_id,
+        },
+        "semilla": SEMILLA,
+        "entorno": _entorno(),
+        "calentamiento": CALENTAMIENTO,
+        "repeticiones": repeticiones,
+        "unidad": "ns_por_paso",
+        **resumen,
+        "limite_ns": LIMITE_IR_A_NS,
+        "cumple_mediana_5ms": resumen["mediana"] < LIMITE_IR_A_NS,
+        "cumple_todas_muestras_5ms": resumen["maximo"] < LIMITE_IR_A_NS,
+        "muestras_bajo_5ms": sum(
+            muestra < LIMITE_IR_A_NS for muestra in muestras),
+        "fases": fases,
+        "trabajo": trabajo,
+        "fixture_fuera": True,
+        "preparacion_auxiliar_incluida": True,
+        "consulta_reutilizada_fuera_del_total_frio": (
+            alternativa == ALTERNATIVA_IR_A_REUTILIZADA),
+        "validacion": validacion,
+        "memoria": _medir_memoria_ir_a(escenario, alternativa),
+        "origen_carga": escenario.origen_carga,
+        "afirma_pr001": False,
+    }
+
+
+def medir_paso_ir_a_001(
+        repeticiones=15, tamanos=CARGAS_IR_A, incluir_publicado=True):
+    """T054: paso completo real frente a 5 ms y reutilización experimental."""
+    if type(repeticiones) is not int or repeticiones < 1:
+        raise ValueError("Se requiere al menos una repetición medida.")
+    cargas = sorted({n for n in tamanos if type(n) is int and n >= 8})
+    if not cargas and not incluir_publicado:
+        raise ValueError("T054 requiere una carga sintética o el mapa publicado.")
+    filas = []
+    escenarios = []
+    for n in cargas:
+        escenarios.extend(_escenarios_ir_a_sinteticos(n))
+    if incluir_publicado:
+        escenarios.append(_escenario_ir_a_publicado())
+    for escenario in escenarios:
+        validacion = _validar_ir_a(escenario)
+        for alternativa in (
+                ALTERNATIVA_IR_A_RECALCULO,
+                ALTERNATIVA_IR_A_REUTILIZADA):
+            filas.append(_medir_escenario_ir_a(
+                escenario, alternativa, repeticiones, validacion))
+    return filas
+
+
 def medir_agenda_main(repeticiones, tamanos):
     """Adapta la firma común conservando las cargas propias de agenda."""
     return medir_agenda(repeticiones=repeticiones, tamanos=CARGAS_AGENDA)
@@ -1335,10 +1798,14 @@ def medir_rutas_region_main(repeticiones, tamanos):
 
 
 def medir_rutas_matriz_main(repeticiones, tamanos):
-    """Adapta la firma común conservando las cargas de AC-014."""
+    """Adapta AC-014 y T054 mediante el proveedor de rutas ya conectado."""
     return medir_rutas_matriz(
         repeticiones=repeticiones,
         tamanos=CARGAS_RUTAS_MATRIZ,
+    ) + medir_paso_ir_a_001(
+        repeticiones=repeticiones,
+        tamanos=CARGAS_IR_A,
+        incluir_publicado=True,
     )
 
 

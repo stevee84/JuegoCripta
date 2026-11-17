@@ -461,6 +461,18 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 60 | Cierre de integraciones T004/T052/T053/T056 | Tema 12. Parte II dirigida por especificaciones | 13/11/2026 |
 | 61 | Preparación coordinada de T049/T050 para `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
 | 62 | Adaptadores de cargas propias para T049/T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 63 | Integración final de proveedores 001 en `main.py --bench` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 64 | Preparación de ejecución y evidencia oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 65 | Intento de ejecución oficial T050 y fallo de captura del código | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 66 | Corrida directa T050 interrumpida por `NativeCommandError` | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 67 | Ejecutor Python reproducible y cierre oficial T050 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 68 | Validación oficial de MapaCripta y decisión del índice por ID | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 69 | Verificación integral de benchmarks y cierre sintético de US4 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 70 | Decisión final del cazador y aceptación README de 001 | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 71 | Medición completa de «ir a» y decisión de reutilización | Tema 12. Parte II dirigida por especificaciones | 14/11/2026 |
+| 72 | Auditoría y cierre de persistencia conjunta T006/T041/T055 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
+| 73 | Auditoría final de consistencia e integración 001 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
+| 74 | Corrección documental posterior a la auditoría | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2300,6 +2312,288 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Pruebas y documentación.** `tests/test_bench_adaptadores_001.py` usa productores sustitutos para comprobar una llamada exacta, firma, cargas, repeticiones, cinco identidades únicas, las 25 identidades del registro propuesto y tuplas históricas intactas. La ejecución focalizada con las regresiones de agenda, rutas y ciclo terminó en **60 passed in 19.98s**. La propuesta T049, `plan.md`, `quickstart.md` y `tasks.md` documentan que `informe["tamanos"]` pertenece al ejecutor común y que cada fila de 001 debe interpretarse mediante su `n`, `carga`, escenario y alternativa.
 
 **Límites.** `main.py` no se modificó; T049/T050 continúan abiertas. No se ejecutaron el benchmark completo, la línea de tiempo de 5000 acciones, la suite completa, producción, persistencia ni operaciones Git modificadoras.
+
+---
+
+## Prompt 63 — Integración final de proveedores 001 en `main.py --bench`
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> En la rama única `Sofia`, sincronizada con `origin/Sofia`, completar T049 conectando en el bloque `if config.bench` de `main.py` las dos tuplas `PROVEEDORES_MAIN` de terreno/cazador y ciclo. Conservar íntegramente todos los proveedores anteriores, incluida la línea de tiempo de Joshua; comprobar por identidad que los cinco adaptadores aparezcan exactamente una vez; ejecutar solo pruebas focalizadas; cerrar T049 con evidencia del acuerdo de Steven y mantener T050 abierta. No ejecutar el benchmark completo ni operaciones Git modificadoras.
+
+**Integración.** `main.py` conserva los 20 proveedores anteriores en su orden y añade después cuatro adaptadores de agenda/rutas y uno de ciclo. La secuencia final contiene **25 identidades únicas**. No se modificaron `benchmarks.integrante3.py`, adaptadores, algoritmos medidos ni otros caminos de producción.
+
+**Pruebas.** `tests/test_bloque3_conexiones.py` captura la tupla entregada al ejecutor, exige igualdad exacta con existentes + adicionales + mapa + línea de tiempo + terreno + ciclo, comprueba unicidad y una aparición de cada adaptador. Junto con `tests/test_bench_adaptadores_001.py` y la prueba de registro/K de línea de tiempo: **10 passed in 0.64s**. No se ejecutó `python main.py --bench` ni la suite completa.
+
+**Cierre y coordinación.** T049 queda cerrada. El acuerdo sobre el punto compartido se acredita con `4ea99fa1c62dd79faf841ea143bb7ff9b55cde94`, donde Steven registró previamente el mapa de 001 para T049, retiró la omisión y dejó el conteo derivado para extensiones coordinadas; la autorización actual completa esa misma concatenación. T050 permanece abierta para la ejecución oficial y el artefacto reproducible.
+
+---
+
+## Prompt 64 — Preparación de ejecución y evidencia oficial T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> En `Sofia@4c6fb68`, preparar T050 sin ejecutar todavía `main.py --bench`: revisar el JSON real, crear una herramienta de 001 que extraiga únicamente mapa, agenda, rutas y ciclo hacia `benchmarks/resultados_terreno_cazador_integrante1.json`, conservar todos los datos originales, validar nombres/metadatos/muestras/duplicados, probar con un fixture pequeño y documentar comandos PowerShell que separen stdout, stderr y código de salida y permitan consultar el proceso. Mantener T050 abierta y no modificar proveedores, producción ni el ejecutor común.
+
+**Extractor.** `benchmarks/extraer_resultados_terreno_cazador_integrante1.py` reconoce conjuntos exactos de mediciones y alternativas reales de `mapa_cripta_integrante1`, `terreno_cazador_integrante1` y `benchmark_ciclo_real_integrante1`. Copia las filas completas y conserva el nivel superior del ejecutor; no usa `tamanos` global para sustituir `n` o `carga`. Exige entorno/formato común, campos de fila, una muestra por repetición, escenario para rutas/ciclo, etiqueta sintética del ciclo, cobertura de nombres y ausencia de claves lógicas duplicadas.
+
+**Ejecución preparada.** `contracts/ejecucion-t050-powershell.md` define archivos separados para JSON completo, stderr, PID, código de salida y JSON filtrado; incluye inicio con `Start-Process`, consulta no intrusiva, espera, comprobación de código 0, parseo JSON, extracción y hashes SHA-256. El JSON completo no se reemplaza ni mezcla con stderr.
+
+**Pruebas y límite.** `tests/fixtures/benchmarks/main_bench_t050_minimo.json` conserva ejemplos representativos de nivel superior y filas de mapa, agenda, rutas y ciclo. Las pruebas del extractor, CLI, adaptadores y registro terminaron en **17 passed in 0.34s**. No se ejecutó el benchmark completo; T050 permanece abierta hasta obtener y validar la corrida oficial.
+
+---
+
+## Prompt 65 — Intento de ejecución oficial T050 y fallo de captura del código
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Ejecutar directamente los 25 proveedores registrados por `main.py --bench`, conservar stdout y stderr separados, registrar un código de salida verificable, extraer la evidencia de 001 solo después de éxito y cerrar T050 únicamente si toda la validación pasa. No reducir cargas/repeticiones, no sobrescribir evidencia, no modificar producción ni realizar operaciones Git modificadoras.
+
+**Precondiciones.** `Sofia@f5309f1` coincidía con `origin/Sofia`, el entorno Python 3.12.10 importó las dependencias y se confirmaron 25 proveedores/25 identidades. Había un intento previo vacío con PID inexistente; sus tres archivos se preservaron con sufijo `incompleto_20261114T201103` antes de iniciar.
+
+**Ejecuciones.** La primera corrida completa produjo JSON válido con 916 filas y stderr separado, pero `Start-Process.ExitCode` quedó vacío; se preservó con sufijo `sin_codigo_20261114T201819`. Una repetición única añadió `WaitForExit()` y `Refresh()`, volvió a producir 916 filas, pero `$p.ExitCode` siguió en `$null`; el envoltorio escribió `CAPTURE_FAILED` y terminó en 254. No se inició una tercera corrida automática.
+
+**Validación y decisión.** Ambos JSON pasan el parseo y el extractor en memoria: cada uno contiene 194 filas de 001 (mapa 60, agenda 72, rutas 30, ciclo 32), sin duplicados ni cobertura ausente. stderr contiene cinco avisos por falta del paquete offline de `cripta-01`. Como ninguna corrida tiene código de salida del proceso Python verificable, no se creó el JSON filtrado oficial y **T050 permanece abierta**. El contrato PowerShell se corrigió para usar invocación directa y capturar `$LASTEXITCODE`; no se alteraron umbrales, proveedores ni resultados.
+
+---
+
+## Prompt 66 — Corrida directa T050 interrumpida por `NativeCommandError`
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Preservar las dos corridas completas sin código, ejecutar una única corrida adicional mediante invocación directa de Python desde PowerShell, capturar `$LASTEXITCODE` inmediatamente, generar la evidencia filtrada solo con código 0 y cerrar T050 únicamente si todas las validaciones pasan. No iniciar otra corrida mientras esté activa ni modificar benchmarks, parámetros o Git.
+
+**Resultado.** Las dos corridas anteriores se preservaron con sus sufijos. La invocación adicional se ejecutó desde un script PowerShell independiente, pero el envoltorio añadió `$ErrorActionPreference = "Stop"`, opción que no formaba parte del fragmento solicitado. Windows PowerShell 5.1 convirtió el primer aviso de preparación offline en `NativeCommandError` y detuvo el script antes de asignar `$LASTEXITCODE`; el envoltorio terminó en 1, stdout/stderr redirigidos quedaron vacíos y no se creó el archivo de código.
+
+**Decisión y corrección.** No se inició una segunda corrida adicional. Los archivos vacíos/PID se preservaron con sufijo `interrumpido_nativecommanderror_20261114T203733`; las dos corridas completas de 916/194 filas permanecen intactas. El contrato advierte ahora que debe conservarse `$ErrorActionPreference = "Continue"` al ejecutar el proceso nativo. No se generó el JSON filtrado ni se cerró T050.
+
+---
+
+## Prompt 67 — Ejecutor Python reproducible y cierre oficial T050
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Implementar un ejecutor reproducible con `subprocess.Popen` que lance el Python virtual con `main.py --bench`, redirija stdout/stderr directamente, registre PID y `returncode` real, rechace sobrescrituras y pueda correr de forma independiente. Probar primero procesos hijos con códigos 0 y 7; solo después ejecutar una corrida oficial, extraer las 194 filas de 001 y cerrar T050 si código, JSON, muestras, metadatos y duplicados son correctos. Preservar intentos anteriores y no modificar benchmarks ni Git.
+
+**Mecanismo.** `benchmarks/ejecutar_t050_integrante1.py` reserva las cuatro rutas con modos exclusivos, usa `subprocess.Popen`, espera al hijo y escribe `Popen.returncode`; su propio código no suplanta el código de `main.py`. `tests/test_ejecutor_t050_001.py` verificó stdout/stderr/PID y código 0, código 7 y rechazo de sobrescritura: **3 passed in 0.22s**. La validación focalizada final de ejecutor, extractor, adaptadores y registro terminó en **20 passed in 0.43s**.
+
+**Corrida oficial.** No había otro benchmark activo ni rutas objetivo ocupadas. El proceso hijo terminó con código real **0**. `main_bench_completo_t050.json` contiene 916 filas, Python 3.12.10/Windows, tamaños globales 8/16/32/64/128/512 y 15 repeticiones. stderr conserva cinco avisos por ausencia del paquete offline de `cripta-01`; no se ocultaron ni confundieron con el código de salida.
+
+**Extracción y cierre.** El extractor produjo `benchmarks/resultados_terreno_cazador_integrante1.json` con **194 filas/2910 muestras**: mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. Las 194 claves son únicas, las filas y metadatos superiores coinciden exactamente con el subconjunto original y las 32 filas de ciclo mantienen `origen_carga=sintetico`, referencia oficial pendiente y `afirma_pr001=false`. T050 queda cerrada sin afirmar PR-001 ni avanzar T054/T066.
+
+---
+
+## Prompt 68 — Validación oficial de MapaCripta y decisión del índice por ID
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Completar T072 y T076 en la rama `Sofia`: reforzar la prueba para demostrar que el `main.py --bench` real registra una vez el proveedor de MapaCripta sin ejecutar las 916 mediciones; validar contra el JSON oficial las filas de construcción, búsqueda y vinculación, sus tamaños, cargas, alternativas, muestras y equivalencias; e incorporar en la subsección existente de `DECISIONES.md` la evidencia oficial de 15 repeticiones, separada de las corridas anteriores de 9 y 30. No modificar producción, benchmarks, código ajeno ni Git, no repetir el benchmark completo y no avanzar T054/T066.
+
+**Pruebas y evidencia.** `tests/test_bench_mapa_cripta.py` atraviesa `main.main()` en modo benchmark e intercepta solo `benchmarks.integrante3.ejecutar`: confirmó 25 proveedores únicos y una inclusión del proveedor de mapa sin medir. La lectura de `benchmarks/resultados/main_bench_completo_t050.json` validó **60 filas/900 muestras**, tamaños 8/16/32/64/128/512, densidades 1/4, seis alternativas, 15 muestras por fila, 60 claves únicas y huellas/cargas/identidad canónica equivalentes. Resultado focalizado: **6 passed**.
+
+**Decisión documentada.** La subsección «Índice por ID de MapaCripta (evidencia complementaria de 001)», ya enlazada desde §5.6, conserva la justificación, alternativas y complejidades, mantiene separadas las corridas de 9 y 30 repeticiones y añade las tablas oficiales completas de mediana/p95/máximo para construcción, consulta y vinculación. §5.4 no cambió, no se reatribuyeron componentes de 002 y las mediciones aisladas no se presentan como PR-001 ni como prueba del ciclo completo de 20 ms. T072/T076 quedan cerradas; T071/T051 siguen conservando el cierre global y la referencia oficial, y T054/T066 no avanzan.
+
+---
+
+## Prompt 69 — Verificación integral de benchmarks y cierre sintético de US4
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T062 y T071 en `Sofia`: validar los JSON oficiales existentes, comprobar una única conexión de mapa, agenda, rutas y ciclo a `main.py --bench`, revisar cargas, alternativas, muestras, repeticiones y límites; ejecutar `tests/test_bench_terreno_cazador.py` y `tests/test_bench_mapa_cripta.py`; realizar solo una medición focalizada si faltara evidencia; cerrar el alcance sintético de US4 manteniendo T051/PR-001 bloqueados. No repetir el benchmark completo, modificar producción/código ajeno ni avanzar T054/T066/T067/T070.
+
+**Pruebas y conexión.** Los dos módulos exigidos terminaron en **33 passed in 2.66s**. La prueba puntual de composición de `main.main()` terminó en **1 passed in 0.23s**, confirmó 25 proveedores únicos y una inclusión de cada adaptador de 001 sin ejecutar cargas. No faltó evidencia, por lo que no se lanzó ninguna medición adicional.
+
+**Auditoría oficial.** La extracción en memoria desde las 916 filas completas coincidió exactamente con `benchmarks/resultados_terreno_cazador_integrante1.json`: **194 filas/2910 muestras**, 194 claves únicas y 15 repeticiones por fila; mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. PR-002 conserva trabajo regional constante; PR-003 cubre su matriz completa; PR-004/PR-006 conservan metadatos y equivalencia; PR-005 cubre seis operaciones y dos alternativas. Sus 43 muestras de agenda `>=20 ms` pertenecen a la lista lineal y no infringen un umbral inexistente para agenda.
+
+**Límite y cierre.** PR-001 permanece no concluyente: la carga de ciclo es sintética, declara referencia oficial pendiente y conserva **10/240** muestras productivas `>=20 ms` —8 estables y 2 inestables— frente a 0/240 de la alternativa experimental. Esos datos no permiten declarar cumplimiento ni incumplimiento oficial. T062 y T071 quedan cerradas; T051 conserva AC-013 bloqueado y T054/T066/T067/T070 no avanzan.
+
+---
+
+## Prompt 70 — Decisión final del cazador y aceptación README de 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T067 y T070 en `Sofia`: revisar sin reescribir innecesariamente §5.1 de `DECISIONES.md`, completar su evidencia con la corrida conectada T050 de 15 repeticiones separada de las cifras previas de nueve y conservar resultados desfavorables/límites; añadir en `README.md` solo una subsección Parte II de 001 con comandos reales, artefactos, entorno y distinción entre pruebas escritas, ejecutadas, omitidas y bloqueadas. No modificar decisiones o documentación de 002/003/004 ni afirmar PR-001.
+
+**T067.** §5.1 ya contenía problema, alternativas individual/compartida/reutilizada/adaptativa, decisión, complejidad, enlaces y divergencia del diseño. Se preservaron sus tablas de nueve repeticiones y se añadió la ejecución T050 de 15: 30 filas/450 muestras de rutas y 32/480 de ciclo. AC-012 mantuvo trabajo regional constante; las tablas oficiales conservan mediana/p95/máximo y documentan que compartida/reutilizada fueron más rápidas en cargas altas. Producción mantiene recálculo individual por ausencia de política completa de invalidación, tareas productivas acordadas y referencia oficial; las 10 muestras sintéticas productivas `>=20 ms` no prueban PR-001.
+
+**T070.** `README.md` incorpora una subsección aislada «Parte II — especificación 001: terreno y cazador» dentro de Mediciones. Incluye comandos existentes de pruebas e integraciones, `main.py --bench`, los JSON completo/filtrado y el código de salida, entorno/condiciones y una tabla de estados. No se alteraron instrucciones ni resultados de otras especificaciones y no hizo falta coordinación sobre contenido ajeno.
+
+**Validación.** Los cambios son documentales; no se repitieron pruebas ni benchmarks. Se verificaron la existencia de comandos/rutas contra el repositorio y los valores de T050 contra los JSON conservados. T067/T070 quedan cerradas y T051 continúa bloqueada.
+
+---
+
+## Prompt 71 — Medición completa de «ir a» y decisión de reutilización
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** DeepSeek V4.1 Flash Free
+
+**Fecha:** 14/11/2026
+
+> **Prompt**
+>
+> Cerrar T054 y T066 en `Sofia`: estudiar los criterios de ambas tareas, el contrato con Steven y el código actual de `Viaje`, `MapaConocido`, `VistaMapaConocido` y `rutas_ponderadas`; implementar en `benchmarks/terreno_cazador_integrante1.py` una medición propia de un paso completo de «ir a», sin tocar `benchmarks/integrante2.py`, `main.py` ni código de Steven/Joshua. Debe usar las clases reales, incluir la preparación auxiliar, comparar con una reutilización solo experimental, validar siguiente sala/costos/desempates/puertas cerradas/sin camino/cambios de conocimiento antes de medir y conservar cargas, semilla, repeticiones, percentiles y memoria. Contrastar con 5 ms, distinguir cumplimientos de incumplimientos, guardar un JSON nuevo sin sobrescribir T050, documentar la decisión separada en `research.md`, actualizar `tasks.md`/`quickstart.md` y registrar este prompt. No ejecutar Git ni repetir los 916 benchmarks.
+
+**Qué se construyó.** `medir_paso_ir_a_001` usa `Viaje`, `MapaConocido` y `VistaMapaConocido` reales. Incluye creación del viaje/vista, auxiliares de `proximo_paso`, consulta y limpieza; solo la construcción del fixture queda fuera. Compara recálculo con una inversa experimental en siguiente sala, alcance, costo total, costo de la primera salida y motivo. Los sintéticos de 32/128/512 salas cubren empate por primera vecina, puerta recordada cerrada, ausencia de camino y un atajo que pasa de avistado a explorado. La carga publicada usa las 50 salas de `cripta-04`, el mayor mapa oficial local, con el par alcanzable 46→41. El adaptador `medir_rutas_matriz_main` ya registrado añade T054 una sola vez; no se editó `main.py` ni la medición de Steven.
+
+**Corrección durante el bloque.** La primera versión de `_construir_inversa_ir_a` consumía `salidas` al calcular el fallback de `salidas_examinadas` y luego al recorrerla. Se corrigió para materializar una sola vez solo cuando no existe el atributo; la equivalencia y las pruebas posteriores confirmaron el arreglo. No se cambió ningún algoritmo productivo.
+
+**Resultados.** `benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json` conserva **26 filas/390 muestras**, semilla 2609, un calentamiento y 15 repeticiones. En `cripta-04`, el recálculo productivo obtuvo **0.4965/0.5136/0.5136 ms** de mediana/p95/máximo y **15/15** muestras `<5 ms`; la inversa fría experimental, 0.2510/0.3344/0.3344 ms, con consulta reutilizada de 0.0036 ms. En 32/128 salas todas las muestras productivas cumplieron. En 512 salas, desempate registró **9/15 muestras que cumplen y 6/15 que superan** el límite; puerta cerrada, **12/15 que cumplen y 3/15 que superan**. No se redujo la carga ni se alteró el umbral. El total productivo fue **186/195** (9 superaciones) y el experimental **195/195** en costo frío. La inversa fue más rápida en recorridos largos, pero el recálculo ganó en pasos resueltos de inmediato o sin salida: no hay superioridad universal.
+
+**Decisión y validación.** `research.md` añade R-14, separada de R-13: se conserva el recálculo por paso y no se crea caché porque el mapa publicado cumple 5 ms. Las superaciones sintéticas y la referencia oficial pendiente quedan como límites; cualquier adopción futura requiere tareas coordinadas con 003 para propiedad, invalidación del conocimiento, ciclo de vida, limpieza y pruebas tras retroceso/carga. Pruebas focalizadas: **38 passed in 3.78s**; integración 001/003 y lógica asociada: **49 passed in 0.42s**; restricciones: **61 passed in 0.57s**. La prueba temporal de exploración de `tests/test_bench_integrante2.py` falló una vez con factor 2.7× y pasó al repetirse; cinco mediciones directas oscilaron 1.36×–2.23×, por lo que se registra como fluctuación ajena y no se modificó. T054/T066 quedan cerradas: **72/76** tareas, con T006, T041, T051 y T055 abiertas. No se hizo commit, push, merge, cambio de rama ni ninguna operación Git que modifique el repositorio; solo se consultaron estado y `diff --check`. No se repitió T050 y no se afirmó PR-001.
+
+---
+
+## Prompt 72 — Auditoría y cierre de persistencia conjunta T006/T041/T055
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Auditar y cerrar T006, T041 y T055 en `Sofia` sin reimplementar trabajo de Steven/Joshua: inspeccionar `GuardadoBinario`, `RestauradorPartida` e interfaces; confirmar versión 11, campos, commits y compatibilidad v9/v10; revisar el archivo de pruebas existente sin duplicarlo; ejecutar ida/vuelta y regresiones de guardado/restauración/línea; comprobar costo, rango, conocimiento, línea, identidad, alias, rechazo de versiones anteriores y ausencia de resultados derivados. Si cumple, actualizar solo documentación propia de 001, tareas/recuento y este prompt; mantener T051 bloqueada. No modificar producción, formato, otras specs, benchmarks ni Git.
+
+**Auditoría del contrato.** `GuardadoBinario.VERSION = 11`. Steven introdujo costo/rango en v10 con `5000d1fe8af268987206827e4c524c05bd599357`; Joshua publicó la serialización conjunta de estado/línea en `e002077bc4d6376e21308bcb4dd6a2c2a364e779`, integrada por `d86819db3f1e5505105f4dc8f49d2c3202cf8925`; Steven añadió conocimiento reversible en `719fc3492e35a94f81f48fe52773f2adb35e3f55` y entregó v11 en `d1ad04867c94a2637024089c1625edb9cb296807`. V11 conserva costo/rango en registros de sala y añade el bloque opaco de `LineaTiempo`; su estado vivo contiene `mapa_conocido`. El lector acepta exclusivamente v11 y reporta v9/v10 incompatibles, sin reemplazar la partida vigente. La propuesta M3 de un único v10 queda como antecedente: no se reinterpretó el v10 ya publicado.
+
+**Cobertura y ejecución.** El archivo existente `tests/test_datos/test_guardado_terreno_cazador.py`, introducido en `e4a34e8` y ampliado en `76ba6b7`, ya cubre las cuatro piezas, default de costo, v9/v10, alias y ausencia de derivados; las regresiones de restauración/línea cubren identidades canónicas y consultas históricas. No se añadió ni duplicó ninguna prueba. Ejecución directa: **7 passed in 0.63s**. Ejecución conjunta de nueve archivos de persistencia, restauración, línea e integración: **144 passed in 12.09s**. No se ejecutaron benchmarks ni se modificó producción.
+
+**Cierre.** T006, T041 y T055 quedan cerradas con atribución explícita a Steven y Joshua. `tasks.md` pasa a **75/76**; solo T051 permanece abierta por la referencia oficial de PR-001. Se actualizaron contratos, plan, modelo de datos, investigación y quickstart propios de 001 para distinguir antecedentes v9/v10 del estado vigente v11. No se hizo commit, push, pull, merge, cambio de rama ni ninguna operación Git mutante; los intentos históricos incompletos de T050 quedaron intactos.
+
+---
+
+## Prompt 73 — Auditoría final de consistencia e integración 001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Auditar de forma no destructiva la especificación 001 antes de integrar: revisar spec, plan,
+> tasks, research, data-model, quickstart, contratos, decisiones, README y bitácora; comprobar
+> trazabilidad FR/AC/PR, conexiones reales con 002/003/004, persistencia v11, rutas derivadas y
+> evidencias JSON; ejecutar la suite completa y validaciones estáticas pertinentes sin repetir
+> benchmarks ni modificar archivos. Mantener T051 bloqueada, distinguir fallos reproducibles,
+> inestabilidad y limitaciones externas, y proponer únicamente correcciones mínimas.
+
+**Consistencia e integración.** El análisis no destructivo confirmó 30/30 AC en la matriz, 18/18
+FR y 6/6 PR citados por tareas, los siete AC-B explícitos y 75/76 tareas, con T051 como única abierta.
+001 está conectada con la resolubilidad independiente de pesos de 002, `Viaje`/`VistaMapaConocido`
+de 003 y `LineaTiempo`/guardado conjunto de 004. `GuardadoBinario.VERSION` es 11 y los resultados de
+ruta no se persisten como estado canónico. Los 13 JSON versionados son válidos; el subconjunto T050
+de 194 filas coincide exactamente con las 916 filas originales y conserva `afirma_pr001=false`.
+
+**Validación ejecutada.** La suite completa terminó en **1460 passed, 1 failed, 4 subtests passed in
+153.80s**. El único fallo fue
+`tests/test_bench_integrante2.py::test_explorar_no_crece_con_el_mapa_ya_conocido`, con relación local
+2,2×; pasó aislado (**1 passed in 0.86s**). Las restricciones terminaron en **61 passed in 0.58s**,
+224 archivos Python compilaron sin errores y `git diff --check` pasó. No se ejecutaron benchmarks
+completos ni pruebas en línea.
+
+**Hallazgo adicional de Actions #96.** La misma prueba falló en Python 3.11.18/Ubuntu con 10 332 ns
+para 400 salas y 21 997 ns para 1600 (2,13×), mientras Actions #95 había aprobado. La revisión del
+diseño comprobó que el benchmark vuelve a explorar una sala de un mapa completo y produce cero
+revelaciones nuevas; mide una operación de microsegundos mediante el mínimo de siete muestras y es
+sensible a caché, GC y hashes textuales. Cuarenta comparaciones focalizadas, alternando el orden, y
+20 procesos con semillas de hash diferentes aprobaron. Se clasificó como prueba temporal inestable
+y medición insuficiente de SC-003, no como defecto reproducible de producción; cualquier corrección
+corresponde coordinarla con Steven sin relajar `<2×`.
+
+**Resultado.** No se identificaron defectos críticos reproducibles. Se propusieron correcciones de
+G4b, simetría condicional, trazabilidad PR-006, commits auditado/documental e índice de prompts; las
+referencias vigentes de 004/v10 y `DECISIONES.md` §5.5 quedaron para coordinación con Joshua. La
+auditoría no modificó archivos ni Git y mantuvo intactos los 14 artefactos históricos T050.
+
+---
+
+## Prompt 74 — Corrección documental posterior a la auditoría
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 15/11/2026
+
+> **Prompt**
+>
+> Corregir exclusivamente los hallazgos documentales propios de 001: cerrar G4b como estado vigente,
+> precisar la simetría solo cuando existen ambos sentidos, enlazar AC-014 con PR-006 y distinguir la
+> implementación auditada `568477f` del commit documental `c4bb758`. Añadir Prompt 71/72 al índice y
+> registrar Prompt 73/74 con herramienta y modelo reales. No editar 003/004 ni decisiones de Joshua;
+> preparar notas de coordinación para Steven sobre SC-003 y para Joshua sobre v11. Conservar toda
+> evidencia histórica, T051 abierta y 75/76 tareas; validar documentos y `git diff --check`, sin
+> pruebas ni benchmarks y sin operaciones Git mutantes.
+
+**Correcciones.** `spec.md` aclara que una salida es dirigida y que la igualdad de costos se exige
+solo si existe el inverso; AC-014 cita PR-006. `tasks.md` replica esa trazabilidad y marca G4b cerrada
+por `d86819d`/T056 sin alterar evidencias históricas. `quickstart.md` separa la implementación
+auditada `568477f` de su publicación documental `c4bb758`. El índice incorpora Prompt 71–74 sin
+duplicar los cuerpos existentes de 71/72.
+
+**Coordinación y alcance.** §5.5 de `DECISIONES.md` declara a Joshua como responsable, por lo que no
+se editó. Dos notas nuevas dentro de los contratos de 001 registran para Steven el rediseño sugerido
+de la medición SC-003 conservando `<2×`, y para Joshua las referencias vigentes de 004/decisiones
+que deben distinguir el formato actual v11 del contrato histórico v10. No se modificaron código,
+pruebas, benchmarks, umbrales, 003, 004, workflows ni artefactos T050.
+
+**Validación.** Se revisaron referencias, recuentos y enlaces de los documentos modificados; no se
+ejecutaron pruebas ni benchmarks por ser un cambio exclusivamente documental. `git diff --check`
+pasó. El estado permanece en **75/76** y T051 continúa bloqueada por la referencia oficial de
+PR-001. No se hizo commit ni push.
 
 ---
 
