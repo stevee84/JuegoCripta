@@ -130,6 +130,7 @@ class VistaPygame:
         self._pagina_sala = 0
         self._sala_entidades = None
         self._botones_sala = []
+        self._zonas_ir_a = []
         self._botones = []
         self._scroll_bitacora = 0
         self._label_movimiento = None
@@ -690,6 +691,9 @@ class VistaPygame:
         return None
     
     def _dibujar_minimapa(self, estado):
+        # Se vacían antes de las guardas: si no se dibuja nada, no puede quedar clicable lo
+        # del fotograma anterior.
+        self._zonas_ir_a = []
         if estado is None or estado.jugador is None or estado.jugador.sala_actual is None:
             return
         if estado.mapa is None:
@@ -776,6 +780,13 @@ class VistaPygame:
             fondo, borde = self._color_sala_minimapa(sid, conocido, es_actual)
             pygame.draw.rect(self._pantalla, fondo, (px, py, cell, cell), border_radius=3)
             pygame.draw.rect(self._pantalla, borde, (px, py, cell, cell), 1, border_radius=3)
+
+            # §3.4 y FR-010: viajar haciendo clic. Solo las **exploradas** son clicables,
+            # porque a una avistada no se puede viajar; la zona no se dibuja, solo detecta el
+            # clic, y el comando es el mismo que escribe el diálogo de texto.
+            if not es_actual and (conocido is None or conocido.esta_explorada(sid)):
+                self._zonas_ir_a.append(
+                    Boton((px, py, cell, cell), str(sid), f"ir a {sid}"))
 
             if es_actual and cell >= 12:
                 txt = self._font_sala_nombre.render("@", True, VERDE)
@@ -1122,6 +1133,10 @@ class VistaPygame:
             (GLYPH_OBJETO, AMARILLO, "Objeto"),
             (GLYPH_TRAMPA_ARMADA, MAGENTA, "Trampa"),
             ("X", ROJO, "Cerrada"),
+            # Los tres estados de §3.3, para poder leer el minimapa (FR-003, FR-007).
+            ("#", VistaPygame.MINIMAPA_ACTUAL[1], "Aqui"),
+            ("#", VistaPygame.MINIMAPA_EXPLORADA[1], "Explorada"),
+            ("#", VistaPygame.MINIMAPA_AVISTADA[1], "Avistada"),
         ]
         x = 15
         for glyph, color, label in items:
@@ -1318,6 +1333,7 @@ class VistaPygame:
         self._pagina_sala = 0
         self._sala_entidades = None
         self._botones_sala = []
+        self._zonas_ir_a = []
         self._botones = []
 
     def cerrar(self):
@@ -1339,7 +1355,10 @@ class VistaPygame:
                     if pygame.mouse.get_pos()[1] >= self.ALTO - self.BITACORA_ALTO:
                         self._scroll_bitacora = max(0, self._scroll_bitacora + evento.y * 2)
                 elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
-                    for b in self._botones:
+                    # Las zonas del minimapa van al final: el panel se dibuja encima, así que
+                    # un botón del panel gana el clic. No hace falta nada más para despacharlas,
+                    # porque la rama final ya envía `b.comando` al controlador.
+                    for b in self._botones + self._zonas_ir_a:
                         if b.contiene(evento.pos):
                             if b.comando == "salir":
                                 salir_solicitado = True

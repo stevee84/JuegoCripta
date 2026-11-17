@@ -113,3 +113,59 @@ def test_los_tres_estados_se_distinguen_por_luminancia(vista):
         assert despues - antes >= 0.05, (
             f"dos estados contiguos se separan solo {despues - antes:.3f} en luminancia: "
             f"{escala}")
+
+
+# ── Viajar haciendo clic en el minimapa (T038, §3.4) ─────────────────────────
+
+def test_fr010_solo_las_salas_exploradas_son_clicables(vista):
+    """A una avistada no se puede viajar, así que no se puede hacer clic en ella.
+
+    Antes «ir a» solo se alcanzaba tecleando un número en un diálogo, y pedir una avistada
+    llegaba como error; ahora el minimapa no ofrece el clic.
+    """
+    pantalla, _ = vista
+    estado, conocido, _ = _partida_con_puerta_que_se_cierra()
+    pantalla._dibujar_minimapa(estado)
+
+    clicables = [b.comando for b in pantalla._zonas_ir_a]
+    assert clicables == ["ir a 2"], (
+        f"explorada y no actual hay una sola, la 2; quedaron {clicables}")
+    assert conocido.esta_avistada(3) and conocido.esta_avistada(4), "3 y 4 están avistadas"
+    assert estado.jugador.sala_actual.id_sala == 1, "la actual no se ofrece: ya está ahí"
+
+
+def test_las_zonas_no_sobreviven_a_un_dibujo_que_no_pinta_nada(vista):
+    """Si no se dibuja el minimapa no puede quedar clicable lo del fotograma anterior."""
+    pantalla, _ = vista
+    estado, _, _ = _partida_con_puerta_que_se_cierra()
+    pantalla._dibujar_minimapa(estado)
+    assert pantalla._zonas_ir_a
+
+    estado.jugador.sala_actual = None
+    pantalla._dibujar_minimapa(estado)
+    assert pantalla._zonas_ir_a == []
+
+
+def test_las_zonas_caen_dentro_del_minimapa_y_no_bajo_el_panel(vista):
+    """El panel se dibuja encima, así que un clic no puede ser ambiguo."""
+    pantalla, pygame = vista
+    estado, _, _ = _partida_con_puerta_que_se_cierra()
+    pantalla._dibujar_minimapa(estado)
+
+    marco = pygame.Rect(pantalla.MINIMAPA_X, pantalla.MINIMAPA_Y,
+                        pantalla.MINIMAPA_W, pantalla.MINIMAPA_H)
+    for zona in pantalla._zonas_ir_a:
+        assert marco.contains(zona.rect), (zona.comando, tuple(zona.rect))
+    assert marco.right <= pantalla.PANEL_X, "el minimapa no debe solaparse con el panel"
+
+
+def test_la_leyenda_nombra_los_tres_estados_y_cabe_en_la_pantalla(vista):
+    """Sin leyenda los colores del minimapa no se pueden interpretar (FR-007)."""
+    pantalla, _ = vista
+    pantalla._dibujar_leyenda()
+
+    ancho = 15
+    for etiqueta in ("@=Tu", "E=Enemigo", "O=Objeto", "^=Trampa", "X=Cerrada",
+                     "#=Aqui", "#=Explorada", "#=Avistada"):
+        ancho += pantalla._font.size(etiqueta)[0] + 15
+    assert ancho <= pantalla.ANCHO, f"la leyenda ocupa {ancho} px de {pantalla.ANCHO}"
