@@ -307,6 +307,29 @@ dentro del intervalo. Producción reporta 28 y 24 notificaciones enemigas, respe
 `benchmarks/terreno_cazador_integrante1.py`;
 `benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`; `tasks.md` (T048, T068).
 
+### 7. Actualización de Sofía: referencia publicada, T051 no cerrada (17/11/2026)
+
+`cripta-06@f9ed9afa683d` (catálogo `4b9e75a42be5`) contiene 300 salas, 75 enemigos y
+36 cazadores, todos inicialmente inactivos. La carga registrada se activa mediante acciones
+válidas del juego. El recorrido conservado alcanza 1/3/5 cazadores participantes; ejecutan
+1/3/6 decisiones por ciclo, respectivamente. El máximo de cinco observado en este recorrido
+no es un límite demostrado para cualquier partida.
+
+[`t051_cripta06_actividad_real.json`](benchmarks/resultados/t051_cripta06_actividad_real.json)
+conserva 30 ciclos completos (10 por escenario), tres calentamientos, 100 decisiones de cazadores,
+130 eventos y mediana/p95/máximo **0.2940/1.0614/1.3282 ms**; cero muestras `>=20 ms`,
+cero errores/rechazos en las muestras y ningún fallo de caché/acceso a disco o fuente medido.
+La continuación del recorrido incluye una muerte tras 86 acciones completas; permanece en la
+traza de preparación. Los contadores distinguen actores, decisiones y notificaciones y su costo
+se incluye en el intervalo completo del motor. No se alteró producción ni su estrategia.
+
+**Decisión:** conservar T051/AC-013/PR-001 abierta y `afirma_pr001=false`: el tiempo bajo
+20 ms con cinco cazadores no valida decenas. La referencia está publicada; queda pendiente un
+recorrido que demuestre la carga o una aclaración/enmienda oficial, sin afirmar imposibilidad
+global. No se crea `resultados_terreno_cazador_referencia.json`. La corrida no reemplaza T048/T050
+ni autoriza retención productiva. Auditoría y procedimiento: [research.md R-16](specs/001-terreno-y-cazador/research.md)
+y [quickstart.md](specs/001-terreno-y-cazador/quickstart.md).
+
 ---
 
 ## 5.3 El mapa conocido

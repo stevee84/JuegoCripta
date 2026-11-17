@@ -9,11 +9,11 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Prerequisites**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/propuesta-steven-rutas-datos.md` y `contracts/propuesta-joshua-cambios-reversibles.md`.
 
-**Estado**: implementación en curso. G1/G2, US1, US2, el núcleo de US3, la persistencia conjunta y el alcance sintético de US4 están cerrados; los cierres de T001–T050/T052–T076 constan con evidencia fechada. Queda una sola tarea sin marcar: T051, bloqueada por la referencia oficial.
+**Estado**: implementación en curso. G1/G2, US1, US2, el núcleo de US3, la persistencia conjunta y el alcance sintético de US4 están cerrados; los cierres de T001–T050/T052–T076 constan con evidencia fechada. Queda una sola tarea sin marcar: T051. La referencia `cripta-06` ya está publicada; falta demostrar decenas de cazadores activos y participantes por ciclo con acciones reales (R-16, 17/11/2026).
 
 **Organización**: las fases 3–6 corresponden a las cuatro historias de usuario. Las dependencias de Steven/Joshua y las tareas conjuntas se distinguen en el texto de cada tarea para no asignar a Sofía cambios ajenos. **Prioridad de avance acordada en la revisión de 2026-11-09 (B2)**: primero el índice de Phase 2 (T007–T009), después US1 y US2; US3 y US4 avanzan después según su bloqueo (G3, G4b/G5, G6), conservando todos los requisitos obligatorios y sin reordenar dependencias declaradas.
 
-**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; 75 marcadas y 1 abierta; 22 oportunidades `[P]` reales. US1 y US2 están cerradas; el núcleo de US3, la persistencia conjunta, el cierre sintético de US4 y la integración de rendimiento de «ir a» están cerrados. AC-013/PR-001 conserva su referencia oficial bloqueada en T051.
+**Recuento actual**: 76 tareas (T001–T076), sin reutilizar IDs; 75 marcadas y 1 abierta; 22 oportunidades `[P]` reales. US1 y US2 están cerradas; el núcleo de US3, la persistencia conjunta, el cierre sintético de US4 y la integración de rendimiento de «ir a» están cerrados. AC-013/PR-001 continúa sin demostrar en T051: la presencia de 36 cazadores cargados no equivale a decenas participando en el ciclo.
 
 ## Formato: `[ID] [P?] [Story?] Descripción`
 
@@ -179,7 +179,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 
 **Independent Test**: ejecutar `main.py --bench` offline y comprobar filas, alternativas, equivalencia previa, semillas, calentamiento, repeticiones, carga, unidad, trabajo y percentiles requeridos.
 
-**Blocked by**: US1–US3 para medir rutas y ciclo de producción; el benchmark independiente del mapa requiere T008, no costo/rango ni la política ya confirmada de aceptar salidas sin inversa. La referencia oficial pendiente bloquea solo T051.
+**Blocked by**: US1–US3 para medir rutas y ciclo de producción; el benchmark independiente del mapa requiere T008, no costo/rango ni la política ya confirmada de aceptar salidas sin inversa. La carga de decenas aún no validada en la referencia publicada mantiene abierta solo T051.
 
 ### Tests for User Story 4
 
@@ -217,7 +217,9 @@ description: "Tareas ejecutables para Terreno y cazador"
 **Evidencia T050 (2026-11-14; cierre)**: `benchmarks/ejecutar_t050_integrante1.py`, probado primero con procesos hijos de códigos 0 y 7 y rechazo de sobrescritura (**3 passed in 0.22s**), ejecutó los 25 proveedores sin cambiar parámetros y registró el `returncode` real de `main.py`: **0**. `benchmarks/resultados/main_bench_completo_t050.json` conserva **916 filas**, entorno Windows/Python 3.12.10, tamaños globales 8/16/32/64/128/512 y 15 repeticiones; stderr está separado y conserva cinco avisos por falta del paquete offline de `cripta-01`. El extractor oficial generó `benchmarks/resultados_terreno_cazador_integrante1.json` con **194 filas/2910 muestras**: mapa 60/900, agenda 72/1080, rutas 30/450 y ciclo 32/480. Las 194 claves lógicas son únicas, el filtrado coincide exactamente con el subconjunto original y conserva entorno/metadatos superiores. Rangos mediana/p95/máximo (ms): mapa 0.0013–13.6665/0.0017–27.0195/0.0017–27.0195; agenda 0.0474–39.4820/0.0550–71.1175/0.0550–71.1175; rutas 0.0307–27.7025/0.0393–51.9595/0.0393–51.9595; ciclo 0.1212–20.3797/0.1832–33.2902/0.1832–33.2902. El ciclo conserva 10 muestras de producción `>=20 ms`, `origen_carga=sintetico`, `referencia_oficial=pendiente_publicacion_g6` y `afirma_pr001=false`; no se presenta como cierre de PR-001. Pruebas focalizadas finales de ejecutor, extractor, adaptadores y registro: **20 passed in 0.43s**.
 
 **Aclaración de vigencia T050 (2026-11-16)**: la ejecución y los JSON permanecen como evidencia histórica inalterada. Dentro de las 916 filas, seis `mapa_conocido_explorar_una_sala` midieron cero revelaciones, y seis `mapa_conocido_estado_sala` más sus seis alternativas `mapa_conocido_estado_recorriendo_alternativa` usaron lotes variables de `n` consultas; esas **18 filas/270 repeticiones** no son evidencia vigente de SC-002/SC-003. La corrección posterior pertenece a Steven (`1734a70`, `d59752d`) y está documentada en su respuesta. Las 194 filas/2910 muestras filtradas de 001 no contienen ninguna de esas series y conservan su alcance. T050 sigue cerrada como ejecución reproducible; T051 permanece abierta por PR-001.
-- [ ] T051 [US4] Sofía — cuando se publique la referencia oficial, ejecutar AC-013 con decenas de cazadores y registrar en `benchmarks/resultados_terreno_cazador_referencia.json` cada ciclo `<20 ms`; mantener esta tarea bloqueada sin bloquear T042–T050 (PR-001, PR-004, PR-006).
+- [ ] T051 [US4] Sofía — sobre la referencia publicada `cripta-06`, validar un recorrido real con decenas de cazadores activos y participantes, ejecutar AC-013 y registrar en `benchmarks/resultados_terreno_cazador_referencia.json` cada ciclo `<20 ms` solo si cumple todas las condiciones; conservar abierta sin bloquear T042–T050 mientras falte demostrar la carga (PR-001, PR-004, PR-006).
+
+**Diagnóstico T051 (2026-11-17; no cierre)**: versión `f9ed9afa683d`, catálogo `4b9e75a42be5`, 300 salas, 75 enemigos, 36 cazadores (25 sabuesos/11 espectros), 0 activos iniciales. El recorrido de acciones válidas conservado en `benchmarks/recorridos/t051_cripta06.json` alcanza 1/3/5 participantes; ejecutan 1/3/6 decisiones por ciclo. Su continuación registra 86 acciones completas y una muerte, sin rechazos/errores. `benchmarks/resultados/t051_cripta06_actividad_real.json` conserva 30 muestras completas, 3 calentamientos, 100 decisiones de cazadores, 130 eventos, mediana/p95/máximo **0.2940/1.0614/1.3282 ms**, cero muestras `>=20 ms` e I/O nulo medido. No acredita decenas ni demuestra imposibilidad de otro recorrido; `afirma_pr001=false` y no se crea el JSON reservado a la validación oficial. Pruebas de benchmark/conexión/restricciones: **125 passed in 3.82s**. T048/T050 y el diagnóstico anterior quedan intactos; R-16 documenta reglas, distribución, metodología y límite vigente.
 - [x] T065 [US4] Sofía — después de T046, ejecutar AC-009 en `tests/test_bench_terreno_cazador.py` comparando recálculo y reutilización **benchmark-local** en acción, primera vecina y costo para puertas estables/inestables; resultado verificable: no hay dependencia de US3 hacia una alternativa creada en US4 (FR-013, FR-014, PR-003, PR-006).
 - [x] T072 [P] [US4] Sofía — crear `tests/test_bench_mapa_cripta.py` para exigir que `main.py --bench` incluya filas separadas de construcción del índice, búsqueda por ID y vinculación de salidas, con varios tamaños y cargas equivalentes; antes de aceptar tiempos, comprobar mismos IDs/orden, mismos resultados de aciertos y ausencias, y que cada `Puerta.destino_sala` sea la instancia canónica correspondiente (FR-011, FR-013, FR-018, PR-001, PR-002, PR-004, PR-006).
 - [x] T073 [US4] Sofía — después de T008, crear `benchmarks/mapa_cripta_integrante1.py` con generadores deterministas de varios tamaños/densidades y una fila exclusiva para construir `_salas` más el índice propio, separando generación del fixture, construcción medida y memoria; la alternativa lineal permanece local al benchmark y recibe exactamente las mismas instancias en el mismo orden (FR-011, FR-013, FR-018, PR-001, PR-002, PR-004, PR-006).
@@ -360,7 +362,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 | G4a — revisión cruzada de interfaz Joshua ya integrada | **cerrada por T005** | ya no bloquea T040; satisface una precondición de T056 | disponibilidad local de interfaz base, `deepcopy` y recálculo |
 | G4b — `LineaTiempo` completa integrada localmente | **cerrada por la integración `d86819d` y la ejecución T056** | ya no bloquea tareas; T056 se ejecutó sin omisiones | evidencia histórica T040 e interfaz base ya local |
 | G5 — persistencia/versionado publicados | **cerrada por T006 en v11 (`d1ad048`)** | ya no bloquea T041/T055, cerradas con ejecución real | desarrollo desde fuente fresca y benchmarks sintéticos |
-| G6 — referencia oficial | publicación externa | T051 | T042–T054, T066, T072–T075, pruebas funcionales y medición con la mayor cripta publicada local |
+| G6 — validación de referencia oficial | `cripta-06` publicada; falta escenario real con decenas o aclaración oficial (R-16) | T051 | T042–T054, T066, T072–T075, pruebas funcionales y medición con la mayor cripta publicada local |
 
 ### Phase Dependencies
 
@@ -369,7 +371,7 @@ description: "Tareas ejecutables para Terreno y cazador"
 - **US1 (Phase 3)**: las pruebas pueden escribirse antes, pero T016–T017/T064 dependen de T003 integrado; usan el índice de Phase 2 para destinos frecuentes.
 - **US2 (Phase 4)**: depende de T002, T003 y Phase 2; integra sobre US1 para cobrar el paso.
 - **US3 (Phase 5)**: depende de US2; T031 cerró el núcleo propio. T040 dependió de T005 y T041 de T006; ambas integraciones y sus ejecuciones T055/T056 están cerradas.
-- **US4 (Phase 6)**: oráculos pueden escribirse tras T001; mediciones de rutas/ciclo dependen de US1–US3. T072 puede escribirse tras T001 y T073–T075 dependen de T008, no de costo/rango ni de la salida sin inversa. T043 sigue a T042; T065 sigue a T046; T049/T050 integran también el mapa; T051 espera la referencia oficial. US3 no depende de US4.
+- **US4 (Phase 6)**: oráculos pueden escribirse tras T001; mediciones de rutas/ciclo dependen de US1–US3. T072 puede escribirse tras T001 y T073–T075 dependen de T008, no de costo/rango ni de la salida sin inversa. T043 sigue a T042; T065 sigue a T046; T049/T050 integran también el mapa; T051 espera demostrar la carga de decenas en la referencia publicada. US3 no depende de US4.
 - **Phase 7**: T052–T054 se cerraron sobre T002/T004; T055 se cerró sobre T006/T041; T056 sobre T005/T040 y G4b; T057 sobre T046/T065 y T066 tras T054.
 - **Phase 8**: T058 puede ejecutarse al terminar código; T059–T063/T071 cierran pruebas y evidencia; T067–T070/T076 documentan únicamente resultados ya medidos.
 
@@ -466,5 +468,5 @@ La ruta de producción recalcula cada paso. T046/T065 deciden por separado la es
 - Las 22 marcas `[P]` se limitan a archivos distintos y dependencias satisfechas; T042→T043 es expresamente secuencial.
 - Las tareas de Steven/Joshua se verifican como dependencias; no autorizan a Sofía a modificar sus documentos o código sin coordinación.
 - Las pruebas de `Sala` existentes se reutilizan; no se crea otra regresión para lo ya cubierto.
-- La publicación de la referencia oficial bloquea T051, no el resto del desarrollo.
+- La validación de decenas de cazadores en la referencia publicada mantiene abierta T051, no el resto del desarrollo; las notas fechadas anteriores conservan su contexto de referencia aún no publicada.
 - Ejecutar `/speckit.analyze` después de generar este archivo y antes de `/speckit.implement` es obligatorio.

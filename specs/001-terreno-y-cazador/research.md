@@ -322,3 +322,115 @@ antes del reloj, normaliza por revelación y compara medianas alternando el orde
   el hallazgo a las otras 898 filas de T050 ni se alteran decisiones sustentadas en otras cargas.
 - T050 permanece cerrada como ejecución histórica. PR-001 no queda demostrado por ella y T051
   continúa abierta hasta que se publique la referencia oficial.
+
+## R-16 — Auditoría de la referencia publicada y validación pendiente T051 (17/11/2026)
+
+**Decisión vigente**: T051/AC-013/PR-001 permanece **abierta**. `cripta-06` ya está publicada;
+el bloqueo actual es demostrar un ciclo con **decenas de cazadores realmente activos y
+participantes**, no la ausencia del paquete. Esta actualización sustituye las menciones de
+referencia pendiente en el estado vigente; las secciones anteriores conservan su contexto histórico.
+
+### Datos reales y activación
+
+La copia de `tests/fixtures/api_real/cripta-06/` tiene versión `f9ed9afa683d`, catálogo
+`4b9e75a42be5`, **300 salas y 75 enemigos**. Hay 36 ratas rastreadoras, dos guardianes, un
+carcelero errante y **36 cazadores**:
+
+| Ficha | Cantidad | Rango de costo | Velocidad | Salas iniciales (un cazador por sala) |
+|---|---:|---:|---:|---|
+| `ent_sabueso_oseo` | 25 | 600 | 110 | 8, 11, 17, 19, 34, 41, 60, 98, 108, 134, 148, 151, 152, 163, 176, 190, 216, 230, 241, 251, 256, 268, 283, 289, 295 |
+| `ent_espectro_acechador` | 11 | 2400 | 100 | 10, 31, 35, 68, 112, 123, 137, 177, 196, 249, 265 |
+
+Las instancias publicadas no declaran activación inicial. El DTO comienza con `activo=False`;
+la sala inicial 141 no tiene enemigos. Tras `MotorJuego.iniciar` hay **0 cazadores activos y 0
+eventos pendientes**. Entrar en una sala activa sus enemigos vivos y programa su primer turno a
+`reloj + max(1, 100*100//velocidad)` (90 para sabueso, 100 para espectro). Estar dentro del rango
+no activa por sí solo a un enemigo. La activación persiste mientras siga vivo.
+
+Cada evento `ENEMIGO` puede producir una decisión si el actor sigue activo, vivo y pertenece a su
+sala. Compartir sala con el jugador vivo lleva a `ATACAR`; de lo contrario, un cazador consulta
+`proximo_paso` sobre salidas abiertas y dirigidas, limitado por el costo acumulado de su rango.
+Sin ruta dentro del rango decide `ESPERAR`, también reprograma turno y **no emite notificación**.
+El movimiento paga el costo real de salida; ataque/espera cuestan 100. La agenda ordena por
+tiempo/secuencia y se drena hasta la disponibilidad del jugador: un mismo cazador puede decidir
+varias veces, o no tener un turno vencido en un intervalo corto.
+
+El intervalo completo incluye validación/aplicación de la acción, presencia, activación y trampas
+al entrar, agenda, decisiones y rutas, combate/mutaciones, historial y disponibilidad siguiente.
+El motor también despacha `EFECTO`, `VENCER_EFECTO`, `TRAMPA`, `REARMAR_TRAMPA` y
+`CERRAR_PUERTA`. `JUGADOR_DISPONIBLE` termina el ciclo; una muerte/victoria no se clasifica como
+ciclo completo. No se confunden enemigos cargados, activos, actores participantes, decisiones,
+eventos extraídos y avisos de presentación.
+
+### Por qué el diagnóstico anterior no probaba PR-001
+
+`_escenario_enemigos` elige el enemigo más cercano por puertas abiertas: desde 141 entra en 142,
+que tiene una **rata**, no un cazador. `_escenario_efectos` usa una antorcha real de la sala inicial
+y prepara su vencimiento. La repetición alternaba copias de esos dos estados; no exploraba las
+300 salas ni acumulaba activaciones. La auditoría directa cuenta, respectivamente:
+
+- un evento `ENEMIGO`, una decisión de rata y un aviso enemigo;
+- un `VENCER_EFECTO`, ninguna decisión enemiga y ningún aviso enemigo;
+- un `JUGADOR_DISPONIBLE` en cada caso y **0 decisiones de cazadores en ambos**.
+
+En esos dos escenarios concretos no había decisiones de cazadores ocultas detrás de los 0–1
+avisos. En general, sin embargo, `ESPERAR` demuestra por qué ese contador antiguo era insuficiente.
+`t051_cripta06_diagnostico.json` se conserva intacto: sus 30 ciclos rápidos solo describen esa carga.
+
+### Adaptación y recorrido reproducible
+
+`benchmarks/benchmark_ciclo_real_integrante1.py` usa ahora el auxiliar propio
+`benchmarks/auditoria_ciclo_referencia_integrante1.py`. Los contadores envuelven métodos de las
+instancias del benchmark y siempre delegan al motor real; no sustituyen rutas ni decisiones.
+Su costo está incluido en el tiempo total. La copia del estado inicial, inicialización y repetición
+de acciones de preparación quedan fuera; se conserva el historial real del prefijo recorrido.
+Los puntos de medición están fijados antes del cronómetro, sin elegir por sus tiempos.
+
+El recorrido [publicado con el benchmark](../../benchmarks/recorridos/t051_cripta06.json) equipa
+coraza/daga reales, recoge la llave de bronce, combate ratas y recoge/consume pociones reales.
+No añade actores, estadísticas ni activaciones. Conserva **87 acciones: 86 ciclos completos y una
+muerte final**, sin rechazos ni errores. Los puntos 11/37/55 parten de 1/3/5 cazadores activos.
+Los cinco activados proceden de las salas 41, 123, 163, 265 y 283; corresponden a los IDs
+`e-cripta-06-7`, `-6`, `-5`, `-9` y `-4`, respectivamente. El prefijo completo se reproduce antes
+de cada muestra, para medir un estado alcanzado por el juego, sin reinicializar un estado avanzado
+ni limpiar su historial/botín. La muerte posterior no se oculta ni se mezcla con las muestras completas.
+
+Este recorrido **no consigue decenas**. Tampoco demuestra que todos los recorridos válidos de la
+cripta sean incapaces de conseguirlas: queda pendiente encontrar y validar ese escenario o recibir
+una aclaración/enmienda oficial. La presencia de 36 cazadores cargados no resuelve esa condición.
+
+`cripta-05` es irresoluble: solo si la comprobación real confirma ese estado, el inicializador
+local del benchmark reintenta con `forzar=True`. No se fuerza una verificación fallida/desconocida;
+el inicio normal del juego sigue rechazando la cripta. La evidencia conserva el informe y el flag.
+
+### Evidencia conservada y resultado
+
+[Diagnóstico de actividad real](../../benchmarks/resultados/t051_cripta06_actividad_real.json):
+Windows 11, Python 3.12.10, Intel64 Family 6 Model 154 Stepping 3, `perf_counter_ns`, semilla
+20240517, caché 25, tres calentamientos y 30 muestras (10 por escenario):
+
+| Activos / participantes distintos | Decisiones de cazadores / ciclo | Eventos totales / ciclo | Mediana / p95 / máximo (ms) |
+|---|---:|---:|---|
+| 1 / 1 | 1 | 2 | 0.1292 / 0.3592 / 0.3592 |
+| 3 / 3 | 3 | 4 | 0.2862 / 0.7219 / 0.7219 |
+| 5 / 5 | 6 | 7 | 0.6815 / 1.3282 / 1.3282 |
+
+Cada fila de la tabla representa 10 intervalos; los eventos incluyen disponibilidad del jugador.
+En el tercer escenario hay cinco movimientos y un ataque por ciclo: **6 decisiones no son 6
+cazadores distintos**. Total medido: **100 decisiones de cazadores y 130 eventos**. Resumen de
+las 30 muestras: mediana **0.2940 ms**, p95 **1.0614 ms**, máximo **1.3282 ms**, 30 ciclos completos,
+0 rechazos/muertes/victorias/incompletos/errores, **0 ciclos `>=20 ms`**. Los tres calentamientos
+también son completos. No hubo fallos de caché ni lecturas desde disco/fuente dentro de los relojes.
+
+El JSON conserva todas las duraciones, comparación estricta `<20_000_000 ns`, versiones, carga
+antes/después, IDs y decisiones/eventos ordenados, calentamientos, traza de preparación, auditoría
+de los escenarios antiguos y SHA-256 de 56 archivos de datos y 55 archivos de código.
+`resultado_requisito=BAJO_20MS_EN_CARGA_MEDIDA` y **`afirma_pr001=false`**: no se genera
+`benchmarks/resultados_terreno_cazador_referencia.json`. El escritor rechaza sobrescribir archivos y
+reserva ese nombre para una medición validada con al menos dos decenas de actores distintos por
+ciclo, además del resto de condiciones. T048/T050 mantienen sus JSON, cifras y alcance históricos.
+
+**Pruebas**: foco de ciclo/referencia, terreno, adaptadores, conexión y restricciones:
+**125 passed in 3.82s** (64 focalizadas y 61 restricciones, sin omisiones). Se comprueba equivalencia
+observable con/sin contadores, espera silenciosa, 20 ms exactos, rechazo de falsas conclusiones,
+protección de evidencia y `cripta-05` con inicio normal rechazado y benchmark permitido.

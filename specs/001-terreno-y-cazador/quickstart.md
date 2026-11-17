@@ -1,6 +1,8 @@
 # Quickstart de validación: Terreno y cazador
 
-Esta guía describe cómo validar la implementación y sus integraciones; solo la referencia oficial de T051 continúa pendiente.
+Esta guía describe cómo validar la implementación y sus integraciones. `cripta-06` ya está publicada;
+T051 sigue abierta porque el recorrido validado alcanza cinco cazadores activos, no decenas.
+La auditoría vigente está en [R-16](research.md#r-16--auditoría-de-la-referencia-publicada-y-validación-pendiente-t051-17112026).
 
 ## Prerrequisitos
 
@@ -393,7 +395,54 @@ una adopción de reutilización requeriría antes tareas y archivos acordados co
 
 ### Ciclo real
 
-`benchmarks/benchmark_ciclo_real_integrante1.py` mide ya una llamada real a `MotorJuego.ejecutar_accion()`: la copia/inicialización queda antes y el cronómetro incluye acción, agenda, decisiones de cazadores y creación, consultas, invalidación y limpieza de auxiliares hasta la próxima decisión. La retención solo existe en el benchmark mediante sustitución temporal restaurada en `finally`; producción conserva recálculo individual. Cargas sintéticas, criptas reales disponibles y referencia oficial pendiente se etiquetan por separado.
+`benchmarks/benchmark_ciclo_real_integrante1.py` mide una llamada completa a
+`MotorJuego.ejecutar_accion()`. En la referencia publicada se observa producción sin retención:
+acción, agenda, decisiones/rutas y cambios reversibles hasta la siguiente decisión. Los contadores
+de eventos y decisiones están dentro del intervalo; carga, copia inicial y reproducción del prefijo
+de acciones válidas quedan fuera. El recálculo productivo no se modifica.
+
+#### T051: referencia publicada, carga de decenas aún no demostrada (17/11/2026)
+
+```powershell
+.\.venv\Scripts\python.exe benchmarks/benchmark_ciclo_real_integrante1.py `
+  --cripta cripta-06 --datos-offline tests/fixtures/api_real `
+  --recorrido benchmarks/recorridos/t051_cripta06.json --semilla 20240517 `
+  --muestras 30 --calentamiento 3 `
+  --resultados benchmarks/resultados/t051_cripta06_actividad_real.json
+```
+
+Ese es el comando de la corrida conservada. Para otra ejecución se debe elegir **un nombre nuevo**:
+el escritor rechaza sobrescribir evidencia. No hace falta repetir `main.py --bench` ni T050.
+Sin `--recorrido`, los escenarios básicos siguen disponibles para diagnóstico, con validación de
+carga explícita en vez de declarar cumplimiento por un resumen temporal.
+
+- Datos: `cripta-06@f9ed9afa683d`, catálogo `4b9e75a42be5`, 300 salas, 75 enemigos, **36 cazadores
+  cargados y 0 activos inicialmente** (25 sabuesos de rango 600; 11 espectros de rango 2400).
+- Los escenarios anteriores tienen cero cazadores: una rata en sala 142 o vencimiento de antorcha.
+- El recorrido conserva 86 acciones completas y una muerte final; los tres puntos medidos tienen
+  **1/3/5 cazadores participantes**, con **1/3/6 decisiones** y **2/4/7 eventos** por ciclo.
+- Evidencia: [t051_cripta06_actividad_real.json](../../benchmarks/resultados/t051_cripta06_actividad_real.json),
+  30 ciclos completos, 3 calentamientos, 0 errores/rechazos en las muestras, 0 ciclos `>=20 ms`;
+  mediana/p95/máximo agregados **0.2940/1.0614/1.3282 ms**. Conserva cada muestra, actividad, traza,
+  versiones, hashes e I/O nulo dentro del reloj. La muerte de preparación se informa por separado.
+- **T051 sigue abierta, 75/76 tareas**: los tiempos son válidos para esa carga, pero no acreditan
+  decenas. `afirma_pr001=false`; no se genera `resultados_terreno_cazador_referencia.json`.
+  No se ha demostrado que sea imposible con otro recorrido; se necesita uno validado o una
+  aclaración/enmienda de las condiciones oficiales. Detalle de distribución y reglas en R-16.
+- `cripta-05`: el benchmark puede forzar exclusivamente su inicializador si el informe confirma
+  irresolubilidad. El inicio normal conserva el rechazo y no se modifica producción.
+
+Comprobación ejecutada (incluye las **61 restricciones**):
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests/test_bench_referencia_001.py `
+  tests/test_bench_ciclo_real.py tests/test_bench_terreno_cazador.py `
+  tests/test_bench_adaptadores_001.py `
+  tests/test_bloque3_conexiones.py::test_bench_desde_main_no_inicializa_fuente_ni_vista `
+  tests/test_restricciones_enunciado.py
+```
+
+Resultado: **125 passed in 3.82s**, sin omisiones. No se repitió la suite completa.
 
 ### Agenda
 

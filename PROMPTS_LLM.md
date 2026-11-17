@@ -476,6 +476,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 75 | Sprites de carcelero y sabueso | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
 | 76 | Vigencia metodológica de la evidencia histórica T050 | Tema 12. Parte II dirigida por especificaciones | 16/11/2026 |
 | 77 | Sprites del espectro vivo y muerto | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
+| 77 (T051) | Validación oficial T051 / AC-013 / PR-001 | Tema 12. Parte II dirigida por especificaciones | 17/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2705,6 +2706,62 @@ ni eliminó ninguno de los tres archivos.
 corrida con los commits correctivos, sin ejecutar benchmarks ni pruebas. Se verificaron enlaces,
 recuentos, 75/76 tareas y T051 como única abierta. `git diff --check` pasó; los 14 artefactos T050
 incompletos permanecieron intactos. No se modificaron producción, pruebas, 003, 004 ni Git.
+
+---
+
+## Prompt 77 — Validación oficial T051 / AC-013 / PR-001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 17/11/2026
+
+**Numeración:** el usuario tituló esta solicitud «Prompt 77». Se distingue como `77 (T051)` en
+el índice; se conserva la entrada histórica 77 de sprites del Espectro y su atribución original.
+
+> **Prompt**
+>
+> Auditar la carga real de cripta-06 y el benchmark del ciclo completo, diferenciar enemigos
+> cargados, cazadores activos, decisiones y notificaciones; preparar escenarios con acciones válidas
+> sobre la referencia sin alterar datos ni producción. Soportar cripta-05 irresoluble forzando solo
+> el inicializador del benchmark cuando corresponda; conservar evidencia individual reproducible,
+> ejecutar pruebas/restricciones y cerrar T051 únicamente si se demuestra PR-001. Permanecer en
+> Sofia, sin operaciones Git modificadoras ni alteraciones de T048/T050 o especificaciones 002–004.
+
+**Qué se construyó y por qué.** Sobre `Sofia@d2773f4`, la auditoría confirmó 300 salas, 75 enemigos,
+36 cazadores (25 sabuesos/11 espectros) y cero activos iniciales. El escenario anterior de sala 142
+solo activaba una rata; el otro vencía una antorcha. Se añadieron conteos de extracciones y decisiones
+delegando al motor real, con su costo incluido, y reproducción de acciones válidas fuera del reloj.
+El recorrido diagnóstico equipa objetos, combate ratas, recoge llaves/pociones y registra su
+continuación completa: 86 acciones completas y una muerte. Sus puntos de medición tienen 1/3/5
+cazadores participantes y 1/3/6 decisiones por ciclo. No se demuestra que otro recorrido sea imposible.
+
+Se distinguen fallos de caché/I/O, terminales y comparación estricta con 20 ms; el resumen temporal
+ya no declara por sí solo `CUMPLE`. El escritor protege evidencia existente y no permite el nombre
+reservado a PR-001 sin validación. `cripta-05` se fuerza solo en el inicializador local del benchmark
+tras confirmar irresolubilidad; las reglas de inicio normal permanecen verificadas por pruebas.
+
+**Resultados.** `benchmarks/resultados/t051_cripta06_actividad_real.json` conserva versiones,
+SHA-256, entorno Windows/Python 3.12.10, semilla 20240517, tres calentamientos y 30 ciclos completos;
+mediana/p95/máximo **0.2940/1.0614/1.3282 ms**, cero ciclos `>=20 ms`, cero errores/rechazos en
+las muestras, 100 decisiones de cazadores, 130 eventos e I/O nulo dentro del reloj. El diagnóstico
+previo se preserva. **T051 sigue abierta, 75/76 tareas, `afirma_pr001=false`**: no hay carga probada
+de decenas. No se genera `resultados_terreno_cazador_referencia.json`. R-16, plan, quickstart, tareas
+y apartados propios de README/DECISIONES registran el bloqueo vigente.
+
+**Validación.** Tras corregir una llamada de prueba al inicializador que omitía el argumento `cache`,
+el foco completo terminó en **125 passed in 3.82s**: 64 pruebas de referencia/ciclo/terreno/adaptadores/
+conexión y 61 restricciones, sin omisiones. Comprueba equivalencia con/sin contadores, espera
+silenciosa, 20 ms exactos, preservación de archivos y forzado aislado. Se verificaron 68 enlaces
+locales sin roturas, 128 archivos protegidos intactos y los hashes de 56 archivos de datos/55 de
+código más el recorrido; se recalcularon los conteos y percentiles desde las muestras.
+`git diff --check` pasó, con avisos LF→CRLF. Los 14 artefactos incompletos T050 quedan intactos.
+No se repite la suite completa ni T050; no se hizo commit ni push.
+
+**Complejidad o costo.** Los contadores añaden tiempo y memoria O(eventos + decisiones) al intervalo
+observado; preparación, copia, carga, auditoría del estado y serialización quedan fuera. Se conserva
+el trabajo productivo de rutas, agenda e historial; no se introduce retención experimental.
 
 ---
 

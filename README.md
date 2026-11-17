@@ -374,13 +374,26 @@ alternativa, muestras, mediana, p95 y máximo permanecen en el JSON.
 | **Escritas** | Pruebas funcionales, integraciones 001/003 y 001/004, oráculos y benchmarks en las rutas anteriores. |
 | **Ejecutadas** | T050: `main.py --bench` con código 0; T054: 26 filas/390 muestras de «ir a», con 15/15 muestras bajo 5 ms en el mapa publicado; T071: 33 pruebas de benchmark y 1 de conexión aprobadas; T062: JSON completo y filtrado idénticos para las filas de 001. |
 | **Omitidas** | Ninguna en el foco T071. La suite completa y las pruebas en línea no se repitieron en los cierres exclusivamente documentales posteriores. |
-| **Bloqueadas** | T051/AC-013: falta la cripta oficial de referencia publicada para decidir `PR-001`. |
+| **Bloqueadas** | T051/AC-013: `cripta-06` está publicada; falta validar decenas de cazadores activos y participantes por ciclo para decidir `PR-001`. |
 
 Las cargas de T050 son **sintéticas**. En los ciclos productivos sintéticos hubo 10/240 muestras de
 al menos 20 ms; esto es una limitación conservada, no una prueba de cumplimiento ni de
-incumplimiento oficial. El presupuesto de `PR-001` solo podrá decidirse con la referencia pendiente
-de T051. El procedimiento detallado, las cargas y la separación entre evidencia histórica y actual
+incumplimiento oficial. El presupuesto de `PR-001` solo podrá decidirse al validar la carga exigida
+en T051. El procedimiento detallado, las cargas y la separación entre evidencia histórica y actual
 están en [`quickstart.md`](specs/001-terreno-y-cazador/quickstart.md).
+
+**T051, diagnóstico del 17/11/2026:** la referencia `cripta-06@f9ed9afa683d` tiene 300 salas,
+75 enemigos y 36 cazadores (25 sabuesos, 11 espectros), inicialmente inactivos. El recorrido real
+conservado en `benchmarks/recorridos/t051_cripta06.json` mide 1/3/5 cazadores participantes, con
+1/3/6 decisiones por ciclo. El diagnóstico
+[`t051_cripta06_actividad_real.json`](benchmarks/resultados/t051_cripta06_actividad_real.json)
+conserva **30 ciclos completos**, tres calentamientos, mediana/p95/máximo
+**0.2940/1.0614/1.3282 ms**, cero ciclos `>=20 ms` y cero errores/rechazos en las muestras.
+La continuación de la preparación registra por separado una muerte después de 86 acciones
+completas. **No demuestra decenas: T051 sigue abierta (75/76 tareas), `afirma_pr001=false`.**
+El JSON oficial de cierre no se genera. No se afirma imposibilidad de conseguir la carga con otro
+recorrido. R-16 y el quickstart contienen distribución, reglas, comando reproducible y las
+**125 pruebas aprobadas** de benchmark/conexión/restricciones.
 
 ## Pruebas
 

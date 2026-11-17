@@ -45,7 +45,11 @@ from logica.mapa_cripta import MapaCripta  # noqa: E402
 from logica.motor_juego import MotorJuego  # noqa: E402
 from logica.rutas_ponderadas import MetricasRuta, ResultadoRuta  # noqa: E402
 import logica.comportamiento_enemigos as comportamiento_enemigos  # noqa: E402
-from service.inicializador_partida import InicializadorPartida  # noqa: E402
+from service.inicializador_partida import InicializadorPartida, CriptaNoResoluble  # noqa: E402
+from benchmarks.auditoria_ciclo_referencia_integrante1 import (  # noqa: E402
+    REFERENCIA, ObservacionCiclo, accion_del_recorrido, auditar_carga,
+    huellas_archivos, metricas_io, preparar_recorrido, validar_pr001,
+)
 
 
 SEMILLA_PREDETERMINADA = 20240517
@@ -98,23 +102,20 @@ class Escenario:
     incluye_enemigos: bool = False
     incluye_efectos: bool = False
     detalle: str = ""
+    seleccion_id: str | None = None
+    preparacion: tuple = ()
 
     def preparar_muestra(self):
         """Copia, motor y acción se preparan deliberadamente sin cronometrar."""
         estado = _copiar_estado_real(self.plantilla)
         motor = MotorJuego()
         motor.iniciar(estado)
-        objetivo = None
-        sala = estado.jugador.sala_actual
-        if self.tipo_accion == "ATACAR":
-            objetivo = next(
-                (e for e in sala.enemigos if e.id_actor == self.objetivo_id), None
-            )
-        elif self.tipo_accion == "RECOGER":
-            objetivo = next(
-                (o for o in sala.objetos if o.id_instancia == self.objetivo_id), None
-            )
-        accion = Accion(self.tipo_accion, objetivo=objetivo, direccion=self.direccion)
+        for paso in self.preparacion:
+            _ejecutar_preparacion(motor, accion_del_recorrido(estado, paso))
+        accion = accion_del_recorrido(estado, {
+            "tipo": self.tipo_accion, "direccion": self.direccion,
+            "objetivo_id": self.objetivo_id, "seleccion_id": self.seleccion_id,
+        })
         return motor, estado, accion
 
 
@@ -293,14 +294,20 @@ def _clasificar(resultado, estado) -> str:
 
 def _medir_una(escenario: Escenario, indice: int, fase: str) -> dict:
     motor, estado, accion = escenario.preparar_muestra()
+    carga_inicial = auditar_carga(estado)
+    reloj_inicial = estado.reloj
+    io_inicial = metricas_io(estado)
     error = None
     resultado = None
-    inicio = perf_counter_ns()
-    try:
-        resultado = motor.ejecutar_accion(accion)
-    except Exception as excepcion:  # Se registra; nunca se elimina silenciosamente.
-        error = f"{type(excepcion).__name__}: {excepcion}"
-    fin = perf_counter_ns()
+    with ObservacionCiclo(motor) as observacion:
+        inicio = perf_counter_ns()
+        try:
+            resultado = motor.ejecutar_accion(accion)
+        except Exception as excepcion:  # Se registra; nunca se elimina silenciosamente.
+            error = f"{type(excepcion).__name__}: {excepcion}"
+        fin = perf_counter_ns()
+    io_final = metricas_io(estado)
+    io_intervalo = {k: io_final[k] - io_inicial[k] for k in io_inicial}
 
     clasificacion = "error" if error is not None else _clasificar(resultado, estado)
     notificaciones = [] if resultado is None else resultado.notificaciones
@@ -311,6 +318,13 @@ def _medir_una(escenario: Escenario, indice: int, fase: str) -> dict:
         "accion": escenario.tipo_accion,
         "duracion_ns": fin - inicio,
         "duracion_ms": (fin - inicio) / 1_000_000,
+        "menor_20ms": fin - inicio < UMBRAL_NS,
+        "reloj_inicial": reloj_inicial,
+        "carga_inicial": carga_inicial,
+        "carga_final": auditar_carga(estado),
+        "trabajo": observacion.resumen(),
+        "io_intervalo": io_intervalo,
+        "sin_io": not any(io_intervalo.values()),
         "clasificacion": clasificacion,
         "exito": None if resultado is None else resultado.exito,
         "mensaje": (
@@ -319,6 +333,11 @@ def _medir_una(escenario: Escenario, indice: int, fase: str) -> dict:
             else resultado.mensaje),
         "reloj_final": estado.reloj,
         "notificaciones": len(notificaciones),
+        "notificaciones_enemigo": sum(
+            aviso.get("tipo") in ("ATAQUE", "ENEMIGO_MOVIDO")
+            and aviso.get("atacante") != estado.jugador.id_actor
+            for aviso in notificaciones if isinstance(aviso, dict)),
+        # Alias histórico; NO es un contador de decisiones/eventos de agenda.
         "eventos_enemigo": sum(
             aviso.get("tipo") in ("ATAQUE", "ENEMIGO_MOVIDO")
             and aviso.get("atacante") != estado.jugador.id_actor
@@ -356,10 +375,12 @@ def _resumen(cripta_id, semilla, escenarios, mediciones, calentamientos):
     lentos = sum(duracion >= UMBRAL_NS for duracion in completos)
     if not completos:
         estado_requisito = "SIN_CICLOS_COMPLETOS"
+    elif conteos["completo"] != len(mediciones):
+        estado_requisito = "CICLOS_NO_VALIDOS"
     elif lentos:
         estado_requisito = "NO_CUMPLE"
     else:
-        estado_requisito = "CUMPLE"
+        estado_requisito = "BAJO_20MS_EN_CARGA_MEDIDA"
     return {
         "cripta_id": cripta_id,
         "semilla": semilla,
@@ -391,6 +412,7 @@ def _resumen(cripta_id, semilla, escenarios, mediciones, calentamientos):
         "ciclos_20ms_o_mas": lentos,
         "umbral_ns": UMBRAL_NS,
         "comparacion_estricta": "duracion_ns < 20000000",
+        "calentamientos_individuales": calentamientos,
         "resultado_requisito": estado_requisito,
         "mediciones": mediciones,
     }
@@ -452,9 +474,17 @@ def _cargar_estado(cripta_id, semilla, args):
     """Único punto que toca la fuente para una cripta."""
     fuente = _crear_fuente(args)
     inicializador = InicializadorPartida(nombre="Benchmark")
-    estado, inventario = inicializador(
-        cripta_id, semilla, fuente, CacheCatalogo(args.cache_size)
-    )
+    try:
+        estado, inventario = inicializador(
+            cripta_id, semilla, fuente, CacheCatalogo(args.cache_size))
+    except CriptaNoResoluble as error:
+        if not error.informe.verificada:
+            raise
+        # La cripta-05 irresoluble también es una carga medible. Esta opción
+        # pertenece solo a este inicializador del benchmark, nunca al juego.
+        inicializador.forzar = True
+        estado, inventario = inicializador(
+            cripta_id, semilla, fuente, CacheCatalogo(args.cache_size))
     if estado.inventario is not inventario:
         raise ValueError("El inicializador no devolvió el inventario del estado.")
     motor = MotorJuego()
@@ -462,9 +492,16 @@ def _cargar_estado(cripta_id, semilla, args):
     # Fuerza la inspección completa antes de cualquier cronómetro.
     salas = estado.mapa.obtener_salas()
     fichas_cargadas = _cantidad_fichas_disponibles(estado, salas)
+    if fichas_cargadas > args.cache_size:
+        raise ValueError("La caché no admite todas las fichas antes de medir sin I/O.")
     if not salas or fichas_cargadas < 1:
         raise ValueError("La cripta no quedó completamente cargada.")
     return estado, {
+        "version_cripta": estado.version_cripta,
+        "version_catalogo": estado.version_catalogo,
+        "inicio_forzado_solo_benchmark": inicializador.forzar,
+        "resolubilidad": estado.informe_resolubilidad.a_dato(),
+        "actividad": auditar_carga(estado),
         "salas_cargadas": len(salas),
         "fichas_cargadas": fichas_cargadas,
         "enemigos_cargados": sum(len(s.enemigos) for s in salas),
@@ -496,6 +533,13 @@ def ejecutar(args) -> dict:
             )
             if escenario is not None
         ]
+        recorrido, auditoria_anterior = None, []
+        if args.recorrido is not None:
+            auditoria_anterior = [_medir_una(e, i, "auditoria_escenario_anterior")
+                                 for i, e in enumerate(escenarios, 1)]
+            escenarios, recorrido = preparar_recorrido(
+                estado_base, args.recorrido, _copiar_estado_real, MotorJuego,
+                Escenario, _clasificar)
         if not escenarios:
             raise ValueError(
                 f"{cripta_id} no ofrece un escenario real con enemigos o efectos."
@@ -513,6 +557,20 @@ def ejecutar(args) -> dict:
             cripta_id, args.semilla, escenarios, mediciones, calentamientos
         )
         resumen["carga_previa"] = carga
+        identidad = (cripta_id, estado_base.version_cripta, estado_base.version_catalogo)
+        resumen["validacion_pr001"] = validar_pr001(
+            identidad, mediciones, calentamientos,
+            recorrido is not None and not any(
+                recorrido["clasificaciones"].get(c, 0)
+                for c in ("error", "rechazada", "incompleto")))
+        resumen["recorrido_preparacion"] = recorrido
+        resumen["auditoria_escenarios_anteriores"] = auditoria_anterior
+        if args.api_url is None:
+            raiz = Path(args.datos_offline)
+            resumen["sha256_datos"] = huellas_archivos(raiz, [
+                * (raiz / cripta_id).glob("*.json"),
+                * (raiz / "catalogo").glob("*.json"),
+            ])
         resumen["clasificaciones_calentamiento"] = {
             nombre: sum(m["clasificacion"] == nombre for m in calentamientos)
             for nombre in set(m["clasificacion"] for m in calentamientos)
@@ -522,11 +580,23 @@ def ejecutar(args) -> dict:
     return {
         "benchmark": "ciclo_real_entre_decisiones",
         "origen_carga": "criptas_reales_disponibles",
-        "referencia_oficial": "pendiente_publicacion_g6",
-        "afirma_pr001": False,
+        "referencia_oficial": {"id": REFERENCIA[0], "version": REFERENCIA[1],
+                               "version_catalogo": REFERENCIA[2]},
+        "afirma_pr001": all(r["validacion_pr001"]["afirma_pr001"] for r in resultados),
         "alcance_resultado_requisito": (
-            "solo_criptas_disponibles; no demuestra PR-001 ni permite "
-            "cerrar T051 sin la referencia oficial"),
+            "Los tiempos solos no cierran T051: se exige referencia auditada, "
+            "recorrido real, ciclos completos sin I/O y >=20 cazadores distintos por ciclo."),
+        "instrumentacion": "Wrappers de conteo delegan al motor; su costo está incluido.",
+        "alias_historico": "eventos_enemigo cuenta notificaciones; usar trabajo para decisiones.",
+        "sha256_codigo": huellas_archivos(RAIZ_PROYECTO, [
+            Path(__file__).resolve(),
+            RAIZ_PROYECTO / "benchmarks/auditoria_ciclo_referencia_integrante1.py",
+            * (RAIZ_PROYECTO / "logica").glob("*.py"),
+            * (RAIZ_PROYECTO / "estructuras").glob("*.py"),
+            * (RAIZ_PROYECTO / "dto").glob("*.py"),
+            * (RAIZ_PROYECTO / "service").glob("*.py"),
+            * (RAIZ_PROYECTO / "datos").glob("*.py"),
+        ]),
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "entorno": {
             "python": sys.version,
@@ -543,6 +613,7 @@ def ejecutar(args) -> dict:
         "semilla": args.semilla,
         "muestras_por_cripta": args.muestras,
         "calentamientos_por_cripta": args.calentamiento,
+        "cache_size": args.cache_size,
         "exclusiones_cronometro": [
             "red_y_disco", "carga_e_inicializacion", "reinicio_de_partida",
             "copia_del_estado", "preparacion_de_accion", "renderizado",
@@ -1283,6 +1354,10 @@ def _imprimir(informe, ruta_resultados):
             f"  Ciclos >= 20 ms: {resultado['ciclos_20ms_o_mas']} | "
             f"resultado estricto: {resultado['resultado_requisito']}"
         )
+        validacion = resultado["validacion_pr001"]
+        print(f"  PR-001 demostrado: {validacion['afirma_pr001']}")
+        for motivo in validacion["motivos"]:
+            print(f"    {motivo}")
     print(f"Mediciones individuales: {ruta_resultados}")
 
 
@@ -1308,6 +1383,8 @@ def _argumentos(argv=None):
     parser.add_argument("--cache-size", type=int, default=25)
     parser.add_argument("--timeout", type=int, default=10)
     parser.add_argument("--resultados", type=Path, default=RESULTADOS_PREDETERMINADOS)
+    parser.add_argument("--recorrido", type=Path,
+                        help="JSON de acciones válidas y puntos de medición; una sola cripta.")
     parser.add_argument("--listar", action="store_true", help="Solo muestra IDs disponibles.")
     args = parser.parse_args(argv)
     if args.muestras <= 0:
@@ -1316,18 +1393,24 @@ def _argumentos(argv=None):
         parser.error("--calentamiento no puede ser negativo.")
     if args.cache_size <= 0 or args.timeout <= 0:
         parser.error("--cache-size y --timeout deben ser mayores que cero.")
+    if args.recorrido is not None and (not args.criptas or len(args.criptas) != 1):
+        parser.error("--recorrido exige exactamente una --cripta.")
     return args
 
 
 def main(argv=None) -> int:
     args = _argumentos(argv)
     try:
+        if not args.listar and args.resultados.exists():
+            raise ValueError(f"No se sobrescribe evidencia existente: {args.resultados}")
         informe = ejecutar(args)
         if informe["resultados"]:
+            if (args.resultados.name == "resultados_terreno_cazador_referencia.json"
+                    and not informe["afirma_pr001"]):
+                raise ValueError("PR-001 no validado: utilice un archivo diagnóstico nuevo.")
             args.resultados.parent.mkdir(parents=True, exist_ok=True)
-            args.resultados.write_text(
-                json.dumps(informe, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+            with args.resultados.open("x", encoding="utf-8") as archivo:
+                json.dump(informe, archivo, ensure_ascii=False, indent=2)
         _imprimir(informe, args.resultados)
         return 0
     except (CriptaAPIError, OSError, TypeError, ValueError) as error:

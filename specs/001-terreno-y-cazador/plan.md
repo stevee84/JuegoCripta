@@ -1,12 +1,12 @@
 # Implementation Plan: Terreno y cazador
 
-**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-15 | **Spec**: [spec.md](spec.md)
+**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-17 | **Spec**: [spec.md](spec.md)
 
 **Input**: Especificación confirmada en `specs/001-terreno-y-cazador/spec.md`.
 
 ## Summary
 
-La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; `d1ad048` entrega la persistencia conjunta v11 de costo, rango, mapa conocido y línea de tiempo. G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. T049/T050 conectaron y ejecutaron las mediciones sintéticas; T054/T066 cerraron «ir a» sin caché; T006/T041/T055 cerraron persistencia con 144 pruebas relacionadas aprobadas. Solo T051 sigue bloqueada por la referencia oficial de PR-001.
+La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; `d1ad048` entrega la persistencia conjunta v11 de costo, rango, mapa conocido y línea de tiempo. G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. T049/T050 conectaron y ejecutaron las mediciones sintéticas; T054/T066 cerraron «ir a» sin caché; T006/T041/T055 cerraron persistencia con 144 pruebas relacionadas aprobadas. Solo T051 sigue abierta: la referencia `cripta-06` está publicada, pero falta demostrar la carga real de decenas de cazadores por ciclo (R-16).
 
 ## Technical Context
 
@@ -26,7 +26,7 @@ La capacidad incorpora costos de salida a todos los movimientos y añade decisio
 
 **Constraints**: determinismo; estructuras propias; sin `dict`/`set` como índice o caché; sin `heapq`, `bisect`, `collections`, `sorted()`, `list.sort()` ni bibliotecas de grafos/rutas en producción; sin red, disco, renderizado o preparación de fixtures dentro de intervalos que no los evalúen; sí se incluye dentro del tiempo toda preparación auxiliar necesaria por consulta o ciclo.
 
-**Scale/Scope**: esqueleto completo en memoria, costos positivos, cientos de eventos pendientes, decenas de cazadores activos y rangos pequeños o grandes. La carga exacta de la referencia oficial sigue sujeta a la publicación prevista por el enunciado; no se inventa.
+**Scale/Scope**: esqueleto completo en memoria, costos positivos, objetivo de cientos de eventos pendientes y decenas de cazadores activos con rangos pequeños o grandes. La referencia publicada tiene 300 salas, 75 enemigos y 36 cazadores, inicialmente inactivos. El recorrido validado alcanza cinco activos; no se inventan activaciones para alcanzar la carga exigida.
 
 **Evidencia histórica del checkout y ramas consultada el 2026-11-08**:
 
@@ -52,7 +52,7 @@ Los acuerdos comunicados no se clasifican como código disponible. La interfaz b
 | VI. Presupuesto de solicitudes | **Comprobado en el diseño**. La ruta consumirá el esqueleto ya reunido por `InicializadorPartida`; no añade consultas ni contenido remoto. |
 | VII. Estado reversible | **Integrado y verificado**. `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer`, `vincular_linea` y `LineaTiempo` están en `HEAD`; T056 verificó la integración y T006/T041/T055 la persistencia conjunta v11. Sin reutilización productiva no existen cachés que invalidar. |
 | VIII. Contratos estables | **Fronteras explícitas**. Steven conserva DTO/inicialización/guardado; Sofía conserva mapa, rutas y vista del cazador. G1 fija firma/resultado sin asignar la vista conocida de 003. |
-| IX. Rendimiento medido | **Medición sintética conectada y ejecutada**. T044–T050/T065/T073–T075 conservan rutas, ciclo, agenda y mapa con equivalencia previa y trabajo separado; la corrida oficial produjo 194 filas/2910 muestras de 001. La referencia oficial de PR-001 no está publicada. |
+| IX. Rendimiento medido | **Medición sintética conectada y ejecutada**. T044–T050/T065/T073–T075 conservan rutas, ciclo, agenda y mapa con equivalencia previa y trabajo separado; la corrida oficial produjo 194 filas/2910 muestras de 001. R-16 añade diagnóstico sobre `cripta-06` publicada: 30 ciclos completos bajo 20 ms con 1/3/5 participantes, insuficientes para PR-001. |
 | X. Especificación y trazabilidad | **Enmienda confirmada**. FR-002 acepta sentidos únicos y compara costos solo cuando ambos existen; se registra antes del código. |
 | XI. Pruebas | **Cobertura propia ejecutada**. T060 conserva su corrida histórica; T056 eliminó después la omisión de la integración 001/004. La auditoría T055 ejecutó 7 pruebas conjuntas y 144 pruebas relacionadas sin omisiones. [quickstart.md](quickstart.md) separa cada corrida por fecha y alcance. |
 
@@ -270,7 +270,7 @@ Cada fila conservada de 001 informa semilla, entorno, calentamiento, repeticione
 
 **Colaboración con 003**: T054 midió cada decisión de «ir a» con origen, destino y conocimiento vigentes frente al límite de 5 ms. El intervalo incluye creación de `Viaje`/vista, auxiliares de la consulta y limpieza; para la alternativa experimental incluye construcción fría y consulta reutilizada separada. La invalidación de una caché persistente no se mide en T054: queda como requisito futuro si alguna vez se adopta. Antes de medir se compara con cálculo individual desde cero y se verifica que dos estados reales con el mismo mapa conocido den el mismo resultado. El recálculo cumplió 15/15 muestras bajo 5 ms con el mapa conocido completo de la mayor cripta publicada local; las nueve superaciones sintéticas de 512 salas (6 en desempate y 3 en puerta cerrada) y la referencia oficial pendiente se documentan en R-14. T066 cierra sin caché productiva.
 
-**Ciclo real** (`PR-001`): `benchmarks/benchmark_ciclo_real_integrante1.py` está registrado por T049 a través de `medir_ciclos_sinteticos_main`, que conserva 32/64 salas, un cazador/decenas, rangos y estabilidad de puertas. T050/T062 lo ejecutaron dentro de `main.py --bench`; el intervalo abarca acción y eventos hasta la siguiente decisión, incluidos auxiliares de rutas, y excluye carga de fuente, copia/reinicio, red, disco, renderizado e impresión. La referencia oficial de PR-001 sigue pendiente.
+**Ciclo real** (`PR-001`): `benchmarks/benchmark_ciclo_real_integrante1.py` está registrado por T049 a través de `medir_ciclos_sinteticos_main`, que conserva 32/64 salas, un cazador/decenas, rangos y estabilidad de puertas. T050/T062 lo ejecutaron dentro de `main.py --bench`; el intervalo abarca acción y eventos hasta la siguiente decisión, incluidos auxiliares de rutas, y excluye carga de fuente, copia/reinicio, red, disco, renderizado e impresión. T051 añade `--recorrido` en el ejecutor independiente sobre la referencia publicada: preparación mediante acciones reales fuera del reloj, conteo dentro y conservación de terminales, carga, versiones y todas las muestras. Aún no acredita decenas de cazadores participantes; no genera el artefacto reservado al cumplimiento oficial.
 
 **Agenda** (`PR-005`): T047 añadió y T050 ejecutó mediciones separadas de insertar, extraer, cancelar por ID, cancelar por actor, reprogramar y resolver empates, más el ciclo mixto con costos variables y cazadores. `PROVEEDORES_MAIN` conecta el adaptador una sola vez; las 36 filas y sus muestras se conservan en el JSON completo.
 
@@ -302,7 +302,7 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Phase 0 Output
 
-[research.md](research.md) fija las alternativas, las decisiones medidas (R-13 y R-14) y el diseño de producción. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2, T005, persistencia T006/T041/T055, la conexión/ejecución `--bench` T049/T050 y T054/T066 están cerradas; solo permanece abierta la referencia oficial T051.
+[research.md](research.md) fija las alternativas, las decisiones medidas (R-13 y R-14) y el diseño de producción. FR-002 fue enmendada documentalmente antes del código para aceptar salidas sin inversa y comparar solo pares existentes. G1/G2, T005, persistencia T006/T041/T055, la conexión/ejecución `--bench` T049/T050 y T054/T066 están cerradas; R-16 mantiene abierta la validación de carga de T051.
 
 ## Phase 1 Outputs
 
@@ -313,15 +313,15 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 
 ## Post-Design Constitution Check
 
-**Puerta de diseño satisfecha con una condición externa abierta**. G1/G2, G3, T005, la vista conocida, `LineaTiempo` y persistencia v11 están disponibles. T054/T066 cerraron «ir a» sin caché y T006/T041/T055 cerraron guardado. T049 registra mapa, rutas, agenda y ciclo, y T050 los ejecutó sin afirmar PR-001; T051 espera la referencia oficial.
+**Puerta de diseño satisfecha con una condición de validación abierta**. G1/G2, G3, T005, la vista conocida, `LineaTiempo` y persistencia v11 están disponibles. T054/T066 cerraron «ir a» sin caché y T006/T041/T055 cerraron guardado. T049 registra mapa, rutas, agenda y ciclo, y T050 los ejecutó sin afirmar PR-001; T051 requiere demostrar decenas activas y participantes en la referencia publicada.
 
 ## Risks and Pending Agreements Before Tasks
 
 1. **Integración de datos con Steven**: G1/G2 cerradas en `5000d1f`; costo/rango, firma/resultado, archivos de Sofía y política de sentidos únicos están confirmados. La vista conocida de 003 ya está integrada.
 2. **Contrato de «ir a» con Steven/003**: firma, recálculo, casos terminales y vista están confirmados; T054 midió el costo completo y T066 decidió conservar el recálculo sin caché. La referencia oficial futura puede exigir repetir la medición como parte de T051.
 3. **Integración con Joshua**: la interfaz base, `vincular_linea` y `LineaTiempo` están disponibles localmente; T005/T040/T056 cerraron la revisión y ejecución. El paquete conjunto v11 quedó verificado por T006/T041/T055. No hay invalidación de rutas mientras producción recalcule sin retener estado.
-4. **Referencia oficial**: la carga exacta puede ser publicada o enmendada. Hasta entonces los sintéticos preparan la matriz, pero no demuestran `PR-001`.
-5. **Elección de estrategia**: individual es la decisión medida para el cazador (R-13). Para «ir a», T054 midió el recálculo completo y T066 mantiene la misma producción sin caché (R-14); compartida/adaptativa o reutilización solo se seleccionarían con nuevas tareas productivas acordadas, equivalencia e invalidación completas. La referencia oficial de PR-001 sigue pendiente.
+4. **Referencia oficial**: `cripta-06` está publicada. El recorrido de R-16 no llega a decenas; se necesita otro recorrido válido o aclaración/enmienda oficial. No se demuestra imposibilidad global ni se sustituyen datos por sintéticos.
+5. **Elección de estrategia**: individual es la decisión medida para el cazador (R-13). Para «ir a», T054 midió el recálculo completo y T066 mantiene la misma producción sin caché (R-14); compartida/adaptativa o reutilización solo se seleccionarían con nuevas tareas productivas acordadas, equivalencia e invalidación completas. La validación oficial de PR-001 sigue pendiente.
 6. **Persistencia coordinada**: v10 introdujo costo/rango y v11 integra mapa conocido más línea. V9/v10 se rechazan explícitamente; T006/T041/T055 verifican campos, compatibilidad, identidad, alias y ausencia de derivados de ruta.
 7. **Componentes compartidos**: el diseño no exige ampliar `MonticuloMinimo`. El registro en `main.py` requiere tarea conjunta y no autoriza edición unilateral.
 

@@ -160,10 +160,11 @@ def test_cripta_real_disponible_reconecta_catalogo_vivo_sin_ser_oficial():
     ]))
 
     assert informe["origen_carga"] == "criptas_reales_disponibles"
-    assert informe["referencia_oficial"] == "pendiente_publicacion_g6"
+    assert informe["referencia_oficial"]["id"] == "cripta-06"
     assert informe["afirma_pr001"] is False
     assert len(informe["resultados"]) == 1
     resultado = informe["resultados"][0]
     assert resultado["cripta_id"] == "cripta-02"
     assert resultado["ciclos_completos"] == 1
     assert resultado["carga_previa"]["fichas_cargadas"] > 0
+    assert resultado["validacion_pr001"]["afirma_pr001"] is False
