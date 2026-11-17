@@ -398,17 +398,30 @@ semilla:
 La tabla propia se mantiene plana —de 612 a 671 ns entre 100 y 1 600 salas— mientras recorrer
 crece de forma lineal. Eso es `SC-002`.
 
-Explorar una sala, con mapas conocidos de distinto tamaño:
+Revelar, con mapas conocidos de distinto tamaño. Cada lote explora **8 salas interiores** de
+grado 4, separadas para que no se quiten hechos entre sí, sobre un mapa conocido que tiene todo
+explorado salvo esas salas y su entorno: **40 revelaciones en los cuatro tamaños**, comprobadas con
+`MapaConocido.revelaciones_de` antes de cronometrar.
 
-| SALAS YA CONOCIDAS | POR REVELACIÓN |
-|---|---|
-| 100 | 14,9 µs |
-| 400 | 20,5 µs |
-| 900 | 20,1 µs |
-| 1 600 | 20,5 µs |
+| SALAS YA CONOCIDAS | REVELACIONES DEL LOTE | POR REVELACIÓN |
+|---|---|---|
+| 100 | 40 | 5,04 µs |
+| 400 | 40 | 3,49 µs |
+| 900 | 40 | 3,75 µs |
+| 1 600 | 40 | 3,90 µs |
 
-Se estabiliza: revelar cuesta lo mismo sobre un mapa de 400 que sobre uno de 1 600. Eso es
-`SC-003`.
+De 400 a 1 600 salas —cuatro veces el mapa— revelar pasa de 3,49 a 3,90 µs: **1,12×**. Lo que
+crece no es el mapa sino la tabla hash que lo guarda. Eso es `SC-003`. El tamaño de 100 sale más
+caro que los demás porque, con ocho objetivos y su entorno fuera, quedan pocas salas exploradas y
+la tabla todavía está creciendo durante el lote.
+
+**Esta tabla se rehízo el 17/11/2026.** La anterior (14,9 a 20,5 µs) salía de una medición que
+construía el mapa conocido completo y después exploraba una sala **ya conocida**: `revelaciones_de`
+devolvía 0 en todos los tamaños, así que cronometraba el acceso a la tabla y los chequeos de
+puertas, nunca el costo de revelar, y la columna «por revelación» dividía entre revelaciones que no
+existían. Lo detectó Sofía en
+`specs/001-terreno-y-cazador/contracts/nota-coordinacion-steven-sc003.md`; la respuesta y el detalle
+del arreglo están en `specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.md`.
 
 Un paso de «ir a», contra el límite de 5 ms de §6.1:
 
@@ -431,18 +444,24 @@ algo más del doble de margen.
   pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
   —«podemos reutilizar auxiliares después, si demostramos equivalencia»—, no cambiar la
   estructura.
-- **El conocimiento todavía no se revierte ni se guarda.** `FR-022` está sin implementar: el
-  mecanismo de rehacer de la línea de tiempo (§5.5) solo sabe restaurar atributos, listas y
-  diccionarios, y el conocimiento vive en tablas propias que se modifican en su sitio, como exige
-  §6.2. Hace falta que esa capacidad ofrezca una forma de volver a aplicar un cambio; está
-  planteado al grupo. Mientras tanto el conocimiento avanza pero no retrocede.
+- **El conocimiento se revierte y se guarda desde el 14/11/2026.** `FR-022` quedó cerrado:
+  `CambioConocimiento` hereda del contrato de cambios reversibles sin tocar el archivo de otro
+  integrante (Principio VIII) y guarda solo los hechos de cada revelación, nunca una copia del
+  mapa; Joshua añadió el gancho de rehacer que faltaba. El mapa conocido viaja dentro de la
+  sección opaca de la línea de tiempo en el guardado **v11**, así que no hay una segunda copia del
+  conocimiento en el archivo. Probado en `tests/test_datos/test_mapa_conocido_persistido.py` y
+  `tests/test_integracion_conocimiento_003_004.py`.
 - **Las mediciones usan mallas regulares.** Validan el crecimiento, no cualquier topología.
 - Las mediciones son de un solo equipo y no caracterizan otras máquinas.
 
 **Trazabilidad**: `logica/mapa_conocido.py`; `logica/viaje.py`;
 `logica/rutas_ponderadas.py` (buscador de 001, no se modifica);
+`controller/resumen_mapa.py`; `vista/vista_pygame.py` (minimapa y zonas de «ir a»);
 `benchmarks/integrante2.py` (`medir_mapa_conocido`, `medir_paso_ir_a`);
-`tests/test_logica/test_mapa_conocido.py`; `tests/test_logica/test_viaje.py`.
+`tests/test_logica/test_mapa_conocido.py`; `tests/test_logica/test_viaje.py`;
+`tests/test_controller/test_minimapa_niebla.py`; `tests/test_controller/test_mapa_ir_a.py`;
+`tests/test_datos/test_mapa_conocido_persistido.py`;
+`tests/test_integracion_conocimiento_003_004.py`.
 
 ## 5.4 Resolubilidad
 

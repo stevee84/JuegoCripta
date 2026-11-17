@@ -3581,6 +3581,11 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Herramienta:** Claude Code (Claude Opus 5), con spec-kit 1.2.3. Capacidades a mi cargo según
 `REPARTO_PARTE2.md`: `002-resolubilidad` y `003-niebla-y-ir-a`.
 
+**Sobre las citas.** Los prompts se reproducen completos y sin recortes, pero transcritos con
+ortografía y puntuación corregidas: se arreglaron erratas de tecleo, tildes y mayúsculas, sin
+cambiar una palabra de lo que se pedía. El prompt del `/speckit.specify` de la 002 va tal cual se
+escribió, porque se redactó como texto formal.
+
 | # | Tema | Fecha |
 | --- | --- | --- |
 | 11 | `/speckit.specify` de la resolubilidad | 05/11/2026 |
@@ -3594,6 +3599,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 19 | `/speckit.implement`, fases 3 y 4 | 12/11/2026 |
 | 20 | Mediciones y documento de decisiones §5.3 | 13/11/2026 |
 | 21 | Guardado v11 y cierre de la 003 sobre la rama de integración | 14/11/2026 |
+| 22 | Defectos de medición, niebla en el minimapa y cierre de la 003 | 17/11/2026 |
 
 ## Prompt 11 — `/speckit.specify` de la capacidad 002-resolubilidad
 
@@ -3840,7 +3846,7 @@ en el mismo turno.
 
 > **Prompt**
 >
-> dale con tus dos recomendaciones y seguí con clarify y plan
+> Dale con tus dos recomendaciones y seguí con clarify y plan.
 
 **Para qué se usó.** `specs/003-niebla-y-ir-a/plan.md` y `research.md`: la elección de estructuras
 —tablas hash propias indexadas por id para lo explorado, lo avistado y la memoria de puertas—, la
@@ -3853,7 +3859,7 @@ segundo buscador. El `plan` también dejó los contratos `contracts/vista-conoci
 
 > **Prompt**
 >
-> dale con tasks y analyze
+> Dale con tasks y analyze.
 
 **Para qué se usó.** `tasks.md` con 59 tareas en cinco historias, y la lista de hallazgos del
 `analyze`. El análisis encontró dos cosas que se corrigieron antes de escribir código: `FR-020`
@@ -3865,8 +3871,8 @@ Joshua, porque `controller/` y `vista/` son suyos.
 
 > **Prompt**
 >
-> ok , vamos a pushear , quiero que el codigo se escriba con el ponytail activo, la ultima vez
-> hiciste review y no escribiste con el
+> Vamos a pushear. Quiero que el código se escriba con ponytail activo: la última vez hiciste
+> review y no escribiste con él.
 
 **Para qué se usó.** `logica/mapa_conocido.py` y `logica/viaje.py` con sus pruebas (`T001` a
 `T028`). La instrucción sobre el ponytail cambió el método, no el resultado: la escala de
@@ -3878,7 +3884,7 @@ es lo que `FR-014` necesita y además menos código.
 
 > **Prompt**
 >
-> dale, seguí con las fases 3 y 4
+> Dale, seguí con las fases 3 y 4.
 
 **Para qué se usó.** Las cuatro condiciones de parada, la antorcha y el conocimiento como estado
 reversible. Aquí apareció el bloqueo que paró la capacidad: el mecanismo de rehacer de la 004 solo
@@ -3890,7 +3896,7 @@ vez de copiar el mapa, que el Principio VII prohíbe.
 
 > **Prompt**
 >
-> dale con los benchmarks y el documento de decisiones
+> Dale con los benchmarks y el documento de decisiones.
 
 **Para qué se usó.** `benchmarks/integrante2.py` con la medición del mapa conocido contra la
 alternativa que recorre el mapa y la del paso de «ir a» (`T051` a `T054`), y la sección §5.3 de
@@ -3905,7 +3911,7 @@ en `integracion-parte2`. Se trabajó allí directamente.
 
 > **Prompt**
 >
-> nos mensjaes de johsua ys sofia de ayer
+> Los mensajes de Joshua y Sofía de ayer.
 
 **Para qué se usó.** Adoptar el gancho de Joshua en `CambioConocimiento` —los hechos de una
 revelación se volvieron bidireccionales con `aplicar()`, y se retiró la fotografía del mapa que
@@ -3913,3 +3919,54 @@ había quedado del intento anterior— y subir el guardado a v11. La comprobaci�
 diseño fue leer `LineaTiempo.INFRAESTRUCTURA` antes de escribir: el mapa conocido no está en esa
 lista, así que ya viajaba dentro de los bytes de la línea y la segunda sección que el plan
 preveía sobraba.
+
+## Prompt 22 — Defectos de medición, niebla en el minimapa y cierre de la 003
+
+Bloque de cierre, el día anterior a la entrega. Sofía había dejado una nota de coordinación sobre
+la medición de `SC-003` y Joshua había reportado otra prueba de tiempos intermitente; además
+quedaban tres pendientes que yo había excluido del alcance. Se trabajó por partes, verificando
+antes y después de cada una.
+
+> **Prompt**
+>
+> Vamos a aceptar los últimos 3 como responsabilidad nuestra, pero vamos parte por parte; no
+> tenemos que correr, tomate tu tiempo y revisa todo antes y después de hacerlo.
+
+y, a mitad del bloque:
+
+> **Prompt**
+>
+> Seguí en automático con cada parte hasta terminar; decime si necesitas que intervenga.
+
+**Para qué se usó.** Cuatro defectos, cada uno comprobado sobre el código anterior antes de
+arreglarlo, y el cierre de la contabilidad de la 003:
+
+1. **`SC-003` medía cero revelaciones.** `benchmarks/integrante2.py` construía el mapa conocido
+   completo y después exploraba una sala ya conocida. Se rehízo con 8 salas interiores separadas,
+   comprobando con `revelaciones_de` que los tamaños revelan lo mismo antes de cronometrar: la
+   razón pasó de 2,13× a 1,11×. La tabla de §5.3 de `DECISIONES.md` se regeneró, porque la
+   anterior dividía entre revelaciones que no existían.
+2. **`SC-002` comparaba lotes distintos**: 100 consultas contra 900, con el mínimo de cinco
+   repeticiones sobre una ventana de 70 µs. Lote fijo de 2 000 y medianas.
+3. **El minimapa de pygame rompía la niebla.** Pintaba el estado **real** de cada puerta, dibujaba
+   conexiones entre salas solo avistadas y coloreaba las salas por su contenido real. Verificado
+   sobre el código anterior con la fixture `cripta-cierre`: una puerta observada abierta que se
+   cierra sola se dibujaba con el color de cerrada mientras el comando `mapa` la informaba abierta
+   en la misma pantalla. Ahora el color sale de `puerta_recordada_abierta` y codifica los tres
+   estados de §3.3, separados por luminancia y no solo por tono.
+4. **«Ir a» no daba ningún paso en el juego real.** Al ejecutar los pasos 4, 5 y 6 del quickstart
+   salió que todo viaje terminaba en «cero pasos». La orden se anotaba en la bitácora llamando a
+   `RegistroPartida` por detrás del servicio, y el servicio guarda una huella del archivo para
+   detectar cambios externos: el primer paso se rechazaba. El comentario pasa ahora por
+   `JuegoService.anotar_comentario`. La prueba que debía cubrirlo aceptaba «Viaje detenido» como
+   alternativa válida y comprobaba los pasos con `all()` sobre una lista vacía.
+
+Además: las salas exploradas del minimapa se volvieron clicables para viajar; se ejecutaron los
+diez pasos del quickstart y se marcaron `T016`, `T037`, `T038` y `T056` (59 de 59); se respondió la
+nota de Sofía en `specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.md`; y se corrió el
+`/speckit-analyze` cruzado de la capacidad 004 de Joshua.
+
+Lo que más cambió el trabajo fue la disciplina de reproducir cada defecto antes de tocarlo. Los
+cuatro **pasaban** las pruebas existentes: dos porque medían algo que no era, uno porque nadie
+había escrito una prueba del dibujo, y el cuarto porque su prueba aceptaba el fallo como resultado
+válido.
