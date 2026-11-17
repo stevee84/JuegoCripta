@@ -28,6 +28,12 @@
 - Q: ¿Qué debe mostrar del mapa conocido el resumen de historia? → A: El mismo contenido que el comando de mapa conocido de la spec 003, en ese instante: salas exploradas con sus salidas, costos y estado recordado de puertas, y salas avistadas (FR-004).
 - Q: ¿Qué incluye «vida y estadísticas» del jugador en el resumen? → A: Vida actual y máxima, ataque, defensa y velocidad efectivos en ese instante, con equipo y efectos aplicados (FR-004).
 
+### Session 2026-11-16 (tras el `/speckit-analyze` cruzado de Steven)
+
+- Q: La acción que crea un punto de control (una de cada K) tarda unos 51 ms, por encima de los 20 ms por ciclo de §6.1. ¿Se corrige o se declara? → A: Se declara como excepción medida y acotada (FR-032): solo afecta a esa acción, el costo se reporta en `--bench` y se documenta en `DECISIONES.md` §5.5 con las mejoras posibles. No hay una tarea que lo remedie en esta entrega.
+- Q: ¿Qué estadístico usa SC-001? → A: La mediana de las consultas, que es lo que se cumple. El p95 y el máximo se reportan siempre y quedan como límite conocido (SC-001).
+- Q: ¿Qué pasa si la memoria con 5 000 acciones no llega a ser el doble de la de 2 500? → A: Se reporta la razón medida tal cual; SC-005 se evalúa con esa medición y, si no se cumple, el motivo queda en `DECISIONES.md` §5.5.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Consultar el estado en un instante pasado (Priority: P1)
@@ -196,6 +202,7 @@ El desarrollador inicia el juego, el replay o el modo de medición con `--checkp
 - **FR-029**: Como contrato con el guardado de partida, sin fijar su formato, el archivo MUST conservar: los puntos de control, la información de cambios necesaria para reconstruir cualquier instante desde el inicio, el valor de K con que se tomaron, el número de acción y el reloj de cada punto de control, y el estado del generador aleatorio si la reconstrucción re-simula.
 - **FR-030**: Al cargar una partida guardada con un K distinto del configurado con `--checkpoint-cada`, el juego MUST conservar el K con que se guardó la partida, usarlo también en las acciones posteriores e informar al jugador que se ignora el valor pedido.
 - **FR-031**: Un archivo de partida de la Parte I MUST reportarse como incompatible o migrarse de forma explícita, informándolo; nunca se carga en silencio.
+- **FR-032**: La acción que crea un punto de control (una de cada K) MAY superar el límite de 20 ms por ciclo de §6.1. Es una excepción declarada: `--bench` MUST reportar su costo frente a ese límite, y `DECISIONES.md` MUST explicarla con las mejoras posibles. Las demás acciones y todas las consultas siguen sujetas a sus límites.
 
 ### Key Entities
 
@@ -208,11 +215,11 @@ El desarrollador inicia el juego, el replay o el modo de medición con `--checkp
 
 ### Measurable Outcomes
 
-- **SC-001**: `historia <t>` e `historia #k` responden en menos de 50 ms en una partida de al menos 5 000 acciones del jugador con el K por defecto, medido en el equipo local sin red ni renderizado (§6.1).
+- **SC-001**: `historia <t>` e `historia #k` responden con una **mediana** menor de 50 ms en una partida de al menos 5 000 acciones del jugador con el K por defecto, medido en el equipo local sin red ni renderizado (§6.1). `--bench` reporta también el p95 y el máximo, que pueden superar los 50 ms y quedan como límite conocido en `DECISIONES.md` §5.5.
 - **SC-002**: En el 100 % de las consultas de las pruebas, el resumen coincide con el estado que tenía la partida en ese instante o antes de esa acción.
 - **SC-003**: Después de cualquier cantidad de consultas, la partida continúa de forma idéntica a una partida sin consultas: mismo partida.log, mismo reloj y mismos resultados.
 - **SC-004**: `--bench` reporta memoria y tiempo de consulta para al menos tres valores de K y para la alternativa sin puntos de control, y con esos datos se justifica el K por defecto en el Documento de Decisiones.
-- **SC-005**: En `--bench`, al duplicar la cantidad de acciones con K fijo, la memoria de la línea de tiempo crece en proporción a los cambios registrados, no a «acciones por tamaño del estado».
+- **SC-005**: En `--bench`, al duplicar la cantidad de acciones con K fijo (2 500 frente a 5 000, en la misma partida), la memoria de la línea de tiempo crece en proporción a los cambios registrados, no a «acciones por tamaño del estado». La razón medida se reporta tal cual (fila `linea_tiempo_memoria_crecimiento`).
 - **SC-006**: Los 6 casos de línea de tiempo del Apéndice B (US1-1, US1-2, US1-3, US3-1, US4-2 y US5-3) tienen una prueba automatizada o un partida.log que los ejercita, y cada prueba cita su FR.
 
 ## Assumptions

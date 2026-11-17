@@ -11,7 +11,7 @@ primero.
 archivo, sin dependencias pendientes). `[US#]` = historia de usuario de la spec.
 
 **Marcas de dependencia externa**:
-- **[DEPENDE v10]**: necesita la sección v10 del guardado de Steven ([contrato](./contracts/guardado-v10.md)).
+- **[DEPENDE v10]**: necesita la sección de la línea en el guardado de Steven ([contrato](./contracts/guardado-v10.md)). El contrato se propuso como v10; lo entregado es **v11** (`GuardadoBinario.VERSION = 11`), porque v10 quedó para los costos y rangos de la spec 001. La etiqueta se conserva como antecedente.
 - **[DEPENDE 003]**: necesita la spec 003 de Steven ([contrato](./contracts/dependencias.md)).
 
 **Archivos que no se tocan**: `logica/motor_juego.py`, `logica/agenda_eventos.py`,
@@ -166,6 +166,8 @@ partida original.
 - [X] T047 Elegir el K por defecto con los datos de T041 y fijarlo en `configuracion.py`; actualizar R7 en `research.md`. Si cambia el valor del plan, corregir primero el plan en un commit separado (FR-016)
 - [X] T048 Escribir la sección §5.5 de `DECISIONES.md`: problema, alternativas, decisión, complejidad, evidencia de `--bench`, límites, enlace a spec y plan, y si la decisión final coincide con el plan (enunciado §7.1)
 - [X] T049 Agregar a `README.md` las banderas `--checkpoint-cada` y `--replay … --hasta` y el comando `historia` (enunciado §7.2)
+- [X] T051 Tras el `/speckit-analyze` cruzado de Steven (2026-11-16): agregar a `benchmarks/linea_tiempo.py` la memoria a mitad de partida (2 500 acciones) frente al final (5 000) con K fijo, que T041 pedía y faltaba, y su comprobación en `tests/test_bench_linea_tiempo.py`; publicar la corrida en `benchmarks/resultados/linea_tiempo_memoria_2500_5000.json` (T041, SC-005, FR-021)
+- [X] T052 Declarar en `spec.md` la excepción del punto de control frente a los 20 ms (FR-032) y el estadístico de SC-001, y explicar ambas y el resultado de SC-005 en `DECISIONES.md` §5.5 (FR-032, SC-001, SC-005)
 - [X] T050 Correr `python -m pytest -q` completo y los pasos de [quickstart.md](./quickstart.md); informar aprobadas, omitidas (las [DEPENDE]) y fallidas por separado (constitución XI)
 
 ---
