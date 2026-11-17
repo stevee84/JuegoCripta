@@ -25,6 +25,8 @@ def selector():
         "_sprite_carcelero_muerto",
         "_sprite_sabueso",
         "_sprite_sabueso_muerto",
+        "_sprite_espectro",
+        "_sprite_espectro_muerto",
         "_sprite_rata",
         "_sprite_rata_muerta",
         "_sprite_guardian_oseo",
@@ -55,6 +57,8 @@ def pantalla_dummy(monkeypatch):
         ("ent_carcelero", 0, "_sprite_carcelero_muerto"),
         ("ent_sabueso", 10, "_sprite_sabueso"),
         ("ent_sabueso", 0, "_sprite_sabueso_muerto"),
+        ("ent_espectro", 10, "_sprite_espectro"),
+        ("ent_espectro", 0, "_sprite_espectro_muerto"),
     ],
 )
 def test_tipo_de_ficha_y_vida_seleccionan_el_sprite_correcto(
@@ -76,6 +80,8 @@ def test_tipo_de_ficha_y_vida_seleccionan_el_sprite_correcto(
         ("Carcelero", 0, "_sprite_carcelero_muerto"),
         ("Sabueso", 10, "_sprite_sabueso"),
         ("Sabueso", 0, "_sprite_sabueso_muerto"),
+        ("Espectro", 10, "_sprite_espectro"),
+        ("Espectro", 0, "_sprite_espectro_muerto"),
     ],
 )
 def test_nombre_visible_selecciona_el_sprite_correspondiente(
@@ -91,6 +97,7 @@ def test_nombre_visible_selecciona_el_sprite_correspondiente(
     [
         ("ent_carcelero", "_sprite_carcelero"),
         ("ent_sabueso", "_sprite_sabueso"),
+        ("ent_espectro", "_sprite_espectro"),
     ],
 )
 def test_id_resuelto_en_la_ficha_tambien_se_utiliza(selector, tipo_ficha_id, atributo):
@@ -101,9 +108,9 @@ def test_id_resuelto_en_la_ficha_tambien_se_utiliza(selector, tipo_ficha_id, atr
 
 
 def test_recurso_faltante_conserva_el_respaldo_sin_sprite(selector):
-    selector._sprite_sabueso = None
+    selector._sprite_espectro = None
 
-    assert selector._sprite_para_enemigo(_enemigo("ent_sabueso")) is None
+    assert selector._sprite_para_enemigo(_enemigo("ent_espectro")) is None
 
 
 def test_cargador_devuelve_none_si_el_archivo_no_existe(selector):
@@ -116,7 +123,14 @@ def test_cargador_devuelve_none_si_el_archivo_no_existe(selector):
 
 @pytest.mark.parametrize(
     "nombre_archivo",
-    ["Carcelero.png", "Carcelero_muerto.png", "Sabueso.png", "Sabueso_muerto.png"],
+    [
+        "Carcelero.png",
+        "Carcelero_muerto.png",
+        "Sabueso.png",
+        "Sabueso_muerto.png",
+        "Espectro.png",
+        "Espectro_muerto.png",
+    ],
 )
 def test_nuevos_recursos_cargan_con_transparencia_y_proporcion(
     selector, pantalla_dummy, nombre_archivo

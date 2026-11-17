@@ -475,6 +475,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 74 | Corrección documental posterior a la auditoría | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 | 75 | Sprites de carcelero y sabueso | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
 | 76 | Vigencia metodológica de la evidencia histórica T050 | Tema 12. Parte II dirigida por especificaciones | 16/11/2026 |
+| 77 | Sprites del espectro vivo y muerto | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -872,6 +873,36 @@ dummy; no hubo omisiones.
 
 **Complejidad o costo.** Los sprites se cargan una vez al crear la vista. La elección por ID y estado
 de vida es O(1) por enemigo dibujado; el escalado conserva el costo y las convenciones ya existentes.
+
+## Prompt 77 — Sprites del espectro vivo y muerto
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 16/11/2026
+
+> **Prompt**
+>
+> Agregar al juego las nuevas imágenes `Espectro.png` y `Espectro_muerto.png` ubicadas en
+> `assets/personajes/`, siguiendo la integración anterior de enemigos y mostrándolas donde
+> corresponda al espectro.
+
+**Qué se construyó y por qué.** `VistaPygame` carga una vez las dos variantes mediante el mismo
+camino con alfa y escala proporcional de los demás personajes. Como el repositorio aún no contiene
+una ficha versionada de espectro, la selección se conecta de forma independiente a
+`ent_espectro`, al ID resuelto de la ficha o al nombre visible “Espectro”, sin inferir conducta ni
+reutilizar la ficha de otro enemigo. Guardián óseo, rata gigante, carcelero y sabueso conservan sus
+sprites vivos y muertos. Si el recurso no carga, permanece el glifo de respaldo existente. Los PNG
+no se editaron.
+
+**Validación.** La prueba específica de selección por ID/ficha/nombre, variantes vivas y muertas,
+recursos reales y respaldo terminó en **31 passed in 0.98s**. La carpeta completa de vista terminó
+en **43 passed in 6.33s** y las regresiones de presentación del controlador en **43 passed in
+6.32s**. `pygame` estuvo disponible y las pruebas gráficas se ejecutaron; no hubo omisiones.
+
+**Complejidad o costo.** Dos cargas únicas al crear la vista y selección O(1) por enemigo; el
+renderizado conserva el tamaño máximo de 72 px y las convenciones existentes.
 
 ### Tema 7. Fondos de la interfaz
 

@@ -161,6 +161,8 @@ class VistaPygame:
         self._sprite_carcelero_muerto = self._cargar_sprite("Carcelero_muerto.png", "personajes")
         self._sprite_sabueso = self._cargar_sprite("Sabueso.png", "personajes")
         self._sprite_sabueso_muerto = self._cargar_sprite("Sabueso_muerto.png", "personajes")
+        self._sprite_espectro = self._cargar_sprite("Espectro.png", "personajes")
+        self._sprite_espectro_muerto = self._cargar_sprite("Espectro_muerto.png", "personajes")
         self._fondo_menu = self._cargar_fondo_menu()
         self._fondo_sala = self._cargar_fondo_sala()
 
@@ -683,6 +685,10 @@ class VistaPygame:
                 self._sprite_sabueso,
                 self._sprite_sabueso_muerto,
             ),
+            "ent_espectro": (
+                self._sprite_espectro,
+                self._sprite_espectro_muerto,
+            ),
         }
         tipo_ficha_id = getattr(enemigo, "tipo_ficha_id", None) or ficha.get("id")
         sprites = sprites_por_ficha.get(tipo_ficha_id)
@@ -702,6 +708,8 @@ class VistaPygame:
             )
         if "sabueso" in identificacion:
             return self._sprite_sabueso if enemigo.esta_vivo() else self._sprite_sabueso_muerto
+        if "espectro" in identificacion:
+            return self._sprite_espectro if enemigo.esta_vivo() else self._sprite_espectro_muerto
         if "rata gigante" in identificacion:
             return self._sprite_rata if enemigo.esta_vivo() else self._sprite_rata_muerta
         if "guardian" in identificacion and "oseo" in identificacion:
