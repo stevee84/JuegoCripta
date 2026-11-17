@@ -1,6 +1,6 @@
 """T025 (spec 004): --replay partida.log --hasta t (FR-009, FR-010, FR-011).
 
-Se juega una partida real en cripta-01 con su partida.log automático y después se reproduce el log
+Se juega una partida real en cripta-02 con su partida.log automático y después se reproduce el log
 con --hasta, comparando el resumen con el de historia <t> en la partida original.
 """
 

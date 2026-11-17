@@ -128,8 +128,8 @@ def test_la_frontera_bloqueada_nombra_la_puerta_y_su_llave():
 
 
 def test_cripta_real_con_solucion():
-    """cripta-01 del paquete real: bronce en la sala 3, negra en la 4, ambas alcanzables."""
-    informe = verificar_fixture("cripta-01", "tests/fixtures/api_real")
+    """cripta-02 del paquete real: bronce en la sala 3, negra en la 4, ambas alcanzables."""
+    informe = verificar_fixture("cripta-02", "tests/fixtures/api_real")
     assert informe.resoluble
     assert informe.orden_llaves == ["itm_llave_bronce", "itm_llave_negra"]
 
@@ -207,8 +207,8 @@ def test_cambiar_costos_validos_no_altera_la_resolubilidad():
 
 
 def test_las_criptas_publicadas_no_cambian_de_veredicto_con_costos():
-    """La misma regresión sobre las cuatro criptas reales."""
-    for cripta in ("cripta-01", "cripta-02", "cripta-03", "cripta-04"):
+    """La misma regresión sobre todas las criptas publicadas, resolubles o no."""
+    for cripta in ("cripta-02", "cripta-03", "cripta-04", "cripta-05", "cripta-06"):
         mapa, ubicaciones, generales = cargar(cripta, "tests/fixtures/api_real")
         antes = verificar(mapa, ubicaciones, generales["sala_inicial"],
                           generales["sala_salida"], generales["llave_salida"])
@@ -217,5 +217,7 @@ def test_las_criptas_publicadas_no_cambian_de_veredicto_con_costos():
                 puerta.costo = peso * 250
         despues = verificar(mapa, ubicaciones, generales["sala_inicial"],
                             generales["sala_salida"], generales["llave_salida"])
-        assert despues.resoluble == antes.resoluble == True, cripta
+        # Lo que se afirma es que el veredicto **no cambia** con los costos, no que todas
+        # tengan solución: `cripta-05` no la tiene, y tampoco debe cambiar.
+        assert despues.resoluble == antes.resoluble, cripta
         assert despues.orden_llaves == antes.orden_llaves, cripta

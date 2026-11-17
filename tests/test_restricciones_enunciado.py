@@ -78,10 +78,10 @@ def test_indices_de_datos_usan_la_tabla_hash_propia(tmp_path, monkeypatch):
     fuente = FuenteOffline(str(RAIZ / "tests" / "fixtures" / "api_real"))
     servicio = JuegoService(MotorJuego(), fuente, CacheCatalogo(25))
     servicio.conectar_inicializador(InicializadorPartida())
-    servicio.iniciar_partida("cripta-01")
+    servicio.iniciar_partida("cripta-02")
 
     contenido = DecodificadorDatos().convertir_contenido(
-        fuente.obtener_contenido("cripta-01", [1, 2]), servicio._fichas_del_estado(servicio.obtener_estado()))
+        fuente.obtener_contenido("cripta-02", [1, 2]), servicio._fichas_del_estado(servicio.obtener_estado()))
     assert isinstance(contenido, TablaHashImpl)
     assert isinstance(servicio._fichas_del_estado(servicio.obtener_estado()), CatalogoPartida)
 

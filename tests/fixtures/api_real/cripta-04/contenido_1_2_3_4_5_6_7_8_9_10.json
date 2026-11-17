@@ -51,9 +51,9 @@
    "sala": 7,
    "enemigos": [
     {
-     "instancia": "e-rata-cripta-04-1",
+     "instancia": "e-cripta-04-1",
      "tipo": "ent_rata_gigante",
-     "vida": 12
+     "vida": 8
     }
    ],
    "objetos": [],
@@ -79,9 +79,9 @@
    "sala": 10,
    "enemigos": [
     {
-     "instancia": "e-rata-cripta-04-2",
+     "instancia": "e-cripta-04-2",
      "tipo": "ent_rata_gigante",
-     "vida": 12
+     "vida": 8
     }
    ],
    "objetos": [],

@@ -14,7 +14,7 @@ from datos.registro_partida import RegistroPartida
 @pytest.fixture
 def log(tmp_path):
     ruta = str(tmp_path / "p.log")
-    RegistroPartida().crear(ruta, "cripta-01", "v1", "v1", 0)
+    RegistroPartida().crear(ruta, "cripta-02", "v1", "v1", 0)
     return ruta
 
 

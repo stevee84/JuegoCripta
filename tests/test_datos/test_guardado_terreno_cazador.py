@@ -29,7 +29,7 @@ from service.juego_service import JuegoService
 REALES = str(Path("tests/fixtures/api_real").resolve())
 
 
-def partida(carpeta, cripta_id="cripta-01"):
+def partida(carpeta, cripta_id="cripta-02"):
     with contextlib.chdir(carpeta):
         servicio = JuegoService(MotorJuego(), FuenteOffline(REALES), CacheCatalogo(25))
         servicio.conectar_inicializador(InicializadorPartida())
@@ -123,7 +123,7 @@ def test_los_sentidos_cortos_del_paquete_sobreviven_como_canonicos(avanzada, tmp
 
     declarados = set()
     for numero in range(1, 10):
-        archivo = Path(REALES) / "cripta-01" / f"pagina_{numero}.json"
+        archivo = Path(REALES) / "cripta-02" / f"pagina_{numero}.json"
         if not archivo.exists():
             break
         for sala in json.loads(archivo.read_text(encoding="utf-8"))["salas"]:

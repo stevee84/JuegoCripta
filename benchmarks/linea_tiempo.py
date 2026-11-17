@@ -473,7 +473,9 @@ def medir_replay(acciones=60, repeticiones=5, semilla=7):
         # se silencia para no mezclar texto con la salida JSON de --bench.
         original = servicio()
         original.configurar_semilla(semilla)
-        estado = original.iniciar_partida("cripta-01")
+        # Antes decía "cripta-01", que el servicio retiró el 17/11/2026. Se usa la constante
+        # del módulo para no volver a clavar un identificador que puede desaparecer.
+        estado = original.iniciar_partida(CRIPTA_REFERENCIA)
         ruta = os.path.join(carpeta, "partida.log")
         original.iniciar_registro(ruta)
         elegir = random.Random(semilla)

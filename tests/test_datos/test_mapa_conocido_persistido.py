@@ -24,7 +24,7 @@ def partida(carpeta):
     with contextlib.chdir(carpeta):   # la caché del arranque queda en la carpeta temporal
         servicio = JuegoService(MotorJuego(), FuenteOffline(REALES), CacheCatalogo(25))
         servicio.conectar_inicializador(InicializadorPartida())
-        return servicio, servicio.iniciar_partida("cripta-01")
+        return servicio, servicio.iniciar_partida("cripta-02")
 
 
 def conocimiento(estado):

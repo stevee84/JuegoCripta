@@ -184,12 +184,14 @@ def test_el_costo_y_el_rango_sobreviven_a_guardar_y_reanudar(tmp_path):
 
     inicializador = InicializadorPartida()
     fuente = FuenteOffline("tests/fixtures/api_real")
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
 
-    puerta = next(p for p in estado.mapa.obtener_sala(2).puertas if p.destino_sala_id == 5)
+    # Una puerta y un enemigo que existan de verdad en la captura: la sala 2 conecta con la 3
+    # y la primera sala con enemigos es la 7.
+    puerta = next(p for p in estado.mapa.obtener_sala(2).puertas if p.destino_sala_id == 3)
     puerta.costo = 777
-    enemigo = estado.mapa.obtener_sala(4).enemigos[0]
+    enemigo = estado.mapa.obtener_sala(7).enemigos[0]
     enemigo.rango = 600
 
     ruta = str(tmp_path / "p.bin")
@@ -197,9 +199,9 @@ def test_el_costo_y_el_rango_sobreviven_a_guardar_y_reanudar(tmp_path):
     datos = GuardadoBinario().cargar(ruta)
     assert datos is not None
 
-    guardada = [p for p in datos["salas"].obtener(2)["puertas"] if p["destino_sala_id"] == 5][0]
+    guardada = [p for p in datos["salas"].obtener(2)["puertas"] if p["destino_sala_id"] == 3][0]
     assert guardada["costo"] == 777
-    assert datos["salas"].obtener(4)["enemigos"][0]["rango"] == 600
+    assert datos["salas"].obtener(7)["enemigos"][0]["rango"] == 600
 
 
 def test_un_enemigo_sin_rango_vuelve_como_none(tmp_path):
@@ -210,12 +212,12 @@ def test_un_enemigo_sin_rango_vuelve_como_none(tmp_path):
 
     inicializador = InicializadorPartida()
     fuente = FuenteOffline("tests/fixtures/api_real")
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     ruta = str(tmp_path / "p.bin")
     GuardadoBinario().guardar(ruta, estado)
     datos = GuardadoBinario().cargar(ruta)
-    assert datos["salas"].obtener(4)["enemigos"][0]["rango"] is None
+    assert datos["salas"].obtener(7)["enemigos"][0]["rango"] is None
 
 
 def test_una_partida_de_la_version_anterior_se_reporta_incompatible(tmp_path):
@@ -226,8 +228,8 @@ def test_una_partida_de_la_version_anterior_se_reporta_incompatible(tmp_path):
 
     inicializador = InicializadorPartida()
     fuente = FuenteOffline("tests/fixtures/api_real")
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     ruta = tmp_path / "p.bin"
     GuardadoBinario().guardar(str(ruta), estado)
     crudo = bytearray(ruta.read_bytes())

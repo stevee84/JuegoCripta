@@ -4,9 +4,9 @@
    "sala": 31,
    "enemigos": [
     {
-     "instancia": "e-rata-cripta-03-15",
+     "instancia": "e-cripta-03-17",
      "tipo": "ent_rata_gigante",
-     "vida": 12
+     "vida": 8
     }
    ],
    "objetos": [],
@@ -16,14 +16,14 @@
    "sala": 32,
    "enemigos": [
     {
-     "instancia": "e-rata-cripta-03-16",
+     "instancia": "e-cripta-03-18",
      "tipo": "ent_rata_gigante",
-     "vida": 12
+     "vida": 8
     },
     {
-     "instancia": "e-rata-cripta-03-17",
+     "instancia": "e-cripta-03-19",
      "tipo": "ent_rata_gigante",
-     "vida": 12
+     "vida": 8
     }
    ],
    "objetos": [],
@@ -82,8 +82,8 @@
    "sala": 40,
    "enemigos": [],
    "objetos": [
-    "itm_pergamino_retroceso",
-    "itm_antidoto"
+    "itm_pocion_menor",
+    "itm_pocion_menor"
    ],
    "trampas": []
   }

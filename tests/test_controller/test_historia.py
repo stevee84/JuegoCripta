@@ -27,7 +27,7 @@ def _controlador(carpeta, monkeypatch):
         MotorJuego(), VistaConsola(), FuenteOffline(REALES), HistorialReversible())
     controlador.configurar_arranque(0, CacheCatalogo(25), str(carpeta))
     controlador.conectar_inicializador(InicializadorPartida(), 0)
-    assert controlador.procesar_comando("cripta cripta-01").exito
+    assert controlador.procesar_comando("cripta cripta-02").exito
     return controlador
 
 
@@ -130,7 +130,7 @@ def test_fr015_la_partida_interactiva_usa_el_k_pedido(tmp_path, monkeypatch):
     controlador.configurar_arranque(0, CacheCatalogo(25), str(tmp_path))
     controlador.conectar_inicializador(InicializadorPartida(), 0)
     controlador.configurar_checkpoint_cada(4)
-    assert controlador.procesar_comando("cripta cripta-01").exito
+    assert controlador.procesar_comando("cripta cripta-02").exito
     assert controlador._servicio.obtener_linea_tiempo().k == 4
 
 

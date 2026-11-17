@@ -1,7 +1,7 @@
 """Lo que el servicio publica hoy, sin red (captura del 17/11/2026).
 
 `tests/fixtures/api_real/` es la captura anterior y la usan 21 archivos de prueba; esta usa
-`tests/fixtures/api_actual/`, que trae lo que la otra no puede traer: una cripta de 300 salas
+`tests/fixtures/api_real/`, que trae lo que la otra no puede traer: una cripta de 300 salas
 repartidas en 6 páginas y una cripta sin solución a propósito. Las dos capturas no se pueden
 mezclar: el catálogo cambió las estadísticas de las fichas (ver el LEEME de la carpeta).
 """
@@ -15,7 +15,7 @@ from datos.fuente_offline import FuenteOffline
 from logica.mapa_cripta import MapaCripta
 from logica.verificador_resolubilidad import verificar
 
-ACTUAL = "tests/fixtures/api_actual"
+ACTUAL = "tests/fixtures/api_real"
 
 
 def _mapa(cripta_id):

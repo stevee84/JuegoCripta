@@ -24,15 +24,15 @@ def config(verificar=None, forzar=False, offline=True, ruta=REALES):
 
 
 def test_las_banderas_se_parsean(monkeypatch):
-    monkeypatch.setattr("sys.argv", ["cripta", "--verificar", "cripta-01", "--forzar"])
+    monkeypatch.setattr("sys.argv", ["cripta", "--verificar", "cripta-02", "--forzar"])
     args = parsear_argumentos()
-    assert args.verificar == "cripta-01"
+    assert args.verificar == "cripta-02"
     assert args.forzar is True
 
 
 def test_cripta_con_solucion_devuelve_cero(capsys):
     """FR-012: resultado e informe sin abrir la interfaz ni pedir acciones."""
-    assert verificar_cripta(config(verificar="cripta-01")) == 0
+    assert verificar_cripta(config(verificar="cripta-02")) == 0
     salida = capsys.readouterr().out
     assert "tiene solución" in salida
     assert "itm_llave_bronce" in salida and "itm_llave_negra" in salida
@@ -66,8 +66,10 @@ def test_el_resultado_no_depende_de_la_fuente(capsys):
 
 
 @pytest.mark.parametrize("cripta,esperado", [
-    ("cripta-01", 0), ("cripta-02", 0), ("cripta-03", 0), ("cripta-04", 0),
+    ("cripta-02", 0), ("cripta-03", 0), ("cripta-04", 0), ("cripta-06", 0),
+    # `cripta-05` es la «Cripta sellada»: sin solución a propósito, así que 1.
+    ("cripta-05", 1),
 ])
-def test_las_criptas_publicadas_se_pueden_ganar(cripta, esperado, capsys):
+def test_cada_cripta_publicada_da_su_codigo_de_salida(cripta, esperado, capsys):
     assert verificar_cripta(config(verificar=cripta)) == esperado
     capsys.readouterr()

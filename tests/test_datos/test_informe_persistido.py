@@ -14,8 +14,8 @@ REALES = "tests/fixtures/api_real"
 def partida():
     inicializador = InicializadorPartida()
     fuente = FuenteOffline(REALES)
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     return estado
 
 
@@ -51,8 +51,8 @@ def test_el_informe_no_verificado_tambien_se_conserva(tmp_path):
             raise CriptaAPIError("sin respuesta")
 
     fuente = SinLlaves(REALES)
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     ruta = str(tmp_path / "p.bin")
     GuardadoBinario().guardar(ruta, estado)
     datos = GuardadoBinario().cargar(ruta)
@@ -72,7 +72,7 @@ def test_el_informe_no_se_recalcula_con_el_avance_del_jugador(partida):
     from service.juego_service import JuegoService
 
     servicio = JuegoService(MotorJuego(), None, None)
-    servicio.iniciar_partida("cripta-01", estado=partida)
+    servicio.iniciar_partida("cripta-02", estado=partida)
     antes = servicio.obtener_informe_resolubilidad()
     assert antes is partida.informe_resolubilidad
 

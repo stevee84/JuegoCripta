@@ -23,7 +23,9 @@ def _estado_cripta_04(tmp_path, monkeypatch):
         MotorJuego(), FuenteOffline(str(API_REAL)), CacheCatalogo(25))
     servicio.conectar_inicializador(InicializadorPartida())
     estado = servicio.iniciar_partida("cripta-04")
-    assert sum(len(sala.enemigos) for sala in estado.mapa.obtener_salas()) == 21
+    # Cuenta de la captura del 17/11/2026; si el servicio vuelve a cambiar el
+    # contenido, esta cifra se actualiza al recapturar.
+    assert sum(len(sala.enemigos) for sala in estado.mapa.obtener_salas()) == 24
     return estado
 
 
@@ -59,7 +61,7 @@ def _comprobar_aliases_e_indices(original, reconstruido):
             assert sala.contiene_enemigo(enemigo)
             assert sala._enemigos_por_id.obtener(enemigo.id_actor) is enemigo
             assert sala._posiciones_enemigos.obtener(enemigo.id_actor) == posicion
-    assert cantidad == 21
+    assert cantidad == 24
 
 
 def _comprobar_mutaciones_posteriores(estado):
@@ -95,6 +97,12 @@ def _comprobar_mutaciones_posteriores(estado):
 def test_deepcopy_estado_real_conserva_aliases_indices_e_independencia(
         tmp_path, monkeypatch):
     estado = _estado_cripta_04(tmp_path, monkeypatch)
+    # Se anota antes de copiar, en vez de fijar los identificadores de la captura: lo que la
+    # prueba afirma es que tocar la copia no mueve el original, no qué enemigos trae hoy la
+    # sala 11. Así sobrevive a recapturar el servicio.
+    antes = [enemigo.id_actor for enemigo in estado.mapa.obtener_sala(11).enemigos]
+    assert antes, "la sala 11 de cripta-04 debe traer enemigos para que esto pruebe algo"
+
     copia = copy.deepcopy(estado)
 
     _comprobar_aliases_e_indices(estado, copia)
@@ -106,8 +114,7 @@ def test_deepcopy_estado_real_conserva_aliases_indices_e_independencia(
     copiada.enemigos[0].vida -= 1
     assert original.enemigos[0].vida == vida_original
     assert original.enemigos[0] is not copiada.enemigos[0]
-    assert [enemigo.id_actor for enemigo in original.enemigos] == [
-        "e-rata-cripta-04-4", "e-rata-cripta-04-5"]
+    assert [enemigo.id_actor for enemigo in original.enemigos] == antes
 
 
 def test_pickle_estado_real_conserva_aliases_indices_y_operaciones(

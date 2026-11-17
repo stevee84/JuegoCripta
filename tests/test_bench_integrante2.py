@@ -1,9 +1,11 @@
 """§5.3: --bench cubre todos los subsistemas mínimos y sus mediciones son coherentes."""
+import json
 import statistics
 
 import pytest
 
-from benchmarks.integrante2 import PROVEEDORES, medir_cache, medir_guardado, medir_recuperacion
+from benchmarks.integrante2 import (
+    API_REAL, PROVEEDORES, medir_cache, medir_guardado, medir_recuperacion)
 from benchmarks.integrante3 import ejecutar
 
 
@@ -32,10 +34,13 @@ def test_recuperacion_sale_del_disco_sin_tocar_la_red():
     assert filas["cache_recuperar_desde_red_estimado"]["solicitudes"] == 3
 
 
-def test_binario_y_json_miden_el_mismo_estado_de_las_4_criptas():
+def test_binario_y_json_miden_el_mismo_estado_de_las_criptas_publicadas():
     filas = medir_guardado(repeticiones=1, tamanos=())
     criptas = {f["cripta"] for f in filas}
-    assert criptas == {"cripta-01", "cripta-02", "cripta-03", "cripta-04"}
+    # Las que publique el catálogo: suponer cuántas son es lo que se rompió el 17/11.
+    publicadas = {c["id"] for c in json.loads(
+        (API_REAL / "criptas.json").read_text(encoding="utf-8"))["criptas"]}
+    assert criptas == publicadas
     for cripta in criptas:
         propias = [f for f in filas if f["cripta"] == cripta]
         assert len({f["salas"] for f in propias}) == 1

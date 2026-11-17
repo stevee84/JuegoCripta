@@ -577,14 +577,19 @@ Verificación de las criptas publicadas, mediana de 5 repeticiones:
 
 | CRIPTA | SALAS | MEDIANA | LÍMITE §6.1 |
 |---|---|---|---|
-| cripta-01 | 6 | 0,109 ms | 200 ms |
-| cripta-02 | 20 | 0,216 ms | 200 ms |
-| cripta-03 | 40 | 0,446 ms | 200 ms |
-| cripta-04 | 50 | **0,509 ms** | 200 ms |
+| cripta-02 | 20 | 0,211 ms | 200 ms |
+| cripta-05 | 24 | 0,448 ms | 200 ms |
+| cripta-03 | 40 | 0,400 ms | 200 ms |
+| cripta-04 | 50 | 0,716 ms | 200 ms |
+| **cripta-06** | **300** | **3,831 ms** | 200 ms |
 
-La más grande queda casi 400 veces por debajo del límite. El crecimiento es aproximadamente
-lineal: de 20 a 40 salas el tiempo pasa de 0,216 a 0,446 ms, así que duplicar el tamaño no más
-que duplica el tiempo (`SC-002`).
+**La «Cripta de referencia» de 300 salas se verifica en 3,8 ms: 52 veces por debajo del límite.**
+Es el dato que importa, porque §6.1 fija los 200 ms sobre «la cripta publicada más grande» y esa
+cripta pasó de 50 a 300 salas el 17/11/2026. El crecimiento es aproximadamente lineal: 50 salas
+en 0,716 ms y 300 —seis veces más— en 3,831, que es 5,3 veces más tiempo (`SC-002`).
+
+Medido el 17/11/2026 sobre la captura de ese día. La tabla anterior incluía `cripta-01`, de 6
+salas, que el servicio ya no publica.
 
 Recorrido incremental contra rehacerlo por cada llave, sobre criptas sintéticas de llaves
 encadenadas, deterministas por semilla:
@@ -624,10 +629,12 @@ las cinco actuales queda tan ajustada.
 ### 6. Límites conocidos
 
 - **La verificación no dice nada del combate.** §3.5 supone que todo enemigo puede ser derrotado,
-  y se comprobó que eso deja fuera un modo de fallo real: `cripta-01` **tiene solución** y aun así
-  mata al jugador que va directo por la llave de salida, porque la ruta pasa por dos ratas
-  rastreadoras y una trampa mientras el equipo que la vuelve superable está repartido por esas
-  mismas salas. Se consideró añadir una advertencia de ruta con esos datos y **se descartó**:
+  y se comprobó que eso deja fuera un modo de fallo real: la cripta más pequeña que publicaba el
+  servicio hasta el 17/11/2026 (`cripta-01`, 6 salas, hoy retirada) **tenía solución** y aun así
+  mataba al jugador que iba directo por la llave de salida, porque la ruta pasaba por dos ratas
+  rastreadoras y una trampa mientras el equipo que la volvía superable estaba repartido por esas
+  mismas salas. El supuesto sigue siendo el del enunciado y el modo de fallo sigue existiendo;
+  solo se perdió el ejemplo concreto. Se consideró añadir una advertencia de ruta con esos datos y **se descartó**:
   habría revelado el contenido de salas no exploradas, que §3.3 reserva al conocimiento del
   jugador —ni la antorcha revela contenido— y habría contradicho la capacidad `003-niebla-y-ir-a`.
   Decidir si existe *alguna* secuencia de acciones que sobreviva es además una búsqueda en el

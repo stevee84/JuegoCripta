@@ -1,12 +1,6 @@
 {
  "criptas": [
   {
-   "id": "cripta-01",
-   "nombre": "Osario menor",
-   "salas": 6,
-   "dificultad": 1
-  },
-  {
    "id": "cripta-02",
    "nombre": "Catacumbas menores",
    "salas": 20,
@@ -23,6 +17,18 @@
    "nombre": "Catacumbas profundas",
    "salas": 50,
    "dificultad": 4
+  },
+  {
+   "id": "cripta-05",
+   "nombre": "Cripta sellada",
+   "salas": 24,
+   "dificultad": 3
+  },
+  {
+   "id": "cripta-06",
+   "nombre": "Cripta de referencia",
+   "salas": 300,
+   "dificultad": 5
   }
  ]
 }

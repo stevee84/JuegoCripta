@@ -121,7 +121,7 @@ class TestServicioCreaLaLinea(unittest.TestCase):
 
     def test_fr016_k_por_defecto_y_n_mas_1_instantes(self):
         servicio = self._servicio()
-        estado = servicio.iniciar_partida("cripta-01")
+        estado = servicio.iniciar_partida("cripta-02")
         linea = servicio.obtener_linea_tiempo()
         self.assertEqual(linea.k, LineaTiempo.K_POR_DEFECTO)
         self.assertIs(estado.historial._linea, linea)
@@ -138,7 +138,7 @@ class TestServicioCreaLaLinea(unittest.TestCase):
     def test_fr015_k_configurado(self):
         servicio = self._servicio()
         servicio.configurar_checkpoint_cada(3)
-        servicio.iniciar_partida("cripta-01")
+        servicio.iniciar_partida("cripta-02")
         self.assertEqual(servicio.obtener_linea_tiempo().k, 3)
         with self.assertRaises(ValueError):
             servicio.configurar_checkpoint_cada(0)
@@ -239,7 +239,7 @@ class TestConsultaPorInstante(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         (cls.estado, cls.linea, cls.grabaciones, cls.decisiones,
-         cls.eventos) = partida_grabada(7, 60, cripta="cripta-01")
+         cls.eventos) = partida_grabada(7, 60, cripta="cripta-02")
 
     def test_fr001_fr002_cada_instante_coincide_con_lo_que_se_jugo(self):
         instantes = []
@@ -320,7 +320,7 @@ class TestBusquedaBinaria(unittest.TestCase):
         self.assertLessEqual(len(pasos), 14)
 
 
-def partida_por_decisiones(k, acciones, cripta="cripta-01", semilla=7, inmortal=True):
+def partida_por_decisiones(k, acciones, cripta="cripta-02", semilla=7, inmortal=True):
     """Juega y graba la huella antes de cada decisión: decisiones[k - 1] = «antes de #k»."""
     estado, motor, linea, elegir = partida_con_linea(
         k, semilla, cripta, vida=10 ** 9 if inmortal else 80)
@@ -376,9 +376,9 @@ class TestConsultaPorAccion(unittest.TestCase):
 
 
 def partida_con_pergaminos(k, pergaminos=1, semilla=7):
-    """cripta-01 con los pergaminos en la sala inicial, antes de crear la línea."""
+    """cripta-02 con los pergaminos en la sala inicial, antes de crear la línea."""
     estado, _ = InicializadorPartida(nombre="Prueba")(
-        "cripta-01", semilla, FuenteOffline(RUTA_FIXTURES), CacheCatalogo(64))
+        "cripta-02", semilla, FuenteOffline(RUTA_FIXTURES), CacheCatalogo(64))
     estado.jugador.vida_max = estado.jugador.vida = 10 ** 9
     inicial = estado.jugador.sala_actual
     pergamino = next(o for s in estado.mapa.obtener_salas() for o in s.objetos
@@ -506,7 +506,7 @@ class TestVariosK(unittest.TestCase):
         """US6-1 y US6-3, y el caso borde de K mayor que la cantidad de acciones."""
         resultados = []
         for k in (1, 7, 50, 10 ** 6):
-            estado, motor, linea, elegir = partida_con_linea(k, cripta="cripta-01")
+            estado, motor, linea, elegir = partida_con_linea(k, cripta="cripta-02")
             jugar(estado, motor, elegir, 120)
             n = linea.cantidad_acciones()
             consultas = []
@@ -523,7 +523,7 @@ class TestVariosK(unittest.TestCase):
             self.assertEqual(consultas, resultados[0][1])
 
     def test_fr017_con_k_mayor_que_n_solo_existe_el_punto_inicial(self):
-        estado, motor, linea, elegir = partida_con_linea(10 ** 6, cripta="cripta-01")
+        estado, motor, linea, elegir = partida_con_linea(10 ** 6, cripta="cripta-02")
         jugar(estado, motor, elegir, 30)
         self.assertEqual(len(linea.puntos), 1)
         self.assertEqual(linea.puntos[0].accion, 0)
@@ -586,7 +586,7 @@ class TestBytes(unittest.TestCase):
     """T032: exportar e importar la línea (FR-017, FR-028, FR-029, FR-030)."""
 
     def setUp(self):
-        self.estado, motor, self.linea, elegir = partida_con_linea(4, cripta="cripta-01")
+        self.estado, motor, self.linea, elegir = partida_con_linea(4, cripta="cripta-02")
         jugar(self.estado, motor, elegir, 30)
         n = self.linea.cantidad_acciones()
         self.consultas = [self.linea.consultar_accion(k, huella_sin_infra) for k in range(1, n + 2)]
