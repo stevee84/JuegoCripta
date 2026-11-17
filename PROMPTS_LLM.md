@@ -2920,6 +2920,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 46 | Cierre de lo que depende solo de la 004 (T032, T033, T039 y T050) | 11/11/2026 |
 | 47 | Integrar la 003 de Steven y agregar el gancho `rehacer` para cambios propios | 13/11/2026 |
 | 48 | Cerrar la 004 y la interfaz de la 003 con la integración de Steven | 14/11/2026 |
+| 49 | Dejar el guardado v11 como estado vigente en la documentación de la 004 | 16/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3231,6 +3232,14 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `origin/integracion-parte2@76ba6b7` entró por fast-forward (incluye el trabajo de Sofía, que Joshua autorizó usar). El lector del replay salta los registros `comentario`. `controller/resumen_mapa.py` (nuevo) arma el texto del mapa conocido desde cualquier estado; lo usan el comando `mapa` y el resumen de `historia`, que ahora muestra el mapa que el jugador conocía en ese instante. `ControladorJuego._ir_a` valida el destino con `iniciar_viaje`, anota `viaje.comentario()` en la bitácora, ejecuta cada paso con `resolver_accion("MOVER")` y termina con el motivo de parada. Al cargar se publica `obtener_aviso_checkpoint()`. En pygame, los botones «Mapa» e «Ir a» en la barra inferior y el minimapa limitado a salas exploradas o avistadas. Pruebas: `tests/test_controller/test_mapa_ir_a.py` (5, incluida la reproducción de una bitácora con «ir a»), `tests/test_datos/test_guardado_linea.py` (3: mismas consultas tras guardar y cargar, K conservado con aviso, y archivos v7 a v10 rechazados, último caso del Apéndice B), una de T040 y dos de pygame. README con `mapa` e `ir a`. Suite: 1438 aprobadas, 0 omitidas, 0 fallidas.
 
 **Qué hubo que corregir.** (1) Una prueba de tiempos de Steven (`test_consultar_el_estado_no_crece_con_el_mapa_conocido`) falló una vez en la suite completa y pasó sola; es sensible a la carga de la máquina. (2) La prueba de Steven sobre comentarios comprobaba que el lector todavía los rechazaba y, como anunciaba su texto, se dio vuelta para comprobar que los salta. (3) Una segunda fila de botones en pygame chocaba con la sección de acciones cuando el inventario está lleno; los seis botones quedaron en una sola barra con anchos ajustados. (4) En las pruebas de guardado, `shlex` se comía las barras invertidas de las rutas de Windows y la prueba de versiones anteriores pasaba porque no encontraba el archivo; se usan rutas con `/` y se comprueba que el rechazo sea por la versión. (5) El jugador moría en la sala 2 y una partida terminada no se guarda; las pruebas de guardado le dan mucha vida.
+
+## Prompt 49 — Dejar el guardado v11 como estado vigente en la documentación de la 004
+
+> **Prompt**
+>
+> Sofía dejó en origin/Sofia la nota specs/001-terreno-y-cazador/contracts/nota-coordinacion-joshua-v11.md: el guardado entregado es GuardadoBinario.VERSION = 11, pero mi documentación todavía presenta v10 como vigente o la persistencia de la línea como pendiente. Corrige solo mis archivos: specs/004-linea-de-tiempo/plan.md (almacenamiento y cambio de formato), quickstart.md (paso 5), research.md R8 y DECISIONES.md §5.5 (persistencia y límites conocidos, donde también sigue el mapa conocido como «no disponible»). Deja v11 como estado entregado y conserva la evolución v9 → v10 → v11, sin borrar ni reinterpretar contracts/guardado-v10.md, que queda como antecedente. Mantén claro que datos/guardado_binario.py es de Steven y LineaTiempo y su serialización son míos. No toques código ni archivos de Steven o Sofía.
+
+**Qué se obtuvo.** `plan.md` dice que el formato se propuso como v10 y se entregó como v11, porque v10 terminó usándose para `Puerta.costo` y `Enemigo.rango` (spec 001). `quickstart.md` pide rechazar los archivos v10 o anteriores con el guardado v11. R8 gana un párrafo «Estado entregado» con la evolución y la propiedad de cada archivo. En `DECISIONES.md` §5.5, la persistencia figura como entregada en v11, y en los límites se quitaron dos que ya no aplican (la línea sin guardado y el mapa «no disponible»); en su lugar queda el rechazo de los archivos anteriores a v11. El contrato `guardado-v10.md` no cambió. Suite completa sin cambios de código.
 
 # Steven Moya Porras — Parte II
 
