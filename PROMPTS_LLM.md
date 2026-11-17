@@ -473,6 +473,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 72 | Auditoría y cierre de persistencia conjunta T006/T041/T055 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 | 73 | Auditoría final de consistencia e integración 001 | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
 | 74 | Corrección documental posterior a la auditoría | Tema 12. Parte II dirigida por especificaciones | 15/11/2026 |
+| 75 | Sprites de carcelero y sabueso | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -830,6 +831,46 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 **Qué se construyó y por qué.** Aporte de presentación: sprites de objetos, trampas y enemigos asociados a su ficha: arma.png para la daga oxidada, una llave negra distinta de las demás y la rata muerta solo cuando está derrotada. Las entidades sin imagen conservan el símbolo.
 
 **Complejidad o costo.** Carga única; dibujar cada imagen depende de sus píxeles, que son fijos en el juego.
+
+## Prompt 75 — Sprites de carcelero y sabueso
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol
+
+**Fecha:** 16/11/2026
+
+> **Prompt**
+>
+> Integrar en la presentación los sprites `Carcelero`, `Carcelero_muerto`, `Sabueso` y
+> `Sabueso_muerto` ya presentes en `assets/personajes/`. Revisar la carga y el dibujo vigentes,
+> identificar los enemigos mediante sus datos reales y conectar las variantes vivas y muertas sin
+> modificar reglas, datos, persistencia ni contratos. Conservar los sprites y el respaldo actuales,
+> probar selección y recursos faltantes, ejecutar las pruebas pertinentes, revisar el diff y
+> registrar el trabajo sin operaciones Git mutantes.
+
+**Qué se construyó y por qué.** `ent_sabueso` existe como ficha separada de cazador en los datos de
+prueba de 001; carcelero y sabueso se seleccionan por sus identidades/nombres propios, sin deducir
+conducta desde la imagen. `ent_guardian_oseo` conserva `guardian_oseo.png`/`guardian_muerto.png` y
+`ent_rata_gigante` conserva `rata_gigante.png`/`rata_muerta.png`: los recursos nuevos no reemplazan
+enemigos existentes. Los cuatro PNG nuevos pasan por `_cargar_sprite`, igual que los anteriores:
+carga única con alfa, escala proporcional hasta 72 px y ninguna inversión de orientación. Si falta
+un recurso, el dibujo mantiene el glifo original. No se editaron los PNG ni capas de lógica, datos o
+persistencia.
+
+**Corrección durante el bloque.** Una primera asociación incorrecta sustituyó visualmente guardián
+óseo y rata gigante por carcelero y sabueso. Se corrigió antes del cierre y se amplió la regresión
+para exigir por separado las ocho variantes vivas/muertas de los cuatro tipos, evitando que vuelvan
+a intercambiarse.
+
+**Validación.** La prueba específica de selección, compatibilidad anterior, recurso faltante y carga
+real de los cuatro PNG terminó en **24 passed in 0.83s**. La carpeta completa de pruebas de vista
+terminó en **36 passed in 4.21s** y las regresiones de presentación del controlador en **43 passed
+in 6.14s**. `pygame 2.6.1` estuvo disponible y las pruebas gráficas se ejecutaron con vídeo y audio
+dummy; no hubo omisiones.
+
+**Complejidad o costo.** Los sprites se cargan una vez al crear la vista. La elección por ID y estado
+de vida es O(1) por enemigo dibujado; el escalado conserva el costo y las convenciones ya existentes.
 
 ### Tema 7. Fondos de la interfaz
 
