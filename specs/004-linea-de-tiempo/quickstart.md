@@ -58,8 +58,9 @@ arrancar (US6-2).
 ## 5. Guardar y cargar
 
 Guardar a mitad de partida, salir, volver a entrar con `cargar` y repetir las consultas: mismos
-resúmenes (US5-1). Cargar un archivo v9 o de la Parte I: aviso de incompatibilidad (US5-3,
-Apéndice B). Requiere el guardado v10 de Steven.
+resúmenes (US5-1). Cargar un archivo v10 o anterior (incluida la Parte I): aviso de
+incompatibilidad (US5-3, Apéndice B). Usa el guardado v11 de Steven (`GuardadoBinario.VERSION = 11`);
+el contrato se propuso como v10, pero esa versión quedó para los costos y rangos de la spec 001.
 
 ## 6. Mediciones
 
