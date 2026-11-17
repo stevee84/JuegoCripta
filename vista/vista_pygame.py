@@ -141,7 +141,6 @@ class VistaPygame:
         self._panel_content_y = 160
         self._corriendo = True
         self._modo = "demo"
-        self._salas_visitadas = set()
         self._sprite_jugador = self._cargar_sprite("jugador.png")
         self._sprite_rata = self._cargar_sprite("rata_gigante.png")
         self._sprite_arma = self._cargar_sprite("arma.png", "objetos")
@@ -576,14 +575,56 @@ class VistaPygame:
         trampas_armadas = any(t.armada for t in sala.trampas)
         return not enemigos_vivos and not tiene_objetos and not trampas_armadas
 
-    def _color_sala_minimapa(self, sid, sala, es_actual):
+    # Un color por cada estado de §3.3. Separados en **luminancia** y no solo en tono, para que
+    # el mapa se lea en una pantalla mala o con visión del color atípica: 0,055 entre avistada y
+    # explorada y 0,34 hasta la actual, sobre el 0,049 del fondo del panel. El color de avistada
+    # antes era (18, 18, 28), a 0,025 del fondo: prácticamente invisible.
+    MINIMAPA_ACTUAL = ((30, 180, 60), VERDE)
+    MINIMAPA_EXPLORADA = ((30, 60, 45), (60, 160, 90))
+    MINIMAPA_AVISTADA = ((30, 32, 58), (70, 80, 130))
+    MINIMAPA_ABIERTA = (40, 80, 50)
+    MINIMAPA_CERRADA = (80, 35, 35)
+
+    def _color_sala_minimapa(self, sid, conocido, es_actual):
+        """El color sale del estado que el jugador conoce, no del contenido real de la sala.
+
+        Antes leía enemigos, objetos y trampas con `_sala_limpia`, también de salas donde el
+        jugador no está: eso es información que el mapa conocido no guarda a propósito (FR-024),
+        así que pintarla era mirar la realidad. El contenido de la sala actual se sigue viendo en
+        la vista detallada, que es su lugar.
+        """
         if es_actual:
-            return (30, 180, 60), VERDE
-        if sid not in self._salas_visitadas and sala.ultimo_rastro is None:
-            return (18, 18, 28), (35, 35, 50)
-        if self._sala_limpia(sala):
-            return (30, 60, 45), (60, 160, 90)
-        return (50, 45, 30), (120, 110, 60)
+            return self.MINIMAPA_ACTUAL
+        if conocido is None or conocido.esta_explorada(sid):
+            return self.MINIMAPA_EXPLORADA
+        return self.MINIMAPA_AVISTADA
+
+    @staticmethod
+    def _color_puerta_minimapa(conocido, puerta):
+        """FR-006: el color sale de la última observación, no del estado real de la puerta.
+
+        Una puerta que se cerró sola mientras el jugador estaba lejos debe seguir pintándose
+        abierta, igual que la informa el comando `mapa`.
+        """
+        abierta = (puerta.abierta if conocido is None
+                   else conocido.puerta_recordada_abierta(puerta.id_puerta))
+        return VistaPygame.MINIMAPA_ABIERTA if abierta else VistaPygame.MINIMAPA_CERRADA
+
+    @staticmethod
+    def _arista_visible(conocido, sid, did):
+        """Si el jugador puede conocer esta conexión, y desde qué lado se dibuja.
+
+        El identificador de una puerta es `id_sala:DIRECCIÓN`, así que su memoria es del lado
+        que la observó: la arista se dibuja desde el lado explorado, que es el único que sabe
+        cómo estaba. Entre dos salas solo avistadas no se dibuja nada, porque el jugador no
+        puede conocer esa conexión (FR-003). Cuando las dos están exploradas se dibuja una sola
+        vez, desde la de identificador menor.
+        """
+        if conocido is None:
+            return did > sid
+        if not conocido.esta_explorada(sid):
+            return False
+        return did > sid or not conocido.esta_explorada(did)
 
     def _bfs_posiciones(self, estado):
         sala_actual = estado.jugador.sala_actual
@@ -655,7 +696,6 @@ class VistaPygame:
             return
 
         sala_actual = estado.jugador.sala_actual
-        self._salas_visitadas.add(sala_actual.id_sala)
 
         pygame.draw.rect(self._pantalla, (12, 12, 18),
                          (self.MINIMAPA_X, self.MINIMAPA_Y, self.MINIMAPA_W, self.MINIMAPA_H),
@@ -715,15 +755,15 @@ class VistaPygame:
 
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
-                if did not in visibles or did <= sid:
+                if did not in visibles or not self._arista_visible(conocido, sid, did):
                     continue
                 dgx, dgy = visibles[did]
                 dpx = ox + (dgx - min_x) * (cell + gap)
                 dpy = oy + (dgy - min_y) * (cell + gap)
                 start = (px + cell // 2, py + cell // 2)
                 end = (dpx + cell // 2, dpy + cell // 2)
-                color_l = (40, 80, 50) if puerta.abierta else (80, 35, 35)
-                pygame.draw.line(self._pantalla, color_l, start, end, 1)
+                pygame.draw.line(self._pantalla,
+                                 self._color_puerta_minimapa(conocido, puerta), start, end, 1)
 
         for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
@@ -733,7 +773,7 @@ class VistaPygame:
             py = oy + (gy - min_y) * (cell + gap)
             es_actual = (sid == sala_actual.id_sala)
 
-            fondo, borde = self._color_sala_minimapa(sid, sala, es_actual)
+            fondo, borde = self._color_sala_minimapa(sid, conocido, es_actual)
             pygame.draw.rect(self._pantalla, fondo, (px, py, cell, cell), border_radius=3)
             pygame.draw.rect(self._pantalla, borde, (px, py, cell, cell), 1, border_radius=3)
 
@@ -1270,7 +1310,6 @@ class VistaPygame:
         """Limpia lo que la vista recuerda de la partida anterior antes de volver al menú."""
         self.bitacora = BitacoraPantalla()
         self._bitacora = self.bitacora
-        self._salas_visitadas = set()
         self._scroll_bitacora = 0
         self._pagina_acciones = 0
         self._orden_inventario = None

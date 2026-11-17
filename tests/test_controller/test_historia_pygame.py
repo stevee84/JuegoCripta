@@ -99,9 +99,9 @@ def test_t016_el_minimapa_no_dibuja_salas_desconocidas(vista, tmp_path, monkeypa
     dibujadas = []
     original = pantalla._color_sala_minimapa
 
-    def registrar(sid, sala, es_actual):
+    def registrar(sid, conocido_de_la_vista, es_actual):
         dibujadas.append(sid)
-        return original(sid, sala, es_actual)
+        return original(sid, conocido_de_la_vista, es_actual)
 
     monkeypatch.setattr(pantalla, "_color_sala_minimapa", registrar)
     pantalla._dibujar_minimapa(estado)
