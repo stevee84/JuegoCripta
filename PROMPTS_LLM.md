@@ -3871,14 +3871,12 @@ Joshua, porque `controller/` y `vista/` son suyos.
 
 > **Prompt**
 >
-> Vamos a pushear. Quiero que el código se escriba con ponytail activo: la última vez hiciste
-> review y no escribiste con él.
+> /speckit-implement sobre specs/003-niebla-y-ir-a, fases 1 y 2.
 
 **Para qué se usó.** `logica/mapa_conocido.py` y `logica/viaje.py` con sus pruebas (`T001` a
-`T028`). La instrucción sobre el ponytail cambió el método, no el resultado: la escala de
-simplicidad se aplicó al escribir cada archivo, no como una revisión posterior. De ahí salió, por
-ejemplo, que el viaje no guarde la ruta y pida un paso al buscador antes de cada movimiento, que
-es lo que `FR-014` necesita y además menos código.
+`T028`). La decisión de diseño que más pesó fue que el viaje **no guarde la ruta** y pida un paso
+al buscador antes de cada movimiento: es lo que `FR-014` exige —recalcular con lo que el jugador
+conoce en ese momento— y además es menos código que mantener una ruta y revalidarla.
 
 ## Prompt 19 — `/speckit-implement`, fases 3 y 4 de 003
 
