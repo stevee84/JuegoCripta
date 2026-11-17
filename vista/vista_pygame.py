@@ -1127,13 +1127,12 @@ class VistaPygame:
 
     def _dibujar_leyenda(self):
         y = self.ALTO - self.BITACORA_ALTO - 25
+        # Los tres estados de §3.3, que son los que el minimapa codifica en color y no se
+        # pueden interpretar sin leyenda (FR-003, FR-007). Los glifos de la vista detallada
+        # —enemigo, objeto, trampa— no entran: entre el cuadro de sala y la bitácora cabe una
+        # sola fila de 625 px antes del panel, las ocho entradas ocupaban 705, y esos tres se
+        # leen junto a su propio dibujo, con nombre al lado.
         items = [
-            (GLYPH_JUGADOR, VERDE, "Tu"),
-            (GLYPH_ENEMIGO, ROJO, "Enemigo"),
-            (GLYPH_OBJETO, AMARILLO, "Objeto"),
-            (GLYPH_TRAMPA_ARMADA, MAGENTA, "Trampa"),
-            ("X", ROJO, "Cerrada"),
-            # Los tres estados de §3.3, para poder leer el minimapa (FR-003, FR-007).
             ("#", VistaPygame.MINIMAPA_ACTUAL[1], "Aqui"),
             ("#", VistaPygame.MINIMAPA_EXPLORADA[1], "Explorada"),
             ("#", VistaPygame.MINIMAPA_AVISTADA[1], "Avistada"),
@@ -1317,6 +1316,7 @@ class VistaPygame:
         self._dibujar_minimapa(estado)
         self._dibujar_sala_actual(estado)
         self._dibujar_panel(estado)
+        self._dibujar_leyenda()
         self._dibujar_bitacora()
 
     # --- Loop principal ---

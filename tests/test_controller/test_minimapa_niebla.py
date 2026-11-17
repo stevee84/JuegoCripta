@@ -159,13 +159,23 @@ def test_las_zonas_caen_dentro_del_minimapa_y_no_bajo_el_panel(vista):
     assert marco.right <= pantalla.PANEL_X, "el minimapa no debe solaparse con el panel"
 
 
-def test_la_leyenda_nombra_los_tres_estados_y_cabe_en_la_pantalla(vista):
-    """Sin leyenda los colores del minimapa no se pueden interpretar (FR-007)."""
+def test_la_leyenda_nombra_los_tres_estados_sin_meterse_bajo_el_panel(vista):
+    """Sin leyenda los colores del minimapa no se pueden interpretar (FR-007).
+
+    La fila libre está entre el cuadro de sala y la bitácora, y termina donde empieza el
+    panel: si la leyenda se pasa, se dibuja debajo de la barra de botones.
+    """
     pantalla, _ = vista
-    pantalla._dibujar_leyenda()
+    estado, _, _ = _partida_con_puerta_que_se_cierra()
+    pantalla._dibujar_juego(estado)      # la leyenda se dibuja con el resto, no suelta
 
     ancho = 15
-    for etiqueta in ("@=Tu", "E=Enemigo", "O=Objeto", "^=Trampa", "X=Cerrada",
-                     "#=Aqui", "#=Explorada", "#=Avistada"):
+    for etiqueta in ("#=Aqui", "#=Explorada", "#=Avistada"):
         ancho += pantalla._font.size(etiqueta)[0] + 15
-    assert ancho <= pantalla.ANCHO, f"la leyenda ocupa {ancho} px de {pantalla.ANCHO}"
+    assert ancho <= pantalla.PANEL_X, (
+        f"la leyenda ocupa {ancho} px y el panel empieza en {pantalla.PANEL_X}")
+
+    y = pantalla.ALTO - pantalla.BITACORA_ALTO - 25
+    for boton in pantalla._botones:
+        assert not (boton.rect.top <= y <= boton.rect.bottom and boton.rect.left < ancho), (
+            f"la leyenda cruza el botón {boton.texto}")
