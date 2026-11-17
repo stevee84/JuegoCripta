@@ -28,6 +28,10 @@ def capturar(destino: Path) -> None:
         generales = api.obtener_generales(cid)
         _escribir(destino / cid / "generales.json", generales)
         _escribir(destino / cid / "version.json", api.obtener_version_cripta(cid))
+        # §4.2: la ubicación de las llaves. La añadió la verificación de resolubilidad
+        # (spec 002) y el capturador se había quedado atrás: sin este archivo, `FuenteOffline`
+        # no puede responder `obtener_llaves` y toda la 002 se queda sin datos sin conexión.
+        _escribir(destino / cid / "llaves.json", api.obtener_llaves(cid))
         ids = []
         for pagina in range(1, generales["paginas"] + 1):
             datos = api.obtener_pagina(cid, pagina)
