@@ -843,6 +843,12 @@ atrás y re-simular llegan al mismo estado con los tres K; el replay rechaza un 
   estado mismo crece durante la partida y cada punto copia el estado entero. Es justo el término
   «puntos por tamaño del estado» que FR-021 acepta, no «acciones por tamaño del estado»; la mejora
   posible es que los puntos compartan las partes del estado que no cambiaron.
+- **Cripta de las mediciones**: se miden con `cripta-04`, aunque desde el 17/11/2026 el servicio
+  publica `cripta-06` (300 salas) como cripta de referencia. Se mantiene `cripta-04` para que estas
+  cifras sigan siendo comparables entre sí; la optimización del montículo de Steven (17/11) hace que
+  una corrida nueva salga más rápida, así que los tiempos de esta sección son conservadores. Con
+  `cripta-06`, guardar la partida pasaba el límite de recursión porque `pickle` recorre las salas en
+  cadena; `LineaTiempo.exportar_bytes` serializa ahora en un hilo con pila propia.
 - **Archivos anteriores a v11** no se pueden cargar: no tienen línea de tiempo y se rechazan como
   incompatibles.
 - `pickle` ejecuta código al cargar un archivo malicioso; se acepta porque el archivo de partida es

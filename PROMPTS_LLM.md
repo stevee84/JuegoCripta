@@ -3384,6 +3384,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 48 | Cerrar la 004 y la interfaz de la 003 con la integración de Steven | 14/11/2026 |
 | 49 | Dejar el guardado v11 como estado vigente en la documentación de la 004 | 16/11/2026 |
 | 50 | Atender el analyze cruzado de Steven sobre la 004 | 16/11/2026 |
+| 51 | Integrar lo del 17/11 de Steven y Sofía y guardar criptas grandes | 17/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3713,6 +3714,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `origin/Steve@a381eff` entró por fast-forward y la suite dio 1494 aprobadas. `spec.md` gana una sesión de clarificación del 2026-11-16, FR-032 (la acción que crea un punto de control puede pasar los 20 ms, como excepción declarada y medida), SC-001 con la mediana como criterio y SC-005 con la comparación en la misma partida. `benchmarks/linea_tiempo.py` anota la memoria de la línea al llegar a la mitad de las acciones y agrega la fila `linea_tiempo_memoria_crecimiento` a `--bench`. La corrida real (`benchmarks/resultados/linea_tiempo_memoria_2500_5000.json`) da 2,56 veces más memoria con K = 10 y 2,66 con K = 50 al duplicar las acciones: los puntos se duplican, pero cada uno pesa más porque el estado crece durante la partida. Se documentó en `DECISIONES.md` §5.5 como límite de SC-005. `tasks.md` tiene T051 y T052 y la aclaración de v11; `plan.md` corrige T049 y T050 y el dueño de la vista de pygame.
 
 **Qué hubo que corregir.** La primera versión de la prueba esperaba la fila solo para K = 10 y 50, pero K = 200 también la tiene porque cuenta el punto inicial.
+
+## Prompt 51 — Integrar lo del 17/11 de Steven y Sofía y guardar criptas grandes
+
+> **Prompt**
+>
+> Steven y Sofía subieron cambios: cripta-06 de 300 salas, los __deepcopy__ de Sala y MapaCripta, las fixtures migradas al servicio del 17/11 y la optimización del montículo. Trae origin/Sofia (que ya contiene a origin/Steve) a mi rama joshua y corre la suite completa. Si algo de mi capa falla con la cripta nueva, arréglalo en mis archivos sin tocar dto/sala.py ni logica/mapa_cripta.py. Decide si benchmarks/linea_tiempo.py sigue midiendo con cripta-04 o pasa a cripta-06 y justifícalo en DECISIONES.md §5.5.
+
+**Qué se obtuvo.** `origin/Sofia@99d0a43` entró por fast-forward. La suite dio 3 fallas, todas con `RecursionError` al guardar cripta-06: la copia ya no recursa gracias a Steven, pero `pickle` en `LineaTiempo.exportar_bytes` sigue bajando sala por sala. Se agregó `_con_pila_grande` en `logica/linea_tiempo.py`, que serializa en un hilo con pila de 64 MB y límite de recursión alto, restaurando ambos al terminar. Las mediciones siguen con `cripta-04` para que las cifras publicadas sean comparables; quedó explicado en §5.5, junto con que la optimización del montículo vuelve conservadores esos tiempos.
+
+**Qué hubo que corregir.** La primera versión pedía una pila de 256 MB y Windows la rechazó («size not valid»); se bajó a 64 MB.
 
 # Steven Moya Porras — Parte II
 

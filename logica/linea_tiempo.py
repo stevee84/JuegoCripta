@@ -68,6 +68,39 @@ class PuntoControl:
         self.transacciones = transacciones
 
 
+def _con_pila_grande(funcion, pila_mb=64, limite=50_000):
+    """Ejecuta ``funcion`` en un hilo con pila grande y límite de recursión alto.
+
+    ``pickle`` baja sala por sala siguiendo las puertas, así que la profundidad crece con el
+    tamaño del mapa: una cripta de 300 salas (cripta-06) pasaba el límite por defecto. La pila
+    propia del hilo evita que subir el límite desborde la pila de C del hilo principal.
+    """
+    import sys
+    import threading
+
+    resultado, error = [], []
+
+    def correr():
+        try:
+            resultado.append(funcion())
+        except BaseException as exc:  # se vuelve a lanzar en el hilo que llamó
+            error.append(exc)
+
+    limite_anterior = sys.getrecursionlimit()
+    pila_anterior = threading.stack_size(pila_mb * 2 ** 20)
+    try:
+        sys.setrecursionlimit(max(limite, limite_anterior))
+        hilo = threading.Thread(target=correr, name="linea-tiempo-pickle")
+        hilo.start()
+        hilo.join()
+    finally:
+        threading.stack_size(pila_anterior)
+        sys.setrecursionlimit(limite_anterior)
+    if error:
+        raise error[0]
+    return resultado[0] if resultado else None
+
+
 class LineaTiempo:
     """Registro de la partida que permite consultar cualquier instante pasado."""
 
@@ -275,8 +308,8 @@ class LineaTiempo:
                 return ("INFRA", nombre) if nombre in infraestructura else None
 
         flujo = io.BytesIO()
-        _Exportador(flujo, protocol=pickle.HIGHEST_PROTOCOL).dump(
-            {"formato": "linea-tiempo-1", "estado": self._estado, "linea": self})
+        paquete = {"formato": "linea-tiempo-1", "estado": self._estado, "linea": self}
+        _con_pila_grande(lambda: _Exportador(flujo, protocol=pickle.HIGHEST_PROTOCOL).dump(paquete))
         return flujo.getvalue()
 
     @classmethod
