@@ -104,11 +104,11 @@ class Boton:
 
 
 class VistaPygame:
-    ANCHO = 1200
-    ALTO = 850
-    MAPA_ANCHO = 620
-    PANEL_X = 640
-    PANEL_ANCHO = 540
+    ANCHO = 1500
+    ALTO = 1000
+    MAPA_ANCHO = 820
+    PANEL_X = 840
+    PANEL_ANCHO = 640
     BITACORA_ALTO = 180
     FPS = 30
 
@@ -572,8 +572,8 @@ class VistaPygame:
     # --- Minimapa (esquina superior izquierda) ---
 
     # Ocupa el ancho de su columna (MAPA_ANCHO): a la derecha solo había negro.
-    MINIMAPA_W = 610
-    MINIMAPA_H = 200
+    MINIMAPA_W = 810
+    MINIMAPA_H = 320
     MINIMAPA_X = 10
     MINIMAPA_Y = 10
 
@@ -857,15 +857,20 @@ class VistaPygame:
                 txt = self._font_sala_nombre.render("@", True, VERDE)
                 self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
             elif cell >= 14:
-                txt = self._font_sala_nombre.render("S" if sid == estado.sala_salida_id else str(sid), True, borde)
-                self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
+                # El número se pinta solo si cabe de verdad en la celda. Con un umbral fijo de
+                # celda, en una cripta grande los de tres cifras se salían y se pisaban con los
+                # vecinos; la salida ("S") es angosta y casi siempre entra.
+                etiqueta = "S" if sid == estado.sala_salida_id else str(sid)
+                txt = self._font_sala_nombre.render(etiqueta, True, borde)
+                if txt.get_width() <= cell - 2:
+                    self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
 
     # --- Vista detallada de sala actual ---
 
     SALA_X = 10
-    SALA_Y = 245
-    SALA_ANCHO = 620
-    SALA_ALTO_MAX = 395
+    SALA_Y = 365
+    SALA_ANCHO = 820
+    SALA_ALTO_MAX = 420
 
     def _dibujar_sala_actual(self, estado):
         self._botones_sala = []
@@ -1298,7 +1303,14 @@ class VistaPygame:
         fondo.blit(velo, (0, 0))
         lineas = controlador.lineas_metricas()
 
-        ancho, alto = 760, 230 + 26 * len(lineas)
+        # La caja se ajusta a su texto. El alto ya lo hacía; el ancho era fijo en 760, y con
+        # una caché caliente la línea de métricas se pasa (31 024 aciertos miden 765 px) y se
+        # salía del cuadro por los dos lados, porque el texto va centrado.
+        anchos = [self._font.size(linea)[0] for linea in lineas]
+        anchos.append(self._font_med.size(mensaje)[0])
+        anchos.append(self._font_titulo.size(titulo)[0])
+        ancho = min(self.ANCHO - 40, max(760, max(anchos) + 56))
+        alto = 230 + 26 * len(lineas)
         x, y0 = (self.ANCHO - ancho) // 2, (self.ALTO - alto) // 2
         btn_w, btn_h = 200, 40
         botones = []
