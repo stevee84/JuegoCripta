@@ -1,4 +1,6 @@
 """§5.3: --bench cubre todos los subsistemas mínimos y sus mediciones son coherentes."""
+import statistics
+
 import pytest
 
 from benchmarks.integrante2 import PROVEEDORES, medir_cache, medir_guardado, medir_recuperacion
@@ -148,18 +150,31 @@ def test_consultar_el_estado_no_crece_con_el_mapa_conocido():
 
 
 def test_explorar_no_crece_con_el_mapa_ya_conocido():
-    """SC-003: revelar cuesta lo que cuesta lo revelado."""
+    """SC-003: revelar cuesta lo que cuesta lo revelado, no lo que ya se conoce.
+
+    Antes de comparar tiempos se comprueba que los dos tamaños revelan **el mismo número de
+    hechos**: si no, la comparación no dice nada sobre el costo de revelar. Y se compara la
+    mediana por revelación, no el mínimo de una sola operación de microsegundos, alternando el
+    orden de los tamaños para que el calentamiento no decida el resultado.
+    """
     from benchmarks.integrante2 import medir_mapa_conocido
 
-    costos = {}
-    for n in (400, 1600):
-        fila = [f for f in medir_mapa_conocido(7, [n])
-                if f["medicion"] == "mapa_conocido_explorar_una_sala"][0]
-        costos[fila["salas_conocidas"]] = fila["minimo"]
-    chico, grande = sorted(costos)
-    assert costos[grande] < 2 * costos[chico], (
-        f"revelar sobre {grande} salas costó {costos[grande] / costos[chico]:.1f}x "
-        f"lo que sobre {chico}")
+    por_tamano = {}
+    for tamanos in ((400, 1600), (1600, 400)):
+        for fila in medir_mapa_conocido(7, tamanos):
+            if fila["medicion"] == "mapa_conocido_explorar_una_sala":
+                por_tamano.setdefault(fila["salas_conocidas"], []).append(fila)
+
+    revelados = [f["revelaciones_por_lote"] for filas in por_tamano.values() for f in filas]
+    assert min(revelados) == max(revelados) > 0, (
+        f"los tamaños no revelaron lo mismo, así que no son comparables: {revelados}")
+
+    costo = {n: statistics.median([f["mediana"] / f["revelaciones_por_lote"] for f in filas])
+             for n, filas in por_tamano.items()}
+    chico, grande = sorted(costo)
+    assert costo[grande] < 2 * costo[chico], (
+        f"revelar sobre {grande} salas costó {costo[grande] / costo[chico]:.1f}x lo que sobre "
+        f"{chico} ({costo[chico]:.0f} vs {costo[grande]:.0f} ns por revelación)")
 
 
 def test_un_paso_de_ir_a_cabe_en_5_ms_en_las_criptas_publicadas():

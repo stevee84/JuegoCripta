@@ -664,6 +664,38 @@ def _estado_recorriendo(mapa, id_sala):
     return False
 
 
+def _interiores_separadas(lado, k=8):
+    """Hasta `k` salas **interiores** de la malla, a distancia >= 3 entre si.
+
+    Interiores porque en `_cripta_malla` las de borde tienen 3 salidas y las de esquina 2: un
+    objetivo elegido por posicion fija (antes `salas // 2`) cae en una malla distinta segun el
+    tamano, y entonces las dos cargas que se comparan no son la misma. Separadas porque las
+    revelaciones de una vecina avistada no vuelven a contar: si dos objetivos comparten vecina,
+    el segundo revela menos que el primero.
+    """
+    pasos = tuple(range(1, lado - 1, 3))
+    return tuple(f * lado + c + 1 for f in pasos for c in pasos)[:k]
+
+
+def _conocido_salvo(mapa, objetivos, lado):
+    """Mapa conocido con todo explorado salvo las objetivo y su entorno a distancia 2.
+
+    El entorno queda fuera tambien: una vecina de la objetivo que ya estuviera avistada no
+    produce hecho al explorar, y el lote mediria menos revelaciones en el mapa grande que en el
+    chico. Asi cada objetivo revela lo mismo en todos los tamanos.
+    """
+    from logica.mapa_conocido import MapaConocido
+
+    conocido = MapaConocido()
+    for sala in mapa.obtener_salas():
+        fila, columna = (sala.id_sala - 1) // lado, (sala.id_sala - 1) % lado
+        cerca = any(abs(fila - (o - 1) // lado) + abs(columna - (o - 1) % lado) < 3
+                    for o in objetivos)
+        if not cerca:
+            conocido.explorar(sala)
+    return conocido
+
+
 def medir_mapa_conocido(repeticiones, tamanos):
     """§5.3: consultar el estado y explorar, contra recorrer el mapa."""
     filas = []
@@ -680,11 +712,22 @@ def medir_mapa_conocido(repeticiones, tamanos):
             "mapa_conocido_estado_recorriendo_alternativa", salas, repeticiones,
             lambda m=mapa, i=ids: (lambda: [_estado_recorriendo(m, x) for x in i]),
             estructura="recorrido_del_mapa", consultas_por_lote=salas))
+        objetivos = _interiores_separadas(lado)
+        revelaciones = sum(_conocido_salvo(mapa, objetivos, lado).revelaciones_de(
+            mapa.obtener_sala(o)) for o in objetivos)
+
+        def preparar_revelar(m=mapa, ld=lado, obj=objetivos):
+            conocido = _conocido_salvo(m, obj, ld)
+            salas_objetivo = [m.obtener_sala(o) for o in obj]
+            if not sum(conocido.revelaciones_de(s) for s in salas_objetivo):
+                raise AssertionError(
+                    "el lote no revelaria nada: se mediria cualquier cosa menos revelar")
+            return lambda: [conocido.explorar(s) for s in salas_objetivo]
+
         filas.append(medir(
-            "mapa_conocido_explorar_una_sala", salas, repeticiones,
-            lambda m=mapa, s=salas: (
-                lambda c=_conocido_completo(m): c.explorar(m.obtener_sala(s // 2))),
-            estructura="revelacion_proporcional", salas_conocidas=salas))
+            "mapa_conocido_explorar_una_sala", salas, repeticiones, preparar_revelar,
+            estructura="revelacion_proporcional", salas_conocidas=salas,
+            revelaciones_por_lote=revelaciones))
     return filas
 
 
