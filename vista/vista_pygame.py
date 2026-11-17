@@ -622,31 +622,52 @@ class VistaPygame:
 
     def _sprite_para_enemigo(self, enemigo):
         """Elige por ficha real; conserva la selección histórica como respaldo."""
+        ficha = getattr(enemigo, "ficha", None)
+        ficha = ficha if isinstance(ficha, dict) else {}
         sprites_por_ficha = {
             "ent_guardian_oseo": (
+                self._sprite_guardian_oseo,
+                self._sprite_guardian_muerto,
+            ),
+            "ent_rata_gigante": (
+                self._sprite_rata,
+                self._sprite_rata_muerta,
+            ),
+            "ent_carcelero": (
                 self._sprite_carcelero,
                 self._sprite_carcelero_muerto,
             ),
-            "ent_rata_gigante": (
+            "ent_sabueso": (
                 self._sprite_sabueso,
                 self._sprite_sabueso_muerto,
             ),
         }
-        sprites = sprites_por_ficha.get(getattr(enemigo, "tipo_ficha_id", None))
+        tipo_ficha_id = getattr(enemigo, "tipo_ficha_id", None) or ficha.get("id")
+        sprites = sprites_por_ficha.get(tipo_ficha_id)
         if sprites is not None:
             return sprites[0] if enemigo.esta_vivo() else sprites[1]
 
-        ficha = getattr(enemigo, "ficha", None)
-        nombre_ficha = ficha.get("nombre", "") if isinstance(ficha, dict) else ""
         identificacion = self._normalizar_nombre(
             f"{enemigo.nombre} "
-            f"{getattr(enemigo, 'tipo_ficha_id', '')} "
-            f"{nombre_ficha}"
+            f"{tipo_ficha_id or ''} "
+            f"{ficha.get('nombre', '')}"
         )
+        if "carcelero" in identificacion:
+            return (
+                self._sprite_carcelero
+                if enemigo.esta_vivo()
+                else self._sprite_carcelero_muerto
+            )
+        if "sabueso" in identificacion:
+            return self._sprite_sabueso if enemigo.esta_vivo() else self._sprite_sabueso_muerto
         if "rata gigante" in identificacion:
             return self._sprite_rata if enemigo.esta_vivo() else self._sprite_rata_muerta
         if "guardian" in identificacion and "oseo" in identificacion:
-            return self._sprite_guardian_oseo if enemigo.esta_vivo() else self._sprite_guardian_muerto
+            return (
+                self._sprite_guardian_oseo
+                if enemigo.esta_vivo()
+                else self._sprite_guardian_muerto
+            )
         return None
     
     def _sprite_para_objeto(self, objeto):

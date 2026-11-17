@@ -849,18 +849,24 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 > probar selección y recursos faltantes, ejecutar las pruebas pertinentes, revisar el diff y
 > registrar el trabajo sin operaciones Git mutantes.
 
-**Qué se construyó y por qué.** Las fichas reales del API identifican a `ent_guardian_oseo` como
-el guardián y a `ent_rata_gigante` como el rastreador. `VistaPygame` selecciona ahora por esos IDs
-el carcelero y el sabueso, respectivamente, y elige la variante viva o muerta a partir de la vida
-del enemigo. Los cuatro recursos pasan por `_cargar_sprite`, igual que los existentes: carga única
-con alfa, escala proporcional hasta 72 px y ninguna inversión de orientación. Para entidades sin
-una ficha reconocida se conserva la selección textual anterior y, si la carga devuelve `None`, el
-dibujo mantiene el glifo original. No se editaron los PNG ni capas de lógica, datos o persistencia.
+**Qué se construyó y por qué.** `ent_sabueso` existe como ficha separada de cazador en los datos de
+prueba de 001; carcelero y sabueso se seleccionan por sus identidades/nombres propios, sin deducir
+conducta desde la imagen. `ent_guardian_oseo` conserva `guardian_oseo.png`/`guardian_muerto.png` y
+`ent_rata_gigante` conserva `rata_gigante.png`/`rata_muerta.png`: los recursos nuevos no reemplazan
+enemigos existentes. Los cuatro PNG nuevos pasan por `_cargar_sprite`, igual que los anteriores:
+carga única con alfa, escala proporcional hasta 72 px y ninguna inversión de orientación. Si falta
+un recurso, el dibujo mantiene el glifo original. No se editaron los PNG ni capas de lógica, datos o
+persistencia.
 
-**Validación.** La prueba nueva de selección, compatibilidad anterior, recurso faltante y carga real
-de los cuatro PNG terminó en **14 passed in 0.83s**. La carpeta completa de pruebas de vista terminó
-en **26 passed in 5.05s** y las regresiones de presentación del controlador en **43 passed in
-5.94s**. `pygame 2.6.1` estuvo disponible y las pruebas gráficas se ejecutaron con vídeo y audio
+**Corrección durante el bloque.** Una primera asociación incorrecta sustituyó visualmente guardián
+óseo y rata gigante por carcelero y sabueso. Se corrigió antes del cierre y se amplió la regresión
+para exigir por separado las ocho variantes vivas/muertas de los cuatro tipos, evitando que vuelvan
+a intercambiarse.
+
+**Validación.** La prueba específica de selección, compatibilidad anterior, recurso faltante y carga
+real de los cuatro PNG terminó en **24 passed in 0.83s**. La carpeta completa de pruebas de vista
+terminó en **36 passed in 4.21s** y las regresiones de presentación del controlador en **43 passed
+in 6.14s**. `pygame 2.6.1` estuvo disponible y las pruebas gráficas se ejecutaron con vídeo y audio
 dummy; no hubo omisiones.
 
 **Complejidad o costo.** Los sprites se cargan una vez al crear la vista. La elección por ID y estado

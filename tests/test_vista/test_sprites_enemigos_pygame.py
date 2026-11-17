@@ -47,13 +47,17 @@ def pantalla_dummy(monkeypatch):
 @pytest.mark.parametrize(
     ("tipo_ficha_id", "vida", "atributo"),
     [
-        ("ent_guardian_oseo", 10, "_sprite_carcelero"),
-        ("ent_guardian_oseo", 0, "_sprite_carcelero_muerto"),
-        ("ent_rata_gigante", 10, "_sprite_sabueso"),
-        ("ent_rata_gigante", 0, "_sprite_sabueso_muerto"),
+        ("ent_guardian_oseo", 10, "_sprite_guardian_oseo"),
+        ("ent_guardian_oseo", 0, "_sprite_guardian_muerto"),
+        ("ent_rata_gigante", 10, "_sprite_rata"),
+        ("ent_rata_gigante", 0, "_sprite_rata_muerta"),
+        ("ent_carcelero", 10, "_sprite_carcelero"),
+        ("ent_carcelero", 0, "_sprite_carcelero_muerto"),
+        ("ent_sabueso", 10, "_sprite_sabueso"),
+        ("ent_sabueso", 0, "_sprite_sabueso_muerto"),
     ],
 )
-def test_ficha_real_y_vida_seleccionan_el_sprite_correcto(
+def test_tipo_de_ficha_y_vida_seleccionan_el_sprite_correcto(
     selector, tipo_ficha_id, vida, atributo
 ):
     enemigo = _enemigo(tipo_ficha_id, vida)
@@ -68,9 +72,13 @@ def test_ficha_real_y_vida_seleccionan_el_sprite_correcto(
         ("Rata gigante", 0, "_sprite_rata_muerta"),
         ("Guardián óseo", 10, "_sprite_guardian_oseo"),
         ("Guardián óseo", 0, "_sprite_guardian_muerto"),
+        ("Carcelero", 10, "_sprite_carcelero"),
+        ("Carcelero", 0, "_sprite_carcelero_muerto"),
+        ("Sabueso", 10, "_sprite_sabueso"),
+        ("Sabueso", 0, "_sprite_sabueso_muerto"),
     ],
 )
-def test_enemigos_sin_ficha_conservan_la_seleccion_anterior(
+def test_nombre_visible_selecciona_el_sprite_correspondiente(
     selector, nombre, vida, atributo
 ):
     enemigo = _enemigo(None, vida, nombre)
@@ -78,10 +86,24 @@ def test_enemigos_sin_ficha_conservan_la_seleccion_anterior(
     assert selector._sprite_para_enemigo(enemigo) is getattr(selector, atributo)
 
 
+@pytest.mark.parametrize(
+    ("tipo_ficha_id", "atributo"),
+    [
+        ("ent_carcelero", "_sprite_carcelero"),
+        ("ent_sabueso", "_sprite_sabueso"),
+    ],
+)
+def test_id_resuelto_en_la_ficha_tambien_se_utiliza(selector, tipo_ficha_id, atributo):
+    enemigo = _enemigo(None, nombre="Enemigo")
+    enemigo.ficha = {"id": tipo_ficha_id, "nombre": ""}
+
+    assert selector._sprite_para_enemigo(enemigo) is getattr(selector, atributo)
+
+
 def test_recurso_faltante_conserva_el_respaldo_sin_sprite(selector):
     selector._sprite_sabueso = None
 
-    assert selector._sprite_para_enemigo(_enemigo("ent_rata_gigante")) is None
+    assert selector._sprite_para_enemigo(_enemigo("ent_sabueso")) is None
 
 
 def test_cargador_devuelve_none_si_el_archivo_no_existe(selector):
