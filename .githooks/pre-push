@@ -1,0 +1,20 @@
+#!/bin/sh
+# Impide empujar codigo que viole las restricciones del enunciado (§6.2 y §7):
+# estructuras y ordenamientos de biblioteca, heapq, bisect, collections, graphlib,
+# set/frozenset/sorted, y los indices que deben usar la tabla hash propia.
+#
+# Tarda medio segundo. Corre solo esa prueba a proposito: la suite completa son cuatro
+# minutos y nadie espera cuatro minutos por push, asi que no se instalaria.
+#
+# Instalar una vez por clon:   git config core.hooksPath .githooks
+# Saltarlo en un caso puntual: git push --no-verify
+PY=python
+[ -x .venv/bin/python ] && PY=.venv/bin/python
+[ -x .venv/Scripts/python.exe ] && PY=.venv/Scripts/python.exe
+
+if ! "$PY" -m pytest -q tests/test_restricciones_enunciado.py; then
+    echo ""
+    echo "PUSH DETENIDO: el codigo viola una restriccion del enunciado (ver arriba)."
+    echo "Arreglalo antes de empujar, o usa 'git push --no-verify' si sabes lo que haces."
+    exit 1
+fi

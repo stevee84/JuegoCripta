@@ -401,8 +401,8 @@ recorrido. R-16 y el quickstart contienen distribución, reglas, comando reprodu
 python -m pytest -q
 ```
 
-Más de 900 pruebas automáticas. Además de las unitarias, hay pruebas de contrato con
-**respuestas reales del servicio** guardadas en `tests/fixtures/api_real/` (las cuatro
+**1538 pruebas automáticas.** Además de las unitarias, hay pruebas de contrato con
+**respuestas reales del servicio** guardadas en `tests/fixtures/api_real/` (las cinco
 criptas publicadas): recorren cada cripta de punta a punta, guardan, cargan y continúan.
 Si el servicio cambia de forma, esas pruebas fallan antes que el juego. Para volver a
 capturar las respuestas:
@@ -410,6 +410,27 @@ capturar las respuestas:
 ```bash
 python -m tests.fixtures.capturar_api
 ```
+
+### Restricciones del enunciado
+
+`tests/test_restricciones_enunciado.py` vigila §6.2 y §7: nada de `set`, `frozenset`,
+`sorted()`, `heapq`, `bisect`, `collections`, `graphlib` ni bibliotecas de grafos en las capas
+que resuelven §4, y los índices tienen que usar la tabla hash propia. Tarda medio segundo:
+
+```bash
+python -m pytest -q tests/test_restricciones_enunciado.py
+```
+
+Para que una violación **detenga el push** en vez de descubrirse después, el repositorio trae
+un hook. Se instala una vez por clon:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Desde entonces `git push` corre esa prueba y aborta si falla (`git push --no-verify` lo salta).
+GitHub Actions repite las dos comprobaciones sobre **Python 3.11 y 3.14**, los dos extremos que
+el proyecto declara soportar.
 
 ## Archivos que genera el programa
 
