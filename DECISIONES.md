@@ -445,13 +445,37 @@ La «Cripta de referencia» (`cripta-06`) tiene 300, y con el mapa entero explor
 
 ### 6. Límites conocidos
 
-- **El paso de «ir a» se pasa de 5 ms en la cripta de referencia.** Dejó de ser hipotético el
-  17/11/2026: la API publicó `cripta-06`, «Cripta de referencia», de **300 salas**, y §6.1 decía
-  que los valores se ajustan cuando esa cripta exista.
+- **`SC-001` se cumple en la cripta de referencia; la malla sintética del `--bench` es un caso
+  peor que ninguna cripta publicada.** Conviene explicarlo porque la primera lectura de la
+  medición dijo lo contrario.
 
-  **Se optimizó al descubrirlo, y el paso bajó a la mitad**, con tres cambios que no alteran
-  ningún resultado —cada uno hace lo mismo en menos trabajo— y que además aceleran cualquier
-  otro subsistema, porque están en las estructuras compartidas:
+  `SC-001` pide menos de 5 ms por paso **con el mapa conocido completo de la cripta de
+  referencia**. Esa cripta existe desde el 17/11/2026: `cripta-06`, 300 salas. Medido sobre
+  **sus datos reales**, con las 300 salas exploradas y 120 pares origen-destino al azar:
+
+  | | MEDIANA | p95 | PEOR DE 120 | LÍMITE |
+  |---|---|---|---|---|
+  | `cripta-06`, mapa completo | 1,050 ms | 1,353 ms | **1,591 ms** | 5 ms |
+
+  **Se cumple con tres veces de margen, incluso en el peor par.**
+
+  La medición de `--bench` da 7,44 ms con 289 salas porque usa una **malla regular de grado 4**:
+  cada sala con cuatro salidas. La cripta de referencia real tiene **760 salidas para 300 salas,
+  grado medio 2,53** —un trazado de pasillos—, y el costo de la búsqueda crece con las salidas
+  examinadas, no con las salas. La malla es entonces un caso peor deliberado, útil para ver cómo
+  escala, pero **no es el escenario que `SC-001` describe**. Se conserva por eso, y porque §5.6
+  pide medir contra cargas que no sean solo las publicadas.
+
+  **Límite real que queda**: sobre una topología densa como la malla, el paso supera los 5 ms por
+  encima de unas 200 salas conocidas. Si alguna cripta futura combinara ese tamaño con ese grado,
+  habría que reutilizar el cálculo entre pasos mientras el mapa conocido no cambie, que es lo que
+  el contrato con 001 dejó abierto —«podemos reutilizar auxiliares después, si demostramos
+  equivalencia»—. No cambiaría la estructura ni contradiría `FR-014`: recalcular y reutilizar un
+  resultado que no pudo cambiar dan lo mismo.
+
+  Sobre esa malla el paso igualmente **bajó a la mitad** el 17/11/2026, con tres cambios que no
+  alteran ningún resultado y que aceleran cualquier otro subsistema, porque están en las
+  estructuras compartidas:
 
   1. `MonticuloMinimo` anota en cada elemento su posición para que `eliminar(referencia)` sea
      O(log n). Las entradas del buscador de rutas son `dataclass(frozen=True)`, así que esa
@@ -463,23 +487,12 @@ La «Cripta de referencia» (`cripta-06`) tiene 300, y con el mapa entero explor
   3. `MapaConocido.sala` y `puerta_recordada_abierta` preguntaban `contiene` y después
      `obtener`: dos búsquedas para una respuesta. `obtener` ya devuelve None si la clave no está.
 
-  | SALAS CONOCIDAS | ANTES | DESPUÉS | LÍMITE |
+  | SALAS (malla de grado 4) | ANTES | DESPUÉS | LÍMITE |
   |---|---|---|---|
   | 49 | 2,26 ms | **1,15 ms** | 5 ms |
   | 100 | 4,42 ms | **2,27 ms** | 5 ms |
   | 289 | 14,14 ms | **7,44 ms** | 5 ms |
 
-  El límite pasa a cumplirse hasta unas 200 salas conocidas, no 110. **Sigue sin cumplirse en la
-  cripta de referencia con el mapa entero explorado**, y por eso continúa siendo un límite.
-
-  Dos matices que lo acotan sin excusarlo: el costo depende de las salas **conocidas**, no de las
-  que tiene la cripta, así que una partida de `cripta-06` solo llega a esos 14 ms cuando el
-  jugador ya exploró casi todo; y es un retraso, no un fallo, porque el viaje se completa igual.
-
-  El camino para arreglarlo está escrito y no se tomó por falta de tiempo: reutilizar el cálculo
-  entre pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
-  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—. No cambia la estructura
-  ni contradice `FR-014`: recalcular y reutilizar un resultado que no pudo cambiar dan lo mismo.
 - **El conocimiento se revierte y se guarda desde el 14/11/2026.** `FR-022` quedó cerrado:
   `CambioConocimiento` hereda del contrato de cambios reversibles sin tocar el archivo de otro
   integrante (Principio VIII) y guarda solo los hechos de cada revelación, nunca una copia del
