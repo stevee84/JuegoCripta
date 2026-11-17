@@ -610,13 +610,13 @@ def test_cache_size_limita_las_fichas_retenidas_y_recupera_desde_disco(en_tmp, m
     assert pedidos_a_red == []
 
 
-def test_el_presupuesto_alcanza_para_arrancar_las_cuatro_criptas_publicadas(en_tmp, api_simulada):
+def test_el_presupuesto_alcanza_para_arrancar_las_criptas_publicadas(en_tmp, api_simulada):
     """§5.1 y §9: ninguna cripta publicada se pasa de su presupuesto al iniciar.
 
-    El test de arriba cubre los caminos del presupuesto en dos criptas; este cubre las cuatro y
-    deja el margen a la vista, porque es lo que se verifica en la defensa (§9) y porque el límite
-    no es proporcional al tamaño: cripta-01 declara 9 solicitudes para 6 salas y es la más
-    ajustada de las cuatro, no la más holgada.
+    Recorre **todas** las que el catálogo publique, sin suponer cuántas son ni cuáles: el
+    servicio las cambia. El 17/11/2026 retiró `cripta-01` y añadió `cripta-05` y `cripta-06`,
+    y el límite nunca fue proporcional al tamaño —`cripta-01` declaraba 9 solicitudes para 6
+    salas y era la más ajustada—, así que el margen se mide, no se deduce.
 
     La consulta de ubicación de llaves que añadió la verificación de resolubilidad (spec 002,
     `FR-016`) es una de las que se cuentan aquí. No se duplica —la partida reutiliza esos datos y
@@ -624,7 +624,7 @@ def test_el_presupuesto_alcanza_para_arrancar_las_cuatro_criptas_publicadas(en_t
     el que hay que vigilar al añadir cualquier otra.
     """
     criptas = [c["id"] for c in _leer(API_REAL / "criptas.json")["criptas"]]
-    assert len(criptas) == 4
+    assert criptas, "el catálogo de la fixture no publica ninguna cripta"
     margenes = {}
     for cripta_id in criptas:
         controlador = _controlador_http()

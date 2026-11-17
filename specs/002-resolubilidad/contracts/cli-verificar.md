@@ -26,7 +26,7 @@ pruebas pueden distinguir «no tiene solución» de «no se sabe» sin leer el t
 ### Cripta con solución
 
 ```
-Cripta cripta-01: tiene solución. 2 llaves.
+Cripta cripta-02: tiene solución. 2 llaves.
 Orden de obtención: itm_llave_bronce (sala 3), itm_llave_negra (sala 4).
 ```
 

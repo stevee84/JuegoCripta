@@ -85,7 +85,7 @@ python main.py --demo                # partida de demostración, sin servicio we
 python main.py --replay partidas/logs/<bitacora>.log
 python main.py --replay partidas/logs/<bitacora>.log --hasta 400   # resumen en t=400, sin vista
 python main.py --checkpoint-cada 25  # punto de control de la línea de tiempo cada 25 acciones
-python main.py --verificar cripta-01 # solo comprueba si esa cripta se puede ganar, y termina
+python main.py --verificar cripta-02 # solo comprueba si esa cripta se puede ganar, y termina
 python main.py --forzar              # juega una cripta sin solución, avisando
 python main.py --bench               # mediciones por subsistema, sin interfaz
 ```
@@ -256,7 +256,7 @@ trampas de la sala actual, e inventario) no se liberan.
 datos_offline/
 ├── criptas.json
 ├── catalogo/                 ficha por archivo + version.json
-└── cripta-01/                generales.json · pagina_1.json · contenido_<ids>.json · version.json
+└── cripta-<id>/              generales.json · pagina_<n>.json · contenido_<ids>.json · version.json
 ```
 
 Si no tienes el paquete del curso, puedes generarlo desde el servicio web:

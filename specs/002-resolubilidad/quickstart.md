@@ -11,10 +11,19 @@ python -m pip install -r requirements.txt
 
 Sin conexión no hace falta nada más: los fixtures están en `tests/fixtures/api_real/`.
 
+`--offline` lee el paquete de `datos_offline/`, que es **por máquina** y no está en el
+repositorio. Si no lo tienes, genéralo con conexión antes de los pasos de abajo:
+`python -m tests.fixtures.capturar_api datos_offline`. El paso 2 compara ese paquete con
+el servicio, así que tiene que estar recién capturado para que las dos salidas coincidan.
+
+Los identificadores de cripta de esta guía son ejemplos: el servicio los cambia. El
+17/11/2026 retiró `cripta-01` y publicó `cripta-05` y `cripta-06`. Usa cualquiera de las que
+lista el comando `criptas` dentro del juego.
+
 ## 1. Verificar una cripta sin abrir el juego
 
 ```bash
-python main.py --verificar cripta-01 --offline
+python main.py --verificar cripta-02 --offline
 ```
 
 Debe imprimir que tiene solución y el orden de obtención de llaves, sin abrir ninguna ventana y
@@ -24,11 +33,11 @@ verificar. Ver [contracts/cli-verificar.md](./contracts/cli-verificar.md).
 ## 2. Comprobar que el resultado no depende de la fuente
 
 ```bash
-python main.py --verificar cripta-01 --offline
+python main.py --verificar cripta-02 --offline
 ```
 
 ```bash
-python main.py --verificar cripta-01
+python main.py --verificar cripta-02
 ```
 
 Las dos salidas deben ser idénticas (`FR-015`). La segunda consume una solicitud de la consulta
@@ -37,7 +46,7 @@ de llaves.
 ## 3. Comprobar que el orden es siempre el mismo
 
 ```bash
-python main.py --verificar cripta-01 --offline > /tmp/a.txt; python main.py --verificar cripta-01 --offline > /tmp/b.txt; diff /tmp/a.txt /tmp/b.txt && echo "identico"
+python main.py --verificar cripta-02 --offline > /tmp/a.txt; python main.py --verificar cripta-02 --offline > /tmp/b.txt; diff /tmp/a.txt /tmp/b.txt && echo "identico"
 ```
 
 Sin diferencias (`SC-003`, `FR-006`).

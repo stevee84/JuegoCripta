@@ -437,13 +437,20 @@ algo más del doble de margen.
 
 ### 6. Límites conocidos
 
-- **El paso de «ir a» se pasa de 5 ms en criptas mucho mayores que las publicadas.** Con 100
-  salas conocidas son 4,3 ms y con 1 600 son 89,9 ms. No se optimizó porque las criptas
-  publicadas llegan a 50 y §6.1 admite ajustar los valores cuando se publique la cripta de
-  referencia. Si esa cripta resultara mucho mayor, el camino sería reutilizar el cálculo entre
-  pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
-  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—, no cambiar la
-  estructura.
+- **El paso de «ir a» se pasa de 5 ms en la cripta de referencia.** Dejó de ser hipotético el
+  17/11/2026: la API publicó `cripta-06`, «Cripta de referencia», de **300 salas**, y §6.1 decía
+  que los valores se ajustan cuando esa cripta exista. Medido con el mapa conocido completo:
+  2,26 ms con 49 salas, 4,42 ms con 100 y **14,14 ms con 289**, contra el límite de 5 ms. Se
+  cumple hasta unas 110 salas conocidas.
+
+  Dos matices que lo acotan sin excusarlo: el costo depende de las salas **conocidas**, no de las
+  que tiene la cripta, así que una partida de `cripta-06` solo llega a esos 14 ms cuando el
+  jugador ya exploró casi todo; y es un retraso, no un fallo, porque el viaje se completa igual.
+
+  El camino para arreglarlo está escrito y no se tomó por falta de tiempo: reutilizar el cálculo
+  entre pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
+  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—. No cambia la estructura
+  ni contradice `FR-014`: recalcular y reutilizar un resultado que no pudo cambiar dan lo mismo.
 - **El conocimiento se revierte y se guarda desde el 14/11/2026.** `FR-022` quedó cerrado:
   `CambioConocimiento` hereda del contrato de cambios reversibles sin tocar el archivo de otro
   integrante (Principio VIII) y guarda solo los hechos de cada revelación, nunca una copia del
@@ -594,10 +601,25 @@ La ventaja casi se duplica cada vez que se duplican las llaves, que es justo lo 
 del recorrido.
 
 **Costo de red.** La verificación añade **una solicitud por partida**, la consulta de ubicación de
-llaves (§4.2), que cuenta en el presupuesto (§4.3). El arranque pasó de 7 a 8 solicitudes; en
-`cripta-01`, con `presupuesto_solicitudes` 9, el margen baja de 2 a 1. No se desperdicia: son los
-mismos datos que la partida necesita después, así que iniciar una cripta ya verificada no vuelve
-a pedir nada (`SC-004`).
+llaves (§4.2), que cuenta en el presupuesto (§4.3). El arranque pasó de 7 a 8 solicitudes. No se
+desperdicia: son los mismos datos que la partida necesita después, así que iniciar una cripta ya
+verificada no vuelve a pedir nada (`SC-004`).
+
+El margen depende de la cripta y el programa no lo supone: lo lee de `presupuesto_solicitudes` en
+los generales (`service/inicializador_partida.py`). Presupuestos publicados, comprobados contra el
+servicio el 17/11/2026:
+
+| CRIPTA | SALAS | PÁGINAS | PRESUPUESTO |
+|---|---|---|---|
+| cripta-02 | 20 | 1 | 23 |
+| cripta-03 | 40 | 1 | 42 |
+| cripta-04 | 50 | 1 | 52 |
+| cripta-05 | 24 | 1 | 25 |
+| cripta-06 | 300 | 6 | 63 |
+
+Una versión anterior de esta sección citaba `cripta-01`, cuyo presupuesto de 9 dejaba el margen en
+1 al añadir la solicitud extra. **El servicio ya no publica `cripta-01`**: devuelve 404. Ninguna de
+las cinco actuales queda tan ajustada.
 
 ### 6. Límites conocidos
 
