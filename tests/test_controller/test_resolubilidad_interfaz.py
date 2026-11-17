@@ -81,7 +81,7 @@ def _controlador(tmp_path, monkeypatch, carpeta, forzar=False):
 
 def test_fr013_002_al_iniciar_se_muestra_la_linea_con_solucion(tmp_path, monkeypatch, capsys):
     controlador = _controlador(tmp_path, monkeypatch, REALES)
-    resultado = controlador.procesar_comando("cripta cripta-01")
+    resultado = controlador.procesar_comando("cripta cripta-02")
     assert resultado.exito
     assert "Resolubilidad: tiene solución, 2 llaves." in capsys.readouterr().out
 
@@ -100,14 +100,14 @@ def test_fr013_002_sin_solucion_no_inicia_y_muestra_el_informe(tmp_path, monkeyp
 def test_fr014_002_el_comando_muestra_el_informe_y_no_cambia(tmp_path, monkeypatch, capsys):
     """FR-014 de la 002: es el de antes de empezar, igual aunque el jugador avance."""
     controlador = _controlador(tmp_path, monkeypatch, REALES)
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     capsys.readouterr()
     estado = controlador._servicio.obtener_estado()
     reloj = estado.reloj
     resultado = controlador.procesar_comando("resolubilidad")
     primera = capsys.readouterr().out
     assert resultado.exito
-    assert "Cripta cripta-01: tiene solución. 2 llaves." in primera
+    assert "Cripta cripta-02: tiene solución. 2 llaves." in primera
     assert estado.reloj == reloj
     assert estado.historial.esta_vacio()
     controlador.procesar_comando("esperar")

@@ -592,7 +592,9 @@ def test_t054_usa_mapa_conocido_completo_de_la_cripta_publicada_mayor():
     assert produccion["carga"]["estado_conocimiento"] == \
         "conocimiento_completo_publicado"
     assert produccion["validacion"]["paso"] == 45
-    assert produccion["validacion"]["costo_total"] == 4000
+    # 4 650 en la captura del 17/11/2026; antes 4 000. Cambiaron los costos de las
+    # puertas de cripta-04, no el camino: el paso sigue siendo el 45.
+    assert produccion["validacion"]["costo_total"] == 4650
     assert produccion["afirma_pr001"] is False
 
 

@@ -222,7 +222,14 @@ class _LineaMedida(LineaTiempo):
     def __init__(self, estado, k):
         self.bytes_muestras = []
         self.ns_puntos = []
+        self.marca = None  # acción en la que se anota la memoria a mitad de partida (SC-005)
+        self.memoria_en_marca = None
         super().__init__(estado, k)
+
+    def registrar_accion(self, transaccion):
+        super().registrar_accion(transaccion)
+        if self.cantidad_acciones() == self.marca:
+            self.memoria_en_marca = (self.cantidad_acciones(), len(self.puntos), self.bytes_puntos)
 
     @property
     def bytes_puntos(self):
@@ -277,6 +284,8 @@ def partida_sintetica(acciones, semilla=7, valores_k=VALORES_K, cripta_id=CRIPTA
     motor = MotorJuego()
     motor.iniciar(estado)
     lineas = [_LineaMedida(estado, k) for k in valores_k]
+    for linea in lineas:
+        linea.marca = acciones // 2
     estado.historial.vincular_linea(_Reparto(lineas))
     elegir = random.Random(semilla)
     jugadas, ns_accion = [], []
@@ -380,6 +389,36 @@ def medir_costo_punto(lineas, ns_accion):
     return filas
 
 
+def medir_crecimiento_memoria(lineas):
+    """T041 y SC-005: memoria de la línea a mitad de partida frente al final, con K fijo.
+
+    Se anota en la misma partida al llegar a la mitad de las acciones (2 500 de 5 000). Si la
+    memoria crece en proporción a lo registrado, la razón de memoria queda cerca de la razón de
+    acciones (unas 2 veces) y el tamaño por punto de control no crece.
+    """
+    filas = []
+    for linea in lineas:
+        if linea.k == SIN_PUNTOS or linea.memoria_en_marca is None or not linea.puntos:
+            continue
+        acciones_mitad, puntos_mitad, bytes_mitad = linea.memoria_en_marca
+        acciones_final, bytes_final = linea.cantidad_acciones(), linea.bytes_puntos
+        razon_acciones = acciones_final / acciones_mitad
+        razon_memoria = bytes_final / bytes_mitad if bytes_mitad else None
+        filas.append({
+            "medicion": "linea_tiempo_memoria_crecimiento", "k": linea.k,
+            "acciones_mitad": acciones_mitad, "acciones_final": acciones_final,
+            "memoria_mitad_mb": round(bytes_mitad / 2 ** 20, 2),
+            "memoria_final_mb": round(bytes_final / 2 ** 20, 2),
+            "por_punto_mitad_kb": round(bytes_mitad / 1024 / max(puntos_mitad, 1), 1),
+            "por_punto_final_kb": round(bytes_final / 1024 / len(linea.puntos), 1),
+            "razon_acciones": round(razon_acciones, 2),
+            "razon_memoria": round(razon_memoria, 2) if razon_memoria else None,
+            "proporcional": (razon_memoria is not None
+                             and razon_memoria <= razon_acciones * 1.25),
+        })
+    return filas
+
+
 def _reconectar_catalogo(copia, vivo):
     """Re-simular necesita las fichas: las copias no llevan el catálogo (FichaResoluble).
 
@@ -473,7 +512,9 @@ def medir_replay(acciones=60, repeticiones=5, semilla=7):
         # se silencia para no mezclar texto con la salida JSON de --bench.
         original = servicio()
         original.configurar_semilla(semilla)
-        estado = original.iniciar_partida("cripta-01")
+        # Antes decía "cripta-01", que el servicio retiró el 17/11/2026. Se usa la constante
+        # del módulo para no volver a clavar un identificador que puede desaparecer.
+        estado = original.iniciar_partida(CRIPTA_REFERENCIA)
         ruta = os.path.join(carpeta, "partida.log")
         original.iniciar_registro(ruta)
         elegir = random.Random(semilla)
@@ -576,6 +617,7 @@ def medir_linea_tiempo(repeticiones=15, tamanos=(), acciones=5000):
     estado, lineas, jugadas, ns_accion = partida_sintetica(acciones, valores_k=tuple(valores) + (SIN_PUNTOS,))
     filas = medir_consultas(lineas)
     filas += medir_costo_punto(lineas, ns_accion)
+    filas += medir_crecimiento_memoria(lineas)
     filas += medir_adelante_atras(estado, lineas, jugadas)
     filas += medir_retroceso(estado, repeticiones=min(repeticiones, 10))
     filas += medir_replay()

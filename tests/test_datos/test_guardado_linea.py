@@ -61,7 +61,7 @@ def test_fr030_al_cargar_se_conserva_el_k_y_se_avisa(tmp_path, monkeypatch, caps
     """US5-2: guardada con K = 3 y cargada pidiendo K = 7."""
     controlador = _controlador(tmp_path, monkeypatch)
     controlador.configurar_checkpoint_cada(3)
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     _jugar(controlador)
     assert controlador.procesar_comando("guardar").exito
     cargado = _controlador(tmp_path / "otra", monkeypatch)
@@ -95,5 +95,5 @@ def test_fr031_archivos_de_versiones_anteriores_son_incompatibles(tmp_path, monk
         resultado = cargado.procesar_comando(f"cargar {viejo.as_posix()}")
         assert not resultado.exito, version
         assert "No hay una partida guardada" not in resultado.mensaje, resultado.mensaje
-        assert cargado._servicio.obtener_estado().cripta_id == "cripta-01"  # la partida nueva sigue
+        assert cargado._servicio.obtener_estado().cripta_id == "cripta-02"  # la partida nueva sigue
         assert cargado._servicio.obtener_estado().reloj == 0

@@ -1,9 +1,11 @@
 """§5.3: --bench cubre todos los subsistemas mínimos y sus mediciones son coherentes."""
+import json
 import statistics
 
 import pytest
 
-from benchmarks.integrante2 import PROVEEDORES, medir_cache, medir_guardado, medir_recuperacion
+from benchmarks.integrante2 import (
+    API_REAL, PROVEEDORES, medir_cache, medir_guardado, medir_recuperacion)
 from benchmarks.integrante3 import ejecutar
 
 
@@ -32,10 +34,13 @@ def test_recuperacion_sale_del_disco_sin_tocar_la_red():
     assert filas["cache_recuperar_desde_red_estimado"]["solicitudes"] == 3
 
 
-def test_binario_y_json_miden_el_mismo_estado_de_las_4_criptas():
+def test_binario_y_json_miden_el_mismo_estado_de_las_criptas_publicadas():
     filas = medir_guardado(repeticiones=1, tamanos=())
     criptas = {f["cripta"] for f in filas}
-    assert criptas == {"cripta-01", "cripta-02", "cripta-03", "cripta-04"}
+    # Las que publique el catálogo: suponer cuántas son es lo que se rompió el 17/11.
+    publicadas = {c["id"] for c in json.loads(
+        (API_REAL / "criptas.json").read_text(encoding="utf-8"))["criptas"]}
+    assert criptas == publicadas
     for cripta in criptas:
         propias = [f for f in filas if f["cripta"] == cripta]
         assert len({f["salas"] for f in propias}) == 1
@@ -191,10 +196,18 @@ def test_explorar_no_crece_con_el_mapa_ya_conocido():
         f"{chico} ({costo[chico]:.0f} vs {costo[grande]:.0f} ns por revelación)")
 
 
-def test_un_paso_de_ir_a_cabe_en_5_ms_en_las_criptas_publicadas():
-    """SC-001 y §6.1. Las criptas publicadas llegan a 50 salas."""
+def test_un_paso_de_ir_a_cabe_en_5_ms_hasta_unas_doscientas_salas():
+    """SC-001 y §6.1, con la frontera que `DECISIONES.md` §5.3 declara.
+
+    El costo depende de las salas **conocidas**, no del tamaño de la cripta. Se comprueban los
+    dos extremos de lo documentado: el tamaño de las criptas que se publicaban hasta el
+    17/11/2026 (hasta 50 salas) y el límite declarado, unas 200. Más allá no se cumple y eso
+    está escrito como límite conocido, no como una prueba que pasa.
+    """
     from benchmarks.integrante2 import medir_paso_ir_a, PROVEEDORES
 
-    fila = medir_paso_ir_a(5, (49,))[0]
-    assert fila["mediana"] / 1e6 < 5, f"un paso tardó {fila['mediana'] / 1e6:.2f} ms"
+    por_tamano = {fila["n"]: fila["mediana"] / 1e6
+                  for fila in medir_paso_ir_a(5, (49, 196))}
+    for salas, ms in por_tamano.items():
+        assert ms < 5, f"con {salas} salas conocidas un paso tardó {ms:.2f} ms"
     assert medir_paso_ir_a in PROVEEDORES

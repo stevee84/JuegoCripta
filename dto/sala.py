@@ -314,6 +314,23 @@ class Puerta:
         self.evento_cierre_id = None
         self.evento_cierre = None
 
+    def __deepcopy__(self, memo):
+        """Copia la puerta **sin seguir** `destino_sala`; el mapa la reenlaza al terminar.
+
+        Seguirla encadena sala -> puerta -> sala por todo el grafo, y `copy.deepcopy` es
+        recursivo: cuesta unos 5,4 marcos de pila por sala, asi que con el limite de 1000 de
+        Python cualquier cripta de mas de ~180 salas reventaba al tomar un punto de control de
+        la linea de tiempo (§5.5, FR-017). El destino no se pierde: `destino_sala_id` si se
+        copia, y `MapaCripta.__deepcopy__` vuelve a enlazar. Mientras tanto queda en None, que
+        es el mismo estado que tiene una puerta recien construida antes de `vincular_salidas`.
+        """
+        copia = type(self).__new__(type(self))
+        memo[id(self)] = copia
+        for nombre, valor in self.__dict__.items():
+            copia.__dict__[nombre] = (None if nombre == "destino_sala"
+                                      else copy.deepcopy(valor, memo))
+        return copia
+
 #----------------------------------------------------------------------------------
 
 class Trampa(FichaResoluble):

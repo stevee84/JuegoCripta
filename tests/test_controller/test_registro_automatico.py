@@ -313,13 +313,17 @@ def test_replay_automatico_con_fixture_api_real(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     control = ControladorJuego(MotorJuego(), VistaConsola(), FuenteOffline(str(datos)))
     control.conectar_inicializador(InicializadorPartida(), 3)
-    assert control.procesar_comando("cripta cripta-01").exito
+    assert control.procesar_comando("cripta cripta-02").exito
     ruta = control._servicio._ruta_registro
-    for comando in ("recoger objeto:1:0", "mover N"):
+    # Se camina hasta la primera sala con enemigos (la 7): la agenda tiene que traer sus
+    # eventos para que el replay tenga algo que reproducir. Antes bastaba con un paso, porque
+    # la sala 2 de `cripta-01` ya traía ratas; la de `cripta-02` está vacía.
+    for comando in ["recoger objeto:1:0"] + ["mover N"] * 6:
         resultado = control.procesar_comando(comando)
         assert resultado.exito, resultado.mensaje
     estado = control._motor.estado
-    assert estado.jugador.sala_actual.id_sala == 2
+    assert estado.jugador.sala_actual.id_sala == 7
+    assert estado.mapa.obtener_sala(7).enemigos, "la sala elegida debe tener enemigos"
     assert list(estado.agenda.recorrer())
     esperado = firma(estado)
     contenido = ruta.read_bytes()

@@ -24,7 +24,7 @@ def avanzada(tmp_path):
     with contextlib.chdir(tmp_path):
         servicio = JuegoService(MotorJuego(), FuenteOffline(REALES), CacheCatalogo(25))
         servicio.conectar_inicializador(InicializadorPartida())
-        estado = servicio.iniciar_partida("cripta-01")
+        estado = servicio.iniciar_partida("cripta-02")
         for direccion in ("NORTE", "NORTE"):
             accion = servicio.resolver_accion("MOVER", direccion=direccion)
             assert servicio.ejecutar_accion(accion).exito

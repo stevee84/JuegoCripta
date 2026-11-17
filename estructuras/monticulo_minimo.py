@@ -8,14 +8,27 @@ class MonticuloMinimo:
 
     def __init__(self):
         self._datos = []
+        # Se apaga en cuanto un elemento no admita la marca de posición. Ver `_marcar`.
+        self._marca_posicion = True
 
-    @staticmethod
-    def _marcar(elemento, indice):
+    def _marcar(self, elemento, indice):
+        """Anota en el elemento dónde está, para que `eliminar(referencia)` sea O(log n).
+
+        No todos la admiten: las pruebas estructurales usan enteros, y las entradas del
+        buscador de rutas son `dataclass(frozen=True)`, que al asignarles un atributo lanzan
+        `FrozenInstanceError`. Antes se provocaba y se atrapaba esa excepción **en cada
+        movimiento del montículo**: una consulta de ruta sobre 300 salas hacía miles, y eso
+        era la mitad de su costo. Ahora el montículo lo recuerda y no vuelve a intentarlo.
+
+        Un montículo guarda elementos del mismo tipo —la agenda solo `Evento`, el buscador
+        solo entradas de frontera—, así que basta con descubrirlo una vez.
+        """
+        if not self._marca_posicion:
+            return
         try:
             elemento._indice_monticulo = indice
         except (AttributeError, TypeError):
-            # Las pruebas estructurales también usan enteros.
-            pass
+            self._marca_posicion = False
 
     def _intercambiar(self, primero, segundo):
         self._datos[primero], self._datos[segundo] = (

@@ -98,12 +98,12 @@ el principio VII y se corrigieron en R3 y R8.
 | `logica/servicio_inventario.py` | Joshua | Anotar en el registro de la línea recoger/soltar un pergamino y su consumo al retroceder (R6) | Motor, controlador |
 | `service/juego_service.py` | Steven y Joshua | Crear y vincular la línea al iniciar una partida, en el mismo punto donde hoy se vincula el historial (T010). Solo un método o rama nueva. | Controlador, replay, `--bench`, pruebas del servicio |
 | `controller/resumen_historia.py` (nuevo) | Joshua | Arma las líneas del resumen (FR-004) a partir de un estado | Controlador, replay |
-| `controller/controlador_juego.py` | Steven y Joshua | Comandos `historia <t>`, `historia #k` y el del informe de resolubilidad (T050); línea de resolubilidad al iniciar (T049) | Vistas, pruebas del controlador |
+| `controller/controlador_juego.py` | Steven y Joshua | Comandos `historia <t>`, `historia #k` y el del informe de resolubilidad (T050 de la spec 002); línea de resolubilidad al iniciar (T049 de la spec 002) | Vistas, pruebas del controlador |
 | `controller/ejecutor_replay.py` | Joshua | Parámetro `hasta` en `reproducir` | `main.py`, pruebas del replay |
 | `configuracion.py` | Steven | Banderas `--checkpoint-cada K` y `--hasta t`, con su validación | `main.py`, pruebas de configuración |
 | `main.py` | Steven | Pasar K y `--hasta`; agregar el proveedor de mediciones de la línea a `--bench` | Todos |
 | `vista/vista_consola.py` | Joshua | Mostrar el resumen y la línea de resolubilidad (ya muestra mensajes) | Controlador |
-| `vista/vista_pygame.py` | Steven (mayor parte) | Botón o entrada para `historia` y panel para el resumen y la línea de resolubilidad. Cambio aislado en métodos nuevos. | Controlador |
+| `vista/vista_pygame.py` | Joshua (interfaz §7.3; Steven agregó el minimapa con niebla de la spec 003) | Botón o entrada para `historia` y panel para el resumen y la línea de resolubilidad. Cambio aislado en métodos nuevos. | Controlador |
 | `benchmarks/linea_tiempo.py` (nuevo) | Joshua | Mediciones FR-024 a FR-027 | `main.py --bench` |
 | `datos/guardado_binario.py` | Steven | **No lo toca Joshua.** Steven agrega la sección con el contrato (entregada en v11). | — |
 | `logica/motor_juego.py` | Sofía | **Sin cambios.** | — |

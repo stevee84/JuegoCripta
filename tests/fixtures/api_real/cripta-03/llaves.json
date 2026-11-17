@@ -7,6 +7,11 @@
   {
    "id": "itm_llave_negra",
    "sala": 4
+  },
+  {
+   "id": "itm_llave_hierro",
+   "sala": 16,
+   "enemigo": "e-cripta-03-8"
   }
  ]
 }

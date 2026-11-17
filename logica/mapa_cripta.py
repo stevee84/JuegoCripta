@@ -1,3 +1,5 @@
+import copy
+
 from dto.sala import Sala, validar_id_sala
 from estructuras.tabla_hash import TablaHashImpl
 
@@ -49,6 +51,22 @@ class MapaCripta:
         return list(self._salas)
 
 
+
+    def __deepcopy__(self, memo):
+        """Copia el mapa y se reenlaza **solo**, para no encadenar la recursion.
+
+        `Puerta.__deepcopy__` deja `destino_sala` en None a proposito, asi que la copia se
+        reenlaza aqui por id. Va en el mapa y no en quien copia porque el mapa viaja anidado
+        dentro del estado de la partida: el punto de control de la linea de tiempo copia el
+        estado entero y no tiene por que saber que hay que reenlazar nada.
+        """
+        copia = type(self).__new__(type(self))
+        memo[id(self)] = copia
+        for nombre, valor in self.__dict__.items():
+            copia.__dict__[nombre] = copy.deepcopy(valor, memo)
+        if getattr(self, "_enlaces_listos", False):
+            copia.vincular_salidas()
+        return copia
 
     def vincular_salidas(self):
         """Resuelve IDs una vez; el recorrido de vecinos usa referencias locales."""

@@ -283,7 +283,10 @@ def _perfil_arranque(cripta):
             fuente = FuenteContada()
             cache = CacheCatalogo(25)
             servicio = JuegoService(MotorJuego(), fuente, cache)
-            servicio.conectar_inicializador(InicializadorPartida())
+            inicializador = InicializadorPartida()
+            # `--forzar` (FR-011): hay una cripta publicada sin solución a propósito.
+            inicializador.forzar = True
+            servicio.conectar_inicializador(inicializador)
             estado = servicio.iniciar_partida(cripta)
             return {'medicion': 'perfil_arranque_offline', 'n': len(estado.mapa.obtener_salas()),
                     'cripta': cripta, 'repeticiones': 1, 'unidad': 'conteos_por_arranque',

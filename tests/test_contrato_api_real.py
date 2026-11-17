@@ -49,10 +49,18 @@ def en_tmp(tmp_path, monkeypatch):
     return tmp_path
 
 
-def _servicio(cache=None):
+def _servicio(cache=None, forzar=False):
+    """`forzar` es `--forzar` (FR-011): arranca aunque la cripta no tenga solución.
+
+    Hace falta desde que el servicio publica `cripta-05`, «Cripta sellada», que no tiene
+    solución a propósito. El rechazo tiene sus propias pruebas; las de punta a punta están
+    para ejercitar los datos reales, y sin forzar no llegarían a ejercitar nada.
+    """
     servicio = JuegoService(motor=MotorJuego(), fuente=FuenteOffline(str(API_REAL)),
                             cache=cache or CacheCatalogo(25))
-    servicio.conectar_inicializador(InicializadorPartida())
+    inicializador = InicializadorPartida()
+    inicializador.forzar = forzar
+    servicio.conectar_inicializador(inicializador)
     return servicio
 
 
@@ -128,7 +136,7 @@ def test_dos_criptas_offline_materializan_pesos_del_fixture_sin_cambiar_resolubi
     """T014: el peso llega de la fuente y no interviene en el oráculo de 002."""
     raiz_ponderada = tmp_path / "api_ponderada"
     shutil.copytree(API_REAL, raiz_ponderada)
-    costos_por_cripta = {"cripta-01": 37, "cripta-02": 211}
+    costos_por_cripta = {"cripta-02": 37, "cripta-03": 211}
     for cripta_id, costo in costos_por_cripta.items():
         for ruta in (raiz_ponderada / cripta_id).glob("pagina_*.json"):
             pagina = _leer(ruta)
@@ -158,7 +166,7 @@ def test_dos_criptas_offline_materializan_pesos_del_fixture_sin_cambiar_resolubi
         assert ponderada.informe_resolubilidad.a_dato() == \
             original.informe_resolubilidad.a_dato()
 
-    assert observados["cripta-01"] != observados["cripta-02"]
+    assert observados["cripta-02"] != observados["cripta-03"]
 
 
 # ── Fuente offline sobre el formato real ──────────────────────────────
@@ -179,30 +187,30 @@ def test_fuente_offline_lee_formato_real(cripta_id):
 def test_fuente_offline_acepta_contenido_json_unico(tmp_path):
     destino = tmp_path / "paquete"
     shutil.copytree(API_REAL, destino)
-    registros = list(_contenido_real("cripta-01").values())
-    for archivo in (destino / "cripta-01").glob("contenido_*.json"):
+    registros = list(_contenido_real("cripta-02").values())
+    for archivo in (destino / "cripta-02").glob("contenido_*.json"):
         archivo.unlink()
-    (destino / "cripta-01" / "contenido.json").write_text(json.dumps({"contenido": registros}), encoding="utf-8")
-    (destino / "cripta-01" / "version.json").unlink()
-    (destino / "cripta-01" / "version.txt").write_text("v-txt", encoding="utf-8")
+    (destino / "cripta-02" / "contenido.json").write_text(json.dumps({"contenido": registros}), encoding="utf-8")
+    (destino / "cripta-02" / "version.json").unlink()
+    (destino / "cripta-02" / "version.txt").write_text("v-txt", encoding="utf-8")
     fuente = FuenteOffline(str(destino))
-    assert len(fuente.obtener_contenido("cripta-01", [1, 2, 3])["contenido"]) == 3
-    assert fuente.obtener_version_cripta("cripta-01") == "v-txt"
+    assert len(fuente.obtener_contenido("cripta-02", [1, 2, 3])["contenido"]) == 3
+    assert fuente.obtener_version_cripta("cripta-02") == "v-txt"
 
 
-@pytest.mark.parametrize("archivo", ["generales.json", "pagina_1.json", "contenido_1_2_3_4_5_6.json", "version.json"])
+@pytest.mark.parametrize("archivo", ["generales.json", "pagina_1.json", "contenido_1_2_3_4_5_6_7_8_9_10.json", "version.json"])
 def test_fuente_offline_falla_claro_si_falta_un_archivo(tmp_path, archivo):
     destino = tmp_path / "paquete"
     shutil.copytree(API_REAL, destino)
-    (destino / "cripta-01" / archivo).unlink()
+    (destino / "cripta-02" / archivo).unlink()
     fuente = FuenteOffline(str(destino))
     llamadas = {
-        "generales.json": lambda: fuente.obtener_generales("cripta-01"),
-        "pagina_1.json": lambda: fuente.obtener_pagina("cripta-01", 1),
-        "contenido_1_2_3_4_5_6.json": lambda: fuente.obtener_contenido("cripta-01", [1]),
-        "version.json": lambda: fuente.obtener_version_cripta("cripta-01"),
+        "generales.json": lambda: fuente.obtener_generales("cripta-02"),
+        "pagina_1.json": lambda: fuente.obtener_pagina("cripta-02", 1),
+        "contenido_1_2_3_4_5_6_7_8_9_10.json": lambda: fuente.obtener_contenido("cripta-02", [1]),
+        "version.json": lambda: fuente.obtener_version_cripta("cripta-02"),
     }
-    with pytest.raises(CriptaAPIError, match="cripta-01"):
+    with pytest.raises(CriptaAPIError, match="cripta-02"):
         llamadas[archivo]()
 
 
@@ -210,7 +218,7 @@ def test_fuente_offline_falla_claro_si_falta_un_archivo(tmp_path, archivo):
 
 @pytest.mark.parametrize("cripta_id", CRIPTAS)
 def test_partida_completa_con_datos_reales(cripta_id, en_tmp):
-    servicio = _servicio()
+    servicio = _servicio(forzar=True)
     estado = servicio.iniciar_partida(cripta_id)
     esperado = _contenido_real(cripta_id)
     for sala_id, registro in esperado.items():
@@ -262,7 +270,7 @@ def test_pocion_real_cura_lo_que_dice_su_ficha(en_tmp):
 
 def test_ficha_de_enemigo_muerto_deja_de_estar_en_uso(en_tmp):
     servicio = _servicio()
-    estado = servicio.iniciar_partida("cripta-01")
+    estado = servicio.iniciar_partida("cripta-02")
     guardian = next(e for s in estado.mapa.obtener_salas() for e in s.enemigos
                     if e.tipo_ficha_id == "ent_guardian_oseo")
     assert "ent_guardian_oseo" in servicio._cache.fichas_fijadas("en_uso")
@@ -390,7 +398,7 @@ def test_guardar_y_continuar_en_otro_proceso(en_tmp):
 
 def test_no_se_guarda_una_partida_terminada(en_tmp):
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     controlador._servicio.obtener_estado().partida_activa = False
     resultado = controlador.procesar_comando("guardar")
     assert not resultado.exito and "terminó" in resultado.mensaje
@@ -407,11 +415,11 @@ def test_archivo_corrupto_no_se_ofrece_para_continuar(en_tmp):
 
 def test_continuar_con_version_distinta_se_rechaza(en_tmp):
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     assert controlador.procesar_comando("guardar").exito
     paquete = en_tmp / "paquete"
     shutil.copytree(API_REAL, paquete)
-    (paquete / "cripta-01" / "version.json").write_text('{"id": "cripta-01", "version": "otra"}', encoding="utf-8")
+    (paquete / "cripta-02" / "version.json").write_text('{"id": "cripta-02", "version": "otra"}', encoding="utf-8")
     otro = _controlador(paquete)
     resultado = otro.procesar_comando("cargar")
     assert not resultado.exito and "versi" in resultado.mensaje.lower()
@@ -515,26 +523,26 @@ def test_presupuesto_por_partida_en_todos_los_caminos(en_tmp, api_simulada):
 
     controlador.procesar_comando("criptas")
     api_simulada["fallar"] = True
-    assert not controlador.procesar_comando("cripta cripta-01").exito
+    assert not controlador.procesar_comando("cripta cripta-02").exito
     api_simulada["fallar"] = False
     antes = api_simulada["llamadas"]
-    assert controlador.procesar_comando("cripta cripta-01").exito
+    assert controlador.procesar_comando("cripta cripta-02").exito
     # El reintento empieza de cero: no arrastra ni el listado ni los intentos fallidos.
     assert presupuesto()._intentos == api_simulada["llamadas"] - antes
-    assert presupuesto()._limite == _leer(API_REAL / "cripta-01" / "generales.json")["presupuesto_solicitudes"]
+    assert presupuesto()._limite == _leer(API_REAL / "cripta-02" / "generales.json")["presupuesto_solicitudes"]
 
     antes = api_simulada["llamadas"]
     controlador.procesar_comando("criptas")
     assert controlador.procesar_comando("cripta cripta-02").exito
-    # Reemplazar una partida sin acciones: cuenta el listado nuevo y nada de cripta-01.
+    # Reemplazar una partida sin acciones: cuenta el listado nuevo y nada de cripta-02.
     assert presupuesto()._intentos == api_simulada["llamadas"] - antes
 
 
 def test_offline_reporta_cero_solicitudes_contra_el_presupuesto_de_la_cripta(en_tmp):
-    limite = _leer(API_REAL / "cripta-01" / "generales.json")["presupuesto_solicitudes"]
+    limite = _leer(API_REAL / "cripta-02" / "generales.json")["presupuesto_solicitudes"]
     esperado = {"intentos": 0, "limite": limite, "restantes": limite, "agotado": False}
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     assert controlador._servicio.obtener_metricas()["presupuesto"] == esperado
     assert any(f"0/{limite} solicitudes" in linea for linea in controlador.lineas_metricas())
     assert controlador.procesar_comando("guardar").exito
@@ -546,11 +554,11 @@ def test_offline_reporta_cero_solicitudes_contra_el_presupuesto_de_la_cripta(en_
 
 def test_metricas_de_cache_son_de_la_partida_y_no_acumuladas(en_tmp):
     controlador = _controlador()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     primera = controlador._servicio.obtener_metricas()["cache"]
     assert primera["fallos"] > 0 and primera["desde_red"] == primera["fallos"]
     controlador._preparar_nueva_partida()
-    controlador.procesar_comando("cripta cripta-01")
+    controlador.procesar_comando("cripta cripta-02")
     segunda = controlador._servicio.obtener_metricas()["cache"]
     # Misma caché caliente: todo se resuelve en memoria y no se arrastran los fallos anteriores.
     assert segunda["fallos"] == 0 and segunda["desde_red"] == segunda["desde_disco"] == 0
@@ -581,7 +589,7 @@ def test_guardado_conserva_ids_largos_y_multibyte(en_tmp, largo):
 def test_guardado_v5_se_rechaza_como_incompatible(en_tmp):
     import struct
     ruta = en_tmp / "viejo.bin"
-    ruta.write_bytes(struct.pack("<4sH32sqIIII", b"CRPT", 5, b"cripta-01", 1, 0, 0, 0, 0))
+    ruta.write_bytes(struct.pack("<4sH32sqIIII", b"CRPT", 5, b"cripta-02", 1, 0, 0, 0, 0))
     assert GuardadoBinario().cargar(str(ruta)) is None
     assert GuardadoBinario().leer_sala(str(ruta), 1) is None
 
@@ -610,13 +618,13 @@ def test_cache_size_limita_las_fichas_retenidas_y_recupera_desde_disco(en_tmp, m
     assert pedidos_a_red == []
 
 
-def test_el_presupuesto_alcanza_para_arrancar_las_cuatro_criptas_publicadas(en_tmp, api_simulada):
+def test_el_presupuesto_alcanza_para_arrancar_las_criptas_publicadas(en_tmp, api_simulada):
     """§5.1 y §9: ninguna cripta publicada se pasa de su presupuesto al iniciar.
 
-    El test de arriba cubre los caminos del presupuesto en dos criptas; este cubre las cuatro y
-    deja el margen a la vista, porque es lo que se verifica en la defensa (§9) y porque el límite
-    no es proporcional al tamaño: cripta-01 declara 9 solicitudes para 6 salas y es la más
-    ajustada de las cuatro, no la más holgada.
+    Recorre **todas** las que el catálogo publique, sin suponer cuántas son ni cuáles: el
+    servicio las cambia. El 17/11/2026 retiró `cripta-02` y añadió `cripta-05` y `cripta-06`,
+    y el límite nunca fue proporcional al tamaño —`cripta-02` declaraba 9 solicitudes para 6
+    salas y era la más ajustada—, así que el margen se mide, no se deduce.
 
     La consulta de ubicación de llaves que añadió la verificación de resolubilidad (spec 002,
     `FR-016`) es una de las que se cuentan aquí. No se duplica —la partida reutiliza esos datos y
@@ -624,12 +632,14 @@ def test_el_presupuesto_alcanza_para_arrancar_las_cuatro_criptas_publicadas(en_t
     el que hay que vigilar al añadir cualquier otra.
     """
     criptas = [c["id"] for c in _leer(API_REAL / "criptas.json")["criptas"]]
-    assert len(criptas) == 4
+    assert criptas, "el catálogo de la fixture no publica ninguna cripta"
     margenes = {}
     for cripta_id in criptas:
         controlador = _controlador_http()
         controlador.procesar_comando("criptas")
-        assert controlador.procesar_comando(f"cripta {cripta_id}").exito, cripta_id
+        # Una cripta sin solución no arranca (FR-011) y aun así gasta solicitudes antes de
+        # negarse: su presupuesto también se vigila, que es de lo que trata esta prueba.
+        controlador.procesar_comando(f"cripta {cripta_id}")
         presupuesto = controlador._fuente._presupuesto
         assert presupuesto._limite == _leer(API_REAL / cripta_id / "generales.json")["presupuesto_solicitudes"]
         assert presupuesto._intentos <= presupuesto._limite, (

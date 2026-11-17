@@ -121,7 +121,12 @@ def medir_recuperacion(repeticiones, tamanos):
 def _partida_real(cripta_id, carpeta):
     with contextlib.chdir(carpeta):  # la caché persistente del arranque queda en la carpeta temporal
         servicio = JuegoService(MotorJuego(), FuenteOffline(str(API_REAL)), CacheCatalogo(25))
-        servicio.conectar_inicializador(InicializadorPartida())
+        inicializador = InicializadorPartida()
+        # `--forzar` (FR-011 de la 002): el servicio publica `cripta-05`, que no tiene solución
+        # a propósito. Medir el guardado de su estado es tan válido como el de las demás, y sin
+        # esto el benchmark no podría medir toda cripta publicada.
+        inicializador.forzar = True
+        servicio.conectar_inicializador(inicializador)
         return servicio, servicio.iniciar_partida(cripta_id)
 
 
@@ -145,7 +150,7 @@ def _leer_sala_json(ruta, id_sala):
 
 
 def medir_guardado(repeticiones, tamanos):
-    """Binario propio contra JSON con el mismo estado (§4.10), en las 4 criptas reales."""
+    """Binario propio contra JSON con el mismo estado (§4.10), en todas las criptas reales."""
     filas = []
     binario = GuardadoBinario()
     criptas = [c["id"] for c in json.loads((API_REAL / "criptas.json").read_text(encoding="utf-8"))["criptas"]]
@@ -319,7 +324,9 @@ def _arrancar(cripta_id, carpeta):
     fuente = _FuenteContada(str(API_REAL))
     with contextlib.chdir(carpeta):
         servicio = JuegoService(MotorJuego(), fuente, CacheCatalogo(25))
-        servicio.conectar_inicializador(InicializadorPartida())
+        inicializador = InicializadorPartida()
+        inicializador.forzar = True   # FR-011: `cripta-05` no tiene solución a propósito
+        servicio.conectar_inicializador(inicializador)
         servicio.iniciar_partida(cripta_id)
     return fuente
 

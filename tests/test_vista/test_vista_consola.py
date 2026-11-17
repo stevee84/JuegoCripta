@@ -142,9 +142,9 @@ def test_salida_llaves_muertos_inventario_equipo_efectos_y_bitacora_solo_lectura
 
 
 def test_criptas_presentadas_sin_diccionarios(capsys):
-    datos = {"criptas": [{"id": "cripta-01", "nombre": "Cripta del bosque", "salas_total": 6}]}
+    datos = {"criptas": [{"id": "cripta-02", "nombre": "Cripta del bosque", "salas_total": 6}]}
     antes = pickle.dumps(datos)
     VistaConsola().mostrar_criptas(datos)
     texto = capsys.readouterr().out
-    assert "Cripta del bosque (cripta-01): 6 salas" in texto and "{" not in texto
+    assert "Cripta del bosque (cripta-02): 6 salas" in texto and "{" not in texto
     assert pickle.dumps(datos) == antes

@@ -15,7 +15,8 @@ def test_fr024_a_fr027_el_proveedor_trae_todas_las_mediciones():
     for esperada in ("linea_tiempo_historia", "linea_tiempo_accion_sin_punto",
                      "linea_tiempo_accion_con_punto", "linea_tiempo_adelante_vs_atras",
                      "retroceso_punta_a_punta", "replay_completo", "replay_version_incompatible",
-                     "inventario_vista_ordenada", "inventario_recoger_lleno"):
+                     "inventario_vista_ordenada", "inventario_recoger_lleno",
+                     "linea_tiempo_memoria_crecimiento"):
         assert esperada in nombres, esperada
     historia = [f for f in filas if f["medicion"] == "linea_tiempo_historia"]
     assert [f["k"] for f in historia] == [10, 50, 200, "sin puntos de control"]
@@ -23,6 +24,10 @@ def test_fr024_a_fr027_el_proveedor_trae_todas_las_mediciones():
         limite = 10 ** 9 if fila["k"] == "sin puntos de control" else fila["k"]
         assert fila["max_transacciones_por_consulta"] <= limite
         assert fila["memoria_puntos_mb_estimada"] >= 0
+    crecimiento = [f for f in filas if f["medicion"] == "linea_tiempo_memoria_crecimiento"]
+    assert [f["k"] for f in crecimiento] == [10, 50, 200]
+    for fila in crecimiento:  # T041, SC-005: mitad frente a final de la misma partida
+        assert fila["acciones_final"] == 2 * fila["acciones_mitad"]
     for fila in filas:
         if fila["medicion"] == "linea_tiempo_adelante_vs_atras":
             assert fila["mismo_estado"], fila

@@ -154,7 +154,7 @@ def test_proveedor_ciclo_queda_disponible_sin_registrar_main():
 def test_cripta_real_disponible_reconecta_catalogo_vivo_sin_ser_oficial():
     informe = ejecutar(_argumentos([
         "--datos-offline", "tests/fixtures/api_real",
-        "--cripta", "cripta-01",
+        "--cripta", "cripta-02",
         "--muestras", "1",
         "--calentamiento", "0",
     ]))
@@ -164,6 +164,6 @@ def test_cripta_real_disponible_reconecta_catalogo_vivo_sin_ser_oficial():
     assert informe["afirma_pr001"] is False
     assert len(informe["resultados"]) == 1
     resultado = informe["resultados"][0]
-    assert resultado["cripta_id"] == "cripta-01"
+    assert resultado["cripta_id"] == "cripta-02"
     assert resultado["ciclos_completos"] == 1
     assert resultado["carga_previa"]["fichas_cargadas"] > 0

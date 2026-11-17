@@ -19,7 +19,7 @@ def construir(cripta_id, carpeta, forzar=False):
 
 
 def test_cripta_con_solucion_inicia_y_lleva_su_informe():
-    estado, _ = construir("cripta-01", REALES)
+    estado, _ = construir("cripta-02", REALES)
     informe = estado.informe_resolubilidad
     assert informe.puede_iniciar
     assert informe.orden_llaves == ["itm_llave_bronce", "itm_llave_negra"]
@@ -49,9 +49,9 @@ def test_sin_la_ubicacion_de_las_llaves_no_se_verifica_y_no_inicia():
 
     inicializador = InicializadorPartida()
     fuente = SinLlaves(REALES)
-    inicializador.preparar("cripta-01", fuente)
+    inicializador.preparar("cripta-02", fuente)
     with pytest.raises(CriptaNoResoluble) as excepcion:
-        inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+        inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     informe = excepcion.value.informe
     assert not informe.verificada
     assert not informe.puede_iniciar
@@ -69,8 +69,8 @@ def test_sin_la_ubicacion_de_las_llaves_se_puede_forzar():
     inicializador = InicializadorPartida()
     inicializador.forzar = True
     fuente = SinLlaves(REALES)
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     assert not estado.informe_resolubilidad.verificada
 
 
@@ -106,9 +106,9 @@ def test_una_respuesta_de_llaves_invalida_deja_la_cripta_sin_verificar():
 
     inicializador = InicializadorPartida()
     fuente = LlavesCorruptas(REALES)
-    inicializador.preparar("cripta-01", fuente)
+    inicializador.preparar("cripta-02", fuente)
     with pytest.raises(CriptaNoResoluble) as excepcion:
-        inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+        inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     informe = excepcion.value.informe
     assert not informe.verificada
     assert "inválida" in informe.motivo
@@ -123,6 +123,6 @@ def test_una_respuesta_de_llaves_invalida_se_puede_forzar():
     inicializador = InicializadorPartida()
     inicializador.forzar = True
     fuente = LlavesCorruptas(REALES)
-    inicializador.preparar("cripta-01", fuente)
-    estado, _ = inicializador("cripta-01", 0, fuente, CacheCatalogo(25))
+    inicializador.preparar("cripta-02", fuente)
+    estado, _ = inicializador("cripta-02", 0, fuente, CacheCatalogo(25))
     assert not estado.informe_resolubilidad.verificada

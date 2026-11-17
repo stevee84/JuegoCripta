@@ -425,25 +425,74 @@ del arreglo están en `specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.m
 
 Un paso de «ir a», contra el límite de 5 ms de §6.1:
 
-| SALAS | MEDIANA | LÍMITE |
+| SALAS CONOCIDAS | MEDIANA | LÍMITE |
 |---|---|---|
-| 9 | 0,242 ms | 5 ms |
-| 25 | 0,876 ms | 5 ms |
-| 49 | 1,971 ms | 5 ms |
-| 64 | 2,497 ms | 5 ms |
+| 9 | 0,138 ms | 5 ms |
+| 25 | 0,509 ms | 5 ms |
+| 49 | 1,154 ms | 5 ms |
+| 64 | 1,428 ms | 5 ms |
+| 100 | 2,269 ms | 5 ms |
+| 196 | **4,637 ms** | 5 ms |
+| 225 | 5,852 ms | 5 ms |
+| 289 | 7,438 ms | 5 ms |
 
-Las criptas publicadas tienen entre 6 y 50 salas, así que el caso real queda en unos 2 ms, con
-algo más del doble de margen.
+**El límite se cumple hasta unas 200 salas conocidas.** Medido el 17/11/2026, después de las
+optimizaciones que se describen abajo; antes se cumplía hasta unas 110.
+
+Las criptas publicadas iban de 6 a 50 salas hasta ese día, y ahí el paso cuesta poco más de 1 ms.
+La «Cripta de referencia» (`cripta-06`) tiene 300, y con el mapa entero explorado el paso llega a
+7,4 ms: ver el primer límite conocido.
 
 ### 6. Límites conocidos
 
-- **El paso de «ir a» se pasa de 5 ms en criptas mucho mayores que las publicadas.** Con 100
-  salas conocidas son 4,3 ms y con 1 600 son 89,9 ms. No se optimizó porque las criptas
-  publicadas llegan a 50 y §6.1 admite ajustar los valores cuando se publique la cripta de
-  referencia. Si esa cripta resultara mucho mayor, el camino sería reutilizar el cálculo entre
-  pasos mientras el mapa conocido no cambie, que es lo que el contrato con 001 dejó abierto
-  —«podemos reutilizar auxiliares después, si demostramos equivalencia»—, no cambiar la
-  estructura.
+- **`SC-001` se cumple en la cripta de referencia; la malla sintética del `--bench` es un caso
+  peor que ninguna cripta publicada.** Conviene explicarlo porque la primera lectura de la
+  medición dijo lo contrario.
+
+  `SC-001` pide menos de 5 ms por paso **con el mapa conocido completo de la cripta de
+  referencia**. Esa cripta existe desde el 17/11/2026: `cripta-06`, 300 salas. Medido sobre
+  **sus datos reales**, con las 300 salas exploradas y 120 pares origen-destino al azar:
+
+  | | MEDIANA | p95 | PEOR DE 120 | LÍMITE |
+  |---|---|---|---|---|
+  | `cripta-06`, mapa completo | 1,050 ms | 1,353 ms | **1,591 ms** | 5 ms |
+
+  **Se cumple con tres veces de margen, incluso en el peor par.**
+
+  La medición de `--bench` da 7,44 ms con 289 salas porque usa una **malla regular de grado 4**:
+  cada sala con cuatro salidas. La cripta de referencia real tiene **760 salidas para 300 salas,
+  grado medio 2,53** —un trazado de pasillos—, y el costo de la búsqueda crece con las salidas
+  examinadas, no con las salas. La malla es entonces un caso peor deliberado, útil para ver cómo
+  escala, pero **no es el escenario que `SC-001` describe**. Se conserva por eso, y porque §5.6
+  pide medir contra cargas que no sean solo las publicadas.
+
+  **Límite real que queda**: sobre una topología densa como la malla, el paso supera los 5 ms por
+  encima de unas 200 salas conocidas. Si alguna cripta futura combinara ese tamaño con ese grado,
+  habría que reutilizar el cálculo entre pasos mientras el mapa conocido no cambie, que es lo que
+  el contrato con 001 dejó abierto —«podemos reutilizar auxiliares después, si demostramos
+  equivalencia»—. No cambiaría la estructura ni contradiría `FR-014`: recalcular y reutilizar un
+  resultado que no pudo cambiar dan lo mismo.
+
+  Sobre esa malla el paso igualmente **bajó a la mitad** el 17/11/2026, con tres cambios que no
+  alteran ningún resultado y que aceleran cualquier otro subsistema, porque están en las
+  estructuras compartidas:
+
+  1. `MonticuloMinimo` anota en cada elemento su posición para que `eliminar(referencia)` sea
+     O(log n). Las entradas del buscador de rutas son `dataclass(frozen=True)`, así que esa
+     anotación **lanzaba y atrapaba una excepción en cada movimiento del montículo**: miles por
+     consulta. Ahora el montículo lo descubre una vez y no vuelve a intentarlo. Era la mitad del
+     costo.
+  2. `TablaHashImpl.contiene` recorría el bucket con un generador, creando un frame por llamada;
+     una sola consulta sobre 300 salas la llama unas 5 000 veces. Pasa a un bucle explícito.
+  3. `MapaConocido.sala` y `puerta_recordada_abierta` preguntaban `contiene` y después
+     `obtener`: dos búsquedas para una respuesta. `obtener` ya devuelve None si la clave no está.
+
+  | SALAS (malla de grado 4) | ANTES | DESPUÉS | LÍMITE |
+  |---|---|---|---|
+  | 49 | 2,26 ms | **1,15 ms** | 5 ms |
+  | 100 | 4,42 ms | **2,27 ms** | 5 ms |
+  | 289 | 14,14 ms | **7,44 ms** | 5 ms |
+
 - **El conocimiento se revierte y se guarda desde el 14/11/2026.** `FR-022` quedó cerrado:
   `CambioConocimiento` hereda del contrato de cambios reversibles sin tocar el archivo de otro
   integrante (Principio VIII) y guarda solo los hechos de cada revelación, nunca una copia del
@@ -570,14 +619,23 @@ Verificación de las criptas publicadas, mediana de 5 repeticiones:
 
 | CRIPTA | SALAS | MEDIANA | LÍMITE §6.1 |
 |---|---|---|---|
-| cripta-01 | 6 | 0,109 ms | 200 ms |
-| cripta-02 | 20 | 0,216 ms | 200 ms |
-| cripta-03 | 40 | 0,446 ms | 200 ms |
-| cripta-04 | 50 | **0,509 ms** | 200 ms |
+| cripta-02 | 20 | 0,152 ms | 200 ms |
+| cripta-05 | 24 | 0,189 ms | 200 ms |
+| cripta-03 | 40 | 0,270 ms | 200 ms |
+| cripta-04 | 50 | 0,333 ms | 200 ms |
+| **cripta-06** | **300** | **1,983 ms** | 200 ms |
 
-La más grande queda casi 400 veces por debajo del límite. El crecimiento es aproximadamente
-lineal: de 20 a 40 salas el tiempo pasa de 0,216 a 0,446 ms, así que duplicar el tamaño no más
-que duplica el tiempo (`SC-002`).
+**La «Cripta de referencia» de 300 salas se verifica en 2,0 ms: 100 veces por debajo del límite.**
+Es el dato que importa, porque §6.1 fija los 200 ms sobre «la cripta publicada más grande» y esa
+cripta pasó de 50 a 300 salas el 17/11/2026. El crecimiento es aproximadamente lineal: 50 salas
+en 0,333 ms y 300 —seis veces más— en 1,983, que es 6,0 veces más tiempo (`SC-002`).
+
+Estos tiempos son posteriores a las optimizaciones de las estructuras compartidas que describe el
+primer límite conocido de §5.3: la verificación también se benefició, de 3,831 a 1,983 ms en la
+cripta de referencia.
+
+Medido el 17/11/2026 sobre la captura de ese día. La tabla anterior incluía `cripta-01`, de 6
+salas, que el servicio ya no publica.
 
 Recorrido incremental contra rehacerlo por cada llave, sobre criptas sintéticas de llaves
 encadenadas, deterministas por semilla:
@@ -594,18 +652,35 @@ La ventaja casi se duplica cada vez que se duplican las llaves, que es justo lo 
 del recorrido.
 
 **Costo de red.** La verificación añade **una solicitud por partida**, la consulta de ubicación de
-llaves (§4.2), que cuenta en el presupuesto (§4.3). El arranque pasó de 7 a 8 solicitudes; en
-`cripta-01`, con `presupuesto_solicitudes` 9, el margen baja de 2 a 1. No se desperdicia: son los
-mismos datos que la partida necesita después, así que iniciar una cripta ya verificada no vuelve
-a pedir nada (`SC-004`).
+llaves (§4.2), que cuenta en el presupuesto (§4.3). El arranque pasó de 7 a 8 solicitudes. No se
+desperdicia: son los mismos datos que la partida necesita después, así que iniciar una cripta ya
+verificada no vuelve a pedir nada (`SC-004`).
+
+El margen depende de la cripta y el programa no lo supone: lo lee de `presupuesto_solicitudes` en
+los generales (`service/inicializador_partida.py`). Presupuestos publicados, comprobados contra el
+servicio el 17/11/2026:
+
+| CRIPTA | SALAS | PÁGINAS | PRESUPUESTO |
+|---|---|---|---|
+| cripta-02 | 20 | 1 | 23 |
+| cripta-03 | 40 | 1 | 42 |
+| cripta-04 | 50 | 1 | 52 |
+| cripta-05 | 24 | 1 | 25 |
+| cripta-06 | 300 | 6 | 63 |
+
+Una versión anterior de esta sección citaba `cripta-01`, cuyo presupuesto de 9 dejaba el margen en
+1 al añadir la solicitud extra. **El servicio ya no publica `cripta-01`**: devuelve 404. Ninguna de
+las cinco actuales queda tan ajustada.
 
 ### 6. Límites conocidos
 
 - **La verificación no dice nada del combate.** §3.5 supone que todo enemigo puede ser derrotado,
-  y se comprobó que eso deja fuera un modo de fallo real: `cripta-01` **tiene solución** y aun así
-  mata al jugador que va directo por la llave de salida, porque la ruta pasa por dos ratas
-  rastreadoras y una trampa mientras el equipo que la vuelve superable está repartido por esas
-  mismas salas. Se consideró añadir una advertencia de ruta con esos datos y **se descartó**:
+  y se comprobó que eso deja fuera un modo de fallo real: la cripta más pequeña que publicaba el
+  servicio hasta el 17/11/2026 (`cripta-01`, 6 salas, hoy retirada) **tenía solución** y aun así
+  mataba al jugador que iba directo por la llave de salida, porque la ruta pasaba por dos ratas
+  rastreadoras y una trampa mientras el equipo que la volvía superable estaba repartido por esas
+  mismas salas. El supuesto sigue siendo el del enunciado y el modo de fallo sigue existiendo;
+  solo se perdió el ejemplo concreto. Se consideró añadir una advertencia de ruta con esos datos y **se descartó**:
   habría revelado el contenido de salas no exploradas, que §3.3 reserva al conocimiento del
   jugador —ni la antorcha revela contenido— y habría contradicho la capacidad `003-niebla-y-ir-a`.
   Decidir si existe *alguna* secuencia de acciones que sobreviva es además una búsqueda en el
@@ -732,10 +807,19 @@ atrás y re-simular llegan al mismo estado con los tres K; el replay rechaza un 
 - **`historia` no cumple 50 ms en todos los casos** con esta carga: el p95 es 60 ms y el máximo
   83 ms. La mediana sí (16 ms). En una partida normal, con menos enemigos activos por acción, cada
   transacción es más chica y las consultas son más rápidas (T001: 5,6 ms de mediana con 600 acciones).
+  Por eso SC-001 se mide con la mediana; el p95 y el máximo se reportan siempre en `--bench`.
 - **La acción que crea un punto de control pasa los 20 ms por ciclo** (unos 51 ms, una de cada 10
   acciones). Mejoras posibles, no implementadas: tomar el punto de control fuera del ciclo de la
-  decisión, o una copia propia del estado más barata que `copy.deepcopy`.
+  decisión, o una copia propia del estado más barata que `copy.deepcopy`. Queda declarada como
+  excepción en el spec (FR-032): solo afecta a esa acción y `--bench` reporta su costo.
 - **Memoria alta en partidas muy largas** (unos 650 MB con 5 000 acciones en esta carga).
+- **SC-005 no se cumple del todo**: en la misma partida, de 2 500 a 5 000 acciones con K = 10 la
+  memoria pasa de 261 MB a 668 MB (2,56 veces, no 2), y con K = 50 de 197 MB a 523 MB (2,66 veces)
+  (`benchmarks/resultados/linea_tiempo_memoria_2500_5000.json`). La cantidad de puntos se duplica,
+  como debe, pero cada punto pesa más al final (1 066 KB frente a 1 365 KB con K = 10), porque el
+  estado mismo crece durante la partida y cada punto copia el estado entero. Es justo el término
+  «puntos por tamaño del estado» que FR-021 acepta, no «acciones por tamaño del estado»; la mejora
+  posible es que los puntos compartan las partes del estado que no cambiaron.
 - **Archivos anteriores a v11** no se pueden cargar: no tienen línea de tiempo y se rechazan como
   incompatibles.
 - `pickle` ejecuta código al cargar un archivo malicioso; se acepta porque el archivo de partida es
