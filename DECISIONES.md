@@ -425,23 +425,52 @@ del arreglo están en `specs/003-niebla-y-ir-a/contracts/respuesta-sofia-sc003.m
 
 Un paso de «ir a», contra el límite de 5 ms de §6.1:
 
-| SALAS | MEDIANA | LÍMITE |
+| SALAS CONOCIDAS | MEDIANA | LÍMITE |
 |---|---|---|
-| 9 | 0,242 ms | 5 ms |
-| 25 | 0,876 ms | 5 ms |
-| 49 | 1,971 ms | 5 ms |
-| 64 | 2,497 ms | 5 ms |
+| 9 | 0,138 ms | 5 ms |
+| 25 | 0,509 ms | 5 ms |
+| 49 | 1,154 ms | 5 ms |
+| 64 | 1,428 ms | 5 ms |
+| 100 | 2,269 ms | 5 ms |
+| 196 | **4,637 ms** | 5 ms |
+| 225 | 5,852 ms | 5 ms |
+| 289 | 7,438 ms | 5 ms |
 
-Las criptas publicadas tienen entre 6 y 50 salas, así que el caso real queda en unos 2 ms, con
-algo más del doble de margen.
+**El límite se cumple hasta unas 200 salas conocidas.** Medido el 17/11/2026, después de las
+optimizaciones que se describen abajo; antes se cumplía hasta unas 110.
+
+Las criptas publicadas iban de 6 a 50 salas hasta ese día, y ahí el paso cuesta poco más de 1 ms.
+La «Cripta de referencia» (`cripta-06`) tiene 300, y con el mapa entero explorado el paso llega a
+7,4 ms: ver el primer límite conocido.
 
 ### 6. Límites conocidos
 
 - **El paso de «ir a» se pasa de 5 ms en la cripta de referencia.** Dejó de ser hipotético el
   17/11/2026: la API publicó `cripta-06`, «Cripta de referencia», de **300 salas**, y §6.1 decía
-  que los valores se ajustan cuando esa cripta exista. Medido con el mapa conocido completo:
-  2,26 ms con 49 salas, 4,42 ms con 100 y **14,14 ms con 289**, contra el límite de 5 ms. Se
-  cumple hasta unas 110 salas conocidas.
+  que los valores se ajustan cuando esa cripta exista.
+
+  **Se optimizó al descubrirlo, y el paso bajó a la mitad**, con tres cambios que no alteran
+  ningún resultado —cada uno hace lo mismo en menos trabajo— y que además aceleran cualquier
+  otro subsistema, porque están en las estructuras compartidas:
+
+  1. `MonticuloMinimo` anota en cada elemento su posición para que `eliminar(referencia)` sea
+     O(log n). Las entradas del buscador de rutas son `dataclass(frozen=True)`, así que esa
+     anotación **lanzaba y atrapaba una excepción en cada movimiento del montículo**: miles por
+     consulta. Ahora el montículo lo descubre una vez y no vuelve a intentarlo. Era la mitad del
+     costo.
+  2. `TablaHashImpl.contiene` recorría el bucket con un generador, creando un frame por llamada;
+     una sola consulta sobre 300 salas la llama unas 5 000 veces. Pasa a un bucle explícito.
+  3. `MapaConocido.sala` y `puerta_recordada_abierta` preguntaban `contiene` y después
+     `obtener`: dos búsquedas para una respuesta. `obtener` ya devuelve None si la clave no está.
+
+  | SALAS CONOCIDAS | ANTES | DESPUÉS | LÍMITE |
+  |---|---|---|---|
+  | 49 | 2,26 ms | **1,15 ms** | 5 ms |
+  | 100 | 4,42 ms | **2,27 ms** | 5 ms |
+  | 289 | 14,14 ms | **7,44 ms** | 5 ms |
+
+  El límite pasa a cumplirse hasta unas 200 salas conocidas, no 110. **Sigue sin cumplirse en la
+  cripta de referencia con el mapa entero explorado**, y por eso continúa siendo un límite.
 
   Dos matices que lo acotan sin excusarlo: el costo depende de las salas **conocidas**, no de las
   que tiene la cripta, así que una partida de `cripta-06` solo llega a esos 14 ms cuando el
@@ -577,16 +606,20 @@ Verificación de las criptas publicadas, mediana de 5 repeticiones:
 
 | CRIPTA | SALAS | MEDIANA | LÍMITE §6.1 |
 |---|---|---|---|
-| cripta-02 | 20 | 0,211 ms | 200 ms |
-| cripta-05 | 24 | 0,448 ms | 200 ms |
-| cripta-03 | 40 | 0,400 ms | 200 ms |
-| cripta-04 | 50 | 0,716 ms | 200 ms |
-| **cripta-06** | **300** | **3,831 ms** | 200 ms |
+| cripta-02 | 20 | 0,152 ms | 200 ms |
+| cripta-05 | 24 | 0,189 ms | 200 ms |
+| cripta-03 | 40 | 0,270 ms | 200 ms |
+| cripta-04 | 50 | 0,333 ms | 200 ms |
+| **cripta-06** | **300** | **1,983 ms** | 200 ms |
 
-**La «Cripta de referencia» de 300 salas se verifica en 3,8 ms: 52 veces por debajo del límite.**
+**La «Cripta de referencia» de 300 salas se verifica en 2,0 ms: 100 veces por debajo del límite.**
 Es el dato que importa, porque §6.1 fija los 200 ms sobre «la cripta publicada más grande» y esa
 cripta pasó de 50 a 300 salas el 17/11/2026. El crecimiento es aproximadamente lineal: 50 salas
-en 0,716 ms y 300 —seis veces más— en 3,831, que es 5,3 veces más tiempo (`SC-002`).
+en 0,333 ms y 300 —seis veces más— en 1,983, que es 6,0 veces más tiempo (`SC-002`).
+
+Estos tiempos son posteriores a las optimizaciones de las estructuras compartidas que describe el
+primer límite conocido de §5.3: la verificación también se benefició, de 3,831 a 1,983 ms en la
+cripta de referencia.
 
 Medido el 17/11/2026 sobre la captura de ese día. La tabla anterior incluía `cripta-01`, de 6
 salas, que el servicio ya no publica.

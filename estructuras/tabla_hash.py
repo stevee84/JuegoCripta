@@ -42,8 +42,13 @@ class TablaHashImpl(TablaHash):
                 return
 
     def contiene(self, clave) -> bool:
-        indice = hash(clave) % self._capacidad
-        return any(k == clave for k, _ in self._buckets[indice])
+        # Bucle explícito en vez de `any(... for ...)`: es el mismo recorrido del bucket, pero
+        # sin crear un generador por llamada. Pesa porque es la operación más repetida del
+        # proyecto: una sola consulta de ruta sobre 300 salas la llama unas 5 000 veces.
+        for k, _ in self._buckets[hash(clave) % self._capacidad]:
+            if k == clave:
+                return True
+        return False
 
     def __len__(self) -> int:
         return self._tamanio

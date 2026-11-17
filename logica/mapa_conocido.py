@@ -74,12 +74,21 @@ class MapaConocido:
         return DESCONOCIDA
 
     def sala(self, id_sala):
-        """La sala conocida, o None si no está explorada. De una avistada no se sabe nada."""
-        return self._exploradas.obtener(id_sala) if self._exploradas.contiene(id_sala) else None
+        """La sala conocida, o None si no está explorada. De una avistada no se sabe nada.
+
+        Una sola búsqueda: `obtener` ya devuelve None cuando la clave no está, así que
+        preguntar antes con `contiene` duplicaba el trabajo en el camino más caliente del
+        proyecto, el del buscador de rutas.
+        """
+        return self._exploradas.obtener(id_sala)
 
     def puerta_recordada_abierta(self, id_puerta) -> bool:
-        """Lo que el jugador vio la última vez, que puede no ser lo que hay ahora (§3.3)."""
-        return bool(self._puertas.obtener(id_puerta)) if self._puertas.contiene(id_puerta) else False
+        """Lo que el jugador vio la última vez, que puede no ser lo que hay ahora (§3.3).
+
+        Una sola búsqueda, igual que `sala`: una puerta nunca observada da None, y `bool(None)`
+        ya es False, que es lo que se quiere decir —no se recuerda abierta—.
+        """
+        return bool(self._puertas.obtener(id_puerta))
 
     def exploradas(self):
         return list(self._exploradas.claves())
