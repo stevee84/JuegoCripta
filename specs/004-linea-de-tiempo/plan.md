@@ -30,9 +30,12 @@ Sofía). El detalle y las alternativas están en [research.md](./research.md).
 puntos de control), `pickle` (sección de la línea en el guardado) y `tracemalloc` (solo en
 `--bench`). `requests` y `pygame` siguen siendo las únicas externas.
 
-**Almacenamiento**: en memoria durante la partida; en el archivo de partida v10, como una sección
-opaca que escribe y lee el guardado de Steven (ver
-[contracts/guardado-v10.md](./contracts/guardado-v10.md)).
+**Almacenamiento**: en memoria durante la partida; en el archivo de partida, como una sección
+opaca que escribe y lee el guardado de Steven. **Estado entregado: v11**
+(`GuardadoBinario.VERSION = 11`). El contrato se escribió para v10
+([contracts/guardado-v10.md](./contracts/guardado-v10.md)), pero v10 terminó usándose para
+`Puerta.costo` y `Enemigo.rango` (spec 001), así que la sección de la línea entró en v11. Evolución:
+v9 → v10 (costos y rangos) → v11 (línea de tiempo con el estado vivo, incluido `mapa_conocido`).
 
 **Pruebas**: `pytest`, que también ejecuta las de `unittest`. Cada prueba nueva cita su FR.
 
@@ -66,7 +69,7 @@ tenga un inverso exacto (R3). La primera tarea lo mide y lo comprueba.
 | V. Datos desde el servicio | La consulta no ejecuta reglas ni pide contenido: no hace solicitudes. Un archivo v8 o anterior se reporta incompatible (FR-031). |
 | VI. Presupuesto de solicitudes | Ninguna operación de la línea hace solicitudes HTTP. |
 | VII. Estado reversible sin copias completas | Las únicas copias completas en memoria son los puntos de control, uno cada K acciones, también después de cargar (R8). Las consultas no copian: deshacen y rehacen en sitio (R3). Las acciones rechazadas no llegan a la línea. Las consultas dejan el estado y el historial del pergamino como estaban. |
-| VIII. Contratos estables y cambios mínimos | No se toca `logica/motor_juego.py` (Sofía) ni `datos/guardado_binario.py` (Steven): el cambio de v10 lo hace Steven con el contrato de [guardado-v10.md](./contracts/guardado-v10.md). En archivos compartidos (`main.py`, `configuracion.py`, `controller/controlador_juego.py`, `vista/vista_pygame.py`) solo se agregan ramas o banderas. |
+| VIII. Contratos estables y cambios mínimos | No se toca `logica/motor_juego.py` (Sofía) ni `datos/guardado_binario.py` (Steven): el cambio de formato (entregado como v11) lo hace Steven con el contrato de [guardado-v10.md](./contracts/guardado-v10.md). En archivos compartidos (`main.py`, `configuracion.py`, `controller/controlador_juego.py`, `vista/vista_pygame.py`) solo se agregan ramas o banderas. |
 | IX. Rendimiento medido | `--bench` mide K = 10, 50 y 200, sin puntos de control, hacia adelante frente a hacia atrás, y repite las mediciones de P1 de punta a punta (FR-024 a FR-027). Todo se conecta en `main.py --bench`. |
 | X. Especificación primero | spec.md confirmado en `b589c27` y `024e943`. Cada tarea citará sus FR. |
 | XI. Pruebas | Las 1071 pruebas actuales deben seguir pasando. Las nuevas distinguen las que dependen de la spec 003. |
@@ -102,12 +105,12 @@ el principio VII y se corrigieron en R3 y R8.
 | `vista/vista_consola.py` | Joshua | Mostrar el resumen y la línea de resolubilidad (ya muestra mensajes) | Controlador |
 | `vista/vista_pygame.py` | Steven (mayor parte) | Botón o entrada para `historia` y panel para el resumen y la línea de resolubilidad. Cambio aislado en métodos nuevos. | Controlador |
 | `benchmarks/linea_tiempo.py` (nuevo) | Joshua | Mediciones FR-024 a FR-027 | `main.py --bench` |
-| `datos/guardado_binario.py` | Steven | **No lo toca Joshua.** Steven agrega la sección v10 con el contrato. | — |
+| `datos/guardado_binario.py` | Steven | **No lo toca Joshua.** Steven agrega la sección con el contrato (entregada en v11). | — |
 | `logica/motor_juego.py` | Sofía | **Sin cambios.** | — |
 
 ## Contratos con otros integrantes
 
-- **Steven, guardado v10**: [contracts/guardado-v10.md](./contracts/guardado-v10.md).
+- **Steven, guardado (propuesto como v10, entregado como v11)**: [contracts/guardado-v10.md](./contracts/guardado-v10.md).
 - **Steven, spec 003**: mapa conocido reversible y una consulta de solo lectura sobre un estado.
   Ver [contracts/dependencias.md](./contracts/dependencias.md).
 - **Sofía, spec 001**: su FR-016 (todo cambio de terreno y cazadores reversible dentro del
@@ -194,6 +197,6 @@ Las dos que tenía la primera versión del plan se corrigieron después de `/spe
 ## Revisión de la constitución después del diseño
 
 Se revisó de nuevo con `data-model.md` y los contratos: no aparecen dependencias prohibidas, el
-motor de Sofía y el guardado de Steven no se modifican (el cambio de v10 lo hace Steven con el
-contrato), las consultas no copian el estado y cada requisito de rendimiento tiene su medición en
+motor de Sofía y el guardado de Steven no se modifican (el cambio de formato, entregado
+como v11, lo hace Steven con el contrato), las consultas no copian el estado y cada requisito de rendimiento tiene su medición en
 `--bench`.

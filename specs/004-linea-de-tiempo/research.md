@@ -206,6 +206,14 @@ Un archivo v8 o anterior (Parte I y comienzos de la Parte II) se sigue reportand
 con el mecanismo que ya usó Steven de v8 a v9 (FR-031). Un v9 se reporta incompatible también: no
 tiene línea de tiempo.
 
+**Estado entregado (2026-11-14): v11.** La decisión se tomó pensando en v10, pero v10 terminó
+usándose para `Puerta.costo` y `Enemigo.rango` (spec 001). La sección de la línea entró en **v11**
+(`GuardadoBinario.VERSION = 11`) sin cambiar nada de lo anterior: los mismos bytes opacos, el estado
+vivo (incluido `mapa_conocido`) serializado junto con la línea, y el rechazo como incompatibles de v7
+a v10. Evolución: v9 → v10 (costos y rangos) → v11 (línea de tiempo). El contrato
+`contracts/guardado-v10.md` queda como antecedente. `datos/guardado_binario.py` sigue siendo de
+Steven; `LineaTiempo` y su serialización, de Joshua.
+
 ## R9. Contratos con las otras specs
 
 - **Spec 001 (Sofía)**: su FR-016 ya exige que todo cambio de terreno y cazadores sea reversible

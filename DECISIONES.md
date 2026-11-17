@@ -622,7 +622,12 @@ menos 5 000 acciones y el K por defecto (§6.1).
   posteriores. Recoger, soltar y consumir pergaminos se anotan como cambios «solo línea» para que el
   pasado los muestre bien.
 - **K por defecto: 10** (`LineaTiempo.K_POR_DEFECTO`, configurable con `--checkpoint-cada`).
-- **Persistencia**: pendiente del guardado de Steven (contrato `specs/004-linea-de-tiempo/contracts/guardado-v10.md`).
+- **Persistencia**: entregada en el guardado **v11** de Steven (`GuardadoBinario.VERSION = 11`).
+  La línea produce y consume una sección de bytes opaca que serializa juntos el estado vivo (incluido
+  `mapa_conocido`) y la línea; al cargar, el estado es el que devuelve la línea. El contrato se
+  propuso como v10 (`specs/004-linea-de-tiempo/contracts/guardado-v10.md`, que queda como
+  antecedente), pero v10 terminó usándose para los costos y rangos de la spec 001. Evolución: v9 →
+  v10 → v11. Los archivos v7 a v10 se rechazan como incompatibles.
 
 ### 4. Análisis de complejidad
 
@@ -670,9 +675,8 @@ atrás y re-simular llegan al mismo estado con los tres K; el replay rechaza un 
   acciones). Mejoras posibles, no implementadas: tomar el punto de control fuera del ciclo de la
   decisión, o una copia propia del estado más barata que `copy.deepcopy`.
 - **Memoria alta en partidas muy largas** (unos 650 MB con 5 000 acciones en esta carga).
-- **Guardar y cargar la línea** depende del guardado de Steven; mientras tanto, una partida cargada
-  empieza sin línea de tiempo.
-- **El mapa conocido** del resumen dice «no disponible» hasta que exista la spec 003.
+- **Archivos anteriores a v11** no se pueden cargar: no tienen línea de tiempo y se rechazan como
+  incompatibles.
 - `pickle` ejecuta código al cargar un archivo malicioso; se acepta porque el archivo de partida es
   local y lo produce el propio juego.
 
