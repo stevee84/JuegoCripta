@@ -732,10 +732,19 @@ atrás y re-simular llegan al mismo estado con los tres K; el replay rechaza un 
 - **`historia` no cumple 50 ms en todos los casos** con esta carga: el p95 es 60 ms y el máximo
   83 ms. La mediana sí (16 ms). En una partida normal, con menos enemigos activos por acción, cada
   transacción es más chica y las consultas son más rápidas (T001: 5,6 ms de mediana con 600 acciones).
+  Por eso SC-001 se mide con la mediana; el p95 y el máximo se reportan siempre en `--bench`.
 - **La acción que crea un punto de control pasa los 20 ms por ciclo** (unos 51 ms, una de cada 10
   acciones). Mejoras posibles, no implementadas: tomar el punto de control fuera del ciclo de la
-  decisión, o una copia propia del estado más barata que `copy.deepcopy`.
+  decisión, o una copia propia del estado más barata que `copy.deepcopy`. Queda declarada como
+  excepción en el spec (FR-032): solo afecta a esa acción y `--bench` reporta su costo.
 - **Memoria alta en partidas muy largas** (unos 650 MB con 5 000 acciones en esta carga).
+- **SC-005 no se cumple del todo**: en la misma partida, de 2 500 a 5 000 acciones con K = 10 la
+  memoria pasa de 261 MB a 668 MB (2,56 veces, no 2), y con K = 50 de 197 MB a 523 MB (2,66 veces)
+  (`benchmarks/resultados/linea_tiempo_memoria_2500_5000.json`). La cantidad de puntos se duplica,
+  como debe, pero cada punto pesa más al final (1 066 KB frente a 1 365 KB con K = 10), porque el
+  estado mismo crece durante la partida y cada punto copia el estado entero. Es justo el término
+  «puntos por tamaño del estado» que FR-021 acepta, no «acciones por tamaño del estado»; la mejora
+  posible es que los puntos compartan las partes del estado que no cambiaron.
 - **Archivos anteriores a v11** no se pueden cargar: no tienen línea de tiempo y se rechazan como
   incompatibles.
 - `pickle` ejecuta código al cargar un archivo malicioso; se acepta porque el archivo de partida es
