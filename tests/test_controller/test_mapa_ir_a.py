@@ -57,11 +57,13 @@ def test_fr019_fr020_viaje_real_con_comentario_y_replay(tmp_path, monkeypatch):
     antes = len(_registros(controlador))
     resultado = controlador.procesar_comando("ir a 1")
     assert resultado.exito
-    assert "Viaje terminado: llegaste a la sala 1" in resultado.mensaje or \
-        "Viaje detenido" in resultado.mensaje
+    assert "(0 pasos)" not in resultado.mensaje, (
+        f"el viaje no dio un solo paso: {resultado.mensaje}")
     nuevos = _registros(controlador)[antes:]
     assert nuevos[0] == {"registro": "comentario", "texto": "ir a 1 desde 2"}
-    assert all(r["registro"] == "accion" and r["tipo"] == "MOVER" for r in nuevos[1:])
+    pasos = nuevos[1:]
+    assert pasos, "sin pasos MOVER el resto de la prueba no comprueba nada"
+    assert all(r["registro"] == "accion" and r["tipo"] == "MOVER" for r in pasos)
     # El replay salta el comentario y repite solo los pasos.
     replay = _replay()
     replay.reproducir(str(controlador._servicio._ruta_registro))
@@ -81,3 +83,26 @@ def test_fr020_el_lector_salta_comentarios(tmp_path):
     leida, acciones = EjecutorReplay()._leer_log(str(ruta))
     assert leida == cabecera
     assert [r["tipo"] for _, r in acciones] == ["ESPERAR"]
+
+
+def test_fr020_anotar_la_orden_no_invalida_la_bitacora(tmp_path, monkeypatch):
+    """Regresion: el comentario se escribia por detras del servicio y paraba el viaje.
+
+    El servicio guarda una huella del log —tamano y fecha— para detectar que lo cambiaron por
+    fuera. Escribir el comentario con `RegistroPartida` directamente la invalidaba, asi que el
+    **primer** paso se rechazaba con «El log fue reemplazado o modificado externamente» y todo
+    «ir a» terminaba en cero pasos. La prueba de arriba no lo veia: aceptaba «Viaje detenido» y
+    comprobaba con `all()` una lista de pasos vacia.
+    """
+    controlador = _controlador(tmp_path, monkeypatch)
+    estado = controlador._servicio.obtener_estado()
+    assert controlador.procesar_comando("mover NORTE").exito
+    sala_antes = estado.jugador.sala_actual.id_sala
+
+    viaje = controlador.procesar_comando("ir a 1")
+    assert viaje.exito and "(0 pasos)" not in viaje.mensaje, viaje.mensaje
+    assert estado.jugador.sala_actual.id_sala != sala_antes, "el jugador no se movio"
+
+    # Y la bitacora sigue siendo valida para lo que venga despues.
+    siguiente = controlador.procesar_comando("esperar")
+    assert siguiente.exito, siguiente.mensaje

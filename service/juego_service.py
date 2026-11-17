@@ -799,6 +799,20 @@ class JuegoService:
         self._ruta_registro = destino
         self._marca_registro = datos.st_dev, datos.st_ino, datos.st_size, datos.st_mtime_ns
 
+    def anotar_comentario(self, texto):
+        """Anota un comentario en la bitácora (003, `FR-020`). Sin registro conectado, nada.
+
+        Pasa por el servicio y no por `RegistroPartida` directamente porque el servicio guarda
+        una huella del archivo —tamaño y fecha— para detectar que alguien lo cambió por fuera.
+        Escribir a sus espaldas invalida esa huella y hace que la acción **siguiente** se
+        rechace con «El log fue reemplazado o modificado externamente», que es lo que dejaba
+        «ir a» en cero pasos.
+        """
+        if self._ruta_registro is None:
+            return
+        self._registro.anexar_comentario(str(self._ruta_registro), texto)
+        self._marca_registro = self._marca_archivo()
+
     def _marca_archivo(self):
         datos = self._ruta_registro.stat()
         return datos.st_dev, datos.st_ino, datos.st_size, datos.st_mtime_ns

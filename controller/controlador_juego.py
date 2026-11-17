@@ -116,9 +116,8 @@ class ControladorJuego:
         estado = self._servicio.obtener_estado()
         if not viaje.valido:
             raise ValueError(f"No puedes viajar a la sala {destino}: {viaje.explicacion()}.")
-        ruta = getattr(self._servicio, "_ruta_registro", None)
-        if ruta is not None and destino != estado.jugador.sala_actual.id_sala:
-            self._servicio._registro.anexar_comentario(str(ruta), viaje.comentario())
+        if destino != estado.jugador.sala_actual.id_sala:
+            self._servicio.anotar_comentario(viaje.comentario())
         viaje.evaluar_llegada(None, estado.jugador.vida)  # vida de partida, sin parar por enemigos
         pasos = 0
         while estado.partida_activa:

@@ -104,7 +104,7 @@ detrás de sus salidas; tras moverse, esa vecina se conoce por completo.
 - [X] T015 [US1] Dar al mapa conocido una forma legible para la interfaz —salas exploradas con sus
       salidas y estado recordado, y la lista de avistadas— según
       [contracts/cli-ir-a.md](./contracts/cli-ir-a.md) (`FR-008`)
-- [ ] T016 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
+- [X] T016 [US1] **Depende de Joshua** (`controller/` y `vista/` son suyos según
       `REPARTO_PARTE2.md`): añadir el comando que muestra el mapa conocido, y dejar de pintar las
       salas que el jugador no conoce. §7.3 lo exige en la interfaz mínima (`FR-007`, `FR-008`)
 
@@ -190,9 +190,9 @@ correcto.
       empezar el viaje (`FR-017`)
 - [X] T036 [US3] Detectar en `logica/viaje.py` el daño recibido entre dos pasos, no solo al
       moverse (`FR-018`)
-- [ ] T037 [US3] Anotar en la bitácora cada paso como un movimiento individual, y la orden de ir a
+- [X] T037 [US3] Anotar en la bitácora cada paso como un movimiento individual, y la orden de ir a
       como un comentario, en `logica/viaje.py` (`FR-020`)
-- [ ] T038 [US3] **Depende de Joshua**: añadir el comando «ir a» y mostrar el motivo de parada,
+- [X] T038 [US3] **Depende de Joshua**: añadir el comando «ir a» y mostrar el motivo de parada,
       consumiendo lo que expone T028. §7.3 lo exige en la interfaz mínima (`FR-019`)
 
 **Punto de control**: las tres primeras historias funcionan por separado.
@@ -280,7 +280,7 @@ antorcha apagada, solo avistadas.
       entrada ejecuta no cuenta como evidencia (Principio IX)
 - [X] T055 [P] Comprobar que `tests/test_restricciones_enunciado.py` sigue en verde sobre el
       código nuevo: sin `heapq`, `set`, `collections`, bibliotecas de grafos ni `sorted()` (§6.2)
-- [ ] T056 Ejecutar la validación de punta a punta de [quickstart.md](./quickstart.md), los diez
+- [X] T056 Ejecutar la validación de punta a punta de [quickstart.md](./quickstart.md), los diez
       pasos
 - [X] T057 Registrar en `PROMPTS_LLM.md`, en la sección «Steven Moya Porras — Parte II», los
       comandos de spec-kit usados en esta capacidad (§2.6)
@@ -371,21 +371,39 @@ la línea de tiempo entre en el mismo salto de versión, en vez de provocar un v
 
 ---
 
-## Estado al 14/11/2026
+## Estado al 17/11/2026
 
-**Hechas: 55 de 59.** Lo que queda:
+**Hechas: 59 de 59.**
 
-- `T016` y `T038` son de Joshua: los comandos de ver el mapa conocido y de «ir a» en `controller/`
-  y `vista/`, que consumen lo que `T014`, `T015` y `T028` ya exponen desde el servicio.
-- `T037` tiene su mitad escrita y la otra pedida. Anotar cada paso como un movimiento individual
-  sale gratis: cada paso ya es una acción `MOVER` del jugador y la bitácora la registra sola.
-  Anotar la orden de «ir a» **como comentario** necesita que el lector de
-  `controller/ejecutor_replay.py` ignore las líneas que no son acciones, y hoy rechaza cualquier
-  registro que no tenga los cuatro campos de una acción. Escribir comentarios sin ese cambio
-  dejaría sin reproducir toda partida que use «ir a», y §4.11 la exige. El escritor
-  —`RegistroPartida.anexar_comentario` y `Viaje.comentario()`— está listo y probado; la petición
-  es [contracts/bitacora-comentarios.md](./contracts/bitacora-comentarios.md).
-- `T056` se ejecutó en los pasos que no dependen de la interfaz: 1, 2, 3, 7, 8, 9 y 10. Los pasos
-  4, 5 y 6 escriben `ir a` en la consola y esperan a `T038`. La lógica que esos tres pasos
-  ejercitan sí está cubierta por `tests/test_logica/test_viaje.py` y por
-  `tests/test_integracion_ir_a_001_003.py`.
+- `T016` y `T038` las entregó Joshua el 14/11 (`c07b214`): el comando `mapa`
+  (`controller/resumen_mapa.py`), el comando `ir a` y el motivo de parada. Verificado contra el
+  código, no solo contra su aviso.
+- Sobre eso, esta rama añadió en la vista pygame lo que faltaba para que la niebla se cumpla
+  **también en el dibujo**: el minimapa leía el estado real de cada puerta y el contenido real de
+  las salas. Ver el commit «el minimapa sale del conocimiento del jugador» y
+  `tests/test_controller/test_minimapa_niebla.py`. Y las salas exploradas del minimapa se volvieron
+  clicables para viajar, que es `FR-010` visible en la interfaz en vez de llegar como error.
+- `T037` quedó completa cuando Joshua aplicó
+  [contracts/bitacora-comentarios.md](./contracts/bitacora-comentarios.md): el lector de
+  `controller/ejecutor_replay.py` salta los comentarios y la orden de «ir a» se anota con
+  `Viaje.comentario()`.
+- `T056`: los diez pasos ejecutados. Los pasos 4, 5 y 6, que esperaban a `T038`, se corrieron
+  contra la consola el 17/11 con `cripta-cierre` y `cripta-01`:
+  - **4**: `ir a 4` desde la sala 1 con 1, 2 y 4 exploradas → «llegaste a la sala 4 (2 pasos)»,
+    reloj 400 → 600 y dos acciones `MOVER`, una por paso.
+  - **5**: `ir a 2` (avistada) → «la has avistado pero no explorado»; `ir a 99` → «no conoces la
+    sala 99»; `ir a x` y `ir a` → error de uso. Ninguno gasta tiempo.
+  - **6**: los cuatro motivos, cada uno provocado: llegó → «llegaste a la sala 1 (1 pasos)»;
+    enemigos → «hay enemigos en la sala 2 (1 pasos)» con un enemigo dormido; daño → «recibiste
+    daño (1 pasos)» con la trampa publicada de `cripta-01` rearmada por su propio evento, vida
+    14 → 10; sin camino → «ya no hay un camino conocido hasta la sala 2 (0 pasos)» tras cerrar la
+    única puerta conocida y volver a observarla.
+
+**Un defecto encontrado al ejecutar el paso 4**, que ninguna prueba veía: la orden de «ir a» se
+anotaba en la bitácora llamando a `RegistroPartida` por detrás del servicio, y el servicio guarda
+una huella del archivo —tamaño y fecha— para detectar que lo cambiaron por fuera. Escribir el
+comentario la invalidaba, así que el **primer** paso del viaje se rechazaba y **todo «ir a»
+terminaba en cero pasos** en el juego real. El comentario pasa ahora por
+`JuegoService.anotar_comentario`, que refresca la huella. La prueba que debía cubrirlo aceptaba
+«Viaje detenido» como alternativa válida y comprobaba los pasos con `all()` sobre una lista vacía:
+quedó reforzada, más una regresión en `tests/test_controller/test_mapa_ir_a.py`.
