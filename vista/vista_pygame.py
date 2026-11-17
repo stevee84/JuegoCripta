@@ -571,7 +571,8 @@ class VistaPygame:
 
     # --- Minimapa (esquina superior izquierda) ---
 
-    MINIMAPA_W = 220
+    # Ocupa el ancho de su columna (MAPA_ANCHO): a la derecha solo había negro.
+    MINIMAPA_W = 610
     MINIMAPA_H = 200
     MINIMAPA_X = 10
     MINIMAPA_Y = 10
@@ -775,12 +776,14 @@ class VistaPygame:
             return
 
         jx, jy = posiciones[sala_actual.id_sala]
-        cell_ideal = 100
-        gap = 8
-        espacio_w = self.MAPA_ANCHO - 40
-        espacio_h = self.ALTO - self.BITACORA_ALTO - 80
-        max_cols = max(1, espacio_w // (cell_ideal + gap))
-        max_rows = max(1, espacio_h // (cell_ideal + gap))
+        # El radio se calcula con la geometría del propio minimapa y su celda mínima. Antes
+        # usaba `cell_ideal = 100` y el ancho de la vista grande de la sala (580x590), que no
+        # son ni la celda ni el panel de aquí: recortaba a 5x5 salas, así que todo lo que
+        # estuviera a más de dos salas no se dibujaba ni recibía zona clicable y no se podía
+        # viajar ahí con el ratón. El dibujo de abajo ya reescala la celda a lo que quepa.
+        CELDA_MINIMA = 10
+        max_cols = max(1, (self.MINIMAPA_W - 24) // (CELDA_MINIMA + 3))
+        max_rows = max(1, (self.MINIMAPA_H - 24) // (CELDA_MINIMA + 3))
         radio_x = max_cols // 2
         radio_y = max_rows // 2
 
