@@ -2,6 +2,11 @@ name: Pruebas
 
 on: [push, pull_request]
 
+# Una corrida viva por rama: un push nuevo cancela el anterior en vez de hacer cola.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # pygame-ce necesita un vídeo y un audio sin pantalla en CI.
   SDL_VIDEODRIVER: dummy
@@ -10,11 +15,22 @@ env:
 jobs:
   pytest:
     runs-on: ubuntu-latest
+    # Hay pruebas que salen al servicio real; si una se cuelga, no quemar la cuota.
+    timeout-minutes: 20
+    strategy:
+      # Que el fallo de una versión no oculte el resultado de la otra.
+      fail-fast: false
+      matrix:
+        # README promete «3.11 o superior» y desarrollamos en 3.14: se prueban los dos
+        # extremos. No se comportan igual —la recursión en C de `pickle` dejó de contar
+        # contra el límite en 3.12— y probar solo una escondió ese fallo un día entero.
+        python-version: ["3.11", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
       - run: python -m pip install -r requirements.txt
       - name: Restricciones del enunciado §6.2
         run: python -m pytest -q tests/test_restricciones_enunciado.py

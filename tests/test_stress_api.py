@@ -1,12 +1,11 @@
 """Stress test contra el API real de CRIPTA.
 
 Ejecutar con: python -m pytest tests/test_stress_api.py -v -s
-Se salta automáticamente si el servidor no responde.
+Se salta automáticamente si el servidor no responde o responde con error.
 """
 import time
 
 import pytest
-import requests
 
 from datos.cliente_api import ClienteAPI, CriptaAPIError
 
@@ -14,10 +13,16 @@ URL_API = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
 
 
 def _api_disponible():
+    """Sondea con el cliente real, que manda `X-Cripta-Client-Id` (sin esa cabecera el
+    servicio responde 400) y traduce a `CriptaAPIError` tanto la caída como el 5xx.
+
+    La sonda cruda anterior tomaba por disponible cualquier respuesta, así que un servicio
+    degradado ponía en rojo estas 14 pruebas en vez de saltarlas.
+    """
     try:
-        requests.get(f"{URL_API}/criptas", timeout=5)
+        ClienteAPI(URL_API, timeout=5).listar_criptas()
         return True
-    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+    except CriptaAPIError:
         return False
 
 
