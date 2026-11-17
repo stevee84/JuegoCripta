@@ -14,7 +14,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 - **Búsqueda inversa limitada al rango máximo activo**: puede compartir trabajo, pero un solo rango grande amplía la región para todos y requiere gestionar cazadores fuera de la región.
 - **Estrategia adaptativa**: prometedora, pero el umbral depende de cantidad/distribución de cazadores, rangos y estabilidad de puertas. No se fija sin datos.
 
-**Measurement completed (2026-11-10)**: T046/T065 y T048 midieron uno frente a muchos cazadores, rango pequeño/grande, individual/compartida/reutilizada y puertas estables/inestables. La alternativa compartida/reutilizada fue más rápida en la matriz sintética y pasó la equivalencia observable, pero producción conserva el recálculo individual porque adoptar estado retenido exige tareas productivas nuevas y validación del ciclo completo; la referencia oficial sigue sin publicarse. La decisión medida se registra en R-13. Para «ir a», T054/T066 continúan bloqueadas por la vista de mapa conocido (T004); no existe medición de 5 ms.
+**Measurement completed (2026-11-14)**: T046/T065 y T048 midieron uno frente a muchos cazadores, rango pequeño/grande, individual/compartida/reutilizada y puertas estables/inestables. La alternativa compartida/reutilizada fue más rápida en la matriz sintética y pasó la equivalencia observable, pero producción conserva el recálculo individual porque adoptar estado retenido exige tareas productivas nuevas y validación del ciclo completo; la referencia oficial sigue sin publicarse. La decisión medida del cazador se registra en R-13. T054 midió separadamente «ir a» con `Viaje`/`VistaMapaConocido` reales y T066 cerró su decisión sin caché; los resultados y límites están en R-14.
 
 ## R-02 — Desempate independiente del descubrimiento
 
@@ -105,7 +105,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Rationale**: `Sofia@3df43c63c68a33f692148b737c12b0c0a4208569` integra `972af5421d628171a4464709858275b100151c1e` y `927d8860639f3efa6260172d3e03cae61f74301b`: están locales `registrar_solo_linea`, `deshacer_mientras`, `rehacer`, `fotografiar_para_rehacer` y `HistorialReversible.vincular_linea`. 001 consume esa interfaz y no copia ni modifica clases de Joshua. Añadir snapshots por decisión violaría Constitución VII. La excepción de pergaminos permanece en el servicio de inventario y no se replica en rutas.
 
-**Estado observado**: la interfaz base y el enlace del historial están locales y T005 está cerrada; la clase completa `LineaTiempo` sigue pendiente. `5000d1f` integra guardado v10 de costo/rango, no la persistencia conjunta restante.
+**Estado observado (actualizado 2026-11-15)**: la interfaz base, el enlace del historial y `LineaTiempo` están locales; T005/T040/T056 verifican su protocolo. `5000d1f` introdujo guardado v10 de costo/rango y `d1ad048` entregó v11 con el bloque conjunto de línea/estado, incluido `mapa_conocido`. T006/T041/T055 verifican persistencia y restauración sin resultados de ruta retenidos.
 
 **Compatibilidad exigida por 004**: cada cambio nuevo de 001 debe poder copiarse profundamente junto con el estado y su ventana de transacciones, conservando referencias hacia las entidades copiadas. También debe poder serializarse con el `pickle` conjunto de estado vivo y línea propuesto para el formato que finalmente acuerden Steven y Joshua. No puede retener motor, servicio de rutas, caché, callbacks ni recursos externos. Estas propiedades se prueban; no se dan por demostradas por el acuerdo documental.
 
@@ -143,7 +143,7 @@ Este documento registra decisiones de diseño provisionales. Las afirmaciones de
 
 **Decision**: distinguir siempre checkout local, publicación remota y acuerdo comunicado. Registrar el acuerdo parcial con Steven y la aceptación condicionada de Joshua sin presentar otra rama como integrada ni un acuerdo como implementación.
 
-**Rationale**: `Sofia@5000d1f` integra costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de esos campos. Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` con los cuatro observables acordados y asignó a Sofía rutas/vista del cazador; el equipo acepta sentidos sin inversa. La vista conocida de 003, la clase completa `LineaTiempo` y su persistencia conjunta siguen pendientes. La validación `1204 passed, 4 subtests passed` es evidencia comunicada por Sofía sobre la base integrada, no ejecutada en este bloque.
+**Rationale**: `Sofia@5000d1f` integra costo/rango estrictos, simetría entre sentidos existentes y persistencia v10 de esos campos. Steven aceptó `proximo_paso(vista, origen_id, objetivo_id, limite_costo=None) -> ResultadoRuta` con los cuatro observables acordados y asignó a Sofía rutas/vista del cazador; el equipo acepta sentidos sin inversa. La vista conocida y `LineaTiempo` están integradas; `d1ad048` entrega su persistencia conjunta v11 y T006/T041/T055 la verifican. La validación histórica `1204 passed, 4 subtests passed` fue comunicada sobre la base v10; la auditoría actual ejecutó separadamente 7 pruebas conjuntas y 144 regresiones relacionadas.
 
 **Alternatives considered**: modificar directamente los archivos compartidos o asumir una firma. Ambas se rechazan porque crearían contratos de hecho sin revisión.
 
@@ -202,10 +202,88 @@ Las nueve muestras clasifican `completo`, con `exito=true`; ninguna pertenece a 
 - T046 usa 20 cazadores y tres ciclos por lote; T048 usa 28 cazadores y un ciclo completo por muestra. Sus medianas no son intercambiables ni justifican una comparación causal entre sí.
 - La alternativa compartida/reutilizada no se adopta y no existe caché productiva. Cualquier adopción futura requiere actualizar primero `plan.md`/`tasks.md` con tareas productivas concretas, definir la invalidación y repetir la validación de ciclo completo.
 - La estrategia adaptativa sigue sin umbral medido; no se implementó.
-- La conexión de estas filas a `main.py --bench` depende de T049/T050; hoy son evidencia aislada de los proveedores, no cierre de Principio IX.
+- T049/T050 conectaron y ejecutaron estas filas mediante `main.py --bench`: la evidencia oficial conserva 194 filas/2910 muestras de 001 dentro de un informe completo de 916 filas. Siguen siendo cargas sintéticas y no cierran PR-001 ni sustituyen la referencia oficial pendiente.
 
 **Trazabilidad**: `logica/rutas_ponderadas.py`; `logica/comportamiento_enemigos.py`;
 `benchmarks/terreno_cazador_integrante1.py`; `benchmarks/benchmark_ciclo_real_integrante1.py`;
 `benchmarks/resultados/rutas_t044-t046-t065_c1_r9_32-128-512.json`;
 `benchmarks/resultados/ciclo_sintetico_t048_t047_c1_r9_32-64.json`;
 `specs/001-terreno-y-cazador/tasks.md` (T046, T048, T057, T065).
+
+## R-14 — Decisión de reutilización para «ir a» (T066)
+
+**Decision**: conservar en producción el **recálculo completo en cada paso de «ir a»**, sin caché,
+generación ni estado de ruta retenido. La inversa reutilizable permanece exclusivamente en
+`benchmarks/terreno_cazador_integrante1.py`. Esta decisión es independiente de R-13: que el
+cazador y «ir a» compartan el buscador no obliga a que compartan una política de reutilización.
+
+**Rationale**: el criterio vigente exige menos de 5 ms con el mapa conocido completo de la cripta
+de referencia. En la mayor cripta publicada disponible (`cripta-04`, 50 salas exploradas), el
+recálculo productivo obtuvo 15/15 muestras bajo el límite, incluidas la creación real de `Viaje` y
+`VistaMapaConocido` y los auxiliares que `proximo_paso` crea y libera. Por tanto, no hay una
+necesidad de rendimiento que justifique introducir una caché productiva y sus obligaciones de
+invalidez. La alternativa experimental demuestra que reutilizar es viable, no que sea necesario.
+
+**Equivalence and knowledge evidence**:
+
+- Antes de cada medición se compararon recálculo e inversa experimental en siguiente sala,
+  alcanzabilidad, costo total, costo de la primera salida y motivo de parada.
+- Los sintéticos comprueban empate por menor primera vecina, puerta recordada cerrada, ausencia de
+  camino y un nuevo atajo que solo puede usarse después de pasar de avistado a explorado.
+- Ambas alternativas reciben `VistaMapaConocido`; ninguna consulta el mapa real ni una sala no
+  explorada. El mapa publicado se carga y explora fuera del intervalo; red y decodificación no se
+  atribuyen al paso.
+- La consulta reutilizada solo se considera válida mientras el conocimiento no cambia. Las filas
+  de conocimiento actualizado construyen nuevamente sobre la vista vigente; no se reutiliza una
+  instantánea anterior como si siguiera siendo válida.
+
+**Measured full cost** (15 repeticiones, un calentamiento, ns convertidos a ms):
+
+| Carga / estado | Recálculo mediana / p95 / máx. | Muestras que cumplen `<5 ms` | Inversa fría mediana / p95 / máx. | Consulta reutilizada mediana |
+|---|---:|---:|---:|---:|
+| 32, empate | 0.2895 / 0.4029 / 0.4029 | 15/15 | 0.1311 / 0.1835 / 0.1835 | 0.0079 |
+| 32, puerta cerrada | 0.2744 / 0.2823 / 0.2823 | 15/15 | 0.1092 / 0.1176 / 0.1176 | 0.0055 |
+| 32, conocimiento actualizado | 0.0554 / 0.0655 / 0.0655 | 15/15 | 0.1173 / 0.1319 / 0.1319 | 0.0076 |
+| 32, sin camino | 0.0132 / 0.0152 / 0.0152 | 15/15 | 0.1070 / 0.1221 / 0.1221 | 0.0042 |
+| 128, empate | 1.0906 / 1.5156 / 1.5156 | 15/15 | 0.4060 / 0.4298 / 0.4298 | 0.0065 |
+| 128, puerta cerrada | 1.0958 / 1.4903 / 1.4903 | 15/15 | 0.4446 / 0.6648 / 0.6648 | 0.0058 |
+| 128, conocimiento actualizado | 0.0555 / 0.0586 / 0.0586 | 15/15 | 0.4072 / 0.4496 / 0.4496 | 0.0071 |
+| 128, sin camino | 0.0142 / 0.0181 / 0.0181 | 15/15 | 0.4152 / 0.4587 / 0.4587 | 0.0045 |
+| 512, empate | 4.9585 / 12.4589 / 12.4589 | 9/15 | 1.6261 / 1.7028 / 1.7028 | 0.0066 |
+| 512, puerta cerrada | 4.7594 / 5.6072 / 5.6072 | 12/15 | 1.8904 / 2.4974 / 2.4974 | 0.0068 |
+| 512, conocimiento actualizado | 0.0635 / 0.0684 / 0.0684 | 15/15 | 2.0905 / 4.1043 / 4.1043 | 0.0094 |
+| 512, sin camino | 0.0146 / 0.0176 / 0.0176 | 15/15 | 1.7512 / 2.1633 / 2.1633 | 0.0047 |
+| `cripta-04`, 50, conocimiento completo | **0.4965 / 0.5136 / 0.5136** | **15/15** | 0.2510 / 0.3344 / 0.3344 | 0.0036 |
+
+La inversa fría incluye crear `Viaje`/vista, construir sus tablas/listas/distancias, consultar y
+limpiar; la consulta reutilizada se informa aparte y no se resta de ese costo. La memoria se mide
+en una corrida `tracemalloc` separada. La columna de muestras que cumplen no cuenta las
+superaciones: en 512 salas, desempate tiene 9/15 que cumplen y 6/15 que superan; puerta cerrada,
+12/15 que cumplen y 3/15 que superan. En total, producción conservó 186/195 muestras sintéticas y
+publicadas bajo 5 ms; las nueve superaciones pertenecen únicamente a esas dos cargas de 512 salas
+(6 + 3). La alternativa experimental tuvo 195/195 muestras frías bajo el límite. Estos resultados
+favorecen la inversa en recorridos largos, pero el recálculo fue más rápido cuando el nuevo atajo
+resolvió el paso de inmediato o no había salida transitable; no existe un ganador universal.
+
+**Complexity**: el recálculo conserva el costo de R-03 sobre el subgrafo conocido alcanzado,
+`O(E_R + P_R log max(2,Q_R) + Q_fin)` esperado y memoria `O(D_R+Q_R)`. La inversa fría barre todas
+las salidas conocidas, construye distancias al destino y paga su limpieza; una consulta estable
+posterior inspecciona solo las salidas del origen, pero cualquier cambio relevante de conocimiento
+obliga a invalidar o reconstruir antes de decidir.
+
+**Limits and future coordination**:
+
+- Las cargas de 512 salas son sintéticas y mayores que las criptas publicadas. Sus nueve muestras
+  `>=5 ms` se conservan como límite real; no se redujo la carga ni se ajustó el umbral.
+- El cumplimiento de 5 ms corresponde al mapa conocido completo de la cripta publicada de 50
+  salas disponible localmente. No es una afirmación sobre PR-001, cuyo ciclo oficial es otro
+  requisito y sigue bloqueado por T051.
+- Si una referencia futura mayor o una topología nueva hace necesario retener estado, no se adopta
+  automáticamente esta inversa. Primero deben acordarse con 003 tareas y archivos para propietario
+  de la caché, generación/invalidez ante exploración y puertas recordadas, ciclo de vida y limpieza,
+  y pruebas tras retroceso, historia, inicio y carga. Hasta entonces no existe caché productiva.
+
+**Evidence**: `benchmarks/resultados/paso_ir_a_t054_c1_r15_32-128-512-publicado50.json` conserva
+26 filas/390 muestras, entorno Windows/Python 3.12.10, semilla 2609, fases, trabajo, percentiles y
+memoria. La medición es propia de 001 y no reemplaza ni modifica
+`benchmarks.integrante2.medir_paso_ir_a`.

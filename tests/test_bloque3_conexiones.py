@@ -106,9 +106,14 @@ def test_bench_desde_main_no_inicializa_fuente_ni_vista(monkeypatch, capsys):
     import main
     import benchmarks.integrante3
 
+    capturados = []
+
+    def ejecutar(proveedores=()):
+        capturados.extend(proveedores)
+        return {"prueba_modo": True, "proveedores": len(proveedores)}
+
     monkeypatch.setattr(main, "Configuracion", lambda: SimpleNamespace(bench=True))
-    monkeypatch.setattr(benchmarks.integrante3, "ejecutar",
-                        lambda proveedores=(): {"prueba_modo": True, "proveedores": len(proveedores)})
+    monkeypatch.setattr(benchmarks.integrante3, "ejecutar", ejecutar)
     monkeypatch.setattr(VistaConsola, "__init__", lambda *args: pytest.fail("No debe crear vista"))
     monkeypatch.setattr("builtins.input", lambda *args: pytest.fail("No debe pedir entrada"))
     main.main()
@@ -116,11 +121,19 @@ def test_bench_desde_main_no_inicializa_fuente_ni_vista(monkeypatch, capsys):
     from benchmarks.bench_ampliado import PROVEEDORES as ADICIONALES
     from benchmarks.mapa_cripta_integrante1 import PROVEEDORES as MAPA
     from benchmarks.linea_tiempo import PROVEEDORES as LINEA
-    # Una sola vía de registro: originales + complementarios + el mapa de 001 (T049)
-    # + la línea de tiempo de 004 (T046), sin el agregador `adicionales`.
+    from benchmarks.terreno_cazador_integrante1 import PROVEEDORES_MAIN as TERRENO
+    from benchmarks.benchmark_ciclo_real_integrante1 import PROVEEDORES_MAIN as CICLO
+
+    esperados = PROVEEDORES + ADICIONALES + MAPA + LINEA + TERRENO + CICLO
+    assert tuple(capturados) == esperados
+    assert len(capturados) == len({id(proveedor) for proveedor in capturados}) == 25
+    for adaptador in TERRENO + CICLO:
+        assert capturados.count(adaptador) == 1
+
     assert json.loads(capsys.readouterr().out) == {
         "prueba_modo": True,
-        "proveedores": len(PROVEEDORES) + len(ADICIONALES) + len(MAPA) + len(LINEA)}
+        "proveedores": len(esperados),
+    }
 
 
 def test_pergamino_por_controlador_delega_una_vez_al_motor_sin_tiempo(tmp_path, monkeypatch):

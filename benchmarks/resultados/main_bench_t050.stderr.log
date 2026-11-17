@@ -1,0 +1,5 @@
+ERROR Preparación de la cripta cripta-01: falló la API (No hay paquete offline de cripta-01 (faltan sus generales en datos_offline). Genéralo con conexión: python -m tests.fixtures.capturar_api datos_offline).
+ERROR Preparación de la cripta cripta-01: falló la API (No hay paquete offline de cripta-01 (faltan sus generales en datos_offline). Genéralo con conexión: python -m tests.fixtures.capturar_api datos_offline).
+ERROR Preparación de la cripta cripta-01: falló la API (No hay paquete offline de cripta-01 (faltan sus generales en datos_offline). Genéralo con conexión: python -m tests.fixtures.capturar_api datos_offline).
+ERROR Preparación de la cripta cripta-01: falló la API (No hay paquete offline de cripta-01 (faltan sus generales en datos_offline). Genéralo con conexión: python -m tests.fixtures.capturar_api datos_offline).
+ERROR Preparación de la cripta cripta-01: falló la API (No hay paquete offline de cripta-01 (faltan sus generales en datos_offline). Genéralo con conexión: python -m tests.fixtures.capturar_api datos_offline).

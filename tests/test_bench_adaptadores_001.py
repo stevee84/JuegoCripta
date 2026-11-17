@@ -20,11 +20,6 @@ CASOS_TERRENO = (
         "medir_rutas_region",
         terreno.CARGAS_RUTAS_REGION,
     ),
-    (
-        "medir_rutas_matriz_main",
-        "medir_rutas_matriz",
-        terreno.CARGAS_RUTAS_MATRIZ,
-    ),
 )
 
 
@@ -46,6 +41,33 @@ def test_adaptador_terreno_despacha_una_vez_con_carga_propia(
 
     assert resultado == [proveedor]
     assert llamadas == [(7, cargas)]
+
+
+def test_adaptador_matriz_anade_t054_una_vez_con_cargas_propias(monkeypatch):
+    llamadas = []
+
+    def matriz(*, repeticiones, tamanos):
+        llamadas.append(("matriz", repeticiones, tamanos))
+        return ["matriz"]
+
+    def ir_a(*, repeticiones, tamanos, incluir_publicado):
+        llamadas.append(
+            ("ir_a", repeticiones, tamanos, incluir_publicado))
+        return ["ir_a"]
+
+    monkeypatch.setattr(terreno, "medir_rutas_matriz", matriz)
+    monkeypatch.setattr(terreno, "medir_paso_ir_a_001", ir_a)
+
+    resultado = terreno.medir_rutas_matriz_main(
+        repeticiones=7,
+        tamanos=(8, 16, 999),
+    )
+
+    assert resultado == ["matriz", "ir_a"]
+    assert llamadas == [
+        ("matriz", 7, terreno.CARGAS_RUTAS_MATRIZ),
+        ("ir_a", 7, terreno.CARGAS_IR_A, True),
+    ]
 
 
 def test_adaptador_ciclo_despacha_una_vez_con_32_y_64(monkeypatch):
