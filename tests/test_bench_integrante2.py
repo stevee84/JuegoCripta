@@ -136,17 +136,31 @@ def test_bench_mide_el_mapa_conocido_contra_recorrer_el_mapa():
 
 
 def test_consultar_el_estado_no_crece_con_el_mapa_conocido():
-    """SC-002: la consulta es por identificador."""
+    """SC-002: la consulta es por identificador, no un recorrido del mapa.
+
+    Compara la **mediana** por consulta, no el mínimo: el mínimo de cinco repeticiones premia
+    el mejor golpe de suerte del reloj, y con el lote viejo —una pasada por las salas— la
+    ventana del tamaño chico eran unos 70 µs. Ahora los dos tamaños cronometran el mismo lote
+    y se alterna el orden en que se miden.
+    """
     from benchmarks.integrante2 import medir_mapa_conocido
 
     por_tamano = {}
-    for n in (100, 900):
-        fila = [f for f in medir_mapa_conocido(5, [n])
-                if f["medicion"] == "mapa_conocido_estado_sala"][0]
-        por_tamano[fila["n"]] = fila["minimo"] / fila["consultas_por_lote"]
-    chico, grande = sorted(por_tamano)
-    assert por_tamano[grande] < 2 * por_tamano[chico], (
-        f"la consulta creció de {por_tamano[chico]:.0f} a {por_tamano[grande]:.0f} ns")
+    for tamanos in ((100, 900), (900, 100)):
+        for fila in medir_mapa_conocido(5, tamanos):
+            if fila["medicion"] == "mapa_conocido_estado_sala":
+                por_tamano.setdefault(fila["n"], []).append(fila)
+
+    lotes = [f["consultas_por_lote"] for filas in por_tamano.values() for f in filas]
+    assert min(lotes) == max(lotes) > 0, (
+        f"los tamaños no consultaron lo mismo, así que no son comparables: {lotes}")
+
+    costo = {n: statistics.median([f["mediana"] / f["consultas_por_lote"] for f in filas])
+             for n, filas in por_tamano.items()}
+    chico, grande = sorted(costo)
+    assert costo[grande] < 2 * costo[chico], (
+        f"la consulta creció {costo[grande] / costo[chico]:.1f}x de {chico} a {grande} salas "
+        f"({costo[chico]:.0f} vs {costo[grande]:.0f} ns por consulta)")
 
 
 def test_explorar_no_crece_con_el_mapa_ya_conocido():

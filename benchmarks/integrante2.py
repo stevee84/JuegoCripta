@@ -698,20 +698,29 @@ def _conocido_salvo(mapa, objetivos, lado):
 
 def medir_mapa_conocido(repeticiones, tamanos):
     """§5.3: consultar el estado y explorar, contra recorrer el mapa."""
+    import random
+
     filas = []
     for n in tamanos:
         lado = max(3, int(n ** 0.5))
         mapa, salas = _cripta_malla(lado)
         conocido = _conocido_completo(mapa)
+        # Lote fijo de consultas, el mismo para la tabla y para la alternativa. Antes el lote
+        # era una pasada por las salas, asi que el tamano chico cronometraba 100 consultas
+        # (unos 70 us, donde pesa el ruido del reloj) y el grande 900: no se comparaban lotes
+        # iguales. Las salas se piden en orden pseudoaleatorio fijo para que el recorrido
+        # predecible de los identificadores no favorezca a ninguno de los dos.
         ids = [s.id_sala for s in mapa.obtener_salas()]
+        azar = random.Random(4242)
+        consultas = [azar.choice(ids) for _ in range(2000)]
         filas.append(medir(
             "mapa_conocido_estado_sala", salas, repeticiones,
-            lambda c=conocido, i=ids: (lambda: [c.esta_explorada(x) for x in i]),
-            estructura="tabla_hash_propia", consultas_por_lote=salas))
+            lambda c=conocido, q=consultas: (lambda: [c.esta_explorada(x) for x in q]),
+            estructura="tabla_hash_propia", consultas_por_lote=len(consultas)))
         filas.append(medir(
             "mapa_conocido_estado_recorriendo_alternativa", salas, repeticiones,
-            lambda m=mapa, i=ids: (lambda: [_estado_recorriendo(m, x) for x in i]),
-            estructura="recorrido_del_mapa", consultas_por_lote=salas))
+            lambda m=mapa, q=consultas: (lambda: [_estado_recorriendo(m, x) for x in q]),
+            estructura="recorrido_del_mapa", consultas_por_lote=len(consultas)))
         objetivos = _interiores_separadas(lado)
         revelaciones = sum(_conocido_salvo(mapa, objetivos, lado).revelaciones_de(
             mapa.obtener_sala(o)) for o in objetivos)
