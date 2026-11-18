@@ -4088,7 +4088,8 @@ que se argumente por qué se descartó. Eso es lo que este bloque tenía que pro
 
 > **Prompt**
 >
-> Dale con los benchmarks y el documento de decisiones.
+> `/speckit-implement`, fase 8 de `specs/003-niebla-y-ir-a`: las mediciones y el documento de
+> decisiones.
 
 **Para qué se usó.** `benchmarks/integrante2.py`, de `T051` a `T054`, y la sección §5.3 de
 `DECISIONES.md`, con los seis apartados que §8 exige.
