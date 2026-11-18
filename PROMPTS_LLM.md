@@ -3385,6 +3385,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 49 | Dejar el guardado v11 como estado vigente en la documentación de la 004 | 16/11/2026 |
 | 50 | Atender el analyze cruzado de Steven sobre la 004 | 16/11/2026 |
 | 51 | Integrar lo del 17/11 de Steven y Sofía y guardar criptas grandes | 17/11/2026 |
+| 52 | Cerrar lo que falta de §7.3 y el README de spec-kit | 17/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -3724,6 +3725,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `origin/Sofia@99d0a43` entró por fast-forward. La suite dio 3 fallas, todas con `RecursionError` al guardar cripta-06: la copia ya no recursa gracias a Steven, pero `pickle` en `LineaTiempo.exportar_bytes` sigue bajando sala por sala. Se agregó `_con_pila_grande` en `logica/linea_tiempo.py`, que serializa en un hilo con pila de 64 MB y límite de recursión alto, restaurando ambos al terminar. Las mediciones siguen con `cripta-04` para que las cifras publicadas sean comparables; quedó explicado en §5.5, junto con que la optimización del montículo vuelve conservadores esos tiempos.
 
 **Qué hubo que corregir.** La primera versión pedía una pila de 256 MB y Windows la rechazó («size not valid»); se bajó a 64 MB.
+
+## Prompt 52 — Cerrar lo que falta de §7.3 y el README de spec-kit
+
+> **Prompt**
+>
+> Revisé main contra el enunciado y hay dos faltantes que nos tocan. (1) §7.3 pide que la vista muestre los costos de las salidas de la sala actual y distinga a los cazadores de los demás enemigos, y ninguna spec lo cubre: primero agrégalo a mi spec 004 como clarificación y FR nuevos, con sus tareas, y confírmalo en un commit aparte; después impleméntalo en vista/presentacion_juego.py para que lo usen la consola y pygame, con un color propio para el cazador en pygame, y pruébalo citando los FR. (2) §2.1 y §7.2 piden la versión de spec-kit y el agente en el README; agrega una sección con la versión 1.2.3, Claude Code, la instalación, la constitución, las specs y la bitácora. Trae antes origin/main a mi rama y al final corre la suite completa. Si una prueba de otro espera el texto viejo de las puertas, cambia solo esa cadena.
+
+**Qué se obtuvo.** `origin/main@4709753` entró por fast-forward. El spec 004 ganó una clarificación y **FR-033** (costo de cada salida) y **FR-034** (cazadores distinguidos), con T053 a T055, confirmados en `b6c220f` antes del código. `descripcion_puerta` muestra ahora `(abierta, costo 40)`; `es_cazador` y `marca_cazador` agregan `[cazador]` al nombre en consola y pygame, y en pygame el cazador se dibuja en naranja. Pruebas en `tests/test_vista/test_vista_costos_cazadores.py` (3). El README tiene la sección «Desarrollo con spec-kit».
+
+**Qué hubo que corregir.** `tests/test_vista/test_vista_consola.py` (de Steven) esperaba `N -> Sala 2 (abierta)`; se cambiaron solo esas dos cadenas para incluir el costo por defecto, 100.
 
 # Steven Moya Porras — Parte II
 
