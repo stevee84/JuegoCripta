@@ -32,6 +32,7 @@
 
 - Q: La acción que crea un punto de control (una de cada K) tarda unos 51 ms, por encima de los 20 ms por ciclo de §6.1. ¿Se corrige o se declara? → A: Se declara como excepción medida y acotada (FR-032): solo afecta a esa acción, el costo se reporta en `--bench` y se documenta en `DECISIONES.md` §5.5 con las mejoras posibles. No hay una tarea que lo remedie en esta entrega.
 - Q: ¿Qué estadístico usa SC-001? → A: La mediana de las consultas, que es lo que se cumple. El p95 y el máximo se reportan siempre y quedan como límite conocido (SC-001).
+- Q: §7.3 pide que la vista muestre los costos de las salidas de la sala actual y distinga a los cazadores, y ninguna spec lo cubría. ¿Dónde se especifica? → A: Aquí, junto con el resto de la interfaz §7.3 a cargo de Joshua (FR-033 y FR-034), en consola y en pygame.
 - Q: ¿Qué pasa si la memoria con 5 000 acciones no llega a ser el doble de la de 2 500? → A: Se reporta la razón medida tal cual; SC-005 se evalúa con esa medición y, si no se cumple, el motivo queda en `DECISIONES.md` §5.5.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -203,6 +204,8 @@ El desarrollador inicia el juego, el replay o el modo de medición con `--checkp
 - **FR-030**: Al cargar una partida guardada con un K distinto del configurado con `--checkpoint-cada`, el juego MUST conservar el K con que se guardó la partida, usarlo también en las acciones posteriores e informar al jugador que se ignora el valor pedido.
 - **FR-031**: Un archivo de partida de la Parte I MUST reportarse como incompatible o migrarse de forma explícita, informándolo; nunca se carga en silencio.
 - **FR-032**: La acción que crea un punto de control (una de cada K) MAY superar el límite de 20 ms por ciclo de §6.1. Es una excepción declarada: `--bench` MUST reportar su costo frente a ese límite, y `DECISIONES.md` MUST explicarla con las mejoras posibles. Las demás acciones y todas las consultas siguen sujetas a sus límites.
+- **FR-033** (interfaz §7.3): La vista, en consola y en pygame, MUST mostrar el costo de cada salida de la sala actual junto a su dirección y su estado.
+- **FR-034** (interfaz §7.3): La vista, en consola y en pygame, MUST distinguir a los cazadores de los demás enemigos de la sala actual con una marca visible en su nombre (y, en pygame, con un color propio).
 
 ### Key Entities
 
