@@ -14,7 +14,7 @@ desempata por la vecina de menor id. Aquí solo se le entrega la vista del conoc
 jugador, de modo que no pueda observar nada que el jugador no sepa.
 """
 from logica.mapa_conocido import VistaMapaConocido
-from logica.rutas_ponderadas import proximo_paso
+from logica.rutas_ponderadas import SalidaTransitable, SalidasTransitables, proximo_paso
 
 
 class MOTIVOS:
@@ -37,6 +37,38 @@ MENSAJES = {
     MOTIVOS.DESCONOCIDA: "no conoces la sala {destino}",
 }
 
+# Caso particular de SIN_CAMINO: el camino existe y lo corta una puerta que el jugador
+# recuerda cerrada. Decir solo «no hay camino» se entiende mal —parece que la sala es
+# inalcanzable— cuando lo que hay que hacer es ir hasta la puerta y abrirla (FR-015).
+MENSAJE_PUERTA_CERRADA = ("hay una puerta cerrada en el camino a la sala {destino}; "
+                          "el viaje no abre puertas, hay que ir hasta ella y abrirla")
+
+
+class _VistaIgnorandoPuertas:
+    """La vista conocida pero sin mirar si la puerta se recuerda abierta.
+
+    Solo se usa para **explicar** un fallo, nunca para elegir un paso: si tratando las
+    puertas cerradas como pasables sí aparece un camino, entonces lo que corta el viaje es
+    una puerta y no la falta de camino. No revela nada que el jugador no sepa, porque son sus
+    propias salas exploradas y sus propias puertas recordadas.
+    """
+
+    __slots__ = ("_conocido",)
+
+    def __init__(self, conocido):
+        self._conocido = conocido
+
+    def contiene_sala(self, id_sala: int) -> bool:
+        return self._conocido.esta_explorada(id_sala)
+
+    def salidas_transitables(self, id_sala: int):
+        sala = self._conocido.sala(id_sala)
+        if sala is None:
+            return SalidasTransitables((), 0)
+        salidas = tuple(SalidaTransitable(s.destino_id, s.costo) for s in sala.salidas
+                        if self._conocido.esta_explorada(s.destino_id))
+        return SalidasTransitables(salidas, len(sala.salidas))
+
 
 class Viaje:
     """Una orden de ir a una sala, y la decisión de cuál es el siguiente paso.
@@ -55,6 +87,8 @@ class Viaje:
         # Para detectar el daño entre dos pasos. Se fija en el primer `evaluar_llegada`,
         # porque empezar el viaje no es recibir daño.
         self._vida_anterior = None
+        # Lo fija `siguiente_paso` al fallar: distingue «no hay camino» de «hay una puerta».
+        self._corta_puerta = False
         if not conocido.esta_explorada(destino_id):
             self.valido = False
             self.motivo = (MOTIVOS.AVISTADA if conocido.esta_avistada(destino_id)
@@ -108,6 +142,9 @@ class Viaje:
         paso = proximo_paso(self._vista, sala_actual_id, self.destino_id)
         if not paso.alcanzable or paso.primera_vecina_id is None:
             self.motivo = MOTIVOS.SIN_CAMINO
+            sonda = proximo_paso(_VistaIgnorandoPuertas(self._conocido),
+                                 sala_actual_id, self.destino_id)
+            self._corta_puerta = bool(sonda.alcanzable and sonda.primera_vecina_id is not None)
             return None
         return paso.primera_vecina_id
 
@@ -119,4 +156,6 @@ class Viaje:
         """Por qué se detuvo, en palabras (FR-019)."""
         if self.motivo is None:
             return "el viaje sigue en curso"
+        if self.motivo == MOTIVOS.SIN_CAMINO and self._corta_puerta:
+            return MENSAJE_PUERTA_CERRADA.format(destino=self.destino_id)
         return MENSAJES[self.motivo].format(sala=sala_actual_id, destino=self.destino_id)

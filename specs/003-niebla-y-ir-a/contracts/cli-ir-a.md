@@ -53,10 +53,17 @@ Los motivos de parada, que §3.4 fija y el jugador debe poder ver:
 | recibió daño | le llegó daño, moviéndose o entre dos pasos |
 | no hay camino conocido | dejó de existir un camino con lo que el jugador sabe |
 
+Los cuatro motivos siguen siendo los que fija §3.4. El último se explica de dos maneras
+distintas, porque la causa cambia lo que el jugador tiene que hacer: si el camino existe y lo
+corta una puerta que recuerda cerrada, se le dice que es una puerta y que el viaje no las abre
+(FR-015), en vez de dejarle creer que la sala es inalcanzable.
+
 ```
 Viaje detenido en la sala 3: hay enemigos.
 Viaje detenido en la sala 2: recibiste daño.
 Viaje detenido en la sala 2: ya no hay un camino conocido hasta la sala 6.
+Viaje detenido en la sala 2: hay una puerta cerrada en el camino a la sala 6; el viaje no
+abre puertas, hay que ir hasta ella y abrirla.
 ```
 
 Destinos que se rechazan antes de empezar, indicando el motivo:

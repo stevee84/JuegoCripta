@@ -150,6 +150,35 @@ def test_sin_camino_conocido_el_viaje_se_detiene():
     assert viaje.motivo == MOTIVOS.SIN_CAMINO
 
 
+def test_una_puerta_cerrada_se_explica_como_puerta_y_no_como_falta_de_camino():
+    """El camino existe y lo corta una puerta: decir solo «no hay camino» se entiende mal.
+
+    Salió de jugar: con la llave en la mano, «no hay un camino conocido» parecía que la sala
+    era inalcanzable, cuando lo que hacía falta era ir hasta la puerta y abrirla (FR-015).
+    """
+    saber, mapa = explorado("cripta-cierre", [1, 2, 4])
+    for puerta in mapa.obtener_sala(2).puertas:
+        puerta.abierta = False
+    saber.observar_puertas(mapa.obtener_sala(2))
+    viaje = Viaje(saber, origen_id=2, destino_id=4)
+
+    assert viaje.siguiente_paso(2) is None
+    assert viaje.motivo == MOTIVOS.SIN_CAMINO, "sigue siendo una de las cuatro paradas de FR-016"
+    assert "puerta cerrada" in viaje.explicacion(2)
+    assert "no abre puertas" in viaje.explicacion(2)
+
+
+def test_sin_camino_de_verdad_sigue_diciendo_que_no_hay_camino():
+    """La 5 solo se alcanza por la 4, que no está explorada: ni abriendo puertas hay camino."""
+    saber, _ = explorado("cripta-cierre", [1, 2, 5])
+    viaje = Viaje(saber, origen_id=1, destino_id=5)
+
+    assert viaje.siguiente_paso(1) is None
+    assert viaje.motivo == MOTIVOS.SIN_CAMINO
+    assert "camino conocido" in viaje.explicacion(1)
+    assert "puerta" not in viaje.explicacion(1)
+
+
 # ── Condiciones de parada (§3.4) ─────────────────────────────────────────────
 
 class _Enemigo:
