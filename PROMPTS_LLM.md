@@ -3741,6 +3741,7 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 | 50 | Atender el analyze cruzado de Steven sobre la 004 | 16/11/2026 |
 | 51 | Integrar lo del 17/11 de Steven y Sofía y guardar criptas grandes | 17/11/2026 |
 | 52 | Cerrar lo que falta de §7.3 y el README de spec-kit | 17/11/2026 |
+| 53 | Intentar cerrar T051: decenas de cazadores activos en cripta-06 | 18/11/2026 |
 
 ## Prompt 26 — Constitución del proyecto (`/speckit-constitution`)
 
@@ -4090,6 +4091,16 @@ Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye
 **Qué se obtuvo.** `origin/main@4709753` entró por fast-forward. El spec 004 ganó una clarificación y **FR-033** (costo de cada salida) y **FR-034** (cazadores distinguidos), con T053 a T055, confirmados en `b6c220f` antes del código. `descripcion_puerta` muestra ahora `(abierta, costo 40)`; `es_cazador` y `marca_cazador` agregan `[cazador]` al nombre en consola y pygame, y en pygame el cazador se dibuja en naranja. Pruebas en `tests/test_vista/test_vista_costos_cazadores.py` (3). El README tiene la sección «Desarrollo con spec-kit».
 
 **Qué hubo que corregir.** `tests/test_vista/test_vista_consola.py` (de Steven) esperaba `N -> Sala 2 (abierta)`; se cambiaron solo esas dos cadenas para incluir el costo por defecto, 100.
+
+## Prompt 53 — Intentar cerrar T051: decenas de cazadores activos en cripta-06
+
+> **Prompt**
+>
+> Trae origin/main a mi rama joshua. Sofía dejó abierta T051 de la spec 001 porque no logró mantener 20 cazadores activos en un recorrido legal de cripta-06. Intenta resolverla: mide el ciclo completo con los 36 cazadores activos y, si no cumple los 20 ms de §6.1, busca la causa y corrígela sin cambiar ninguna decisión del cazador respecto a un cálculo desde cero (§3.2, §5.2), comprobándolo con pruebas. Compara individual frente a compartido en un benchmark determinista y publica el JSON. Documenta el resultado real en DECISIONES.md §5.1, en plan.md y tasks.md de la 001. Si no se cumple del todo, deja T051 abierta y no afirmes lo que no se midió.
+
+**Qué se obtuvo.** Con 36 cazadores activos, 299 de 300 ciclos pasaban de 20 ms (mediana 26,6 ms). `logica/rutas_compartidas.py` comparte una búsqueda desde el jugador a partir del quinto cazador que decide en el ciclo, y valida en cada consulta el mapa, la sala del jugador y las puertas. Con el jugador esperando, la mediana baja a 5,5 ms y quedan 6 de 300 ciclos en 20 ms o más; moviéndose, 9,8 ms y 16 de 300. `tests/test_logica/test_rutas_compartidas.py` compara las decisiones con `proximo_paso` desde cero. **T051 sigue abierta**: la carga está preparada y no todos los ciclos cumplen.
+
+**Qué hubo que corregir.** La primera versión de la foto de puertas costaba más que la búsqueda que ahorraba y empeoró los tiempos; se redujo a leer solo si cada puerta está abierta.
 
 # Steven Moya Porras — Parte II
 
