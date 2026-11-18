@@ -477,6 +477,7 @@ Bitácora de prompts (§10.3) de Sofía, ordenada por tema. Cada entrada incluye
 | 76 | Vigencia metodológica de la evidencia histórica T050 | Tema 12. Parte II dirigida por especificaciones | 16/11/2026 |
 | 77 | Sprites del espectro vivo y muerto | Tema 6. Imágenes de personajes y objetos | 16/11/2026 |
 | 77 (T051) | Validación oficial T051 / AC-013 / PR-001 | Tema 12. Parte II dirigida por especificaciones | 17/11/2026 |
+| 78 | Correcciones finales de Sofía antes de la entrega | Tema 12. Parte II dirigida por especificaciones | 17/11/2026 |
 
 ### Tema 1. Estructuras de datos y agenda de eventos
 
@@ -2762,6 +2763,58 @@ No se repite la suite completa ni T050; no se hizo commit ni push.
 **Complejidad o costo.** Los contadores añaden tiempo y memoria O(eventos + decisiones) al intervalo
 observado; preparación, copia, carga, auditoría del estado y serialización quedan fuera. Se conserva
 el trabajo productivo de rutas, agenda e historial; no se introduce retención experimental.
+
+---
+
+## Prompt 78 — Correcciones finales de Sofía antes de la entrega
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 17/11/2026
+
+> **Prompt**
+>
+> Revisar primero el estado posterior a los merges y corregir únicamente lo pendiente de Sofía:
+> mostrar costo/estado/destino/llave de cada salida en las vistas, identificar cazadores desde la
+> ficha real, completar la información verificable de Spec Kit en README y actualizar dos límites
+> obsoletos sobre T049/T050 en DECISIONES. Conservar controles, sprites, reglas productivas,
+> implementaciones 002–004, evidencia histórica y T051 abierta. Ejecutar pruebas de interfaz,
+> presentación, sprites, restricciones, suite completa y `git diff --check` si el entorno lo permite.
+
+**Revisión previa y alcance.** En `Sofia@e89e09e`, el commit integrado `b0702c3` ya había añadido
+descripciones completas de puertas, marcas básicas de cazador y la sección Spec Kit; no se
+sobrescribieron esos aportes ni se modificó 004. La revisión encontró tres huecos restantes: los
+botones Pygame omitían el costo, la marca consultaba el atributo del actor en vez de la ficha y README
+no distinguía configuración inicial de uso real. Las dos frases obsoletas de `DECISIONES.md` todavía
+afirmaban que T049/T050 estaban pendientes.
+
+**Interfaz.** `presentacion_juego.py` conserva la descripción completa usada por consola y añade una
+etiqueta compacta para la cuadrícula Pygame con dirección, destino, estado, costo real y llave. Los
+comandos siguen siendo exactamente `mover DIRECCIÓN` o `abrir DIRECCIÓN`; no cambian controles ni
+distribución. `es_cazador` lee exclusivamente `comportamiento` de la ficha disponible, no nombre,
+sprite, ID ni el atributo potencialmente contradictorio del actor. Pygame y consola conservan número
+individual, nombre, HP/vida, sprites y marca `[cazador]`, incluso en la presentación de derrotados.
+Las pruebas verifican costo predeterminado 100, costo explícito 40, puertas abiertas/cerradas, llave,
+comandos/IDs y ausencia de mutación del estado.
+
+**Documentación.** README registra literalmente Spec Kit 1.2.3 y la configuración inicial
+`ai=claude`/`integration=claude` de `.specify/init-options.json`, aclarando que no atribuye todo el
+trabajo a Claude Code y enlazando `PROMPTS_LLM.md` como fuente de herramientas/modelos reales,
+incluido OpenCode con OpenAI. En los dos límites de 001, `DECISIONES.md` distingue medición aislada
+inicial, conexión T049, ejecución T050 y JSON completo/filtrado, manteniendo carácter sintético y
+T051 pendiente. No se cambiaron cifras históricas.
+
+**Validación.** Prueba focal nueva: **4 passed in 1.25s**. Toda vista, incluidos sprites Pygame:
+**47 passed in 4.53s**; presentación del controlador: **43 passed in 6.67s**; restricciones:
+**61 passed in 0.60s**. La suite completa terminó en **1544 passed, 4 subtests passed in 152.43s**,
+sin fallos ni omisiones. `py_compile` pasó. `git diff --check` pasó con avisos LF→CRLF. T051 conserva
+75/76 tareas y sigue abierta; no se modificaron benchmarks, datos, mediciones, 002–004 ni los 14
+artefactos T050 incompletos. No se ejecutaron operaciones Git de publicación.
+
+**Complejidad o costo.** La presentación de cada puerta y enemigo sigue siendo O(1) más la consulta
+local de ficha ya utilizada para nombres. No se añade trabajo al motor ni se altera el estado.
 
 ---
 

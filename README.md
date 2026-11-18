@@ -484,12 +484,17 @@ La Parte II se desarrolló con especificaciones ejecutables (enunciado §2).
 
 | Dato | Valor |
 |---|---|
-| Versión de spec-kit | **1.2.3** (la misma para todo el grupo; queda en `.specify/init-options.json`) |
-| Agente de programación | **Claude Code** (`specify init --here --ai claude`) |
+| Versión de spec-kit | **1.2.3** (queda registrada en `.specify/init-options.json`) |
+| Configuración original | Agente `claude` e integración `claude`, creados por `specify init --here --ai claude` |
 | Instalación | `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.2.3` |
 | Constitución | `.specify/memory/constitution.md` |
 | Especificaciones | `specs/001-terreno-y-cazador`, `specs/002-resolubilidad`, `specs/003-niebla-y-ir-a`, `specs/004-linea-de-tiempo` |
+| Uso real de asistentes | `PROMPTS_LLM.md` registra por prompt la herramienta y el modelo realmente utilizados, incluidos OpenCode con modelos de OpenAI y otras herramientas del equipo |
 | Bitácora de prompts | `PROMPTS_LLM.md` (incluye los comandos `/speckit-*` con texto propio) |
+
+La configuración de inicialización identifica cómo se creó el espacio de Spec Kit; no implica que
+todas las contribuciones posteriores se hayan realizado exclusivamente con Claude Code. La bitácora
+es la fuente verificable para atribuir cada sesión y distinguir configuración, herramienta y modelo.
 
 Las pruebas de aceptación de cada especificación citan su requisito (`FR-…`) en el nombre o el
 docstring y corren con la suite completa (`python -m pytest -q`, ver [Pruebas](#pruebas)).
