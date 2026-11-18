@@ -468,7 +468,8 @@ class VistaPygame:
         contexto = getattr(self, "_contexto_presentacion", None)
         for numero, enemigo in enumerate(sala.enemigos, 1):
             if enemigo.esta_vivo():
-                nombre = presentacion.nombre_actor(enemigo, estado, contexto)
+                nombre = (presentacion.nombre_actor(enemigo, estado, contexto)
+                          + presentacion.marca_cazador(enemigo))
                 items.append((f"#{numero} Atacar {nombre}", f"atacar {shlex.quote(enemigo.id_actor)}", ROJO_OSCURO))
         for numero, obj in enumerate(sala.objetos, 1):
             nombre = presentacion.nombre_objeto(obj, estado, contexto)
@@ -953,8 +954,9 @@ class VistaPygame:
             if enemigo.esta_vivo():
                 entidades.append((
                     GLYPH_ENEMIGO,
-                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
-                    ROJO,
+                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}"
+                    f"{presentacion.marca_cazador(enemigo)}",
+                    NARANJA if presentacion.es_cazador(enemigo) else ROJO,
                     f"HP {enemigo.vida}/{enemigo.vida_max}",
                     sprite,
                 ))

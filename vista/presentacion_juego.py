@@ -96,9 +96,21 @@ def nombre_actor(actor, estado=None, contexto=None):
             or nombre_ficha(actor.tipo_ficha_id))
 
 
+MARCA_CAZADOR = "[cazador]"
+
+
+def es_cazador(enemigo) -> bool:
+    """FR-034 (spec 004, §7.3): los cazadores se distinguen de los demás enemigos."""
+    return getattr(enemigo, "comportamiento", None) == "cazador"
+
+
+def marca_cazador(enemigo) -> str:
+    return f" {MARCA_CAZADOR}" if es_cazador(enemigo) else ""
+
+
 def etiqueta_enemigo(enemigo, enemigos, estado=None, contexto=None):
     numero = next(i for i, otro in enumerate(enemigos, 1) if otro is enemigo)
-    return f"{nombre_actor(enemigo, estado, contexto)} #{numero}"
+    return f"{nombre_actor(enemigo, estado, contexto)}{marca_cazador(enemigo)} #{numero}"
 
 
 def nombre_trampa(trampa, estado=None, contexto=None):
@@ -112,7 +124,7 @@ def descripcion_sala(sala_id, estado):
 
 def descripcion_puerta(puerta, estado, contexto=None):
     texto = (f"{puerta.direccion} -> {descripcion_sala(puerta.destino_sala_id, estado)} "
-             f"({'abierta' if puerta.abierta else 'cerrada'})")
+             f"({'abierta' if puerta.abierta else 'cerrada'}, costo {puerta.costo})")
     if puerta.llave_requerida:
         ficha = ficha_disponible(puerta.llave_requerida, estado, contexto)
         texto += f"; requiere {ficha.get('nombre') or nombre_ficha(puerta.llave_requerida)}"
