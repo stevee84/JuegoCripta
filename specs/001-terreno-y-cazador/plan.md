@@ -328,3 +328,11 @@ La reversión captura el estado canónico antes del intervalo, ejecuta acciones/
 ## Complexity Tracking
 
 No aplica: el plan no introduce violaciones constitucionales.
+
+## Corrección del plan tras la carga de §6.1 (18/11/2026)
+
+La estrategia de recálculo individual se sustituye por una **estrategia adaptativa**: los cuatro
+primeros cazadores que deciden en un ciclo buscan individualmente dentro de su rango, y desde el quinto
+se comparte una búsqueda desde el jugador (`logica/rutas_compartidas.py`). La tabla solo se reutiliza
+si coinciden mapa, sala del jugador y estado de todas las puertas, así que la decisión es la de un
+cálculo desde cero (§3.2, §5.2). Motivo y mediciones: `DECISIONES.md` §5.1. T051 sigue abierta.
