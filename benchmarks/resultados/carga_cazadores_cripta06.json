@@ -1,0 +1,56 @@
+{
+  "cripta": "cripta-06",
+  "afirma_t051": false,
+  "limite_ms": 20,
+  "alcance": "carga preparada (36 activos y vida alta); no es un recorrido legal",
+  "filas": [
+    {
+      "jugador": "esperar",
+      "busqueda": "individual",
+      "cazadores_activos": 36,
+      "ciclos": 300,
+      "ciclos_con_20_o_mas_participantes": 300,
+      "participantes_mediana": 36.0,
+      "mediana_ms": 26.586,
+      "p95_ms": 52.604,
+      "maximo_ms": 76.404,
+      "ciclos_de_20_ms_o_mas": 299
+    },
+    {
+      "jugador": "esperar",
+      "busqueda": "compartida",
+      "cazadores_activos": 36,
+      "ciclos": 300,
+      "ciclos_con_20_o_mas_participantes": 300,
+      "participantes_mediana": 36.0,
+      "mediana_ms": 5.507,
+      "p95_ms": 9.133,
+      "maximo_ms": 40.628,
+      "ciclos_de_20_ms_o_mas": 6
+    },
+    {
+      "jugador": "moverse",
+      "busqueda": "individual",
+      "cazadores_activos": 36,
+      "ciclos": 300,
+      "ciclos_con_20_o_mas_participantes": 285,
+      "participantes_mediana": 36.0,
+      "mediana_ms": 24.446,
+      "p95_ms": 72.312,
+      "maximo_ms": 103.365,
+      "ciclos_de_20_ms_o_mas": 271
+    },
+    {
+      "jugador": "moverse",
+      "busqueda": "compartida",
+      "cazadores_activos": 36,
+      "ciclos": 300,
+      "ciclos_con_20_o_mas_participantes": 285,
+      "participantes_mediana": 36.0,
+      "mediana_ms": 9.763,
+      "p95_ms": 20.294,
+      "maximo_ms": 62.204,
+      "ciclos_de_20_ms_o_mas": 16
+    }
+  ]
+}

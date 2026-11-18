@@ -334,6 +334,31 @@ global. No se crea `resultados_terreno_cazador_referencia.json`. La corrida no r
 ni autoriza retención productiva. Auditoría y procedimiento: [research.md R-16](specs/001-terreno-y-cazador/research.md)
 y [quickstart.md](specs/001-terreno-y-cazador/quickstart.md).
 
+**Cambio de decisión tras medir la carga de §6.1 (18/11/2026).** El recálculo individual no aguanta
+decenas de cazadores activos en `cripta-06`. Con sus 36 cazadores activos a la vez, 299 de 300 ciclos
+pasaban de 20 ms, y el 87 % del tiempo era repetir la búsqueda por cazador. Desde el quinto cazador
+que decide en un ciclo se usa ahora una búsqueda compartida desde el jugador
+(`logica/rutas_compartidas.py`); los cuatro primeros siguen buscando solo dentro de su rango (§5.1).
+La tabla se reutiliza únicamente si coinciden el mapa, la sala del jugador y el estado de todas las
+puertas, comprobado en cada consulta. `tests/test_logica/test_rutas_compartidas.py` compara cada
+decisión con `proximo_paso` desde cero, con puertas que cambian y en una partida con los 36 activos.
+
+| Jugador | Búsqueda | Mediana | p95 | Máximo | Ciclos de 20 ms o más (de 300) |
+|---|---|---:|---:|---:|---:|
+| Espera | individual | 26,586 ms | 52,604 ms | 76,404 ms | 299 |
+| Espera | **compartida** | **5,507 ms** | **9,133 ms** | 40,628 ms | **6** |
+| Se mueve | individual | 24,446 ms | 72,312 ms | 103,365 ms | 271 |
+| Se mueve | **compartida** | **9,763 ms** | **20,294 ms** | 62,204 ms | **16** |
+
+Fuente: `python -m benchmarks.carga_cazadores_cripta06`
+([`carga_cazadores_cripta06.json`](benchmarks/resultados/carga_cazadores_cripta06.json)).
+
+**Límite que queda: PR-001 sigue sin cumplirse en todos los ciclos.** Mejora mucho, pero entre el 2 %
+y el 5 % de los ciclos sigue en 20 ms o más: al cruzar salidas caras cada cazador actúa varias veces
+(hasta unas 150 decisiones en un ciclo) y el recolector de basura de Python agrega pausas. Además, esta
+carga está **preparada** (cazadores activados de entrada y jugador con vida alta): no es el recorrido
+legal que pide T051, por lo que **T051 sigue abierta** y `afirma_t051=false`.
+
 ---
 
 ## 5.3 El mapa conocido

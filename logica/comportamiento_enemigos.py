@@ -1,3 +1,4 @@
+from logica.rutas_compartidas import DistanciasAlJugador
 from logica.rutas_ponderadas import VistaMapaCazador, proximo_paso
 
 
@@ -12,6 +13,15 @@ class ComportamientoEnemigos:
 
     La ejecución real será responsabilidad del MotorJuego.
     """
+
+    # P2 §5.1: con pocos cazadores por ciclo, cada uno busca solo dentro de su rango; desde el
+    # quinto conviene la búsqueda compartida (DECISIONES §5.1, medición de cripta-06).
+    CAZADORES_SIN_COMPARTIR = 4
+
+    def __init__(self):
+        self._compartidas = DistanciasAlJugador()
+        self._ciclo = None
+        self._decisiones_ciclo = 0
 
 
     def decidir_accion(self, enemigo, estado):
@@ -59,6 +69,16 @@ class ComportamientoEnemigos:
                 or not jugador.esta_vivo() or jugador.sala_actual is None
                 or estado.mapa is None):
             return {"tipo": "ESPERAR"}
+        ciclo = (estado.acciones_ejecutadas, jugador.sala_actual.id_sala)
+        if ciclo != self._ciclo:
+            self._ciclo, self._decisiones_ciclo = ciclo, 0
+        self._decisiones_ciclo += 1
+        if (self._decisiones_ciclo > self.CAZADORES_SIN_COMPARTIR
+                and type(enemigo.rango) is int and enemigo.rango >= 0):
+            destino = self._compartidas.primera_vecina(
+                estado.mapa, enemigo.sala_actual, jugador.sala_actual.id_sala, enemigo.rango)
+            return ({"tipo": "ESPERAR"} if destino is None
+                    else {"tipo": "MOVER", "destino": destino})
         resultado = proximo_paso(
             VistaMapaCazador(estado.mapa),
             enemigo.sala_actual.id_sala,
