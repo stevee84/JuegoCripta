@@ -809,28 +809,35 @@ class VistaPygame:
         margen = 12
         area_w = self.MINIMAPA_W - margen * 2
         area_h = self.MINIMAPA_H - margen * 2
-        cell = min(area_w // rango_x - gap, area_h // rango_y - gap, 28)
-        cell = max(cell, 10)
+        # La celda no es cuadrada a propósito. Lo que la limita es el **alto** del panel
+        # repartido entre las filas; a lo ancho suele sobrar. Haciéndola tan ancha como pida
+        # la etiqueta más larga, los números de tres cifras caben sin encoger la fuente y sin
+        # perder filas. Si aun así no caben, no se pinta ninguno: que unos aparezcan y otros
+        # no se ve peor que no ver ninguno.
+        ancho_etiqueta = max(self._font_sala_nombre.size(str(sid))[0] for sid in visibles)
+        cell_h = max(10, min(area_h // rango_y - gap, 28))
+        cell_w = max(10, min(area_w // rango_x - gap, max(28, ancho_etiqueta + 6)))
+        etiquetas_caben = ancho_etiqueta <= cell_w - 4
 
-        ox = self.MINIMAPA_X + margen + (area_w - rango_x * (cell + gap)) // 2
-        oy = self.MINIMAPA_Y + margen + (area_h - rango_y * (cell + gap)) // 2
+        ox = self.MINIMAPA_X + margen + (area_w - rango_x * (cell_w + gap)) // 2
+        oy = self.MINIMAPA_Y + margen + (area_h - rango_y * (cell_h + gap)) // 2
 
         for sid, (gx, gy) in visibles.items():
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
-            px = ox + (gx - min_x) * (cell + gap)
-            py = oy + (gy - min_y) * (cell + gap)
+            px = ox + (gx - min_x) * (cell_w + gap)
+            py = oy + (gy - min_y) * (cell_h + gap)
 
             for puerta in sala.puertas:
                 did = puerta.destino_sala_id
                 if did not in visibles or not self._arista_visible(conocido, sid, did):
                     continue
                 dgx, dgy = visibles[did]
-                dpx = ox + (dgx - min_x) * (cell + gap)
-                dpy = oy + (dgy - min_y) * (cell + gap)
-                start = (px + cell // 2, py + cell // 2)
-                end = (dpx + cell // 2, dpy + cell // 2)
+                dpx = ox + (dgx - min_x) * (cell_w + gap)
+                dpy = oy + (dgy - min_y) * (cell_h + gap)
+                start = (px + cell_w // 2, py + cell_h // 2)
+                end = (dpx + cell_w // 2, dpy + cell_h // 2)
                 pygame.draw.line(self._pantalla,
                                  self._color_puerta_minimapa(conocido, puerta), start, end, 1)
 
@@ -838,32 +845,31 @@ class VistaPygame:
             sala = estado.mapa.obtener_sala(sid)
             if sala is None:
                 continue
-            px = ox + (gx - min_x) * (cell + gap)
-            py = oy + (gy - min_y) * (cell + gap)
+            px = ox + (gx - min_x) * (cell_w + gap)
+            py = oy + (gy - min_y) * (cell_h + gap)
             es_actual = (sid == sala_actual.id_sala)
 
             fondo, borde = self._color_sala_minimapa(sid, conocido, es_actual)
-            pygame.draw.rect(self._pantalla, fondo, (px, py, cell, cell), border_radius=3)
-            pygame.draw.rect(self._pantalla, borde, (px, py, cell, cell), 1, border_radius=3)
+            pygame.draw.rect(self._pantalla, fondo, (px, py, cell_w, cell_h), border_radius=3)
+            pygame.draw.rect(self._pantalla, borde, (px, py, cell_w, cell_h), 1, border_radius=3)
 
             # §3.4 y FR-010: viajar haciendo clic. Solo las **exploradas** son clicables,
             # porque a una avistada no se puede viajar; la zona no se dibuja, solo detecta el
             # clic, y el comando es el mismo que escribe el diálogo de texto.
             if not es_actual and (conocido is None or conocido.esta_explorada(sid)):
                 self._zonas_ir_a.append(
-                    Boton((px, py, cell, cell), str(sid), f"ir a {sid}"))
+                    Boton((px, py, cell_w, cell_h), str(sid), f"ir a {sid}"))
 
-            if es_actual and cell >= 12:
+            if es_actual and cell_h >= 12:
                 txt = self._font_sala_nombre.render("@", True, VERDE)
-                self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
-            elif cell >= 14:
+                self._pantalla.blit(txt, txt.get_rect(center=(px + cell_w // 2, py + cell_h // 2)))
+            elif cell_h >= 14 and etiquetas_caben:
                 # El número se pinta solo si cabe de verdad en la celda. Con un umbral fijo de
                 # celda, en una cripta grande los de tres cifras se salían y se pisaban con los
                 # vecinos; la salida ("S") es angosta y casi siempre entra.
                 etiqueta = "S" if sid == estado.sala_salida_id else str(sid)
                 txt = self._font_sala_nombre.render(etiqueta, True, borde)
-                if txt.get_width() <= cell - 2:
-                    self._pantalla.blit(txt, txt.get_rect(center=(px + cell // 2, py + cell // 2)))
+                self._pantalla.blit(txt, txt.get_rect(center=(px + cell_w // 2, py + cell_h // 2)))
 
     # --- Vista detallada de sala actual ---
 
