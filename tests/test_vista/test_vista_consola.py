@@ -54,8 +54,8 @@ def test_muestra_atributos_reales_sin_mutar_estado(capsys):
     for esperado in (
         "Cripta: c1", "Tiempo virtual: 125", "Acciones ejecutadas: 3",
         "Enemigos derrotados: 2", "Vida: 20/30", "Ataque: 6", "defensa: 2",
-        "velocidad: 100", "Sala: 1", "N -> Sala 2 (abierta)",
-        "E -> Sala 3 (cerrada)", "Guardián #1 (e1)", "1. Ficha1 (o1)",
+        "velocidad: 100", "Sala: 1", "N -> Sala 2 (abierta, costo 100)",
+        "E -> Sala 3 (cerrada, costo 100)", "Guardián #1 (e1)", "1. Ficha1 (o1)",
         "Veneno, armada",
     ):
         assert esperado in texto

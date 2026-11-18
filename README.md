@@ -26,6 +26,7 @@ usar las equivalentes de la biblioteca estándar.
 - [Pruebas](#pruebas)
 - [Archivos que genera el programa](#archivos-que-genera-el-programa)
 - [Estructura del repositorio](#estructura-del-repositorio)
+- [Desarrollo con spec-kit](#desarrollo-con-spec-kit)
 - [Equipo](#equipo)
 
 ## Características
@@ -476,6 +477,22 @@ tests/                Pruebas automáticas y respuestas reales del servicio
 stubs/                Dobles de prueba usados por los tests
 docs/                 Enunciado, Documento de Decisiones y resultados de las mediciones
 ```
+
+## Desarrollo con spec-kit
+
+La Parte II se desarrolló con especificaciones ejecutables (enunciado §2).
+
+| Dato | Valor |
+|---|---|
+| Versión de spec-kit | **1.2.3** (la misma para todo el grupo; queda en `.specify/init-options.json`) |
+| Agente de programación | **Claude Code** (`specify init --here --ai claude`) |
+| Instalación | `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.2.3` |
+| Constitución | `.specify/memory/constitution.md` |
+| Especificaciones | `specs/001-terreno-y-cazador`, `specs/002-resolubilidad`, `specs/003-niebla-y-ir-a`, `specs/004-linea-de-tiempo` |
+| Bitácora de prompts | `PROMPTS_LLM.md` (incluye los comandos `/speckit-*` con texto propio) |
+
+Las pruebas de aceptación de cada especificación citan su requisito (`FR-…`) en el nombre o el
+docstring y corren con la suite completa (`python -m pytest -q`, ver [Pruebas](#pruebas)).
 
 ## Equipo
 

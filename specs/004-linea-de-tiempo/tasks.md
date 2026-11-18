@@ -168,6 +168,9 @@ partida original.
 - [X] T049 Agregar a `README.md` las banderas `--checkpoint-cada` y `--replay … --hasta` y el comando `historia` (enunciado §7.2)
 - [X] T051 Tras el `/speckit-analyze` cruzado de Steven (2026-11-16): agregar a `benchmarks/linea_tiempo.py` la memoria a mitad de partida (2 500 acciones) frente al final (5 000) con K fijo, que T041 pedía y faltaba, y su comprobación en `tests/test_bench_linea_tiempo.py`; publicar la corrida en `benchmarks/resultados/linea_tiempo_memoria_2500_5000.json` (T041, SC-005, FR-021)
 - [X] T052 Declarar en `spec.md` la excepción del punto de control frente a los 20 ms (FR-032) y el estadístico de SC-001, y explicar ambas y el resultado de SC-005 en `DECISIONES.md` §5.5 (FR-032, SC-001, SC-005)
+- [X] T053 Mostrar el costo de cada salida de la sala actual en `vista/presentacion_juego.py` (lo usan consola y pygame) y probarlo en `tests/test_vista/test_vista_costos_cazadores.py` (FR-033, §7.3)
+- [X] T054 Marcar a los cazadores en el nombre del enemigo (consola y pygame) y darles un color propio en pygame; probarlo en el mismo archivo (FR-034, §7.3)
+- [X] T055 Agregar al README la versión de spec-kit (1.2.3) y el agente (Claude Code), §2.1 y §7.2 (constitución X)
 - [X] T050 Correr `python -m pytest -q` completo y los pasos de [quickstart.md](./quickstart.md); informar aprobadas, omitidas (las [DEPENDE]) y fallidas por separado (constitución XI)
 
 ---
