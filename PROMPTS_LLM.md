@@ -3749,6 +3749,10 @@ escribió, porque se redactó como texto formal.
 | 20 | Mediciones y documento de decisiones §5.3 | 13/11/2026 |
 | 21 | Guardado v11 y cierre de la 003 sobre la rama de integración | 14/11/2026 |
 | 22 | Defectos de medición, niebla en el minimapa y cierre de la 003 | 17/11/2026 |
+| 23 | Las criptas nuevas del servicio y la copia del mapa | 17/11/2026 |
+| 24 | Rendimiento del paso de «ir a» y corrección de `SC-001` | 17/11/2026 |
+| 25 | Integración continua: `pickle`, versiones de Python y restricciones que frenen el push | 17/11/2026–18/11/2026 |
+| 26 | Revisión contra el enunciado y ajustes de la interfaz al jugar | 18/11/2026 |
 
 ## Prompt 11 — `/speckit.specify` de la capacidad 002-resolubilidad
 
@@ -4117,3 +4121,165 @@ Lo que más cambió el trabajo fue la disciplina de reproducir cada defecto ante
 cuatro **pasaban** las pruebas existentes: dos porque medían algo que no era, uno porque nadie
 había escrito una prueba del dibujo, y el cuarto porque su prueba aceptaba el fallo como resultado
 válido.
+
+## Prompt 23 — Las criptas nuevas del servicio y la copia del mapa
+
+El servicio cambió su catálogo el mismo día: retiró `cripta-01` y publicó `cripta-05` («Cripta
+sellada») y `cripta-06` («Cripta de referencia», 300 salas). Sofía avisó que no lograba abrir la
+última y que a otros grupos les pasaba lo mismo.
+
+> **Prompt**
+>
+> Sofía ha hecho un merge y me comenta algo interesante: ella no puede abrir la última cripta.
+> Hemos hablado con compañeros de otros grupos y la penúltima cripta no es accesible, pero la
+> última sí, y no lo estamos consiguiendo. Pongamos un agente a probar las nuevas criptas.
+
+Después, con el diagnóstico en la mano:
+
+> **Prompt**
+>
+> Arreglá la flecha ya, y el `deepcopy` hacelo vos también, y arreglemos los archivos de entrega,
+> specs y código de una vez. De igual manera, el código no debería saber qué cripta va a recibir y
+> debe estar listo para cualquiera.
+
+**Para qué se usó.** Separar tres cosas que parecían un solo fallo:
+
+1. **`cripta-05` no es un error.** Es irresoluble a propósito, y que el programa se niegue a
+   iniciarla mostrando el informe es el comportamiento correcto de `FR-011`. Lo que había que
+   revisar no era la cripta sino la expectativa.
+2. **Cualquier cripta de más de ~180 salas tumbaba el proceso.** `copy.deepcopy` del estado
+   recorre `Sala → Puerta.destino_sala → Sala`, unos 5,4 marcos de pila por sala, y con 300 salas
+   superaba el límite de recursión. Se resolvió con `__deepcopy__` en `Puerta` —que no copia
+   `destino_sala`— y en `MapaCripta`, que vuelve a enlazar las salidas al final. El arreglo es de
+   la capa de Sofía y se hizo con su acuerdo, porque bloqueaba a los tres.
+3. **El principio de fondo**, que quedó como criterio de revisión: el código no puede suponer qué
+   cripta va a recibir. Eso llevó a revisar los sitios donde se daba por sentado el catálogo, y es
+   exactamente lo que `§9` del enunciado comprueba en la defensa con una cripta no vista.
+
+Se recapturaron las fixtures del servicio —incluido el endpoint de llaves de `§4.2`, que el
+capturador no guardaba— y se migraron las 21 pruebas que seguían afirmando el catálogo viejo.
+
+> **Prompt**
+>
+> Migremos las 21 pruebas al snapshot nuevo.
+
+Lo que más enseñó este bloque: una fixture guardada es una foto con fecha. Las pruebas de contrato
+avisaron del cambio del servicio antes de que fallara el juego, que es para lo que están, pero
+afirmar «hay cuatro criptas» en vez de «las que publique el catálogo» convirtió un aviso útil en 65
+fallos que hubo que leer uno por uno.
+
+## Prompt 24 — Rendimiento del paso de «ir a» y corrección de `SC-001`
+
+> **Prompt**
+>
+> Arreglemos lo del «ir a», entonces.
+
+**Para qué se usó.** El paso de viaje costaba 14,14 ms sobre una malla de grado 4, con un límite de
+5 ms en `§6.1`. Se bajó a 7,44 ms, y con las mismas tres optimizaciones la verificación de
+resolubilidad sobre `cripta-06` pasó de 3,83 ms a 1,98 ms. Las tres consistían en dejar de
+reconstruir estructuras compartidas en cada consulta: una búsqueda única en lugar de dos en
+`MapaConocido`, `contiene` de la tabla hash como bucle explícito, y la marca de posición del
+montículo convertida en atributo de instancia en vez de atraparse una excepción por operación.
+
+Pero el hallazgo que importó fue otro, y fue una corrección a mí mismo. Yo había informado dos
+veces que `SC-001` no se cumplía. Estaba midiendo sobre una malla sintética de grado 4 inventada
+como caso peor, cuando el criterio dice literalmente «con el mapa conocido completo de la **cripta
+de referencia**». Medido sobre `cripta-06`, que tiene grado 2,53: mediana 1,050 ms, p95 1,353 ms y
+peor caso de 120 pares 1,591 ms. **`SC-001` sí se cumple**, con holgura. Se corrigió `DECISIONES.md`
+§5.3, que afirmaba lo contrario, y se añadió una prueba que mide sobre la cripta real para que el
+error no se repita.
+
+La lección quedó anotada: un criterio de aceptación dice sobre qué se mide, y medir sobre algo más
+difícil no es ser prudente, es responder otra pregunta.
+
+## Prompt 25 — Integración continua: `pickle`, versiones de Python y restricciones que frenen el push
+
+> **Prompt**
+>
+> GitHub Actions no dejó pasar ninguno de mis últimos tres commits. Veamos lo de GitHub Actions; me
+> parece que es por el uso de `pickle`.
+
+Luego, sobre el workflow en sí:
+
+> **Prompt**
+>
+> Quiero que veamos que las especificaciones del workflow sí sean correctas. Yo implementé el
+> workflow; mi idea fue evitar tener que arreglar especificaciones al final y poder notarlas de una.
+> Si hay un problema con las especificaciones o restricciones impuestas por el profesor —que es lo
+> que debería de haber en el CI—, mi idea es que, si usábamos una librería no permitida, no nos
+> dejara de una.
+
+**Para qué se usó.** Tres cosas distintas que aparecieron tirando del mismo hilo:
+
+1. **El fallo era de `pickle`, y la causa de fondo era de versión.** Guardar la línea de tiempo
+   serializa el grafo bajando sala por sala: `cripta-06` necesita unos 4 000 de profundidad y el
+   límite por defecto es 1 000. Pero las mismas pruebas pasaban en local. El entorno local es
+   Python 3.14 y el workflow fija 3.11, y desde 3.12 la recursión en C de `pickle` dejó de contar
+   contra `sys.getrecursionlimit()`. Es decir que **la suite verde en local no probaba nada** para
+   ese fallo. El workflow pasó a probar las dos versiones, que son las dos que el README declara.
+2. **Actions no puede impedir un push**, porque `on: push` se dispara después de que el commit ya
+   está en el servidor. Para que una violación de `§6.2` detenga el push de verdad se añadió un
+   hook `pre-push` versionado en `.githooks/`, que corre `tests/test_restricciones_enunciado.py` en
+   medio segundo y aborta si falla. Se comprobó metiendo un `heapq` y un `sorted()` deliberados en
+   `logica/`: el push se detuvo nombrando archivo y línea, y nada salió al servidor.
+3. **El CI producía falsas alarmas.** Las 14 pruebas contra el servicio real se saltan si no
+   responde, pero la sonda solo atrapaba caída y timeout, y `requests` no lanza excepción ante un
+   HTTP 500: un servicio degradado las ponía en rojo por un problema ajeno. La sonda pasó a usar el
+   cliente del proyecto, que ya manda la cabecera que el servicio exige.
+
+También se revisó qué vigila el CI de verdad: de los cuatro límites de `§6.1`, solo el de 200 ms de
+resolubilidad se vuelve a medir en cada corrida; los otros tres se comprueban contra evidencia
+guardada o no se comprueban. Queda anotado como límite conocido.
+
+Lo que más cambió el trabajo fue una corrección sobre mi propia sonda. El primer arreglo usaba
+`.ok` sobre una petición cruda, y el servicio responde 400 sin la cabecera `X-Cripta-Client-Id`,
+así que dejaba las 14 pruebas saltadas siempre, peor que el problema original. Se vio al
+ejecutarlo, no al leerlo.
+
+## Prompt 26 — Revisión contra el enunciado y ajustes de la interfaz al jugar
+
+> **Prompt**
+>
+> No sé si el proyecto está terminado. ¿Podemos ver eso contra el enunciado?
+
+Y después de jugar una partida completa sobre `cripta-06`:
+
+> **Prompt**
+>
+> Tengo comentarios. El mapa empieza bien, pero llega un punto donde unos números desaparecen y
+> otros no; se ve raro y mal. Al cerrar el programa, si la caché tiene muchos aciertos, se sale del
+> cuadro y se ve poco profesional. En el inventario llegué a tener 5 pociones y cada una se ponía
+> por separado: ¿por qué no poder «poción menor x5» o algo así? Y algo que no sé si debería ser
+> así: cuando viajé hacia una zona detrás de una puerta me decía que no existía ruta, aunque yo
+> tenía la llave, y la puerta no quedó abierta una vez que la abrí.
+
+**Para qué se usó.** Primero, una auditoría del proyecto contra las doce secciones del enunciado,
+no contra nuestras specs. El resultado fue que `§4.1`–`§4.11`, `§5`, `§6`, `§7`, `§8` y `§10` están
+cubiertos, y que `§5.2` —que `§9` dice que se verifica en la defensa— se cumple con 15× de margen
+sobre `cripta-06`: 1,33 ms de máximo contra un límite de 20 ms. El hallazgo útil fue que la única
+tarea abierta del proyecto, `T051`, responde a un criterio que el equipo se impuso por encima del
+enunciado —un mínimo de cazadores por ciclo que `§5.2` no pide—, no a un requisito del profesor.
+
+Después, jugar reveló cuatro cosas, y lo valioso fue distinguir las dos que eran defectos de las
+dos que no:
+
+- **Eran defectos.** El minimapa se recortaba a 5×5 salas alrededor del jugador, porque el radio se
+  calculaba con la celda y el panel de la vista grande de la sala y no con los suyos: solo se podía
+  viajar con el ratón a dos salas de distancia. Y el cuadro de cierre tenía el alto adaptativo pero
+  el ancho fijo, así que la línea de métricas de una caché caliente se salía por los dos lados.
+- **No lo eran.** Que el viaje no atraviese una puerta cerrada aunque se tenga la llave es
+  `FR-015` de la propia especificación 003. Y que la puerta no quedara abierta es el
+  `cierre_automatico` que la cripta declara en sus datos, tal como describe `§2` del enunciado. Lo
+  que sí estaba mal era el mensaje, que decía «no hay camino conocido» cuando el camino existe y lo
+  corta una puerta: ahora el viaje distingue las dos causas y lo explica.
+- **No se hizo** el agrupado del inventario: las 5 pociones ocupan 5 espacios reales, y `§4.5` pide
+  recorrer el inventario desde la posición actual, soltar el que se está viendo y que equipar mueva
+  el objeto al frente del orden real. Agruparlas rompería las tres cosas.
+
+Lo que más enseñó el bloque fue cómo se diagnostica sin adivinar. El «no hay ruta» se resolvió
+reproduciendo la partida con `--replay` cortada en el instante exacto del clic: desde la sala 162 el
+jugador alcanzaba 38 de sus 40 salas exploradas, y una sola puerta recordada cerrada, la `165→166`,
+dejaba fuera las otras dos. Es justo el uso que `§4.11` le atribuye a la reproducción. Y los
+ajustes del minimapa se verificaron dibujando el fotograma a un archivo y mirándolo, que es como se
+vio que el primer arreglo de los números había creado una inconsistencia peor que el solape
+original.
