@@ -296,7 +296,11 @@ dentro del intervalo. Producción reporta 28 y 24 notificaciones enemigas, respe
   causa no medida.
 - El tiempo retenido incluye construcción, consultas, invalidación, reconstrucción y limpieza; no
   es un coste de consulta aislado.
-- La conexión a `main.py --bench` sigue pendiente de T049/T050; estas filas son evidencia aislada.
+- Estas filas se obtuvieron inicialmente de forma aislada. T049 las registró después una sola vez
+  en `main.py --bench` y T050 ejecutó la integración; el informe completo y el subconjunto de 001
+  se conservan en `benchmarks/resultados/main_bench_completo_t050.json` y
+  `benchmarks/resultados_terreno_cazador_integrante1.json`. Siguen siendo cargas sintéticas y no
+  sustituyen la validación oficial pendiente de T051.
 - Solo caracterizan el equipo y las cargas indicadas. No se infiere el comportamiento en la
   referencia oficial ni en otras máquinas.
 - Cualquier adopción futura debe actualizar `plan.md`/`tasks.md` y repetir la validación; no se
@@ -967,8 +971,11 @@ resolver empates (9); se conservan sin reducir carga. En esta carga aislada, nin
   una causa no medida ni se adopta un cambio parcial sin tarea productiva y validación completa.
 - Las 24 muestras lentas son de la alternativa lineal, no de `AgendaEventos`; no se presentan como
   incumplimiento de `PR-001`.
-- La conexión a `main.py --bench` sigue pendiente de T049/T050; estas filas son evidencia aislada
-  de los proveedores, no cierre del Principio IX.
+- Estas filas se midieron primero de forma aislada. T049 conectó después el proveedor una sola vez
+  a `main.py --bench` y T050 ejecutó la integración; la evidencia permanece en
+  `benchmarks/resultados/main_bench_completo_t050.json` y
+  `benchmarks/resultados_terreno_cazador_integrante1.json`. Su carácter sintético no sustituye la
+  validación oficial pendiente de T051.
 - Solo caracterizan el equipo y las cargas indicadas.
 
 **Trazabilidad**: `logica/agenda_eventos.py`; `logica/motor_juego.py`;

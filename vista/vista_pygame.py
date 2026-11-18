@@ -450,13 +450,12 @@ class VistaPygame:
         contexto = getattr(self, "_contexto_presentacion", None)
         for puerta in sala.puertas:
             dir_name = puerta.direccion
-            destino = presentacion.descripcion_sala(puerta.destino_sala_id, estado)
+            etiqueta = presentacion.etiqueta_boton_puerta(
+                puerta, estado, contexto)
             if puerta.abierta:
-                items.append((f"{dir_name[0]} -> {destino}", f"mover {dir_name}", VERDE_OSCURO))
+                items.append((etiqueta, f"mover {dir_name}", VERDE_OSCURO))
             else:
-                ficha = presentacion.ficha_disponible(puerta.llave_requerida, estado, contexto)
-                llave = f": {ficha.get('nombre') or presentacion.nombre_ficha(puerta.llave_requerida)}" if puerta.llave_requerida else ""
-                items.append((f"{dir_name[0]} Cerrada{llave}", f"abrir {dir_name}", ROJO_OSCURO))
+                items.append((etiqueta, f"abrir {dir_name}", ROJO_OSCURO))
         if not items:
             return y
         return self._colocar_cuadricula(items, px, panel_w, y)
@@ -469,7 +468,7 @@ class VistaPygame:
         for numero, enemigo in enumerate(sala.enemigos, 1):
             if enemigo.esta_vivo():
                 nombre = (presentacion.nombre_actor(enemigo, estado, contexto)
-                          + presentacion.marca_cazador(enemigo))
+                          + presentacion.marca_cazador(enemigo, estado, contexto))
                 items.append((f"#{numero} Atacar {nombre}", f"atacar {shlex.quote(enemigo.id_actor)}", ROJO_OSCURO))
         for numero, obj in enumerate(sala.objetos, 1):
             nombre = presentacion.nombre_objeto(obj, estado, contexto)
@@ -955,15 +954,16 @@ class VistaPygame:
                 entidades.append((
                     GLYPH_ENEMIGO,
                     f"#{numero} {presentacion.nombre_actor(enemigo, estado)}"
-                    f"{presentacion.marca_cazador(enemigo)}",
-                    NARANJA if presentacion.es_cazador(enemigo) else ROJO,
+                    f"{presentacion.marca_cazador(enemigo, estado)}",
+                    NARANJA if presentacion.es_cazador(enemigo, estado) else ROJO,
                     f"HP {enemigo.vida}/{enemigo.vida_max}",
                     sprite,
                 ))
             else:
                 entidades.append((
                     GLYPH_ENEMIGO_MUERTO,
-                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}",
+                    f"#{numero} {presentacion.nombre_actor(enemigo, estado)}"
+                    f"{presentacion.marca_cazador(enemigo, estado)}",
                     GRIS,
                     "muerto",
                     sprite,

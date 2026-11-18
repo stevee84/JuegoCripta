@@ -99,18 +99,20 @@ def nombre_actor(actor, estado=None, contexto=None):
 MARCA_CAZADOR = "[cazador]"
 
 
-def es_cazador(enemigo) -> bool:
-    """FR-034 (spec 004, §7.3): los cazadores se distinguen de los demás enemigos."""
-    return getattr(enemigo, "comportamiento", None) == "cazador"
+def es_cazador(enemigo, estado=None, contexto=None) -> bool:
+    """Identifica al cazador por su ficha real, no por nombre, sprite o ID."""
+    ficha = ficha_disponible(enemigo, estado, contexto)
+    return normalizar(ficha.get("comportamiento", "")) == "cazador"
 
 
-def marca_cazador(enemigo) -> str:
-    return f" {MARCA_CAZADOR}" if es_cazador(enemigo) else ""
+def marca_cazador(enemigo, estado=None, contexto=None) -> str:
+    return f" {MARCA_CAZADOR}" if es_cazador(enemigo, estado, contexto) else ""
 
 
 def etiqueta_enemigo(enemigo, enemigos, estado=None, contexto=None):
     numero = next(i for i, otro in enumerate(enemigos, 1) if otro is enemigo)
-    return f"{nombre_actor(enemigo, estado, contexto)}{marca_cazador(enemigo)} #{numero}"
+    return (f"{nombre_actor(enemigo, estado, contexto)}"
+            f"{marca_cazador(enemigo, estado, contexto)} #{numero}")
 
 
 def nombre_trampa(trampa, estado=None, contexto=None):
@@ -128,6 +130,21 @@ def descripcion_puerta(puerta, estado, contexto=None):
     if puerta.llave_requerida:
         ficha = ficha_disponible(puerta.llave_requerida, estado, contexto)
         texto += f"; requiere {ficha.get('nombre') or nombre_ficha(puerta.llave_requerida)}"
+    return texto
+
+
+def etiqueta_boton_puerta(puerta, estado, contexto=None):
+    """Versión compacta de la misma salida para la cuadrícula de Pygame."""
+    direccion = str(puerta.direccion)
+    abreviada = direccion[0] if direccion else "?"
+    estado_puerta = "abierta" if puerta.abierta else "cerrada"
+    texto = (f"{abreviada}→{puerta.destino_sala_id} · {estado_puerta} "
+             f"· costo {puerta.costo}")
+    if puerta.llave_requerida:
+        ficha = ficha_disponible(puerta.llave_requerida, estado, contexto)
+        llave = ficha.get("nombre") or nombre_ficha(puerta.llave_requerida)
+        llave_compacta = llave.removeprefix("Llave de ").removeprefix("Llave ")
+        texto += f" · llave {llave_compacta}"
     return texto
 
 
