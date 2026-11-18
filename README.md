@@ -259,7 +259,20 @@ datos_offline/
 └── cripta-<id>/              generales.json · pagina_<n>.json · contenido_<ids>.json · version.json
 ```
 
-Si no tienes el paquete del curso, puedes generarlo desde el servicio web:
+El repositorio no versiona `datos_offline/`, porque es el paquete de datos del servicio y no
+código. Si no tienes el del curso, hay dos formas de obtenerlo.
+
+**Sin conexión**, copiando las respuestas reales que el repositorio ya trae para las pruebas de
+contrato. Son las mismas que publica el servicio, con la misma estructura, capturadas el
+17/11/2026:
+
+```bash
+cp -r tests/fixtures/api_real datos_offline      # Linux y macOS
+xcopy /E /I tests\fixtures\api_real datos_offline   # Windows
+```
+
+**Con conexión**, capturando lo que el servicio publique hoy, que es lo que conviene si las
+criptas cambiaron:
 
 ```bash
 python -m tests.fixtures.capturar_api datos_offline
