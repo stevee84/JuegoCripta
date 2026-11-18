@@ -1,12 +1,12 @@
 # Implementation Plan: Terreno y cazador
 
-**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-17 | **Spec**: [spec.md](spec.md)
+**Branch**: `Sofia` | **Created**: 2026-11-07 | **Updated**: 2026-11-18 | **Spec**: [spec.md](spec.md)
 
 **Input**: Especificación confirmada en `specs/001-terreno-y-cazador/spec.md`.
 
 ## Summary
 
-La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; `d1ad048` entrega la persistencia conjunta v11 de costo, rango, mapa conocido y línea de tiempo. G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. T049/T050 conectaron y ejecutaron las mediciones sintéticas; T054/T066 cerraron «ir a» sin caché; T006/T041/T055 cerraron persistencia con 144 pruebas relacionadas aprobadas. Solo T051 sigue abierta: la referencia `cripta-06` está publicada, pero falta demostrar la carga real de decenas de cazadores por ciclo (R-16).
+La capacidad incorpora costos de salida a todos los movimientos y añade decisiones de cazador mediante rutas ponderadas deterministas. `5000d1f` integra validación/persistencia v10 de costo/rango y simetría entre sentidos existentes; `d1ad048` entrega la persistencia conjunta v11 de costo, rango, mapa conocido y línea de tiempo. G1 fija `proximo_paso(...) -> ResultadoRuta` y el equipo acepta sentidos únicos. La **decisión medida** (T046/T048/T057, `research.md` R-13 y `DECISIONES.md` §5.1) conserva una búsqueda individual limitada por rango, con un montículo mínimo y tablas hash propios creados de forma perezosa; cálculo compartido y reutilización permanecen exclusivamente en `--bench`. La producción no retiene resultados de ruta. T049/T050 conectaron y ejecutaron las mediciones sintéticas; T054/T066 cerraron «ir a» sin caché; T006/T041/T055 cerraron persistencia con 144 pruebas relacionadas aprobadas. Solo T051 sigue abierta: la referencia `cripta-06` está publicada y la investigación elevó el máximo reproducible de cinco a nueve cazadores participantes, pero no demostró los 20 exigidos por AC-013/PR-001. La exploración se detuvo para priorizar estabilidad (R-16/R-17).
 
 ## Technical Context
 
@@ -26,7 +26,7 @@ La capacidad incorpora costos de salida a todos los movimientos y añade decisio
 
 **Constraints**: determinismo; estructuras propias; sin `dict`/`set` como índice o caché; sin `heapq`, `bisect`, `collections`, `sorted()`, `list.sort()` ni bibliotecas de grafos/rutas en producción; sin red, disco, renderizado o preparación de fixtures dentro de intervalos que no los evalúen; sí se incluye dentro del tiempo toda preparación auxiliar necesaria por consulta o ciclo.
 
-**Scale/Scope**: esqueleto completo en memoria, costos positivos, objetivo de cientos de eventos pendientes y decenas de cazadores activos con rangos pequeños o grandes. La referencia publicada tiene 300 salas, 75 enemigos y 36 cazadores, inicialmente inactivos. El recorrido validado alcanza cinco activos; no se inventan activaciones para alcanzar la carga exigida.
+**Scale/Scope**: esqueleto completo en memoria, costos positivos, objetivo de cientos de eventos pendientes y decenas de cazadores activos con rangos pequeños o grandes. La referencia publicada tiene 300 salas, 75 enemigos y 36 cazadores, inicialmente inactivos. El mejor diagnóstico parcial reproduce nueve activos y participantes en 299 acciones; no se inventan activaciones ni se reduce el mínimo de 20 para alcanzar la carga exigida.
 
 **Evidencia histórica del checkout y ramas consultada el 2026-11-08**:
 

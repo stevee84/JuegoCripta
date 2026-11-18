@@ -434,3 +434,37 @@ ciclo, además del resto de condiciones. T048/T050 mantienen sus JSON, cifras y 
 **125 passed in 3.82s** (64 focalizadas y 61 restricciones, sin omisiones). Se comprueba equivalencia
 observable con/sin contadores, espera silenciosa, 20 ms exactos, rechazo de falsas conclusiones,
 protección de evidencia y `cripta-05` con inicio normal rechazado y benchmark permitido.
+
+## R-17 — Cierre documental de la exploración T051 (18/11/2026)
+
+**Decisión**: detener los intentos exploratorios y mantener T051/AC-013/PR-001 **abierta**. Los
+Prompts 79–83 mejoraron la evidencia reproducible desde los cinco participantes históricos hasta
+nueve, pero no alcanzaron los 20 exigidos. No se relaja el mínimo, no se modifica producción y no se
+genera `benchmarks/resultados_terreno_cazador_referencia.json`.
+
+### Evidencia parcial reproducible
+
+Los dos recorridos conservados cargan `cripta-06@f9ed9afa683d`, catálogo `4b9e75a42be5` y semilla
+20240517, y ejecutan exclusivamente acciones legales mediante `MotorJuego.ejecutar_accion()` desde el
+estado inicial:
+
+| Diagnóstico | Acciones | Checkpoint final | Activos / participantes | Clasificación |
+|---|---:|---|---:|---|
+| `t051_prompt82_ocho_cazadores_parcial.json` | 250 | sala 71, 12 HP, 3 pociones | 8 / 8 | ciclo completo |
+| `t051_prompt83_nueve_cazadores_parcial.json` | 299 | sala 109, 9 HP, 5 pociones | 9 / 9 | ciclo completo |
+
+El parcial de ocho preserva los checkpoints reproducibles 58, 95, 135, 167 y 250. El de nueve añade
+`e-cripta-06-39`, lo separa mediante el cierre automático 111–110 y mide como acción 299 un
+`MOVER OESTE`. Los nueve IDs vivos y activos toman decisiones en el mismo ciclo; el intervalo procesa
+nueve decisiones de cazador y la disponibilidad del jugador, no realiza I/O y registra
+**1,292416 ms preliminares**. Esta duración describe únicamente la carga de nueve y no puede usarse
+para afirmar PR-001.
+
+### Límite observado y alcance de la conclusión
+
+Después del ciclo, dos cazadores comparten sala con el jugador y un tercero queda en la sala
+adyacente. El jugador conserva 9 HP: curarse o volver hacia C2 concede turnos de ataque concurrentes.
+Ese bloqueo explica por qué no se amplió la exploración, pero **no demuestra imposibilidad global**.
+La decisión es de entrega y estabilidad, no una enmienda del criterio. Los dos diagnósticos mantienen
+`parcial=true` y `afirma_t051=false`; el resultado oficial sigue ausente y el avance de tareas se
+mantiene en **75/76**, con T051 sin marcar.

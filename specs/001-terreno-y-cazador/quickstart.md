@@ -401,7 +401,7 @@ acción, agenda, decisiones/rutas y cambios reversibles hasta la siguiente decis
 de eventos y decisiones están dentro del intervalo; carga, copia inicial y reproducción del prefijo
 de acciones válidas quedan fuera. El recálculo productivo no se modifica.
 
-#### T051: referencia publicada, carga de decenas aún no demostrada (17/11/2026)
+#### T051: investigación detenida, carga de 20 aún no demostrada (18/11/2026)
 
 ```powershell
 .\.venv\Scripts\python.exe benchmarks/benchmark_ciclo_real_integrante1.py `
@@ -427,10 +427,23 @@ carga explícita en vez de declarar cumplimiento por un resumen temporal.
   versiones, hashes e I/O nulo dentro del reloj. La muerte de preparación se informa por separado.
 - **T051 sigue abierta, 75/76 tareas**: los tiempos son válidos para esa carga, pero no acreditan
   decenas. `afirma_pr001=false`; no se genera `resultados_terreno_cazador_referencia.json`.
-  No se ha demostrado que sea imposible con otro recorrido; se necesita uno validado o una
-  aclaración/enmienda de las condiciones oficiales. Detalle de distribución y reglas en R-16.
+  No se ha demostrado que sea imposible con otro recorrido. Detalle de distribución y reglas en
+  R-16 y cierre de la exploración en R-17.
 - `cripta-05`: el benchmark puede forzar exclusivamente su inicializador si el informe confirma
   irresolubilidad. El inicio normal conserva el rechazo y no se modifica producción.
+
+Los diagnósticos posteriores no sustituyen la corrida histórica ni constituyen el resultado oficial:
+
+- `benchmarks/recorridos/diagnosticos/t051_prompt82_ocho_cazadores_parcial.json` conserva el prefijo
+  de 250 acciones y los checkpoints 58/95/135/167/250.
+- `benchmarks/recorridos/diagnosticos/t051_prompt83_nueve_cazadores_parcial.json` reproduce desde el
+  inicio **299 acciones legales**, nueve cazadores vivos, activos y participantes distintos, 9 HP y
+  cinco pociones. El ciclo fue completo, sin I/O, y tardó **1,292416 ms preliminares**.
+- Ambos archivos declaran `parcial=true` y `afirma_t051=false`. El tiempo no demuestra PR-001 porque
+  la carga medida fue nueve, no los 20 exigidos.
+- La exploración se detuvo para priorizar estabilidad: dos cazadores terminaron junto al jugador y
+  otro en la sala adyacente; con 9 HP, curarse o regresar a C2 habilitaba ataques concurrentes. No se
+  ejecutarán nuevas búsquedas como parte de este cierre documental.
 
 Comprobación ejecutada (incluye las **61 restricciones**):
 

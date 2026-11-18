@@ -1,0 +1,1458 @@
+{
+  "cripta": "cripta-06",
+  "version_cripta": "f9ed9afa683d",
+  "version_catalogo": "4b9e75a42be5",
+  "semilla": 20240517,
+  "parcial": true,
+  "afirma_t051": false,
+  "fases": [
+    {
+      "fase": "P82_C0_primer_aislamiento",
+      "cumplida": true,
+      "acciones": 58,
+      "cazadores_activos": 1,
+      "participantes": 1,
+      "estado": {
+        "acciones": 58,
+        "reloj": 5005,
+        "sala": 26,
+        "region": 1,
+        "vida": 19,
+        "partida_activa": true,
+        "cazadores_activos": 1,
+        "pociones": 3,
+        "llaves": [
+          "itm_llave_bronce"
+        ],
+        "posiciones_activas": {
+          "e-cripta-06-7": 25
+        },
+        "ultimas_acciones": [
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:244:0"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "ABRIR",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          }
+        ]
+      }
+    },
+    {
+      "fase": "P82_llave_hierro_sin_plata",
+      "cumplida": true,
+      "acciones": 95,
+      "cazadores_activos": 1,
+      "participantes": 1,
+      "estado": {
+        "acciones": 95,
+        "reloj": 8885,
+        "sala": 247,
+        "region": 1,
+        "vida": 30,
+        "partida_activa": true,
+        "cazadores_activos": 1,
+        "pociones": 5,
+        "llaves": [
+          "itm_llave_bronce",
+          "itm_llave_hierro"
+        ],
+        "posiciones_activas": {
+          "e-cripta-06-7": 25
+        },
+        "ultimas_acciones": [
+          {
+            "tipo": "MOVER",
+            "direccion": "OESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "ABRIR",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "ATACAR",
+            "objetivo_id": "e-cripta-06-29"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "ATACAR",
+            "objetivo_id": "e-cripta-06-1"
+          },
+          {
+            "tipo": "RECOGER",
+            "objetivo_id": "botin:e-cripta-06-1:0"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:147:0"
+          }
+        ]
+      }
+    },
+    {
+      "fase": "P82_C0_tres_conservados",
+      "cumplida": true,
+      "acciones": 135,
+      "cazadores_activos": 3,
+      "participantes": 3,
+      "estado": {
+        "acciones": 135,
+        "reloj": 12770,
+        "sala": 226,
+        "region": 1,
+        "vida": 7,
+        "partida_activa": true,
+        "cazadores_activos": 3,
+        "pociones": 1,
+        "llaves": [
+          "itm_llave_bronce",
+          "itm_llave_hierro"
+        ],
+        "posiciones_activas": {
+          "e-cripta-06-7": 25,
+          "e-cripta-06-4": 225,
+          "e-cripta-06-8": 225
+        },
+        "ultimas_acciones": [
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "SOLTAR",
+            "seleccion_id": "botin:e-cripta-06-31:0"
+          },
+          {
+            "tipo": "ABRIR",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:89:0"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:88:0"
+          },
+          {
+            "tipo": "SOLTAR",
+            "seleccion_id": "objeto:222:0"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          }
+        ]
+      }
+    },
+    {
+      "fase": "P82_C1_grupo_270",
+      "cumplida": true,
+      "acciones": 167,
+      "cazadores_activos": 5,
+      "participantes": 5,
+      "estado": {
+        "acciones": 167,
+        "reloj": 15475,
+        "sala": 271,
+        "region": 2,
+        "vida": 12,
+        "partida_activa": true,
+        "cazadores_activos": 5,
+        "pociones": 0,
+        "llaves": [
+          "itm_llave_hierro"
+        ],
+        "posiciones_activas": {
+          "e-cripta-06-7": 25,
+          "e-cripta-06-4": 225,
+          "e-cripta-06-8": 225,
+          "e-cripta-06-18": 270,
+          "e-cripta-06-24": 270
+        },
+        "ultimas_acciones": [
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "OESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "ATACAR",
+            "objetivo_id": "e-cripta-06-33"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "botin:e-cripta-06-1:1"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "ABRIR",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "SUR"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          }
+        ]
+      }
+    },
+    {
+      "fase": "P82_piloto_ocho_C0_C2",
+      "cumplida": true,
+      "acciones": 250,
+      "cazadores_activos": 8,
+      "participantes": 8,
+      "estado": {
+        "acciones": 250,
+        "reloj": 23025,
+        "sala": 71,
+        "region": 2,
+        "vida": 12,
+        "partida_activa": true,
+        "cazadores_activos": 8,
+        "pociones": 3,
+        "llaves": [
+          "itm_llave_hierro"
+        ],
+        "posiciones_activas": {
+          "e-cripta-06-7": 25,
+          "e-cripta-06-19": 70,
+          "e-cripta-06-26": 70,
+          "e-cripta-06-21": 70,
+          "e-cripta-06-4": 225,
+          "e-cripta-06-8": 225,
+          "e-cripta-06-18": 270,
+          "e-cripta-06-24": 270
+        },
+        "ultimas_acciones": [
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "NORTE"
+          },
+          {
+            "tipo": "ABRIR",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "OESTE"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          },
+          {
+            "tipo": "ESPERAR"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:114:0"
+          },
+          {
+            "tipo": "USAR",
+            "seleccion_id": "objeto:115:0"
+          },
+          {
+            "tipo": "SOLTAR",
+            "seleccion_id": "objeto:214:0"
+          },
+          {
+            "tipo": "MOVER",
+            "direccion": "ESTE"
+          }
+        ]
+      }
+    },
+    {
+      "fase": "P82_limite_piloto",
+      "cumplida": false,
+      "objetivo": 20,
+      "cazadores_activos": 8,
+      "participantes": 8,
+      "estados_de_busqueda": 0,
+      "transiciones_del_prefijo": 250,
+      "nota": "Se detiene tras superar siete; ampliar el presupuesto requiere una decisión explícita y otro piloto por grupos de C2."
+    }
+  ],
+  "acciones": [
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:141:2"
+    },
+    {
+      "tipo": "EQUIPAR",
+      "seleccion_id": "objeto:141:2"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:141:1"
+    },
+    {
+      "tipo": "EQUIPAR",
+      "seleccion_id": "objeto:141:1"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:141:3"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-10"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:222:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:203:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:244:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:245:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:124:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:124:0"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-11"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:22:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:245:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:244:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:46:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:46:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:203:0"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-31"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:88:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:89:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "botin:e-cripta-06-31:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-28"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:147:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-29"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-1"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "botin:e-cripta-06-1:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:147:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-13"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:143:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:143:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "SOLTAR",
+      "seleccion_id": "botin:e-cripta-06-31:0"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:89:0"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:88:0"
+    },
+    {
+      "tipo": "SOLTAR",
+      "seleccion_id": "objeto:222:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "SOLTAR",
+      "seleccion_id": "objeto:22:0"
+    },
+    {
+      "tipo": "SOLTAR",
+      "seleccion_id": "objeto:141:1"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "botin:e-cripta-06-29:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "botin:e-cripta-06-29:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:141:3"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "botin:e-cripta-06-1:1"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:206:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:206:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-33"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "botin:e-cripta-06-1:1"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:291:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:291:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:292:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:293:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:274:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:214:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:174:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:155:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:155:0"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-52"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:174:0"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-52"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:115:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:114:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "botin:e-cripta-06-52:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "botin:e-cripta-06-52:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-54"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-53"
+    },
+    {
+      "tipo": "ATACAR",
+      "objetivo_id": "e-cripta-06-53"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "RECOGER",
+      "objetivo_id": "objeto:28:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:28:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "SUR"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "NORTE"
+    },
+    {
+      "tipo": "ABRIR",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "OESTE"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    },
+    {
+      "tipo": "ESPERAR"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:114:0"
+    },
+    {
+      "tipo": "USAR",
+      "seleccion_id": "objeto:115:0"
+    },
+    {
+      "tipo": "SOLTAR",
+      "seleccion_id": "objeto:214:0"
+    },
+    {
+      "tipo": "MOVER",
+      "direccion": "ESTE"
+    }
+  ],
+  "estado": {
+    "acciones": 250,
+    "reloj": 23025,
+    "sala": 71,
+    "region": 2,
+    "vida": 12,
+    "partida_activa": true,
+    "cazadores_activos": 8,
+    "pociones": 3,
+    "llaves": [
+      "itm_llave_hierro"
+    ],
+    "posiciones_activas": {
+      "e-cripta-06-7": 25,
+      "e-cripta-06-19": 70,
+      "e-cripta-06-26": 70,
+      "e-cripta-06-21": 70,
+      "e-cripta-06-4": 225,
+      "e-cripta-06-8": 225,
+      "e-cripta-06-18": 270,
+      "e-cripta-06-24": 270
+    },
+    "ultimas_acciones": [
+      {
+        "tipo": "MOVER",
+        "direccion": "ESTE"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "ESTE"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "NORTE"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "NORTE"
+      },
+      {
+        "tipo": "ABRIR",
+        "direccion": "ESTE"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "OESTE"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "ESTE"
+      },
+      {
+        "tipo": "ESPERAR"
+      },
+      {
+        "tipo": "USAR",
+        "seleccion_id": "objeto:114:0"
+      },
+      {
+        "tipo": "USAR",
+        "seleccion_id": "objeto:115:0"
+      },
+      {
+        "tipo": "SOLTAR",
+        "seleccion_id": "objeto:214:0"
+      },
+      {
+        "tipo": "MOVER",
+        "direccion": "ESTE"
+      }
+    ]
+  }
+}

@@ -1,10 +1,12 @@
 """T051: carga real, observación fiel y rechazo de cierres por tiempo solamente."""
 
+import json
 from pathlib import Path
 
 import pytest
 
 from benchmarks import benchmark_ciclo_real_integrante1 as bench
+from benchmarks import buscar_recorrido_t051_integrante1 as buscador
 from benchmarks.auditoria_ciclo_referencia_integrante1 import (
     REFERENCIA, ObservacionCiclo, auditar_carga, preparar_recorrido, validar_pr001,
 )
@@ -13,6 +15,14 @@ from service.inicializador_partida import InicializadorPartida, CriptaNoResolubl
 
 
 RECORRIDO = Path("benchmarks/recorridos/t051_cripta06.json")
+PARCIAL_P82 = Path(
+    "benchmarks/recorridos/diagnosticos/"
+    "t051_prompt82_ocho_cazadores_parcial.json"
+)
+PARCIAL_P83 = Path(
+    "benchmarks/recorridos/diagnosticos/"
+    "t051_prompt83_nueve_cazadores_parcial.json"
+)
 
 
 @pytest.fixture(scope="module")
@@ -24,7 +34,37 @@ def referencia():
 @pytest.fixture(scope="module")
 def recorrido(referencia):
     return preparar_recorrido(referencia[0], RECORRIDO, bench._copiar_estado_real,
-                              bench.MotorJuego, bench.Escenario, bench._clasificar)
+                               bench.MotorJuego, bench.Escenario, bench._clasificar)
+
+
+@pytest.fixture(scope="module")
+def busqueda_por_fases(referencia):
+    fase_a = buscador.Ejecucion(bench._copiar_estado_real(referencia[0]))
+    buscador._fase_a_llaves(fase_a)
+    piloto = fase_a.clonar()
+    buscador._fase_b_piloto(piloto)
+    return fase_a, piloto
+
+
+@pytest.fixture(scope="module")
+def piloto_c0_c2(referencia):
+    ejecucion = buscador.Ejecucion(bench._copiar_estado_real(referencia[0]))
+    fases = []
+    participantes, ciclo = buscador._fase_prompt82_c0_c2(ejecucion, fases)
+    return ejecucion, fases, participantes, ciclo
+
+
+@pytest.fixture(scope="module")
+def piloto_nueve(referencia):
+    ejecucion, base, sha = buscador._cargar_parcial_verificado(
+        PARCIAL_P82, referencia[0], 250
+    )
+    buscador._verificar_checkpoint_prompt82(ejecucion)
+    diagnostico = buscador._fase_prompt83_noveno(ejecucion)
+    final, medicion = buscador._medir_parcial(
+        ejecucion, {"tipo": "MOVER", "direccion": "OESTE"}
+    )
+    return ejecucion, final, medicion, diagnostico, base, sha
 
 
 def test_datos_publicados_son_75_enemigos_36_cazadores_inactivos(referencia):
@@ -157,3 +197,215 @@ def test_no_sobrescribe_evidencia_ni_publica_archivo_oficial_sin_carga(tmp_path,
     oficial = tmp_path / "resultados_terreno_cazador_referencia.json"
     assert bench.main(["--resultados", str(oficial)]) == 2
     assert not oficial.exists()
+
+
+def test_buscador_rechaza_estado_inicial_modificado_artificialmente(referencia):
+    estado = bench._copiar_estado_real(referencia[0])
+    assert buscador.huella_estado_inicial(estado) == buscador.HUELLA_INICIAL
+    estado.jugador.defensa += 1
+    with pytest.raises(ValueError, match="modificado artificialmente"):
+        buscador.validar_estado_inicial(estado)
+
+
+def test_buscador_no_cuenta_decisiones_duplicadas_como_cazadores_distintos():
+    carga = {"cazadores_por_sala": [
+        {"id": f"c-{i}", "activo": True, "vida": 10} for i in range(20)
+    ]}
+    repetidas = {"decisiones": [
+        {"actor": "c-0", "comportamiento": "cazador"} for _ in range(40)
+    ]}
+    auditoria = buscador.auditar_medicion(carga, repetidas)
+    assert auditoria["cazadores_activos_vivos"] == 20
+    assert auditoria["cazadores_participantes_distintos"] == 1
+    assert not auditoria["cumple_minimo"]
+
+    distintas = {"decisiones": [
+        {"actor": f"c-{i}", "comportamiento": "cazador"}
+        for i in range(20)
+    ]}
+    assert buscador.auditar_medicion(carga, distintas)["cumple_minimo"]
+
+
+def test_buscador_reproduce_desde_cero_y_rechaza_acciones_inventadas(referencia):
+    with pytest.raises(ValueError, match="Error al reproducir paso 1"):
+        buscador._reproducir(referencia[0], [{
+            "tipo": "RECOGER", "objetivo_id": "objeto:inexistente"
+        }], 1)
+
+
+def test_buscador_no_acepta_auditoria_de_receta_sin_reproducir(referencia):
+    receta = {
+        "cripta": "cripta-06",
+        "version_cripta": "f9ed9afa683d",
+        "version_catalogo": "4b9e75a42be5",
+        "semilla": 20240517,
+        "punto_medicion": 1,
+        "acciones": [{"tipo": "ESPERAR", "medir": "falso_20"}],
+        "auditoria": {
+            "cazadores_activos_iniciales": 20,
+            "cazadores_vivos_iniciales": 36,
+            "cazadores_participantes": 20,
+            "decisiones_cazadores": 20,
+        },
+    }
+    with pytest.raises(ValueError, match="discrepa|no alcanza"):
+        buscador.validar_receta(referencia[0], receta)
+
+
+def test_busqueda_fase_a_obtiene_tres_llaves_sin_preparacion_de_249_acciones(
+        busqueda_por_fases, referencia):
+    fase_a, _ = busqueda_por_fases
+    assert len(fase_a.acciones) < 249
+    assert {o.tipo_ficha_id for o in fase_a.estado.inventario.obtener_objetos()
+            if o.ubicacion == "inventario"} >= {
+        "itm_llave_bronce", "itm_llave_hierro", "itm_llave_plata"}
+    reproducido = buscador._reproducir_prefijo(referencia[0], fase_a.acciones)
+    assert reproducido.jugador.esta_vivo()
+    assert reproducido.jugador.sala_actual.id_sala == 92
+
+
+def test_piloto_por_fases_supera_cinco_y_reproduce_seis_participantes(
+        busqueda_por_fases, referencia):
+    _, piloto = busqueda_por_fases
+    activos = [c for c in buscador._cazadores(piloto.estado) if c.esta_activo()]
+    assert len(activos) == 6
+    ciclo = buscador._ciclo_candidato(piloto)
+    assert ciclo["clasificacion"] == "completo"
+    assert ciclo["trabajo"]["cazadores_participantes"] == 6
+    reproducido = buscador._reproducir_prefijo(referencia[0], piloto.acciones)
+    assert sum(c.esta_activo() for c in buscador._cazadores(reproducido)) == 6
+
+
+def test_firma_por_fases_distingue_azar_y_no_aplica_dominancia_solo_por_vida(
+        busqueda_por_fases):
+    fase_a, _ = busqueda_por_fases
+    copia = fase_a.clonar()
+    assert buscador._firma_fase(fase_a) == buscador._firma_fase(copia)
+    copia.estado.azar.random()
+    assert buscador._firma_fase(fase_a) != buscador._firma_fase(copia)
+    copia = fase_a.clonar()
+    copia.estado.jugador.vida -= 1
+    assert buscador._firma_fase(fase_a) != buscador._firma_fase(copia)
+
+
+def test_firma_por_fases_incluye_puertas_y_suelo(busqueda_por_fases):
+    fase_a, _ = busqueda_por_fases
+    copia = fase_a.clonar()
+    puerta = next(p for sala in copia.estado.mapa.obtener_salas()
+                  for p in sala.puertas if not p.abierta)
+    puerta.abierta = True
+    assert buscador._firma_fase(fase_a) != buscador._firma_fase(copia)
+
+    copia = fase_a.clonar()
+    sala = next(s for s in copia.estado.mapa.obtener_salas() if s.objetos)
+    sala.objetos.pop()
+    assert buscador._firma_fase(fase_a) != buscador._firma_fase(copia)
+
+
+def test_piloto_c0_c2_supera_siete_sin_plata_ni_c3(piloto_c0_c2):
+    ejecucion, fases, participantes, ciclo = piloto_c0_c2
+    assert ejecucion.estado.partida_activa
+    assert len(buscador._ids_activos(ejecucion.estado)) == participantes == 8
+    assert ciclo["clasificacion"] == "completo"
+    assert ejecucion.estado.jugador.sala_actual.id_sala == 71
+    assert ejecucion.estado.jugador.vida == 12
+    assert buscador._cantidad_pociones(ejecucion.estado) == 3
+    assert buscador._tiene(ejecucion.estado, "itm_llave_hierro")
+    assert not buscador._tiene(ejecucion.estado, "itm_llave_plata")
+    assert [fase["acciones"] for fase in fases] == [58, 95, 135, 167, 250]
+
+
+def test_piloto_c0_c2_conserva_grupos_tras_puertas_cerradas(
+        piloto_c0_c2):
+    ejecucion = piloto_c0_c2[0]
+    posiciones = buscador._resumen_estado(ejecucion)["posiciones_activas"]
+    assert set(posiciones.values()) == {25, 70, 225, 270}
+    for sala in (25, 70, 225, 270):
+        assert not ejecucion.estado.mapa.obtener_sala(
+            sala).obtener_salida("ESTE").abierta
+
+
+def test_piloto_c0_c2_se_reproduce_integro_desde_inicio(
+        piloto_c0_c2, referencia):
+    ejecucion = piloto_c0_c2[0]
+    reproducido = buscador._reproducir_prefijo(
+        referencia[0], ejecucion.acciones)
+    assert reproducido.partida_activa
+    assert reproducido.jugador.sala_actual.id_sala == 71
+    assert reproducido.jugador.vida == 12
+    assert len(buscador._ids_activos(reproducido)) == 8
+
+
+def test_copia_persistente_prompt82_es_parcial_y_reproduce_checkpoint_250(
+        referencia):
+    ejecucion, contenido, _ = buscador._cargar_parcial_verificado(
+        PARCIAL_P82, referencia[0], 250
+    )
+    ciclo = buscador._verificar_checkpoint_prompt82(ejecucion)
+    assert contenido["parcial"] is True
+    assert contenido["afirma_t051"] is False
+    assert [fase["acciones"] for fase in contenido["fases"]
+            if fase.get("acciones") in (58, 95, 135, 167, 250)] == [
+        58, 95, 135, 167, 250]
+    assert ciclo["trabajo"]["cazadores_participantes"] == 8
+
+
+def test_continuacion_prompt83_activa_y_separa_noveno_cazador(piloto_nueve):
+    ejecucion, _, _, diagnostico, _, _ = piloto_nueve
+    assert len(ejecucion.acciones) == 298
+    assert len(buscador._ids_activos(ejecucion.estado)) == 9
+    assert diagnostico["objetivo"] == "e-cripta-06-39"
+    assert diagnostico["sala_activacion"] == 151
+    assert ejecucion.estado.jugador.sala_actual.id_sala == 110
+    noveno = next(c for c in buscador._cazadores(ejecucion.estado)
+                  if c.id_actor == "e-cripta-06-39")
+    assert noveno.esta_vivo() and noveno.esta_activo()
+    assert noveno.sala_actual.id_sala == 111
+    assert not ejecucion.estado.mapa.obtener_sala(
+        111).obtener_salida("OESTE").abierta
+
+
+def test_ciclo_prompt83_tiene_nueve_ids_sin_io_y_jugador_vivo(piloto_nueve):
+    _, final, medicion, _, _, _ = piloto_nueve
+    auditoria = medicion["auditoria_participantes"]
+    assert medicion["clasificacion"] == "completo"
+    assert medicion["sin_io"] is True
+    assert medicion["io_intervalo"] == {
+        "desde_disco": 0, "desde_red": 0, "fallos": 0}
+    assert auditoria["cazadores_activos_vivos"] == 9
+    assert auditoria["cazadores_validos_distintos"] == 9
+    assert len(auditoria["participantes_activos_vivos_ids"]) == 9
+    assert final.estado.partida_activa
+    assert final.estado.jugador.vida == 9
+    assert final.estado.jugador.sala_actual.id_sala == 109
+
+
+def test_continuacion_prompt83_se_reproduce_desde_inicio(
+        piloto_nueve, referencia):
+    ejecucion = piloto_nueve[0]
+    reproducido = buscador._reproducir_prefijo(
+        referencia[0], ejecucion.acciones)
+    assert reproducido.partida_activa
+    assert reproducido.jugador.sala_actual.id_sala == 110
+    assert reproducido.jugador.vida == 9
+    assert len(buscador._ids_activos(reproducido)) == 9
+
+
+def test_parcial_prompt83_no_afirma_t051_y_reproduce_medicion(
+        referencia):
+    contenido = json.loads(PARCIAL_P83.read_text(encoding="utf-8"))
+    assert contenido["parcial"] is True
+    assert contenido["afirma_t051"] is False
+    assert contenido["punto_medicion"] == len(contenido["acciones"]) == 299
+    assert [fase["acciones"] for fase in contenido["checkpoints_conservados"]] == [
+        58, 95, 135, 167, 250]
+    reproducido = buscador._reproducir_prefijo(
+        referencia[0], contenido["acciones"])
+    assert reproducido.partida_activa
+    assert reproducido.jugador.vida == 9
+    assert reproducido.jugador.sala_actual.id_sala == 109
+    assert len(buscador._ids_activos(reproducido)) == 9
+    medicion = contenido["medicion_preliminar"]
+    assert medicion["sin_io"] is True
+    assert medicion["auditoria_participantes"][
+        "cazadores_validos_distintos"] == 9

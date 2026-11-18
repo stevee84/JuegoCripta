@@ -2818,6 +2818,308 @@ local de ficha ya utilizada para nombres. No se añade trabajo al motor ni se al
 
 ---
 
+## Prompt 79 — Análisis de viabilidad de T051 / AC-013 / PR-001
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 17/11/2026
+
+> **Prompt resumido**
+>
+> Auditar si T051 puede cerrarse con la evidencia disponible, sin relajar el mínimo de 20 cazadores
+> activos y participantes, sin alterar reglas ni datos y sin modificar producción antes de demostrar
+> una necesidad. Revisar referencia, recorrido real, evidencia sintética y opciones de optimización.
+
+**Análisis realizado.** Se confirmó `cripta-06@f9ed9afa683d`, catálogo `4b9e75a42be5`, 300 salas,
+75 enemigos y 36 cazadores en cuatro regiones de 6/10/10/10. Se verificaron vida 30, defensa 4 con
+coraza, ataque 9 con daga, inventario 10, llaves y pociones reales. El recorrido histórico termina en
+muerte con cinco activos. Exploraciones temporales no exhaustivas alcanzaron 8–9 activos con rutas
+concentradas y 3+3 con una ruta distribuida, pero no constituyen evidencia oficial.
+
+**Conclusión.** No se cerró T051: la evidencia real solo prueba 1/3/5 participantes y la sintética con
+28 cazadores conserva muestras productivas `>=20 ms`. AC-014 mide consultas de ruta, no ciclos
+completos. Se conservó sin cambios el mínimo interno de 20, `validar_pr001`, constitución, tareas,
+producción, evidencia histórica y el artefacto oficial ausente. La recomendación fue construir un
+buscador auxiliar de acciones legales y optimizar producción únicamente si un recorrido real válido
+presenta ciclos lentos.
+
+---
+
+## Prompt 80 — Búsqueda automatizada de recorrido válido para T051
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 17–18/11/2026
+
+> **Prompt resumido**
+>
+> Crear un buscador determinista y acotado que utilice exclusivamente el estado real, acciones de
+> `Accion` y `MotorJuego.ejecutar_accion`; preservar azar, agenda e inventario en copias; reproducir
+> desde cero cualquier candidato y exigir 20 cazadores vivos, activos y participantes distintos en un
+> ciclo. No tocar producción ni generar el resultado oficial sin cumplimiento integral.
+
+**Implementación.** `benchmarks/buscar_recorrido_t051_integrante1.py` carga la referencia oficial,
+verifica una huella estructural del estado inicial, prepara equipo, llaves y reservas mediante acciones
+reales y explora copias completas de motor+estado con un haz local alrededor de cierres automáticos.
+Expone límites de estados, profundidad, anchura, semilla, tiempo y salida; informa progreso y termina
+sin afirmar imposibilidad. La auditoría cruza IDs únicos activos/vivos con decisiones observadas y la
+reproducción rechaza acciones, identidades o cifras declaradas discrepantes. Las pruebas focalizadas
+protegen contra estado inicial manipulado, conteo duplicado y auditorías ficticias.
+
+**Resultado de esta ejecución.** La búsqueda acotada no encontró todavía un recorrido de 20. Las
+corridas diagnósticas alcanzaron tres cazadores vivos y participantes y exploraron hasta 25 000 estados
+en la maniobra de la primera frontera; una maniobra individual temporizada sí aisló legítimamente un
+cazador, pero no basta para AC-013. Por ello no se creó
+`benchmarks/recorridos/t051_cripta06_20_cazadores.json`, no se ejecutó benchmark oficial, no se generó
+`benchmarks/resultados_terreno_cazador_referencia.json` y T051 permanece abierta. No se modificaron
+algoritmos productivos, requisitos, evidencias T048/T050/T051 ni especificaciones 002–004.
+
+**Complejidad o costo.** Cada transición del haz copia el grafo completo de partida y ejecuta una
+acción real; el costo queda acotado por estados, profundidad, anchura y tiempo configurados. La copia,
+preparación y búsqueda están fuera de cualquier cronómetro de PR-001.
+
+---
+
+## Prompt 81 — Búsqueda de T051 por objetivos verificables
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 18/11/2026
+
+> **Prompt resumido**
+>
+> Diagnosticar por qué el buscador agotó 25 000 transiciones sin superar tres cazadores, dividir la
+> búsqueda en progresión de llaves, activación y participación, conservar candidatos diversos y no
+> ejecutar otro barrido masivo antes de superar los cinco del recorrido histórico.
+
+**Diagnóstico.** La preparación anterior acumulaba 12 pociones en C0 y 6 en C1, las trasladaba entre
+reservas y llegaba cerca de 249 acciones sin recoger plata. Después activaba exactamente las salas
+241, 283 y 163 y hacía obligatorio aislar ese grupo por la frontera 165. Las 25 000 transiciones eran
+combinaciones locales de espera, inventario y movimiento junto a esa puerta: no podían progresar de
+región. La puntuación priorizaba el aislamiento y usaba vida como desempate, pero no incluía llaves ni
+región. Además, la firma local omitía azar y parte de agenda/puertas y retenía la mayor vida sin haber
+demostrado dominancia.
+
+**Implementación por fases.** Fase A minimiza primero nuevas activaciones y después costo virtual; el
+prefijo reproducido obtiene bronce, hierro y plata en 116 acciones y llega vivo a la sala 92. Fase B
+usa objetivos macro completos ejecutados por `MotorJuego`, conserva diversidad por conjunto de IDs,
+sala y banda de recursos, y deduplica solo una firma que incluye azar, agenda, posiciones e inventario.
+Antes de abrir el haz, un piloto determinista se reproduce desde cero y prueba seis activos y seis
+participantes, superando los cinco históricos. Los límites por fase son configurables y el valor
+predeterminado bajó de 50 000 estados globales a 300 objetivos por fase y 2 000 globales.
+
+**Exploración acotada.** Tras superar cinco, se ejecutó un único haz de 100 objetivos de C2, anchura 12
+y profundidad máxima 8. Incluidos tres intentos de cruce, fueron 103 estados en 9,42 s. El mejor
+prefijo reproducible tiene 216 acciones, siete cazadores vivos/activos y siete participantes distintos
+en un ciclo completo, jugador con 12 HP en sala 31 y cero pociones. El ciclo preliminar tardó
+0,519387 ms y procesó siete decisiones de siete IDs más la disponibilidad del jugador. Los tres cruces
+hacia C3 terminaron antes de producir un estado completo; las continuaciones hacia los tres cazadores
+restantes de C2 agotaron curación o terminaron la partida. Es un límite concreto de esta corrida, no
+una imposibilidad global.
+
+**Evidencia y límites.** El parcial diagnóstico se guardó solo en
+`/tmp/opencode/t051_prompt81_parcial_100.json`; no se creó ni sobrescribió evidencia versionada. No se
+generaron el recorrido de 20 ni el resultado oficial, no se cambió producción, `validar_pr001`, T051,
+constitución, evidencia histórica o specs 002–004. Las pruebas focalizadas verifican las tres llaves
+con menos de 249 acciones, reproducción del piloto de seis, distinción de azar/vida en la firma y las
+protecciones anteriores contra manipulación y conteos duplicados. `py_compile` pasó; el foco T051
+terminó en **22 passed in 4.40s** y restricciones más benchmarks relacionados en
+**101 passed in 5.33s**.
+
+**Complejidad o costo.** Cada arista macro puede ejecutar varias acciones y copiar un estado completo;
+el costo se limita por objetivos, profundidad, anchura y tiempo de cada fase. El buscador favorece
+primero progreso real (IDs activos y participantes), no cantidad bruta de estados ni vida aislada.
+
+---
+
+## Prompt 82 — Conservación de cazadores y supervivencia en C0–C2
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 18/11/2026
+
+> **Prompt resumido**
+>
+> Auditar el agotamiento de recursos del parcial de Prompt 81, evitar inicialmente C3 y plata,
+> diseñar primero un plan real de C0–C2 y ejecutar solo un piloto acotado que supere siete cazadores
+> vivos, activos y participantes sin relajar AC-013/PR-001.
+
+**Verificación del parcial anterior.** Existía
+`/tmp/opencode/t051_prompt81_parcial_100.json`, con SHA-256
+`4f48df91f8332d19e7fc2ff58315317da73e3b40f65176722d130e8f99798eaa`. Sus 216 acciones se
+reprodujeron desde el estado inicial hasta sala 31, 12 HP, siete activos y cero pociones. Se conservó
+una copia byte a byte en `/tmp/opencode/t051_prompt82_base_prompt81_verificado.json`, con la misma
+huella; ambos archivos son parciales con `afirma_t051=false`.
+
+**Economía de Prompt 81.** El recorrido recibió 130 HP de ataques y cero de trampas, y recuperó 112
+HP efectivos mediante 17 pociones recogidas y consumidas. Hubo nueve acciones con dos o más atacantes
+(tres `MOVER`, cinco `USAR` y una `ATACAR`), 14 acciones de alta presión al incluir daño elevado de un
+mismo actor, y un máximo de cuatro atacantes distintos. En particular, varias curaciones de los pasos
+finales otorgaban un nuevo turno a tres o cuatro cazadores y recuperaban menos vida de la que se perdía. De C0 recogió una
+poción de suelo; de C1, una de botín; y de C2, las 12 de suelo más tres de botín. La carga real contiene
+en C0/C1/C2 respectivamente 13/12/12 pociones de suelo y 6/9/10 de botín preparado; el botín exige
+derrotar al enemigo y ninguna cifra implica disponibilidad simultánea. Las 49 de suelo de toda la
+cripta tampoco están disponibles antes de cruzar fronteras.
+
+**Persecución y puertas.** Los sabuesos tienen velocidad 110 y rango ponderado 600; los espectros,
+velocidad 100 y rango 2400, frente a velocidad 100 del jugador. Por ello una ruta lineal no deja atrás
+a los sabuesos: los siete cazadores de Prompt 81 acabaron juntos en sala 31. Las fronteras legítimas
+C0/C1 son 25–26, 165–166 y 225–226; C1/C2 son 70–71, 110–111 y 270–271. Todas exigen su llave real y
+cierran a los 500. Una vez cerradas, el camino del cazador es inalcanzable y su decisión real pasa a
+`ESPERAR`. La primera hipótesis “hierro antes de bronce” se rechazó porque no existe camino legal
+141→247 sin bronce.
+
+**Plan previo al piloto.** Se descartó activar todos los cazadores de una región antes de cruzar. El
+plan usa componentes alejados: (1) activar sala 41, obtener bronce y separarla en 25; (2) obtener
+hierro en 247 sin plata; (3) reentrar lejos, activar 241 y 283 y cerrar 225; (4) activar 289 y 268 y
+cerrar 270; (5) reentrar por 70, a 1590 de costo ponderado del grupo anterior, activar 8, 68 y 108 y
+cerrar 70. Los riesgos auditados son curarse bajo ataques concurrentes, acercarse otra vez a menos de
+600 de un grupo y quedar en un componente sin salida; por ello cada cierre y cada prefijo se valida.
+
+**Piloto y algoritmo.** Un diagnóstico local limitado exploró 5377 candidatos distribuidos entre
+cuatro cierres y encontró patrones legales. Después se reemplazó esa exploración por un prefijo
+determinista de 250 acciones: una sola ruta, cero estados de ramificación y reproducción integral desde
+el inicio. La firma segura del haz auxiliar ahora incluye azar, reloj, agenda completa, inventario,
+posiciones, vida, todas las puertas y cierres, objetos de suelo y trampas; no aplica dominancia solo por
+vida. Los checkpoints reproducibles quedan en las acciones 58, 95, 135, 167 y 250.
+
+**Resultado.** El piloto termina vivo en sala 71 (C2), con 12 HP, tres pociones, hierro, sin plata y
+sin entrar en C3. Conserva ocho cazadores vivos y activos en las salas 25, 70, 225 y 270; los ocho IDs
+participan en un ciclo completo mediante decisiones reales `ESPERAR`. Supera los siete de Prompt 81,
+pero no satisface el mínimo 20. El nuevo parcial está en
+`/tmp/opencode/t051_prompt82_piloto_c0_c2.json`, marcado `parcial=true` y `afirma_t051=false`.
+
+**Viabilidad y siguiente acción.** C0–C2 contienen 26 cazadores y el piloto demuestra que cierres y
+componentes distantes evitan concentrarlos, pero todavía no demuestra que 20 puedan conservarse con
+los recursos restantes. La siguiente acción justificada es continuar desde el checkpoint 250,
+clasificar los cazadores de C2 por los componentes de 71, 111 y 271 y probar un solo grupo adicional
+con reposición previa. Solo si C2 no permite separar suficientes grupos se justificará estudiar plata
+y C3; no se amplía automáticamente el presupuesto.
+
+**Validación y límites.** `py_compile` pasó, el archivo focalizado terminó en **26 passed in 4.77s** y
+restricciones más benchmarks relacionados en **101 passed in 4.99s**. No se generó el recorrido
+oficial, no se midió PR-001, no se modificó producción, T051, validadores, fixtures, evidencia
+histórica ni specs 002–004, y no se ejecutaron operaciones Git.
+
+---
+
+## Prompt 83 — Continuación controlada desde ocho cazadores
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 18/11/2026
+
+> **Prompt resumido**
+>
+> Verificar y conservar el checkpoint 250 de Prompt 82, analizar C2 y ejecutar una sola exploración
+> pequeña que demuestre nueve participantes antes de ampliar cualquier presupuesto.
+
+**Base verificada y conservada.** `/tmp/opencode/t051_prompt82_piloto_c0_c2.json` existía y sus 250
+acciones se reprodujeron desde el estado inicial. Los checkpoints 58, 95, 135, 167 y 250 coincidieron
+en sala, vida, pociones, activos y participantes. El último volvió a dar sala 71, 12 HP, tres pociones,
+hierro, ocho activos y ocho participantes en ciclo completo. Su SHA-256 es
+`445a9fcc8803dc031b3b0438cda5b46d103ca6ca883965bab59ffa0e31f5c3d5`. Se copió byte a byte, sin
+sobrescribir recorridos existentes, a
+`benchmarks/recorridos/diagnosticos/t051_prompt82_ocho_cazadores_parcial.json`; conserva
+`parcial=true` y `afirma_t051=false`.
+
+**Análisis de C2.** La frontera 70–71 no era adecuada porque tres cazadores previos ocupaban sala 70;
+270–271 tenía otros dos. 110–111 estaba cerrada y sin cazadores en sala 110. Entre los objetivos de
+C2, `e-cripta-06-39`, sabueso de rango 600 en sala 151, era el mejor: desde 71 se llega por
+71→91→111→131→151 y puede volver a 111 para separarse hacia 110. Los espectros de 31, 35 y 112 tienen
+rango 2400 y mayor riesgo de persecución persistente; los demás sabuesos exigían rutas más largas.
+
+**Recursos y combate.** Antes de activar al noveno se recogieron legalmente cinco pociones presentes
+en el suelo: `objeto:71:0`, `botin:e-cripta-06-53:0`, `botin:e-cripta-06-54:0`, `objeto:95:0` y
+`objeto:13:0`. Los dos botines ya estaban en el suelo por derrotas del prefijo; no se supuso botín de
+enemigos vivos. Se consumieron tres pociones para pasar de 12 a 30 HP y quedaron cinco. La ruta derrotó
+por acciones `ATACAR` a las ratas rastreadoras `e-cripta-06-56`, `e-cripta-06-57` y
+`e-cripta-06-48`; no murió ningún cazador.
+
+**Exploración controlada.** El único haz local tenía límite 1000, anchura 16 y profundidad 10. Encontró
+la mejora tras 325 transiciones: activar sala 151, volver a 111 y ejecutar `ABRIR OESTE`, cuatro
+`ESPERAR` y `MOVER OESTE`. La puerta 111→110 cerró, el jugador quedó en 110 y
+`e-cripta-06-39` quedó vivo, activo y aislado en 111. El patrón se convirtió después en prefijo
+determinista; no se probaron otros cazadores ni se amplió el límite.
+
+**Medición diagnóstica.** Antes del ciclo había 298 acciones, nueve activos, 9 HP, cinco pociones y el
+jugador en 110. La acción 299 fue `MOVER OESTE`: terminó viva en sala 109 con 9 HP y cinco pociones.
+El ciclo fue completo, sin I/O (`desde_disco=0`, `desde_red=0`, `fallos=0`), procesó nueve decisiones
+de nueve IDs distintos —tres `MOVER` y seis `ESPERAR`— y diez eventos incluyendo disponibilidad del
+jugador. El tiempo preliminar fue **1,292416 ms**, pero no se usa para afirmar PR-001 porque faltan once
+participantes. Los IDs válidos fueron `e-cripta-06-4`, `7`, `8`, `18`, `19`, `21`, `24`, `26` y `39`.
+
+**Artefacto y bloqueo siguiente.** El recorrido reproducible se guardó en
+`benchmarks/recorridos/diagnosticos/t051_prompt83_nueve_cazadores_parcial.json`, SHA-256
+`67bfda82612e05402ddbe65dde9d56ad40a641bc41a4cd17a741a1939a5a1236`, con los cinco checkpoints
+anteriores, las 299 acciones, eventos, auditoría e IDs. Sigue marcado `parcial=true` y
+`afirma_t051=false`. Tras el ciclo, `e-cripta-06-19` y `e-cripta-06-21` quedaron en sala 109 con el
+jugador y `e-cripta-06-26` en 110; con 9 HP, curarse o reabrir camino hacia C2 concedería turnos de
+ataque concurrentes. Por eso la corrida se detuvo al demostrar nueve y no intentó un décimo.
+
+**Validación y límites.** `py_compile` pasó; pruebas focalizadas: **31 passed in 4.72s**; restricciones
+y benchmarks relacionados: **101 passed in 4.50s**. No se generó el recorrido oficial, no se modificó
+PR-001, producción, T051, constitución, evidencia histórica ni specs 002–004, y no hubo operaciones
+Git.
+
+---
+
+## Prompt 84 — Cierre documental de la investigación T051 sin declarar cumplimiento
+
+**Herramienta:** OpenCode
+
+**Modelo real de la sesión:** OpenAI GPT-5.6 Sol (`openai/gpt-5.6-sol`)
+
+**Fecha:** 18/11/2026
+
+> **Prompt resumido**
+>
+> Detener las búsquedas, consolidar los Prompts 79–83, conservar diagnósticos y evidencia histórica,
+> documentar solo la especificación 001, mantener T051 abierta en 75/76 y preparar una lista explícita
+> para que la usuaria haga personalmente el commit y push.
+
+**Auditoría de solo lectura.** La rama sigue siendo `Sofia`. `git status --porcelain` mostró 461
+entradas locales; la mayoría corresponde a una conversión generalizada de finales de línea y a trabajo
+ajeno. Con `git diff --ignore-cr-at-eol`, los cambios semánticos rastreados de esta investigación quedan
+acotados a `PROMPTS_LLM.md`, `tests/test_bench_referencia_001.py` y cuatro documentos de
+`specs/001-terreno-y-cazador/`. Se añaden el buscador auxiliar y los dos diagnósticos. No hay diferencia
+semántica en producción, specs 002–004, fixtures reales, T048/T050, el recorrido histórico ni la
+evidencia oficial anterior de T051. Los 14 archivos históricos incompletos de T050 y
+`t051_cripta06_diagnostico.json` permanecen presentes y no se modificaron ni eliminaron.
+
+**Reproducción y documentación.** Los 250 pasos del parcial de Prompt 82 se reprodujeron desde el
+estado inicial hasta ocho activos/participantes, sala 71, 12 HP y tres pociones. Los 299 pasos de
+Prompt 83 se reprodujeron hasta nueve activos/participantes, sala 109, 9 HP y cinco pociones; el ciclo
+fue completo y el archivo conserva **1,292416 ms preliminares** e I/O nulo. Ambos JSON mantienen
+`parcial=true` y `afirma_t051=false`. `plan.md`, `tasks.md`, `quickstart.md` y `research.md` documentan
+el avance cinco→nueve, el límite de supervivencia/ataques concurrentes y la decisión de detener la
+exploración. `spec.md`, AC-013, PR-001 y los validadores no cambiaron. T051 sigue sin marcar y el conteo
+automatizado confirma **75 cerradas/1 abierta**.
+
+**Pruebas.** Foco T051: **31 passed in 5.79s**. Restricciones: **61 passed in 1.15s**. La primera suite
+con `python3` de WSL/Python 3.14 no llegó a ejecutar pruebas: **1 skipped, 1 error in 11.62s**, por
+`ModuleNotFoundError: pygame` durante colección. Repetida con el entorno oficial
+`.venv/Scripts/python.exe`, terminó en **1560 passed, 4 subtests passed in 158.35s**.
+
+**Estado de `git diff --check`.** El comando global terminó con código 2: **250724 incidencias en 443
+archivos**. La causa es la conversión CRLF generalizada del checkout, que este Git de WSL presenta como
+espacio final en cada línea añadida; no se normalizaron esos archivos porque incluyen trabajo ajeno y
+evidencia histórica. Este fallo de higiene preexistente debe resolverse o evitarse al preparar el
+índice, sin mezclar una normalización masiva con el commit T051. No se ejecutaron operaciones Git de
+modificación, commit o publicación.
+
+---
+
 # Joshua Cabrera Bonilla — Integrante 3: Estructuras de apoyo, controlador y vista
 
 Bitácora de prompts (§10.3) de Joshua, ordenada por tema. Cada entrada incluye el prompt, qué se construyó y por qué, y el costo de la solución. Las fechas están en la tabla.
